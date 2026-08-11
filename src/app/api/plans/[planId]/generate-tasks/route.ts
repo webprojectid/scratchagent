@@ -18,8 +18,26 @@ export async function POST(request: Request, { params }: { params: Promise<{ pla
       return NextResponse.json({ skipped: true, message: "Tasks sudah ada" });
     }
 
-    const subTitles = (feature.subFeatures ?? []).map((sf: any) => sf.title);
-    const { tasks } = await generateTasksForFeature(plan.brief, feature.title, subTitles, featureIndex);
+    let tasks: { feature: string; sub_feature: string; title: string; layer: "frontend" | "backend" | "qa"; phase: number; page: string | null; deps: string[] }[] = [];
+
+    if (process.env.MOCK_LLM === "1") {
+      const layers: ("frontend" | "backend" | "qa")[] = ["frontend", "backend", "qa"];
+      for (let i = 0; i < 6; i++) {
+        tasks.push({
+          feature: feature.title,
+          sub_feature: feature.subFeatures[0]?.title ?? "Umum",
+          title: `Mock task ${i + 1} untuk ${feature.title}`,
+          layer: layers[i % 3],
+          phase: featureIndex + 1,
+          page: null,
+          deps: [],
+        });
+      }
+    } else {
+      const subTitles = (feature.subFeatures ?? []).map((sf: any) => sf.title);
+      const result = await generateTasksForFeature(plan.brief, feature.title, subTitles, featureIndex);
+      tasks = result.tasks;
+    }
 
     let taskNum = 0;
     for (const sf of feature.subFeatures) {
@@ -68,11 +86,16 @@ export async function POST(request: Request, { params }: { params: Promise<{ pla
       })));
     }
 
-    const allDone = (plan.features ?? []).every((f: any, i) =>
-      i < featureIndex || (f.subFeatures ?? []).some((sf: any) => (sf.tasks ?? []).length > 0),
+    // Ready gate: plan baru boleh "ready" kalau SEMUA fitur sudah punya tasks.
+    // Dievaluasi tiap call (aman untuk generate out-of-order / retry fitur yang
+    // sempat gagal), dan idempoten lewat penanda sub-fitur "QA & Integrasi".
+    const allFeaturesHaveTasks = (plan.features ?? []).every((f: any) =>
+      (f.subFeatures ?? []).some((sf: any) => (sf.tasks ?? []).length > 0),
     );
-    const isLast = featureIndex === (plan.features ?? []).length - 1;
-    if (isLast && allDone) {
+    const alreadyHasQa = (plan.features ?? []).some((f: any) =>
+      (f.subFeatures ?? []).some((sf: any) => sf.title === "QA & Integrasi"),
+    );
+    if (allFeaturesHaveTasks && !alreadyHasQa) {
       const qaPhase = plan.features.length + 1;
       const lastFeature = plan.features.at(-1);
       if (lastFeature) {
@@ -90,7 +113,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pla
       await updatePlanStatus(planId, "ready");
     }
 
-    await savePlan(plan, TUID);
+    await savePlan(plan, plan.userId ?? TUID);
     return NextResponse.json({ ok: true, featureIndex, tasksGenerated: tasks.length });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Generate tasks gagal" }, { status: 500 });

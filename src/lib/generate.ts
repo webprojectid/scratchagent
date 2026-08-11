@@ -1,4 +1,10 @@
 import { z } from "zod";
+import { applyArchFallback } from "./arch-fallback";
+
+const prioritySchema = z.preprocess(
+  (val) => typeof val === "string" ? val.toLowerCase().trim() : val,
+  z.enum(["high", "medium", "low"]).default("medium"),
+);
 
 const featureSchema = z.object({
   title: z.string(),
@@ -6,31 +12,37 @@ const featureSchema = z.object({
   description: z.string(),
   tujuan: z.string(),
   selesai_bila: z.array(z.string()),
-  priority: z.enum(["high", "medium", "low"]),
+  priority: prioritySchema,
 });
 
 const stage1Schema = z.object({
   title: z.string(),
-  assumptions: z.array(z.string()),
-  stack: z.array(z.string()).optional(),
+  assumptions: z.array(z.string()).default([]),
+  stack: z.array(z.string()).default([]),
   features: z.array(featureSchema).min(2),
 });
 
 const archSchema = z.object({
-  architecture: z.string(),
-  database_schema: z.string(),
+  architecture: z.string().min(1),
+});
+
+const dbSchema = z.object({
+  database_schema: z.string().min(1),
+});
+
+const reqSchema = z.object({
   user_flow: z.array(z.object({
     title: z.string(),
     steps: z.array(z.string()),
-  })),
+  })).default([]),
   requirements: z.object({
     fungsional: z.array(z.string()),
     non_fungsional: z.array(z.string()),
-  }),
+  }).default({ fungsional: [], non_fungsional: [] }),
   tech_stack: z.array(z.object({
     name: z.string(),
     desc: z.string(),
-  })),
+  })).default([]),
 });
 
 const stage2Schema = z.object({
@@ -40,10 +52,10 @@ const stage2Schema = z.object({
       sub_features: z.array(
         z.object({
           title: z.string(),
-          tujuan: z.string(),
-          selesai_bila: z.array(z.string()),
+          tujuan: z.string().default(""),
+          selesai_bila: z.array(z.string()).default([]),
         }),
-      ),
+      ).default([]),
     }),
   ),
 });
@@ -90,29 +102,46 @@ function normalize(obj: unknown): unknown {
 }
 
 function extractJson(value: string): string {
+  // 1. Ambil JSON di dalam markdown fence ```json ... ``` atau ``` ... ```
+  const fenced = value.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+  let candidates = fenced ? [fenced[1].trim()] : [];
+
+  // 2. Coba parse value mentah dan heuristic extract
   let clean = value.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
   clean = clean.replace(/,\s*([}\]])/g, "$1");
   const starts = [clean.indexOf("{"), clean.indexOf("[")].filter((x) => x >= 0);
   const start = starts.length ? Math.min(...starts) : -1;
   const end = Math.max(clean.lastIndexOf("}"), clean.lastIndexOf("]"));
-  if (start < 0 || end < start) throw new Error("Respons LLM tidak memuat JSON");
-  const raw = clean.slice(start, end + 1);
-  try { JSON.parse(raw); return raw; } catch { /* repair below */ }
+  if (start >= 0 && end >= start) {
+    candidates.push(clean.slice(start, end + 1));
+  }
+  candidates.push(clean);
+
+  // 3. Coba tiap candidate
+  for (const raw of candidates) {
+    try {
+      JSON.parse(raw);
+      return raw;
+    } catch { /* coba repair */ }
+    try {
+      const { jsonrepair } = require("jsonrepair");
+      const repaired = jsonrepair(raw);
+      JSON.parse(repaired);
+      return repaired;
+    } catch { /* next candidate */ }
+  }
+
+  // 4. Last resort: perbaiki quote dan trailing comma
+  const last = candidates[0] ?? value;
   try {
-    const { jsonrepair } = require("jsonrepair");
-    const repaired = jsonrepair(raw);
-    JSON.parse(repaired);
-    return repaired;
-  } catch { /* second repair pass */ }
-  try {
-    const fixed = raw
+    const fixed = last
       .replace(/(['"])?(\w+)(['"])?:/g, '"$2":')
       .replace(/:\s*'([^']*)'/g, ': "$1"')
       .replace(/,\s*([}\]])/g, "$1");
     JSON.parse(fixed);
     return fixed;
   } catch {
-    throw new Error(`JSON parsing gagal. Raw: ${raw.slice(0, 200)}...`);
+    throw new Error(`JSON parsing gagal. Raw: ${last.slice(0, 500)}...`);
   }
 }
 
@@ -124,10 +153,19 @@ async function callLlm<T>(schema: z.ZodType<T>, prompt: string, usage?: LlmUsage
   const model = process.env.LLM_MODEL;
   if (!baseUrl || !apiKey || !model) throw new Error("Konfigurasi LLM belum lengkap");
 
+  const timeoutMs = Number(process.env.LLM_TIMEOUT_MS) || 180_000;
   let lastError: unknown;
   for (let attempt = 0; attempt < 3; attempt++) {
+    // Retry pakai prompt sedikit berbeda: hindari replay respons rus yang di-cache proxy,
+    // sekaligus mengarahkan model untuk menulis ulang JSON dengan benar.
+    // Nonce bikin tiap retry unik supaya varian prompt pun tidak ikut ter-cache.
+    const userContent = attempt === 0
+      ? prompt
+      : `${prompt}\n\nPerhatian: percobaan ${attempt} sebelumnya menghasilkan output TIDAK VALID. Tulis ulang SEKARANG: HANYA JSON valid di dalam triple backtick json, tanpa teks lain di luarnya. (percobaan-${attempt + 1}-${Date.now()}-${Math.random().toString(36).slice(2, 8)})`;
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 120_000);
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+    const start = Date.now();
+    console.log(`[LLM] request attempt ${attempt + 1} ke ${baseUrl}/chat/completions (model: ${model})`);
     try {
       const res = await fetch(`${baseUrl}/chat/completions`, {
         method: "POST",
@@ -135,8 +173,8 @@ async function callLlm<T>(schema: z.ZodType<T>, prompt: string, usage?: LlmUsage
         body: JSON.stringify({
           model,
           messages: [
-            { role: "system", content: "Balas HANYA dengan JSON valid tanpa markdown, tanpa komentar, tanpa trailing comma. Semua field name WAJIB double-quoted. Semua string WAJIB double-quoted. Jangan gunakan single quote." },
-            { role: "user", content: prompt },
+            { role: "system", content: "Kamu adalah coding assistant. Output HANYA JSON valid di dalam triple backtick dengan kata json. Jangan gunakan reasoning_content, jangan tulis penjelasan, jangan tambah teks di luar JSON. JSON harus valid: double-quoted field names dan string, tanpa trailing comma, tanpa komentar, tanpa single quote. String boleh mengandung newline." },
+            { role: "user", content: userContent },
           ],
           temperature: 0.2,
           max_tokens: 8192,
@@ -144,17 +182,28 @@ async function callLlm<T>(schema: z.ZodType<T>, prompt: string, usage?: LlmUsage
         signal: controller.signal,
       });
       clearTimeout(timeout);
-      if (!res.ok) throw new Error(`LLM gagal: ${res.status} ${await res.text()}`);
-      const body = await res.json();
-      if (usage && body.usage) {
-        usage.tokensIn += body.usage.prompt_tokens ?? 0;
-        usage.tokensOut += body.usage.completion_tokens ?? 0;
+      const elapsed = Date.now() - start;
+      console.log(`[LLM] response ${res.status} in ${elapsed}ms`);
+      if (!res.ok) {
+        const text = await res.text();
+        console.error(`[LLM] error body: ${text.slice(0, 500)}`);
+        throw new Error(`LLM gagal: ${res.status} ${text.slice(0, 200)}`);
+      }
+      const responseBody = await res.json();
+      const messageContent = responseBody.choices?.[0]?.message;
+      if (usage && responseBody.usage) {
+        usage.tokensIn += responseBody.usage.prompt_tokens ?? 0;
+        usage.tokensOut += responseBody.usage.completion_tokens ?? 0;
       }
       try {
-        const raw = JSON.parse(extractJson(body.choices?.[0]?.message?.content ?? ""));
+        const raw = JSON.parse(extractJson(messageContent?.content ?? ""));
         return schema.parse(normalize(raw));
       } catch (error) {
         lastError = error;
+        console.error("[LLM] parsing/validasi gagal. Message:", JSON.stringify(messageContent, null, 2)?.slice(0, 2000));
+        if (error instanceof z.ZodError) {
+          console.error("[LLM] schema validation:", error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; "));
+        }
         if (attempt === 2) throw error;
       }
     } catch (error) {
@@ -162,7 +211,9 @@ async function callLlm<T>(schema: z.ZodType<T>, prompt: string, usage?: LlmUsage
       lastError = error;
       if (attempt === 2) throw error;
       if (error instanceof Error && error.name === "AbortError") {
-        console.warn(`[LLM] timeout pada attempt ${attempt + 1}, retry...`);
+        console.warn(`[LLM] timeout pada attempt ${attempt + 1} setelah ${Date.now() - start}ms, retry...`);
+      } else if (error instanceof Error) {
+        console.warn(`[LLM] attempt ${attempt + 1} error: ${error.message}`);
       }
     }
   }
@@ -204,38 +255,79 @@ export interface GenerateTask {
   deps: string[];
 }
 
+export interface ClarifyQuestion {
+  question: string;
+  type: "text" | "textarea" | "single" | "multiple";
+  options: string[];
+  placeholder: string;
+}
+
+/** Jawaban klarifikasi user yang sudah diratakan jadi string, siap masuk prompt. */
+export interface ContextAnswer {
+  question: string;
+  answer: string;
+}
+
 export async function generatePlanStructure(
   brief: string,
   techPrefs: { mode: "auto" | "custom"; frontend?: string; backend?: string; database?: string; deployment?: string },
+  contextAnswers?: ContextAnswer[],
 ): Promise<GenerateResult> {
   const usage: LlmUsage = { tokensIn: 0, tokensOut: 0 };
   const stackHint = techPrefs.mode === "custom" ? `User memilih: frontend=${techPrefs.frontend ?? "Next.js"}, backend=${techPrefs.backend ?? "Node.js"}, database=${techPrefs.database ?? "PostgreSQL"}, deployment=${techPrefs.deployment ?? "Railway"}` : "Biarkan AI memilih stack terbaik.";
 
+  const answersBlock = contextAnswers && contextAnswers.length > 0
+    ? `\nJawaban klarifikasi dari user (perlakukan sebagai FAKTA yang sudah dikonfirmasi — jangan membuat asumsi yang bertentangan dengan ini):\n${contextAnswers.map((a) => `- ${a.question} → ${a.answer}`).join("\n")}\n`
+    : "";
+
   const one = await callLlm(
     stage1Schema,
-    `${`Brief: ${brief}\n${stackHint}`}\n\nPerkaya brief tanpa bertanya ke user. Buat asumsi wajar. Buat judul produk singkat. Buat daftar fitur lengkap (min 3). Setiap fitur WAJIB punya priority: "high" (fitur inti/kritis), "medium" (penting tapi bisa ditunda), atau "low" (nice-to-have). WAJIB gunakan field dengan nama PERSIS: title, icon, description, tujuan, selesai_bila, priority. Format: {"title":"...","assumptions":[],"stack":[],"features":[{"title":"...","icon":"...","description":"...","tujuan":"...","selesai_bila":[],"priority":"high"}]}`,
+    `${`Brief: ${brief}\n${stackHint}${answersBlock}`}\n\nKamu adalah product manager senior. Buat PRD awal yang mendalam:\n1. Judul produk yang jelas.\n2. Asumsi wajar (min 5): bisnis, teknis, perilaku pengguna. Jika ada jawaban klarifikasi dari user, gunakan itu dan JANGAN jadikan hal yang sudah dijawab sebagai asumsi.\n3. Stack teknologi yang cocok.\n4. Daftar fitur lengkap (min 4, max 8). Setiap fitur WAJIB punya priority high/medium/low. CAKUPAN WAJIB: setiap subsistem, komponen, atau fungsi yang disebut di brief harus tercover oleh minimal satu fitur. Jika brief memuat lebih dari 8 subsistem, gabungkan subsistem yang serumpun menjadi satu fitur dan jelaskan penggabungannya di field description — JANGAN menghapus, melewati, atau mengabaikan subsistem apa pun.\n5. Untuk tiap fitur: deskripsi 1-2 kalimat, tujuan bisnis yang terukur, dan 3-5 kriteria "selesai bila" yang spesifik dan bisa diuji.\n\nWAJIB gunakan field PERSIS: title, assumptions, stack, features (title, icon, description, tujuan, selesai_bila, priority). Format: {"title":"...","assumptions":[],"stack":[],"features":[{"title":"...","icon":"...","description":"...","tujuan":"...","selesai_bila":[],"priority":"high"}]}}`,
     usage,
   );
 
   const featureTitles = one.features.map((f) => f.title);
 
-  const [two, archDataRaw] = await Promise.all([
-    callLlm(
-      stage2Schema,
-      `Brief: ${brief}\nFitur: ${JSON.stringify(featureTitles)}\n\nPecah setiap fitur menjadi sub_features selengkap yang dibutuhkan produk. Setiap sub_feature WAJIB punya: title, tujuan (tujuan spesifik sub-fitur tersebut), selesai_bila (array kondisi kapan sub-fitur dianggap selesai). Format: {"features":[{"title":"...","sub_features":[{"title":"...","tujuan":"...","selesai_bila":["..."]}]}]}`,
-      usage,
-    ),
+  const two = await callLlm(
+    stage2Schema,
+    `Brief: ${brief}\nFitur: ${JSON.stringify(featureTitles)}\n\nKamu adalah arsitek produk. Untuk setiap fitur, lakukan dekomposisi kritis:\n1. Identifikasi 3-6 sub-fitur yang saling eksklusif namun collectively exhaustive.\n2. Tiap sub-fitur pecahkan SATU masalah spesifik.\n3. Tujuan terukur.\n4. Selesai_bila berisi acceptance criteria konkret (min 2).\n5. Tandai sub-fitur risiko tinggi atau dependency eksternal.\n\nWAJIB field: title, sub_features (title, tujuan, selesai_bila). Format: {"features":[{"title":"...","sub_features":[{"title":"...","tujuan":"...","selesai_bila":["..."]}]}]}}`,
+    usage,
+  );
+
+  const [archDataRaw, dbDataRaw, reqDataRaw] = await Promise.all([
     callLlm(
       archSchema,
-      `Brief: ${brief}\nFitur: ${JSON.stringify(featureTitles)}\nStack: ${JSON.stringify(one.stack ?? [])}\n\nBuat dokumentasi lengkap untuk produk ini.\n\nUntuk "architecture": tulis narasi singkat penjelasan komponen utama (frontend, backend, database, integrasi eksternal). KEMUDIAN WAJIB sertakan diagram dengan format: triple-backtick mermaid lalu baris baru lalu flowchart TD lalu diagram lalu triple-backtick. Contoh format: triple-backtick-mermaid-baris-baru-flowchart-TD-baris-baru-A-[Komponen A]--konsol-B-[Komponen B]-triple-backtick. Gunakan flowchart TD atau sequenceDiagram.\n\nUntuk "database_schema": daftar setiap tabel dengan kolom dan tipe data (format: "### Tabel nama_tabel" lalu list "- kolom (tipe) - deskripsi"). KEMUDIAN WAJIB sertakan ERD dengan format: triple-backtick mermaid lalu erDiagram lalu relasi antar tabel lalu triple-backtick. Contoh: USERS ||--o{ TASKS : has\n\nUntuk "user_flow": buat array berisi alur-alur perjalanan pengguna utama. Setiap alur punya "title" dan "steps" (array langkah-langkah).\n\nUntuk "requirements": object dengan "fungsional" (array) dan "non_fungsional" (array).\n\nUntuk "tech_stack": array object {name, desc}.\n\nPENTING: architecture dan database_schema WAJIB mengandung mermaid code blocks (dibungkus triple backtick dengan kata mermaid). Tanpa mermaid, respons ditolak.\n\nFormat: {"architecture":"narasi... [mermaid code block dengan flowchart]","database_schema":"### Tabel... [mermaid code block dengan erDiagram]","user_flow":[{"title":"...","steps":["..."]}],"requirements":{"fungsional":["..."],"non_fungsional":["..."]},"tech_stack":[{"name":"...","desc":"..."}]}`,
+      `Brief: ${brief}\nFitur: ${JSON.stringify(featureTitles)}\nStack: ${JSON.stringify(one.stack ?? [])}\n\nKamu adalah solution architect. Buat architecture detail untuk produk ini. Jelaskan komponen utama, alur data end-to-end, keputusan arsitektur, trade-off (monolith vs microservices, SSR vs CSR, SQL vs NoSQL), error handling, caching, autentikasi, dan skalabilitas. Narasi 2-3 paragraf. WAJIB sertakan diagram mermaid flowchart TD di dalam triple backtick.\n\nFormat: {"architecture":"narasi detail lalu mermaid flowchart TD di triple backtick"}}`,
       usage,
-    ),
+    ).catch((error) => {
+      console.warn("[generate] architecture gagal, pakai fallback:", error instanceof Error ? error.message : error);
+      return null;
+    }),
+    callLlm(
+      dbSchema,
+      `Brief: ${brief}\nFitur: ${JSON.stringify(featureTitles)}\nStack: ${JSON.stringify(one.stack ?? [])}\n\nKamu adalah database architect. Buat database schema lengkap untuk produk ini. Daftar SEMUA tabel utama. Untuk tiap tabel: nama kolom, tipe data, constraint (PK/FK/UNIQUE/INDEX), dan alasan pemilihan tipe. Identifikasi N+1 query risk dan hot path. WAJIB sertakan ERD mermaid di dalam triple backtick.\n\nFormat: {"database_schema":"### Tabel... lalu mermaid erDiagram di triple backtick"}}`,
+      usage,
+    ).catch((error) => {
+      console.warn("[generate] database_schema gagal, pakai fallback:", error instanceof Error ? error.message : error);
+      return null;
+    }),
+    callLlm(
+      reqSchema,
+      `Brief: ${brief}\nFitur: ${JSON.stringify(featureTitles)}\n\nKamu adalah product manager. Buat user flow, requirements, dan tech stack untuk produk ini.\n1. User Flow: 2-4 alur utama (happy path + 1 unhappy path per fitur penting), tiap langkah actionable.\n2. Requirements: fungsional (min 6) dan non-fungsional (min 4: performance, security, reliability, scalability).\n3. Tech Stack: tiap teknologi ada alasan 1 kalimat dan alternatif yang dipertimbangkan.\n\nFormat: {"user_flow":[{"title":"...","steps":["..."]}],"requirements":{"fungsional":[],"non_fungsional":[]},"tech_stack":[{"name":"...","desc":"..."}]}}`,
+      usage,
+    ).catch((error) => {
+      console.warn("[generate] requirements gagal, pakai default:", error instanceof Error ? error.message : error);
+      return null;
+    }),
   ]);
 
-  let archData = { architecture: "", database_schema: "", user_flow: [] as { title: string; steps: string[] }[], requirements: { fungsional: [] as string[], non_fungsional: [] as string[] }, tech_stack: [] as { name: string; desc: string }[] };
-  if (archDataRaw) {
-    archData = archDataRaw;
-  }
+  const archData = {
+    architecture: archDataRaw?.architecture ?? "",
+    databaseSchema: dbDataRaw?.database_schema ?? "",
+    userFlow: reqDataRaw?.user_flow ?? [],
+    requirements: reqDataRaw?.requirements ?? { fungsional: [], non_fungsional: [] },
+    techStack: reqDataRaw?.tech_stack ?? [],
+  };
 
   const features = one.features.map((f, fi) => {
     const mapped = two.features.find((x) => x.title === f.title);
@@ -248,16 +340,31 @@ export async function generatePlanStructure(
     return { slug: f.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""), title: f.title, icon: f.icon, description: f.description, tujuan: f.tujuan, selesaiBila: f.selesai_bila, priority: f.priority, status: "direncanakan" as const, subFeatures };
   });
 
+  const resolvedStack = one.stack?.length
+    ? one.stack
+    : techPrefs.mode === "custom"
+      ? [techPrefs.frontend, techPrefs.backend, techPrefs.database, techPrefs.deployment].filter((s): s is string => !!s)
+      : ["Next.js", "PostgreSQL", "Railway"];
+
+  const { architecture, databaseSchema, usedFallback } = applyArchFallback(
+    { title: one.title, stack: resolvedStack, features: features as never },
+    archData.architecture,
+    archData.databaseSchema,
+  );
+  if (usedFallback.length) {
+    console.warn(`[generate] fallback dipakai untuk: ${usedFallback.join(", ")}`);
+  }
+
   return {
     title: one.title,
     brief,
-    stack: one.stack ?? (techPrefs.mode === "custom" ? [techPrefs.frontend, techPrefs.backend, techPrefs.database, techPrefs.deployment].filter((s): s is string => !!s) : ["Next.js", "PostgreSQL", "Railway"]),
-    techStack: archData.tech_stack,
+    stack: resolvedStack,
+    techStack: archData.techStack,
     asumsi: one.assumptions,
     requirements: { fungsional: archData.requirements.fungsional, nonFungsional: archData.requirements.non_fungsional },
-    userFlow: archData.user_flow,
-    architecture: archData.architecture,
-    databaseSchema: archData.database_schema,
+    userFlow: archData.userFlow,
+    architecture,
+    databaseSchema,
     features,
     usage,
   };
@@ -272,7 +379,7 @@ export async function generateTasksForFeature(
   const usage: LlmUsage = { tokensIn: 0, tokensOut: 0 };
   const result = await callLlm(
     stage3Schema,
-    `Brief: ${brief}\nFitur: ${featureTitle}\nSub-fitur: ${JSON.stringify(subFeatures)}\n\nBuat task untuk fitur ini saja. WAJIB minimal 5 task, maksimal 20 task total. Bagi rata antar sub-fitur. Setiap title WAJIB diawali kata kerja. WAJIB gunakan field: tasks (array of {feature, sub_feature, title, layer, phase, page, deps}). Format: {"tasks":[{"feature":"...","sub_feature":"...","title":"...","layer":"frontend","phase":${featureIndex + 1},"page":null,"deps":[]}]}`,
+    `Brief: ${brief}\nFitur: ${featureTitle}\nSub-fitur: ${JSON.stringify(subFeatures)}\n\nKamu adalah tech lead senior. Buat task untuk fitur ini saja dengan pendekatan kritis:\n1. Minimal 6 task, maksimal 20 task total.\n2. Setiap sub-fitur harus ada task frontend, backend, DAN QA/testing.\n3. Tiap task title WAJIB diawali kata kerja (Buat, Integrasikan, Uji, Deploy, Refactor, dll).\n4. Sertakan task untuk: validasi input, error handling, state management, integrasi antar komponen, unit/integration test, accessibility/perf jika relevan.\n5. Dependency (deps) harus realistis: tiap task boleh bergantung pada task sebelumnya di layer yang sama atau layer yang sudah selesai (frontend -> backend -> qa).\n6. Tandai task yang blocker atau high-risk.\n7. Setiap task wajib field: feature, sub_feature, title, layer (frontend/backend/qa), phase, page (null atau path), deps (array string ref).\n\nFormat: {"tasks":[{"feature":"...","sub_feature":"...","title":"...","layer":"frontend","phase":${featureIndex + 1},"page":null,"deps":[]}]}`,
     usage,
   );
   return { tasks: result.tasks, usage };

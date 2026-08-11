@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { MermaidFlow, mermaidToFlow } from "./mermaid-flow";
 
 export function Mermaid({ code }: { code: string }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -28,16 +29,53 @@ export function Mermaid({ code }: { code: string }) {
   return <div ref={ref} className="overflow-auto [&_svg]:max-w-full" dangerouslySetInnerHTML={{ __html: svg }} />;
 }
 
-export function RichContent({ text, diagramOnly = false }: { text: string; diagramOnly?: boolean }) {
+export function RichContent({ text, diagramOnly = false, flow = false }: { text: string; diagramOnly?: boolean; flow?: boolean }) {
   const parts = text.split(/(```mermaid[\s\S]*?```)/g);
   return (
     <div className="space-y-2">
       {parts.map((part, i) => {
         const mermaidMatch = part.match(/```mermaid\s*([\s\S]*?)```/);
-        if (mermaidMatch) return <Mermaid key={i} code={mermaidMatch[1]} />;
+        if (mermaidMatch) {
+          const code = mermaidMatch[1];
+          if (flow && mermaidToFlow(code)) {
+            return <MermaidFlow key={i} code={code} />;
+          }
+          return <Mermaid key={i} code={code} />;
+        }
         if (diagramOnly || !part.trim()) return null;
         return <pre key={i} className="whitespace-pre-wrap font-mono text-[10px] leading-relaxed text-slate-400">{part.trim()}</pre>;
       })}
+    </div>
+  );
+}
+
+/** Diagram interaktif + narasi (trade-off, alasan desain) dalam collapsible. */
+export function DiagramWithDetails({ text }: { text: string }) {
+  const parts = text.split(/(```mermaid[\s\S]*?```)/g);
+  const diagrams: string[] = [];
+  const narrativeParts: string[] = [];
+  for (const part of parts) {
+    const m = part.match(/```mermaid\s*([\s\S]*?)```/);
+    if (m) diagrams.push(m[1]);
+    else if (part.trim()) narrativeParts.push(part.trim());
+  }
+  const narrative = narrativeParts.join("\n\n");
+
+  return (
+    <div className="space-y-2">
+      {diagrams.map((code, i) => {
+        if (mermaidToFlow(code)) return <MermaidFlow key={i} code={code} />;
+        return <Mermaid key={i} code={code} />;
+      })}
+      {narrative && (
+        <details className="group rounded-lg border border-white/[.06] bg-white/[.02] px-3 py-2">
+          <summary className="cursor-pointer select-none list-none text-[10px] font-semibold uppercase tracking-[.12em] text-white/30 transition-colors hover:text-white/60">
+            <span className="mr-1.5 inline-block transition-transform group-open:rotate-90">▸</span>
+            Detail & alasan desain
+          </summary>
+          <pre className="mt-2 whitespace-pre-wrap border-t border-white/[.06] pt-2 font-mono text-[10px] leading-relaxed text-slate-400">{narrative}</pre>
+        </details>
+      )}
     </div>
   );
 }
