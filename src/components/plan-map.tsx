@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Background,
   BackgroundVariant,
@@ -216,40 +216,44 @@ function FeaturePanel({ plan, index, onClose, onNav }: { plan: Plan; index: numb
 
 export function PlanMap({ plan, liveTasks }: { plan: Plan; liveTasks?: Record<string, Task["status"]> }) {
   const [selected, setSelected] = useState<number | null>(null);
-  const mergedPlan: Plan = liveTasks
+  const mergedPlan: Plan = useMemo(() => liveTasks
     ? { ...plan, features: plan.features.map((feature) => ({ ...feature, subFeatures: feature.subFeatures.map((subFeature) => ({ ...subFeature, tasks: subFeature.tasks.map((task) => ({ ...task, status: liveTasks[task.ref] ?? task.status })) })) })) }
-    : plan;
+    : plan, [plan, liveTasks]);
 
-  const rowGap = 190;
-  const top = 40;
-  const nodes: Node<MapNodeData>[] = [{
-    id: "root",
-    type: "mapNode",
-    position: { x: 20, y: top + ((mergedPlan.features.length - 1) * rowGap) / 2 },
-    data: { kind: "root", label: plan.title },
-  }];
-  const edges: Edge[] = [];
+  const { nodes, edges } = useMemo(() => {
+    const rowGap = 190;
+    const top = 40;
+    const nextNodes: Node<MapNodeData>[] = [{
+      id: "root",
+      type: "mapNode",
+      position: { x: 20, y: top + ((mergedPlan.features.length - 1) * rowGap) / 2 },
+      data: { kind: "root", label: plan.title },
+    }];
+    const nextEdges: Edge[] = [];
 
-  mergedPlan.features.forEach((feature, featureIndex) => {
-    const y = top + featureIndex * rowGap;
-    const tasks = feature.subFeatures.flatMap((subFeature) => subFeature.tasks);
-    const done = tasks.filter((task) => task.status === "done").length;
-    const phase = featureIndex + 1;
-    const featureId = `feature-${featureIndex}`;
-    const subFeatureId = `sub-features-${featureIndex}`;
-    const taskId = `tasks-${featureIndex}`;
+    mergedPlan.features.forEach((feature, featureIndex) => {
+      const y = top + featureIndex * rowGap;
+      const tasks = feature.subFeatures.flatMap((subFeature) => subFeature.tasks);
+      const done = tasks.filter((task) => task.status === "done").length;
+      const phase = featureIndex + 1;
+      const featureId = `feature-${featureIndex}`;
+      const subFeatureId = `sub-features-${featureIndex}`;
+      const taskId = `tasks-${featureIndex}`;
 
-    nodes.push(
-      { id: featureId, type: "mapNode", position: { x: 340, y }, data: { kind: "feature", label: feature.title, feature, phase, done, total: tasks.length } },
-      { id: subFeatureId, type: "mapNode", position: { x: 670, y: y - 16 }, data: { kind: "sub-features", label: "Sub fitur", feature, items: feature.subFeatures.map((subFeature) => ({ label: subFeature.title })), total: feature.subFeatures.length } },
-      { id: taskId, type: "mapNode", position: { x: 1000, y: y - 16 }, data: { kind: "tasks", label: "Tasks", feature, items: tasks.map((task) => ({ label: task.title, status: task.status })), total: tasks.length, done, generating: plan.status === "generating" } },
-    );
-    edges.push(
-      { id: `root-${featureId}`, source: "root", target: featureId, type: "smoothstep", style: { stroke: "#374151", strokeWidth: 1.2 } },
-      { id: `${featureId}-${subFeatureId}`, source: featureId, target: subFeatureId, type: "smoothstep", style: { stroke: "#2d3748", strokeWidth: 1 } },
-      { id: `${subFeatureId}-${taskId}`, source: subFeatureId, target: taskId, type: "smoothstep", style: { stroke: "#2d3748", strokeWidth: 1 } },
-    );
-  });
+      nextNodes.push(
+        { id: featureId, type: "mapNode", position: { x: 340, y }, data: { kind: "feature", label: feature.title, feature, phase, done, total: tasks.length } },
+        { id: subFeatureId, type: "mapNode", position: { x: 670, y: y - 16 }, data: { kind: "sub-features", label: "Sub fitur", feature, items: feature.subFeatures.map((subFeature) => ({ label: subFeature.title })), total: feature.subFeatures.length } },
+        { id: taskId, type: "mapNode", position: { x: 1000, y: y - 16 }, data: { kind: "tasks", label: "Tasks", feature, items: tasks.map((task) => ({ label: task.title, status: task.status })), total: tasks.length, done, generating: plan.status === "generating" } },
+      );
+      nextEdges.push(
+        { id: `root-${featureId}`, source: "root", target: featureId, type: "smoothstep", style: { stroke: "#374151", strokeWidth: 1.2 } },
+        { id: `${featureId}-${subFeatureId}`, source: featureId, target: subFeatureId, type: "smoothstep", style: { stroke: "#2d3748", strokeWidth: 1 } },
+        { id: `${subFeatureId}-${taskId}`, source: subFeatureId, target: taskId, type: "smoothstep", style: { stroke: "#2d3748", strokeWidth: 1 } },
+      );
+    });
+
+    return { nodes: nextNodes, edges: nextEdges };
+  }, [mergedPlan, plan.status, plan.title]);
 
   return (
     <div className="relative h-[calc(100vh-150px)] min-h-[620px] bg-[#0A0A0A]">

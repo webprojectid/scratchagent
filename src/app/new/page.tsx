@@ -50,9 +50,9 @@ export default function NewPlan() {
   }, [mx, my]);
 
   return (
-    <Shell back="/">
+    <Shell back="/" sidebar={false}>
       {!authed ? null : (
-      <section ref={sectionRef} className="relative isolate flex min-h-[calc(100dvh-4rem)] items-center justify-center mx-auto max-w-[1480px] px-5 py-10 md:px-10 md:py-12 lg:py-16">
+      <section ref={sectionRef} className="relative isolate flex min-h-[100dvh] items-center justify-center mx-auto max-w-[1480px] px-5 py-10 md:px-10 md:py-12 lg:py-16">
         <div className="relative w-full overflow-hidden rounded-[24px] border border-white/10 bg-[#101417] p-8 shadow-[0_28px_90px_#000A,inset_0_1px_0_#FFFFFF12] md:p-12">
           <div className="absolute right-4 top-4 z-20">
             <Link href="/profile" className="flex items-center gap-1.5 rounded-lg border border-white/10 px-2.5 py-1.5 text-[10px] text-slate-400 transition hover:border-[#74FA6A]/40 hover:text-[#74FA6A]">

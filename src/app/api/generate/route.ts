@@ -15,9 +15,16 @@ const input = z.object({
     deployment: z.string().optional(),
   }),
   userId: z.string().default("shared"),
+  answers: z
+    .array(
+      z.object({
+        question: z.string(),
+        answer: z.string(),
+      }),
+    )
+    .optional()
+    .default([]),
 });
-
-const TESTER_ID = "701f135a-050a-4e08-bc97-b6d3ee91d7e5";
 
 export async function POST(request: Request) {
   try {
@@ -31,7 +38,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Kuota generate harian habis. Coba besok." }, { status: 429 });
     }
 
-    const result = await generatePlanStructure(data.brief, data.techPrefs);
+    const result = await generatePlanStructure(data.brief, data.techPrefs, data.answers);
     const planId = randomUUID();
     await savePlan(
       {

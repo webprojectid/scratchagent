@@ -58,10 +58,16 @@ export default function Generate() {
 
     if (!alreadyGenerating) {
       const user = JSON.parse(localStorage.getItem("scratch_user") || '{}');
+      const answersStr = sessionStorage.getItem("rv_answers");
       fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ brief, techPrefs: JSON.parse(prefsStr), userId: user.email || "shared" }),
+        body: JSON.stringify({
+          brief,
+          techPrefs: JSON.parse(prefsStr),
+          userId: user.email || "shared",
+          answers: answersStr ? JSON.parse(answersStr) : [],
+        }),
       })
         .then((r) => r.json())
         .then((data) => {
@@ -93,8 +99,8 @@ export default function Generate() {
   const pct = Math.round((step / stages.length) * 100);
 
   return (
-    <Shell back="/new/prefs">
-      <div className="mx-auto max-w-xl px-5 py-24">
+    <Shell back="/new/prefs" sidebar={false}>
+      <div className="mx-auto flex min-h-[100dvh] w-full max-w-xl flex-col justify-center px-5 py-16">
         <p className="eyebrow">{error ? "Misi gagal" : "Agent sedang menyusun strategi"}</p>
         {error ? (
           <div className="mt-8">

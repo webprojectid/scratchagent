@@ -65,6 +65,7 @@ export interface Plan {
   status: "generating" | "ready" | "implementing" | "done";
   features: Feature[];
   createdAt?: string;
+  userId?: string;
 }
 
 export interface TechPrefs {
