@@ -3,15 +3,37 @@ import { getDb } from "@/db";
 import { plans, features, subFeatures, tasks, taskEvents } from "@/db/schema";
 import type { Plan } from "./types";
 import { demoPlan } from "./demo";
+import {
+  memoryFindTask,
+  memoryFindTaskByRef,
+  memoryGetPlan,
+  memoryListAllPlans,
+  memoryListPlans,
+  memorySavePlan,
+  memoryUpdatePlanStatus,
+  memoryUpdateTask,
+} from "./memory-store";
+
+function isMemoryMode() {
+  return !process.env.DATABASE_URL;
+}
 
 export async function savePlan(plan: Plan, userId: string): Promise<void> {
+  if (isMemoryMode()) return memorySavePlan(plan, userId);
   const db = getDb();
   await db.insert(plans).values({
     id: plan.id,
     userId,
     title: plan.title,
     brief: plan.brief,
-    techPrefs: plan.techStack ?? plan.stack ?? [],
+    techPrefs: {
+      stack: plan.stack ?? [],
+      techStack: plan.techStack ?? [],
+      architecture: plan.architecture ?? "",
+      databaseSchema: plan.databaseSchema ?? "",
+      requirements: plan.requirements ?? { fungsional: [], nonFungsional: [] },
+      userFlow: plan.userFlow ?? [],
+    },
     assumptions: plan.asumsi ?? [],
     status: plan.status ?? "generating",
     createdAt: plan.createdAt ? new Date(plan.createdAt) : new Date(),
@@ -67,6 +89,7 @@ export async function savePlan(plan: Plan, userId: string): Promise<void> {
 
 export async function getPlan(planId: string): Promise<Plan | undefined> {
   if (planId === "demo") return { ...demoPlan, userId: "demo" } as Plan;
+  if (isMemoryMode()) return memoryGetPlan(planId);
   const db = getDb();
   const [plan] = await db.select().from(plans).where(eq(plans.id, planId));
   if (!plan) return undefined;
@@ -110,36 +133,51 @@ export async function getPlan(planId: string): Promise<Plan | undefined> {
     };
   }));
 
+  const savedMeta = plan.techPrefs && !Array.isArray(plan.techPrefs) ? plan.techPrefs as any : {};
+  const savedStack = Array.isArray(plan.techPrefs) ? plan.techPrefs as any[] : savedMeta.stack ?? [];
+
   return {
     id: plan.id,
     title: plan.title,
     brief: plan.brief,
-    techStack: plan.techPrefs as any,
-    stack: Array.isArray(plan.techPrefs) ? (plan.techPrefs as any).map((t: any) => t.name ?? t) : [],
+    techStack: savedMeta.techStack ?? (Array.isArray(plan.techPrefs) ? plan.techPrefs : []),
+    stack: savedStack.map((t: any) => t.name ?? t),
     asumsi: plan.assumptions ?? [],
-    requirements: { fungsional: [], nonFungsional: [] },
-    userFlow: [],
-    architecture: "",
-    databaseSchema: "",
+    requirements: savedMeta.requirements ?? { fungsional: [], nonFungsional: [] },
+    userFlow: savedMeta.userFlow ?? [],
+    architecture: savedMeta.architecture ?? "",
+    databaseSchema: savedMeta.databaseSchema ?? "",
     features: resultFeatures,
     status: plan.status as any,
     createdAt: plan.createdAt?.toISOString(),
+    userId: plan.userId ?? undefined,
   } as Plan;
 }
 
 export async function listPlans(userId: string): Promise<Plan[]> {
+  if (isMemoryMode()) return memoryListPlans(userId);
   const db = getDb();
   const rows = await db.select().from(plans).where(eq(plans.userId, userId));
   const result = await Promise.all(rows.map((r) => getPlan(r.id).then((p) => p!).catch(() => undefined)));
   return result.filter((p): p is Plan => !!p);
 }
 
+export async function listAllPlans(): Promise<Plan[]> {
+  if (isMemoryMode()) return memoryListAllPlans();
+  const db = getDb();
+  const rows = await db.select().from(plans);
+  const result = await Promise.all(rows.map((r) => getPlan(r.id).then((p) => p!).catch(() => undefined)));
+  return result.filter((p): p is Plan => !!p);
+}
+
 export async function updatePlanStatus(planId: string, status: Plan["status"]): Promise<void> {
+  if (isMemoryMode()) return memoryUpdatePlanStatus(planId, status);
   const db = getDb();
   await db.update(plans).set({ status } as any).where(eq(plans.id, planId));
 }
 
 export async function updateTask(planId: string, ref: string, patch: any): Promise<void> {
+  if (isMemoryMode()) return memoryUpdateTask(planId, ref, patch);
   const db = getDb();
   const taskRows = await db.select().from(tasks).where(and(eq(tasks.ref, ref), eq(tasks.planId, planId)));
   const task = taskRows[0];
@@ -165,6 +203,7 @@ export async function updateTask(planId: string, ref: string, patch: any): Promi
 }
 
 export async function findTaskByRef(ref: string): Promise<{ task: any; plan: Plan } | undefined> {
+  if (isMemoryMode()) return memoryFindTaskByRef(ref);
   const db = getDb();
   const taskRows = await db.select().from(tasks).where(eq(tasks.ref, ref));
   const task = taskRows[0];
@@ -177,6 +216,7 @@ export async function findTaskByRef(ref: string): Promise<{ task: any; plan: Pla
 }
 
 export async function findTask(planId: string, ref: string): Promise<{ task: any; plan: Plan } | undefined> {
+  if (isMemoryMode()) return memoryFindTask(planId, ref);
   const plan = await getPlan(planId);
   if (!plan) return undefined;
 

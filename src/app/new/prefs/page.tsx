@@ -102,11 +102,11 @@ export default function Prefs() {
       : { mode: "auto" as const };
     sessionStorage.setItem("rv_prefs", JSON.stringify(techPrefs));
     sessionStorage.setItem("rv_brief", brief);
-    router.push("/generate");
+    router.push("/new/questions");
   }
 
   return (
-    <Shell back="/new">
+    <Shell back="/new" sidebar={false}>
       <section className="mx-auto max-w-[1280px] px-5 py-10 md:px-10 md:py-14">
         <div className="grid gap-8 lg:grid-cols-[1.15fr_.85fr]">
           <div>
@@ -159,7 +159,7 @@ export default function Prefs() {
             </AnimatePresence>
 
             <div className="mt-6 flex justify-end">
-              <button className="rounded-full border border-[#74FA6A] bg-transparent px-6 py-2.5 font-mono text-[12px] tracking-[.06em] text-[#74FA6A] transition-colors hover:bg-[#74FA6A] hover:text-black" onClick={start}>generate — graph → task</button>
+              <button className="rounded-full border border-[#74FA6A] bg-transparent px-6 py-2.5 font-mono text-[12px] tracking-[.06em] text-[#74FA6A] transition-colors hover:bg-[#74FA6A] hover:text-black" onClick={start}>lanjut — klarifikasi dulu</button>
             </div>
           </div>
 
@@ -199,7 +199,7 @@ export default function Prefs() {
 
             <div className="mt-3 rounded-[12px] border border-white/5 bg-[#0A0A0A] p-4">
               <p className="font-mono text-[9px] tracking-[.12em] text-white/20">NEXT</p>
-              <div className="mt-2 flex items-center gap-3"><div className="grid size-7 place-items-center rounded-full bg-[#74FA6A]/10 text-[#74FA6A]"><Cpu size={12} /></div><div><p className="font-mono text-[11px] text-white">generate prd + graph</p><p className="font-mono text-[10px] text-white/30">30–90s · 3 stage + qa · polling live</p></div></div>
+              <div className="mt-2 flex items-center gap-3"><div className="grid size-7 place-items-center rounded-full bg-[#74FA6A]/10 text-[#74FA6A]"><Cpu size={12} /></div><div><p className="font-mono text-[11px] text-white">klarifikasi → generate prd + graph</p><p className="font-mono text-[10px] text-white/30">jawab pertanyaan → 3 stage + qa · polling live</p></div></div>
             </div>
           </div>
         </div>

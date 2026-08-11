@@ -2,6 +2,7 @@
 
 # dependencies
 /node_modules
+/cli/node_modules
 /.pnp
 .pnp.*
 .yarn/*
@@ -43,3 +44,9 @@ next-env.d.ts
 # scratch agent local data
 /.roninvibe-data/
 /.scratch-data/
+
+# local helper scripts (may contain credentials)
+chk*.js
+migrate-*.js
+setup-*.js
+*.local.js

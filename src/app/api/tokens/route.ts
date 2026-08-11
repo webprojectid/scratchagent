@@ -2,9 +2,12 @@ import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { getDb } from "@/db";
 import { users } from "@/db/schema";
-import { createToken, listTokens, revokeToken } from "@/lib/tokens";
+import { createToken, listTokens, revokeToken, memoryGetOrCreateUser } from "@/lib/tokens";
 
 async function getOrCreateUser(email: string): Promise<string> {
+  if (!process.env.DATABASE_URL) {
+    return memoryGetOrCreateUser(email).id;
+  }
   const db = getDb();
   const existing = await db.select().from(users).where(eq(users.email, email));
   if (existing[0]) return existing[0].id;
@@ -14,6 +17,11 @@ async function getOrCreateUser(email: string): Promise<string> {
 
 export async function GET() {
   try {
+    if (!process.env.DATABASE_URL) {
+      const user = memoryGetOrCreateUser("admin@scratchagent.com");
+      const userTokens = await listTokens(user.id);
+      return NextResponse.json(userTokens.map((t: any) => ({ hash: t.hash, label: t.label, revoked: !!t.revokedAt, createdAt: t.createdAt })));
+    }
     const db = getDb();
     const allUsers = await db.select().from(users);
     const tokens: any[] = [];

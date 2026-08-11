@@ -2,23 +2,32 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Copy, X, FileText, Package, Terminal } from "lucide-react";
+import { Check, Copy, FileText, Package, Sparkles, X } from "lucide-react";
+
+const steps = [
+  { title: "Salin prompt", desc: "Sudah berisi token akses dan ID plan — siap pakai." },
+  { title: "Buka coding agent", desc: "Claude Code, OpenCode, atau Cursor di folder project target." },
+  { title: "Tempel dan jalankan", desc: "Agent mengeksekusi task satu per satu mengikuti urutan server." },
+];
 
 export function AgentPromptModal({ planId, onClose }: { planId: string; onClose: () => void }) {
   const [token, setToken] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [showPrompt, setShowPrompt] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     fetch("/api/tokens", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ label: "CLI" }) })
       .then((r) => r.json())
-      .then((d) => { if (d.token) setToken(d.token); })
+      .then((d) => {
+        if (d.token) setToken(d.token);
+      })
       .finally(() => setLoading(false));
   }, []);
 
   useEffect(() => {
-    function handler(e: KeyboardEvent) { if (e.key === "Escape") onClose(); }
+    function handler(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, [onClose]);
@@ -53,8 +62,14 @@ LANGKAH 4 — Setelah done=true:
  tiap fitur. Lampirkan checklist di laporan akhir. Jika ada rusak, lapor jujur.`
     : "";
 
-  const downloadMd = () => { window.open(`/api/plans/${planId}/export?format=md`, "_blank"); };
-  const downloadZip = () => { window.open(`/api/plans/${planId}/export?format=zip`, "_blank"); };
+  const copyPrompt = () => {
+    navigator.clipboard.writeText(prompt);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const downloadMd = () => window.open(`/api/plans/${planId}/export?format=md`, "_blank");
+  const downloadZip = () => window.open(`/api/plans/${planId}/export?format=zip`, "_blank");
 
   return (
     <AnimatePresence>
@@ -66,64 +81,116 @@ LANGKAH 4 — Setelah done=true:
         onClick={onClose}
       >
         <motion.div
-          initial={{ scale: 0.96, y: 16 }}
+          initial={{ scale: 0.97, y: 14 }}
           animate={{ scale: 1, y: 0 }}
-          exit={{ scale: 0.96, y: 16 }}
-          className="w-[340px] rounded-xl border border-white/[.06] bg-[#171d29] p-5"
+          exit={{ scale: 0.97, y: 14 }}
+          transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+          className="w-[460px] max-w-full rounded-2xl border border-white/[.08] bg-[#12151A] shadow-2xl shadow-black/50"
           onClick={(e) => e.stopPropagation()}
+          role="dialog"
+          aria-modal="true"
         >
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-medium tracking-tight text-white/80">Mulai Implementasi</h3>
-            <button onClick={onClose} className="grid size-7 place-items-center rounded text-white/30 transition hover:text-[#74FA6A]" aria-label="Tutup"><X size={13} /></button>
-          </div>
-
-          <div className="mt-4 grid grid-cols-3 gap-1.5">
+          {/* Header */}
+          <div className="flex items-start justify-between p-5 pb-4">
+            <div className="flex items-start gap-3">
+              <span className="grid size-9 shrink-0 place-items-center rounded-xl border border-[#74FA6A]/20 bg-[#74FA6A]/[.08]">
+                <Sparkles size={15} className="text-[#74FA6A]" />
+              </span>
+              <div>
+                <h3 className="!text-[15px] !font-semibold !leading-tight !tracking-tight text-white">
+                  Implementasi dengan AI agent
+                </h3>
+                <p className="mt-1 text-[11px] leading-4 text-slate-500">
+                  Serahkan plan ini ke coding agent. Tiga langkah, tanpa setup manual.
+                </p>
+              </div>
+            </div>
             <button
-              onClick={downloadMd}
-              className="flex items-center justify-center gap-1.5 rounded-lg border border-white/10 bg-white/[.02] px-2 py-2 text-[11px] text-slate-400 transition hover:border-white/20 hover:text-white"
+              onClick={onClose}
+              className="grid size-7 shrink-0 place-items-center rounded-lg text-white/30 transition hover:bg-white/5 hover:text-white"
+              aria-label="Tutup"
             >
-              <FileText size={12} /> PRD
-            </button>
-            <button
-              onClick={downloadZip}
-              className="flex items-center justify-center gap-1.5 rounded-lg border border-white/10 bg-white/[.02] px-2 py-2 text-[11px] text-slate-400 transition hover:border-white/20 hover:text-white"
-            >
-              <Package size={12} /> ZIP
-            </button>
-            <button
-              onClick={() => setShowPrompt(!showPrompt)}
-              className={`flex items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-[11px] font-semibold transition ${showPrompt ? "border border-[#74FA6A]/40 bg-[#74FA6A]/10 text-[#74FA6A]" : "border border-[#74FA6A] bg-[#74FA6A] text-black hover:bg-[#67E85E]"}`}
-            >
-              <Terminal size={12} /> Agent
+              <X size={14} />
             </button>
           </div>
 
-          <AnimatePresence>
-            {showPrompt && token && (
-              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="mt-3 overflow-hidden">
-                <div className="relative">
-                  <pre className="max-h-48 overflow-auto whitespace-pre-wrap rounded-lg border border-white/[.06] bg-[#0e1218] p-2.5 font-mono text-[9px] leading-relaxed text-slate-400">
-                    {prompt}
-                    <span className="inline-block w-1.5 animate-pulse bg-[#74FA6A]/60">|</span>
-                  </pre>
-                  <button
-                    className="absolute right-1.5 top-1.5 flex items-center gap-1 rounded border border-white/10 bg-[#171d29] px-1.5 py-0.5 text-[9px] text-slate-400 transition hover:border-[#74FA6A]/40 hover:text-[#74FA6A]"
-                    onClick={() => { navigator.clipboard.writeText(prompt); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
-                  >
-                    <Copy size={11} /> {copied ? "Tersalin" : "Copy"}
-                  </button>
+          {/* Steps */}
+          <div className="px-5">
+            <ol className="relative space-y-3.5">
+              <span aria-hidden className="absolute bottom-4 left-[11px] top-4 w-px bg-gradient-to-b from-white/15 via-white/8 to-transparent" />
+              {steps.map((s, i) => (
+                <motion.li
+                  key={s.title}
+                  initial={{ opacity: 0, x: -6 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.08 + i * 0.07, duration: 0.25 }}
+                  className="relative flex items-start gap-3"
+                >
+                  <span className="z-10 grid size-6 shrink-0 place-items-center rounded-full border border-[#74FA6A]/25 bg-[#12151A] font-mono text-[9px] font-bold text-[#74FA6A]">
+                    {i + 1}
+                  </span>
+                  <span className="min-w-0 pt-0.5">
+                    <span className="block text-[12px] font-medium leading-tight text-white/85">{s.title}</span>
+                    <span className="mt-0.5 block text-[10.5px] leading-4 text-slate-500">{s.desc}</span>
+                  </span>
+                </motion.li>
+              ))}
+            </ol>
+          </div>
+
+          {/* Prompt block */}
+          <div className="p-5 pt-4">
+            <div className="overflow-hidden rounded-xl border border-white/[.07] bg-[#0A0C0E]">
+              <div className="flex items-center justify-between border-b border-white/[.06] px-3 py-2">
+                <span className="flex items-center gap-1.5 font-mono text-[9px] uppercase tracking-[.14em] text-white/25">
+                  <span className="size-1 rounded-full bg-[#74FA6A]/70" /> agent-prompt
+                </span>
+                <button
+                  onClick={copyPrompt}
+                  disabled={!token}
+                  className="flex items-center gap-1.5 rounded-md border border-white/[.08] bg-white/[.03] px-2.5 py-1 text-[10px] font-medium text-slate-300 transition hover:border-[#74FA6A]/40 hover:text-[#74FA6A] active:scale-[.98] disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  {copied ? <Check size={10} /> : <Copy size={10} />}
+                  {loading ? "Menyiapkan..." : copied ? "Tersalin" : "Salin prompt"}
+                </button>
+              </div>
+              {loading ? (
+                <div className="space-y-1.5 p-3.5">
+                  {[80, 62, 71, 45].map((w, i) => (
+                    <div key={i} className="h-2 animate-pulse rounded bg-white/[.05]" style={{ width: `${w}%` }} />
+                  ))}
                 </div>
-                <p className="mt-2 text-center text-[9px] text-slate-500">token pribadi — paste hanya ke agent yang dipercaya</p>
-              </motion.div>
-            )}
-          </AnimatePresence>
+              ) : token ? (
+                <pre className="max-h-44 overflow-auto whitespace-pre-wrap p-3.5 font-mono text-[10px] leading-[1.7] text-slate-400">
+                  {prompt}
+                </pre>
+              ) : (
+                <p className="p-3.5 text-[11px] text-red-400/80">Token tidak tersedia. Coba lagi.</p>
+              )}
+            </div>
 
-          {showPrompt && !token && !loading && (
-            <p className="mt-3 text-center text-[10px] text-red-400/80">Token tidak tersedia</p>
-          )}
+            {/* PRD & ZIP */}
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <button
+                onClick={downloadMd}
+                className="flex items-center justify-center gap-1.5 rounded-lg border border-white/[.08] bg-white/[.02] px-3 py-2 text-[11px] text-slate-400 transition hover:border-white/20 hover:text-white active:scale-[.99]"
+              >
+                <FileText size={12} /> File PRD
+              </button>
+              <button
+                onClick={downloadZip}
+                className="flex items-center justify-center gap-1.5 rounded-lg border border-white/[.08] bg-white/[.02] px-3 py-2 text-[11px] text-slate-400 transition hover:border-white/20 hover:text-white active:scale-[.99]"
+              >
+                <Package size={12} /> ZIP
+              </button>
+            </div>
+
+            <p className="mt-3 text-center text-[9px] leading-3 text-slate-600">
+              Prompt mengandung token pribadi — tempel hanya ke agent yang kamu percaya.
+            </p>
+          </div>
         </motion.div>
       </motion.div>
     </AnimatePresence>
   );
 }
-

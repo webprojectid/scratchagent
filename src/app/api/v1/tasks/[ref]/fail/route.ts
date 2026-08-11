@@ -19,7 +19,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ ref
       /* empty */
     }
   }
-  const task = await failTask(decoded, reason);
+  const planId = new URL(request.url).searchParams.get("planId");
+  const task = planId ? await failTask(planId, reason, decoded) : await failTask(decoded, reason);
   if (!task) return NextResponse.json({ error: "Task tidak ditemukan" }, { status: 404 });
   return NextResponse.json({ ok: true, ref: decoded, status: task.status });
 }

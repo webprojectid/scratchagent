@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { motion } from "motion/react";
 import { Shell } from "@/components/brand";
 import { PlanMap } from "@/components/plan-map";
 import { AgentPromptModal } from "@/components/agent-modal";
 import { TaskBoard } from "@/components/task-board";
-import { RichContent } from "@/components/mermaid";
+import { PrdView } from "@/components/prd-view";
+import { ProjectSwitcher } from "@/components/project-switcher";
 import type { Plan, Task } from "@/lib/types";
 
 const statusMessages = [
@@ -17,6 +17,50 @@ const statusMessages = [
   "Memvalidasi urutan eksekusi task...",
 ];
 
+const planStatusChip: Record<string, { label: string; className: string }> = {
+  generating: { label: "menyusun", className: "border-amber-400/25 bg-amber-400/[.06] text-amber-300" },
+  ready: { label: "siap", className: "border-[#74FA6A]/25 bg-[#74FA6A]/[.06] text-[#74FA6A]" },
+  implementing: { label: "berjalan", className: "border-blue-400/25 bg-blue-400/[.06] text-blue-300" },
+  done: { label: "selesai", className: "border-emerald-400/25 bg-emerald-400/[.06] text-emerald-300" },
+};
+
+const viewTabs = [
+  { key: "struktur", label: "Struktur" },
+  { key: "prd", label: "PRD" },
+  { key: "task", label: "Tasks" },
+] as const;
+
+type ViewKey = (typeof viewTabs)[number]["key"];
+
+function ViewTabs({ view, setView, pillId }: { view: ViewKey; setView: (v: ViewKey) => void; pillId: string }) {
+  return (
+    <div className="flex items-center gap-0.5 rounded-full border border-white/[.08] bg-[#0C0F0C]/85 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] backdrop-blur-xl">
+      {viewTabs.map((t) => {
+        const active = view === t.key;
+        return (
+          <button
+            key={t.key}
+            onClick={() => setView(t.key)}
+            aria-pressed={active}
+            className={`relative rounded-full px-4 py-1.5 text-[12px] font-semibold tracking-tight transition-colors duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+              active ? "text-[#07120A]" : "text-slate-400 hover:text-slate-100"
+            }`}
+          >
+            {active && (
+              <motion.span
+                layoutId={pillId}
+                className="absolute inset-0 rounded-full bg-[#74FA6A] shadow-[0_0_18px_rgba(116,250,106,0.45),0_2px_10px_rgba(116,250,106,0.28)]"
+                transition={{ type: "spring", stiffness: 380, damping: 32 }}
+              />
+            )}
+            <span className="relative z-10">{t.label}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 export function PlanClient({ plan: initialPlan }: { plan: Plan }) {
   const [plan, setPlan] = useState(initialPlan);
   const [liveTasks, setLiveTasks] = useState<Record<string, Task["status"]> | undefined>(undefined);
@@ -24,6 +68,11 @@ export function PlanClient({ plan: initialPlan }: { plan: Plan }) {
   const [view, setView] = useState<"struktur" | "prd" | "task">("struktur");
   const [statusIdx, setStatusIdx] = useState(0);
   const generatingTasks = plan.status === "generating";
+
+  const taskCount = plan.features.reduce((acc, f) => acc + f.subFeatures.reduce((a, sf) => a + sf.tasks.length, 0), 0);
+  const doneCount = liveTasks
+    ? Object.values(liveTasks).filter((s) => s === "done").length
+    : plan.features.reduce((acc, f) => acc + f.subFeatures.reduce((a, sf) => a + sf.tasks.filter((t) => t.status === "done").length, 0), 0);
 
   const refreshPlan = useCallback(async () => {
     try {
@@ -145,31 +194,38 @@ export function PlanClient({ plan: initialPlan }: { plan: Plan }) {
     return () => { active = false; clearInterval(timer); };
   }, [plan.id, plan.status]);
 
+  const chip = planStatusChip[plan.status] ?? planStatusChip.ready;
+
   return (
-    <Shell>
-      <div className="flex items-center justify-between border-b border-white/8 px-4 py-3">
-        <div className="flex items-center gap-2.5">
-          <Link href="/" className="grid size-8 place-items-center rounded-[8px] border border-white/10 bg-white/[.03] text-slate-400 transition hover:border-[#74FA6A]/30 hover:text-white" aria-label="Kembali">
-            <ArrowLeft size={16} />
-          </Link>
-          <div>
-            <div className="flex items-center gap-1">
-              {(["struktur", "prd", "task"] as const).map((v) => (
-                <button
-                  key={v}
-                  onClick={() => setView(v)}
-                  className={`px-2.5 py-1 text-[11px] tracking-wide capitalize ${view === v ? "border-b-2 border-[#74FA6A] text-[#74FA6A]" : "text-slate-500 hover:text-slate-300"}`}
-                >
-                  {v === "prd" ? "PRD" : v}
-                </button>
-              ))}
-            </div>
-            <h1 className="!mt-1 !text-base !font-medium !leading-snug !tracking-tight text-white/90">{plan.title}</h1>
+    <Shell sidebar={false}>
+      <div className="border-b border-white/8">
+        <div className="relative flex flex-wrap items-center justify-between gap-x-3 gap-y-2 px-4 py-2.5 md:flex-nowrap md:px-6">
+          <div className="flex min-w-0 items-center">
+            <ProjectSwitcher currentId={plan.id} fallbackTitle={plan.title} />
+          </div>
+
+          <div className="absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 md:block">
+            <ViewTabs view={view} setView={setView} pillId="view-pill-desktop" />
+          </div>
+
+          <div className="flex shrink-0 items-center gap-2.5">
+            {taskCount > 0 && (
+              <span className="hidden font-mono text-[11px] tabular-nums text-white/30 lg:block">
+                {doneCount}/{taskCount} task
+              </span>
+            )}
+            <span className={`hidden rounded-full border px-2 py-0.5 text-[10px] font-medium sm:inline-block ${chip.className}`}>
+              {chip.label}
+            </span>
+            <button className="btn min-h-0 px-3.5 py-1.5 text-xs" onClick={() => setShowModal(true)} disabled={generatingTasks}>
+              {generatingTasks ? "Menyusun task..." : "Mulai implementasi"}
+            </button>
+          </div>
+
+          <div className="flex w-full justify-center md:hidden">
+            <ViewTabs view={view} setView={setView} pillId="view-pill-mobile" />
           </div>
         </div>
-        <button className="btn min-h-0 px-3 py-1.5 text-xs" onClick={() => setShowModal(true)} disabled={generatingTasks}>
-          {generatingTasks ? "Menyusun task..." : "Mulai Implementasi"}
-        </button>
       </div>
 
       <div className="min-w-0 flex-1">
@@ -180,143 +236,5 @@ export function PlanClient({ plan: initialPlan }: { plan: Plan }) {
 
       {showModal && <AgentPromptModal planId={plan.id} onClose={() => setShowModal(false)} />}
     </Shell>
-  );
-}
-
-function PrdView({ plan }: { plan: Plan }) {
-  const faseMap = new Map<number, typeof plan.features>();
-  for (const f of plan.features) {
-    const phases = f.subFeatures.flatMap((sf) => sf.tasks.map((t) => t.phase));
-    const minPhase = phases.length ? Math.min(...phases) : 1;
-    if (!faseMap.has(minPhase)) faseMap.set(minPhase, []);
-    faseMap.get(minPhase)!.push(f);
-  }
-
-  const priorityColor: Record<string, string> = { high: "text-red-400", medium: "text-amber-400", low: "text-slate-400" };
-
-  return (
-    <article className="mx-auto max-w-2xl px-6 py-8">
-      <p className="eyebrow">Product requirements document</p>
-      <h1 className="!mt-2 !text-base !font-semibold !tracking-tight text-white">{plan.title}</h1>
-
-      <div className="mt-6 grid gap-5">
-        {/* 1. Overview */}
-        <section>
-          <h2 className="!text-[10px] !font-semibold uppercase tracking-[.12em] text-white/40">1. Overview</h2>
-          <p className="mt-1 text-xs leading-5 text-slate-400">{plan.brief}</p>
-        </section>
-
-        {/* 2. Requirements */}
-        <section className="border-t border-white/8 pt-5">
-          <h2 className="!text-[10px] !font-semibold uppercase tracking-[.12em] text-white/40">2. Requirements</h2>
-          {plan.requirements ? (
-            <div className="mt-2 space-y-3">
-              <div>
-                <h3 className="!text-[9px] !font-semibold uppercase tracking-[.12em] text-white/30">Fungsional</h3>
-                <ul className="mt-0.5 list-disc space-y-0.5 pl-4 text-xs leading-5 text-slate-400">
-                  {plan.requirements.fungsional.map((x) => <li key={x}>{x}</li>)}
-                </ul>
-              </div>
-              <div>
-                <h3 className="!text-[9px] !font-semibold uppercase tracking-[.12em] text-white/30">Non-Fungsional</h3>
-                <ul className="mt-0.5 list-disc space-y-0.5 pl-4 text-xs leading-5 text-slate-400">
-                  {plan.requirements.nonFungsional.map((x) => <li key={x}>{x}</li>)}
-                </ul>
-              </div>
-            </div>
-          ) : null}
-          <div className="mt-3">
-            <h3 className="!text-[9px] !font-semibold uppercase tracking-[.12em] text-white/30">Asumsi</h3>
-            <ul className="mt-0.5 list-disc space-y-0.5 pl-4 text-xs leading-5 text-slate-400">
-              {plan.asumsi.map((x) => <li key={x}>{x}</li>)}
-            </ul>
-          </div>
-        </section>
-
-        {/* 3. Core Features */}
-        <section className="border-t border-white/8 pt-5">
-          <h2 className="!text-[10px] !font-semibold uppercase tracking-[.12em] text-white/40">3. Core Features</h2>
-          <div className="mt-2 space-y-4">
-            {[...faseMap.keys()].sort((a, b) => a - b).map((fase) => (
-              <div key={fase}>
-                <h3 className="!text-[9px] !font-semibold uppercase tracking-[.12em] text-[#74FA6A]/60">Fase {fase}</h3>
-                <div className="mt-1.5 space-y-3">
-                  {faseMap.get(fase)!.map((f) => (
-                    <div key={f.slug}>
-                      <div className="flex items-center gap-2">
-                        <span className="!text-xs !font-medium text-white">{f.title}</span>
-                        {f.priority && <span className={`text-[8px] font-bold uppercase ${priorityColor[f.priority]}`}>[{f.priority}]</span>}
-                      </div>
-                      <p className="mt-0.5 text-[11px] leading-5 text-slate-400">{f.description}</p>
-                      <div className="mt-1.5 grid gap-2 sm:grid-cols-2">
-                        <div>
-                          <h4 className="!text-[8px] !font-semibold uppercase tracking-[.12em] text-white/25">Tujuan</h4>
-                          <p className="mt-0.5 text-[11px] leading-5 text-slate-400">{f.tujuan}</p>
-                        </div>
-                        <div>
-                          <h4 className="!text-[8px] !font-semibold uppercase tracking-[.12em] text-white/25">Selesai bila</h4>
-                          <ul className="mt-0.5 list-disc pl-4 text-[11px] leading-5 text-slate-400">
-                            {f.selesaiBila.map((x) => <li key={x}>{x}</li>)}
-                          </ul>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* 4. User Flow */}
-        {plan.userFlow?.length ? (
-          <section className="border-t border-white/8 pt-5">
-            <h2 className="!text-[10px] !font-semibold uppercase tracking-[.12em] text-white/40">4. User Flow</h2>
-            <div className="mt-2 space-y-3">
-              {plan.userFlow.map((flow, i) => (
-                <div key={i}>
-                  <h3 className="!text-[9px] !font-semibold uppercase tracking-[.12em] text-white/30">{flow.title}</h3>
-                  <ol className="mt-1 space-y-0.5 text-xs leading-5 text-slate-400">
-                    {flow.steps.map((step, si) => <li key={si} className="flex gap-2"><span className="text-white/25">{si + 1}.</span><span>{step}</span></li>)}
-                  </ol>
-                </div>
-              ))}
-            </div>
-          </section>
-        ) : null}
-
-        {/* 5. Architecture */}
-        {plan.architecture && (
-          <section className="border-t border-white/8 pt-5">
-            <h2 className="!text-[10px] !font-semibold uppercase tracking-[.12em] text-white/40">5. Architecture</h2>
-            <div className="mt-2 rounded-lg border border-white/[.06] bg-[#0e1218] p-3">
-              <RichContent text={plan.architecture} diagramOnly />
-            </div>
-          </section>
-        )}
-
-        {/* 6. Database Schema */}
-        {plan.databaseSchema && (
-          <section className="border-t border-white/8 pt-5">
-            <h2 className="!text-[10px] !font-semibold uppercase tracking-[.12em] text-white/40">6. Database Schema</h2>
-            <div className="mt-2 rounded-lg border border-white/[.06] bg-[#0e1218] p-3">
-              <RichContent text={plan.databaseSchema} diagramOnly />
-            </div>
-          </section>
-        )}
-
-        {/* 7. Tech Stack */}
-        <section className="border-t border-white/8 pt-5">
-          <h2 className="!text-[10px] !font-semibold uppercase tracking-[.12em] text-white/40">7. Tech Stack</h2>
-          {plan.techStack?.length ? (
-            <ul className="mt-1 space-y-1 text-xs text-slate-400">
-              {plan.techStack.map((t) => <li key={t.name}><span className="font-medium text-white/70">{t.name}</span> — {t.desc}</li>)}
-            </ul>
-          ) : (
-            <p className="mt-1 text-xs text-slate-400">{plan.stack.join(" · ")}</p>
-          )}
-        </section>
-      </div>
-    </article>
   );
 }

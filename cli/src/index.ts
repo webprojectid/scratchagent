@@ -61,6 +61,8 @@ program
   .requiredOption("--plan <planId>", "Plan ID")
   .option("--json", "Output JSON")
   .action(async (opts: { plan: string; json?: boolean }) => {
+    const config = loadConfig();
+    if (config) { config.planId = opts.plan; saveConfig(config); }
     const data = (await api(`/api/v1/plans/${opts.plan}/next`)) as { done: boolean; blocked: boolean; failedTasks: { ref: string; title: string; failReason: string | null }[]; task: { ref: string; title: string; layer: string; phase: number } | null; progress: { phase: { current: number; total: number }; checkpoint: boolean; lastFailReason?: string | null } };
     if (opts.json) {
       console.log(JSON.stringify(data));
@@ -78,9 +80,14 @@ program
 
 const taskCmd = program.commands.find((c) => c.name() === "task")!;
 
-taskCmd.command("start <ref>").description("Mulai task").action(async (ref: string) => { await api(`/api/v1/tasks/${encodeURIComponent(ref)}/start`, { method: "POST" }); console.log(`▶ ${ref} dimulai`); });
-taskCmd.command("complete <ref>").description("Selesaikan task").action(async (ref: string) => { await api(`/api/v1/tasks/${encodeURIComponent(ref)}/complete`, { method: "POST" }); console.log(`✓ ${ref} selesai`); });
-taskCmd.command("fail <ref> [reason...]").description("Tandai task gagal").action(async (ref: string, reason: string[]) => { const r = Array.isArray(reason) ? reason.join(" ") : "Tanpa alasan"; await api(`/api/v1/tasks/${encodeURIComponent(ref)}/fail`, { method: "POST", body: JSON.stringify({ reason: r }) }); console.log(`✕ ${ref} gagal: ${r}`); });
-taskCmd.command("retry <ref>").description("Reset task gagal ke pending").action(async (ref: string) => { await api(`/api/v1/tasks/${encodeURIComponent(ref)}/retry`, { method: "POST" }); console.log(`↻ ${ref} direset ke pending`); });
+function planQs(): string {
+  const config = loadConfig();
+  return config?.planId ? `?planId=${encodeURIComponent(config.planId)}` : "";
+}
+
+taskCmd.command("start <ref>").description("Mulai task").action(async (ref: string) => { await api(`/api/v1/tasks/${encodeURIComponent(ref)}/start${planQs()}`, { method: "POST" }); console.log(`▶ ${ref} dimulai`); });
+taskCmd.command("complete <ref>").description("Selesaikan task").action(async (ref: string) => { await api(`/api/v1/tasks/${encodeURIComponent(ref)}/complete${planQs()}`, { method: "POST" }); console.log(`✓ ${ref} selesai`); });
+taskCmd.command("fail <ref> [reason...]").description("Tandai task gagal").action(async (ref: string, reason: string[]) => { const r = Array.isArray(reason) ? reason.join(" ") : "Tanpa alasan"; await api(`/api/v1/tasks/${encodeURIComponent(ref)}/fail${planQs()}`, { method: "POST", body: JSON.stringify({ reason: r }) }); console.log(`✕ ${ref} gagal: ${r}`); });
+taskCmd.command("retry <ref>").description("Reset task gagal ke pending").action(async (ref: string) => { await api(`/api/v1/tasks/${encodeURIComponent(ref)}/retry${planQs()}`, { method: "POST" }); console.log(`↻ ${ref} direset ke pending`); });
 
 program.parse();
