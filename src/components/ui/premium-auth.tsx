@@ -2,8 +2,10 @@
 
 import * as React from 'react';
 import { useState, useCallback } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
+import { refreshCurrentUser } from "@/lib/current-user";
 import { 
   Mail, 
   Lock, 
@@ -12,8 +14,6 @@ import {
   EyeOff,  
   Shield,
   AlertTriangle,
-  KeyRound,
-  Phone,
   Loader2,
 } from 'lucide-react';
 
@@ -135,12 +135,11 @@ const PasswordStrengthIndicator: React.FC<{ password: string }> = ({ password })
 
 export function AuthForm({
   onSuccess,
-  onClose,
   initialMode = 'login',
   className,
 }: AuthFormProps) {
   const [authMode, setAuthMode] = useState<AuthMode>(initialMode);
-  const [registrationStep, setRegistrationStep] = useState<RegistrationStep>('details');
+  const [, setRegistrationStep] = useState<RegistrationStep>('details');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -251,6 +250,7 @@ export function AuthForm({
         
         if (isAdmin) {
           localStorage.setItem('scratch_user', JSON.stringify({ email: formData.email, name: 'Admin', role: 'admin' }));
+          refreshCurrentUser();
           setSuccessMessage('Login admin berhasil');
           setTimeout(() => onSuccess?.({ email: formData.email, name: 'Admin' }), 500);
           return;
@@ -260,6 +260,7 @@ export function AuthForm({
         const userKey = formData.email.toLowerCase();
         if (storedUsers[userKey] && storedUsers[userKey].password === formData.password) {
           localStorage.setItem('scratch_user', JSON.stringify({ email: formData.email, name: storedUsers[userKey].name }));
+          refreshCurrentUser();
           setSuccessMessage('Login berhasil');
           setTimeout(() => onSuccess?.({ email: formData.email, name: storedUsers[userKey].name }), 500);
           return;
@@ -312,36 +313,38 @@ export function AuthForm({
 
   return (
     <div className={cn("p-6", className)}>
+      <AnimatePresence mode="wait">
       {successMessage && (
-        <div className="mb-4 p-3 bg-[#74FA6A]/10 border border-[#74FA6A]/20 rounded-xl flex items-center gap-2">
+        <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.25, ease: [0.32, 0.72, 0, 1] }} className="mb-4 flex items-center gap-2 rounded-xl border border-[#74FA6A]/20 bg-[#74FA6A]/10 p-3">
           <svg className="h-4 w-4 text-[#74FA6A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
           <span className="text-[#74FA6A] text-sm">{successMessage}</span>
-        </div>
+        </motion.div>
       )}
 
       {errors.general && (
-        <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center gap-2">
+        <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.25, ease: [0.32, 0.72, 0, 1] }} className="mb-4 flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 p-3">
           <AlertTriangle className="h-4 w-4 text-red-400" />
           <span className="text-red-400 text-sm">{errors.general}</span>
-        </div>
+        </motion.div>
       )}
+      </AnimatePresence>
 
-      <div className="text-center mb-6">
-        <h2 className="text-xl font-bold text-white mb-1">
+      <motion.div layout className="mb-6 text-center">
+        <h2 className="!mb-1 !text-xl !font-bold text-white">
           {authMode === 'login' ? 'Selamat Datang' : 
            authMode === 'reset' ? 'Reset Password' : 'Buat Akun'}
         </h2>
-        <p className="text-slate-400 text-sm">
+        <p className="text-sm text-slate-400">
           {authMode === 'login' ? 'Masuk ke akun Anda' : 
            authMode === 'reset' ? 'Pulihkan akses akun' :
            'Buat akun baru'}
         </p>
-      </div>
+      </motion.div>
 
       {authMode !== 'reset' && (
-        <div className="flex bg-white/5 rounded-xl p-1 mb-6">
+        <motion.div layout className="mb-6 flex rounded-xl bg-white/5 p-1">
           <button
             onClick={() => setAuthMode('login')}
             className={cn(
@@ -366,7 +369,7 @@ export function AuthForm({
           >
             Daftar
           </button>
-        </div>
+        </motion.div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-3">
@@ -460,14 +463,6 @@ export function AuthForm({
           </div>
         )}
 
-        {authMode === 'login' && (
-          <div className="text-center">
-            <button type="button" onClick={() => setAuthMode('reset')}
-              className="text-slate-600 hover:text-slate-400 text-xs transition-colors">
-              Lupa password?
-            </button>
-          </div>
-        )}
       </form>
 
       {authMode !== 'reset' && (
