@@ -1,4 +1,4 @@
-import { pgEnum, pgTable, text, timestamp, uuid, varchar, integer, jsonb, boolean } from "drizzle-orm/pg-core";
+import { pgEnum, pgTable, text, timestamp, uuid, varchar, integer, jsonb, boolean, unique } from "drizzle-orm/pg-core";
 
 export const planStatus = pgEnum("plan_status", ["generating", "ready", "implementing", "done"]);
 export const featureStatus = pgEnum("feature_status", ["direncanakan", "berjalan", "selesai"]);
@@ -33,6 +33,7 @@ export const features = pgTable("features", {
   description: text().notNull(),
   tujuan: text().notNull(),
   selesaiBila: jsonb("selesai_bila").$type<string[]>().notNull(),
+  priority: text(),
   status: featureStatus().notNull().default("direncanakan"),
   order: integer().notNull(),
 });
@@ -41,6 +42,8 @@ export const subFeatures = pgTable("sub_features", {
   id: uuid().primaryKey().defaultRandom(),
   featureId: uuid("feature_id").notNull().references(() => features.id, { onDelete: "cascade" }),
   title: text().notNull(),
+  tujuan: text(),
+  selesaiBila: jsonb("selesai_bila").$type<string[]>().notNull().default([]),
   order: integer().notNull(),
 });
 
@@ -49,7 +52,7 @@ export const tasks = pgTable("tasks", {
   planId: uuid("plan_id").notNull().references(() => plans.id, { onDelete: "cascade" }),
   featureId: uuid("feature_id").notNull().references(() => features.id, { onDelete: "cascade" }),
   subFeatureId: uuid("sub_feature_id").references(() => subFeatures.id, { onDelete: "cascade" }),
-  ref: varchar({ length: 20 }).notNull().unique(),
+  ref: varchar({ length: 20 }).notNull(),
   title: text().notNull(),
   layer: taskLayer().notNull(),
   phase: integer().notNull(),
@@ -62,7 +65,9 @@ export const tasks = pgTable("tasks", {
   startedAt: timestamp("started_at", { withTimezone: true }),
   completedAt: timestamp("completed_at", { withTimezone: true }),
   order: integer().notNull(),
-});
+}, (table) => [
+  unique("tasks_plan_ref_unique").on(table.planId, table.ref),
+]);
 
 export const tokens = pgTable("tokens", {
   id: uuid().primaryKey().defaultRandom(),
