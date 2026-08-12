@@ -1,9 +1,10 @@
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, inArray, isNull } from "drizzle-orm";
 import { getDb } from "@/db";
-import { plans, features, subFeatures, tasks, taskEvents } from "@/db/schema";
+import { plans, features, subFeatures, tasks, taskEvents, usageEvents, users } from "@/db/schema";
 import type { Plan } from "./types";
 import { demoPlan } from "./demo";
 import {
+  memoryDeletePlan,
   memoryFindTask,
   memoryFindTaskByRef,
   memoryGetPlan,
@@ -18,12 +19,23 @@ function isMemoryMode() {
   return !process.env.DATABASE_URL;
 }
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// Di DB mode, plans.user_id adalah UUID. UI ngirim email / "shared", jadi harus di-resolve.
+async function resolveDbUserId(userId: string): Promise<string | null> {
+  if (UUID_RE.test(userId)) return userId;
+  const db = getDb();
+  const rows = await db.select({ id: users.id }).from(users).where(eq(users.email, userId));
+  return rows[0]?.id ?? null;
+}
+
 export async function savePlan(plan: Plan, userId: string): Promise<void> {
   if (isMemoryMode()) return memorySavePlan(plan, userId);
+  const dbUserId = await resolveDbUserId(userId);
   const db = getDb();
   await db.insert(plans).values({
     id: plan.id,
-    userId,
+    userId: dbUserId,
     title: plan.title,
     brief: plan.brief,
     techPrefs: {
@@ -50,16 +62,19 @@ export async function savePlan(plan: Plan, userId: string): Promise<void> {
       description: feature.description,
       tujuan: feature.tujuan,
       selesaiBila: feature.selesaiBila,
+      priority: feature.priority ?? null,
       status: feature.status ?? "direncanakan",
       order: feature.order ?? 0,
     } as any).onConflictDoNothing();
 
-    for (const subFeature of (feature.subFeatures as any[])) {
+      for (const subFeature of (feature.subFeatures as any[])) {
       const sid = subFeature.id || crypto.randomUUID();
       await db.insert(subFeatures).values({
         id: sid,
         featureId: fid,
         title: subFeature.title,
+        tujuan: subFeature.tujuan ?? null,
+        selesaiBila: subFeature.selesaiBila ?? [],
         order: 0,
       } as any).onConflictDoNothing();
 
@@ -99,11 +114,11 @@ export async function getPlan(planId: string): Promise<Plan | undefined> {
     const subs = await db.select().from(subFeatures).where(eq(subFeatures.featureId, feature.id));
     const subFeaturesWithTasks = await Promise.all(subs.map(async (sub) => {
       const taskRows = await db.select().from(tasks).where(eq(tasks.subFeatureId, sub.id));
-      return {
-        title: sub.title,
-        tujuan: "",
-        selesaiBila: [],
-        tasks: taskRows.map((t) => ({
+        return {
+          title: sub.title,
+          tujuan: sub.tujuan ?? "",
+          selesaiBila: sub.selesaiBila ?? [],
+          tasks: taskRows.map((t) => ({
           ref: t.ref,
           title: t.title,
           layer: t.layer as any,
@@ -127,7 +142,7 @@ export async function getPlan(planId: string): Promise<Plan | undefined> {
       description: feature.description,
       tujuan: feature.tujuan,
       selesaiBila: feature.selesaiBila,
-      priority: "medium" as const,
+      priority: (feature.priority as any) ?? "medium",
       status: feature.status as any,
       subFeatures: subFeaturesWithTasks,
     };
@@ -156,8 +171,10 @@ export async function getPlan(planId: string): Promise<Plan | undefined> {
 
 export async function listPlans(userId: string): Promise<Plan[]> {
   if (isMemoryMode()) return memoryListPlans(userId);
+  const dbUserId = await resolveDbUserId(userId);
+  if (!dbUserId) return [];
   const db = getDb();
-  const rows = await db.select().from(plans).where(eq(plans.userId, userId));
+  const rows = await db.select().from(plans).where(eq(plans.userId, dbUserId));
   const result = await Promise.all(rows.map((r) => getPlan(r.id).then((p) => p!).catch(() => undefined)));
   return result.filter((p): p is Plan => !!p);
 }
@@ -168,6 +185,22 @@ export async function listAllPlans(): Promise<Plan[]> {
   const rows = await db.select().from(plans);
   const result = await Promise.all(rows.map((r) => getPlan(r.id).then((p) => p!).catch(() => undefined)));
   return result.filter((p): p is Plan => !!p);
+}
+
+export async function deletePlan(planId: string): Promise<boolean> {
+  if (isMemoryMode()) return memoryDeletePlan(planId);
+  const db = getDb();
+  await db.delete(taskEvents).where(eq(taskEvents.planId, planId));
+  await db.delete(usageEvents).where(eq(usageEvents.planId, planId));
+  await db.delete(tasks).where(eq(tasks.planId, planId));
+  const featureIds = await db.select({ id: features.id }).from(features).where(eq(features.planId, planId));
+  if (featureIds.length > 0) {
+    const fIds = featureIds.map((f) => f.id);
+    await db.delete(subFeatures).where(inArray(subFeatures.featureId, fIds));
+    await db.delete(features).where(eq(features.planId, planId));
+  }
+  const deleted = await db.delete(plans).where(eq(plans.id, planId));
+  return (deleted as any).rowCount !== 0;
 }
 
 export async function updatePlanStatus(planId: string, status: Plan["status"]): Promise<void> {

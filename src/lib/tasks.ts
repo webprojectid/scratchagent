@@ -50,7 +50,11 @@ export async function getNextTask(planId: string): Promise<NextTaskResult> {
     return { done: false, blocked: true, failedTasks: [], task: null, progress: { phase: { current: 0, total: 0 }, layer: "qa", page: null, checkpoint: false, remainingInLayer: 0 } };
   }
 
-  const lastCompleted = tasks.filter((t) => t.status === "done").sort((a, b) => (b.completedAt ?? "").localeCompare(a.completedAt ?? ""))[0];
+  const lastCompleted = tasks.filter((t) => t.status === "done").sort((a, b) => {
+    const bt = b.completedAt ? new Date(b.completedAt).getTime() : 0;
+    const at = a.completedAt ? new Date(a.completedAt).getTime() : 0;
+    return bt - at;
+  })[0];
   const checkpoint = !lastCompleted ? false : lastCompleted.layer !== next.layer || lastCompleted.phase !== next.phase;
 
   const phases = [...new Set(tasks.map((t) => t.phase))].sort((a, b) => a - b);

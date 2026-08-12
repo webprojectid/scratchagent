@@ -76,6 +76,12 @@ export function memoryListAllPlans(): Plan[] {
   return Array.from(planStore.values()).map(clone);
 }
 
+export function memoryDeletePlan(planId: string): boolean {
+  const existed = planStore.has(planId);
+  planStore.delete(planId);
+  return existed;
+}
+
 export function memoryUpdatePlanStatus(planId: string, status: Plan["status"]): void {
   const p = planStore.get(planId);
   if (p) p.status = status;
