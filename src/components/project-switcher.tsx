@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
 import { Check, ChevronDown, Circle, Folder, Plus } from "lucide-react";
+import { getCurrentUser } from "@/lib/current-user";
 
 interface PlanItem {
   id: string;
@@ -33,11 +34,19 @@ export function ProjectSwitcher({ currentId, fallbackTitle }: { currentId?: stri
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem("scratch_user") || "{}");
-    fetch(`/api/plans/list?userId=${encodeURIComponent(user.email || "shared")}`)
-      .then((r) => r.json())
-      .then((d) => setPlans(d.plans ?? []))
-      .catch(() => {});
+    let active = true;
+    getCurrentUser().then((u) => {
+      if (!active) return;
+      fetch(`/api/plans/list?userId=${encodeURIComponent(u?.email ?? "shared")}`)
+        .then((r) => r.json())
+        .then((d) => {
+          if (active) setPlans(d.plans ?? []);
+        })
+        .catch(() => {});
+    });
+    return () => {
+      active = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -99,7 +108,7 @@ export function ProjectSwitcher({ currentId, fallbackTitle }: { currentId?: stri
                   return (
                     <Link
                       key={p.id}
-                      href={`/p/${p.id}`}
+                      href={`/project/${p.id}`}
                       role="option"
                       aria-selected={active}
                       className={`group flex items-center gap-2.5 rounded-lg px-2.5 py-2 transition ${

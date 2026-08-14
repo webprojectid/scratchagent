@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { ArrowLeft, ArrowRight, Check, Sparkles } from "lucide-react";
 import { Shell } from "@/components/brand";
 import { CLARIFY_QUESTIONS } from "@/lib/clarify-questions";
+import { getCurrentUser } from "@/lib/current-user";
 
 type AnswerValue = string | string[];
 
@@ -24,13 +25,20 @@ export default function QuestionsPage() {
       router.push("/new");
       return;
     }
-    const user = localStorage.getItem("scratch_user");
-    if (!user) {
-      router.push("/login");
-      return;
-    }
-    const t = setTimeout(() => setAuthed(true), 0);
-    return () => clearTimeout(t);
+    let active = true;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    getCurrentUser().then((u) => {
+      if (!active) return;
+      if (!u) {
+        router.push("/login");
+        return;
+      }
+      timer = setTimeout(() => setAuthed(true), 0);
+    });
+    return () => {
+      active = false;
+      if (timer) clearTimeout(timer);
+    };
   }, [router]);
 
   const isLast = step === total - 1;

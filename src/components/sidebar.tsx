@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import { History, Plus, PanelLeftClose, PanelLeftOpen, FolderOpen } from "lucide-react";
+import { getCurrentUser } from "@/lib/current-user";
 
 interface PlanItem {
   id: string;
@@ -50,14 +51,23 @@ export function Sidebar() {
   const pathname = usePathname();
 
   useEffect(() => {
-    const user = JSON.parse(typeof window !== "undefined" ? localStorage.getItem("scratch_user") || "{}" : "{}");
-    fetch(`/api/plans/list?userId=${encodeURIComponent(user.email || "shared")}`)
-      .then((r) => r.json())
-      .then((d) => {
-        setPlans(d.plans ?? []);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
+    let active = true;
+    getCurrentUser().then((u) => {
+      if (!active) return;
+      fetch(`/api/plans/list?userId=${encodeURIComponent(u?.email ?? "shared")}`)
+        .then((r) => r.json())
+        .then((d) => {
+          if (!active) return;
+          setPlans(d.plans ?? []);
+          setLoading(false);
+        })
+        .catch(() => {
+          if (active) setLoading(false);
+        });
+    });
+    return () => {
+      active = false;
+    };
   }, [pathname]);
 
   return (
@@ -72,8 +82,15 @@ export function Sidebar() {
             className="sticky top-0 z-20 hidden h-[100dvh] shrink-0 overflow-hidden border-r border-white/8 bg-[#0B0D10] md:block"
           >
             <div className="flex h-full w-[264px] flex-col">
+              {/* Brand */}
+              <div className="px-4 pb-3 pt-5">
+                <Link href="/" className="flex items-center gap-2 text-[13px] font-semibold tracking-[-.03em] text-white transition hover:text-[#74FA6A]">
+                  Scratch Agent
+                </Link>
+              </div>
+
               {/* Header */}
-              <div className="flex items-center justify-between px-4 pb-3 pt-5">
+              <div className="flex items-center justify-between px-4 pb-3">
                 <span className="flex items-center gap-2 font-mono text-[10px] font-semibold uppercase tracking-[.16em] text-white/35">
                   <History size={13} className="text-[#74FA6A]/70" /> riwayat project
                 </span>
@@ -118,7 +135,7 @@ export function Sidebar() {
                 ) : (
                   <div className="space-y-1.5 pt-1">
                     {plans.map((p, i) => {
-                      const active = pathname === `/p/${p.id}` || pathname === `/p/${p.id}/prd`;
+                      const active = pathname === `/project/${p.id}` || pathname === `/project/${p.id}/prd`;
                       const ago = timeAgo(p.createdAt);
                       return (
                         <motion.div
@@ -128,7 +145,7 @@ export function Sidebar() {
                           transition={{ delay: Math.min(i * 0.04, 0.3), duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
                         >
                           <Link
-                            href={`/p/${p.id}`}
+                            href={`/project/${p.id}`}
                             className={`group relative block overflow-hidden rounded-[10px] border px-3 py-2.5 transition-colors ${
                               active
                                 ? "border-[#74FA6A]/25 bg-[#74FA6A]/[.06]"

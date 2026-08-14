@@ -100,8 +100,8 @@ function MapNode({ data }: { data: MapNodeData }) {
             <div key={`${item.label}-${index}`} className="flex min-w-0 items-center gap-1 rounded border border-white/[.04] bg-[#0C0E10] px-1 py-0.5">
               {taskNode ? (
                 item.status === "done" ? <Check size={7} className="shrink-0 text-emerald-400" /> : item.status === "in_progress" ? <span className="size-1 shrink-0 animate-spin rounded-full border border-amber-400 border-r-transparent" /> : <Circle size={6} className="shrink-0 text-slate-600" />
-              ) : <span className="size-0.5 shrink-0 rounded-full bg-slate-600" />}
-              <span className="truncate text-[7px] text-slate-300">{item.label}</span>
+              ) : item.status === "done" ? <Check size={7} className="shrink-0 text-emerald-400" /> : item.status === "in_progress" ? <span className="size-1 shrink-0 animate-spin rounded-full border border-amber-400 border-r-transparent" /> : <span className="size-0.5 shrink-0 rounded-full bg-slate-600" />}
+              <span className={`truncate text-[7px] ${item.status === "done" ? "line-through text-slate-600" : "text-slate-300"}`}>{item.label}</span>
             </div>
           ))}
         </div>
@@ -183,10 +183,14 @@ function FeaturePanel({ plan, index, onClose, onNav }: { plan: Plan; index: numb
           {feature.subFeatures.map((subFeature) => {
             const subTasks = subFeature.tasks;
             const subDone = subTasks.filter((task) => task.status === "done").length;
+            const subActive = subTasks.some((task) => task.status === "in_progress");
             return (
-               <div key={subFeature.title} className="rounded-lg border border-white/[.06] bg-[#0C0E10] px-2.5 py-2">
+               <div key={subFeature.title} className={`rounded-lg border bg-[#0C0E10] px-2.5 py-2 ${subActive ? "border-amber-400/30" : "border-white/[.06]"}`}>
                 <div className="flex items-center justify-between gap-2">
-                  <span className="min-w-0 truncate text-[10px] font-medium text-slate-200">{subFeature.title}</span>
+                  <span className="flex min-w-0 items-center gap-1.5">
+                    {subActive && <span className="size-1.5 shrink-0 animate-spin rounded-full border border-amber-400 border-r-transparent" />}
+                    <span className="truncate text-[10px] font-medium text-slate-200">{subFeature.title}</span>
+                  </span>
                   <span className="shrink-0 text-[8px] text-slate-500">{subDone}/{subTasks.length}</span>
                 </div>
                 {subTasks.length > 0 && <p className="mt-0.5 truncate text-[8px] text-slate-500">{subTasks[0].title}</p>}
@@ -202,9 +206,9 @@ function FeaturePanel({ plan, index, onClose, onNav }: { plan: Plan; index: numb
           <div className="mt-2 space-y-1.5">
             {tasks.slice(0, 2).map((task) => (
               <div key={task.ref} className="flex items-center gap-1.5 text-[9px]">
-                {task.status === "done" ? <Check size={9} className="shrink-0 text-emerald-400" /> : <Circle size={8} className="shrink-0 text-slate-500" />}
-                <span className="min-w-0 flex-1 truncate text-slate-200">{task.title}</span>
-                <span className="shrink-0 text-slate-500">{task.status === "done" ? "Selesai" : task.status === "in_progress" ? "Sedang" : task.status === "failed" ? "Gagal" : "Belum"}</span>
+                {task.status === "done" ? <Check size={9} className="shrink-0 text-emerald-400" /> : task.status === "in_progress" ? <span className="size-2 shrink-0 animate-spin rounded-full border border-amber-400 border-r-transparent" /> : <Circle size={8} className="shrink-0 text-slate-500" />}
+                <span className={`min-w-0 flex-1 truncate ${task.status === "done" ? "line-through text-slate-500" : "text-slate-200"}`}>{task.title}</span>
+                <span className={`shrink-0 ${task.status === "in_progress" ? "text-amber-400" : "text-slate-500"}`}>{task.status === "done" ? "Selesai" : task.status === "in_progress" ? "Sedang" : task.status === "failed" ? "Gagal" : "Belum"}</span>
               </div>
             ))}
           </div>
@@ -214,11 +218,25 @@ function FeaturePanel({ plan, index, onClose, onNav }: { plan: Plan; index: numb
   );
 }
 
+function deriveFeatureStatus(feature: Feature): Feature["status"] {
+  const tasks = feature.subFeatures.flatMap((subFeature) => subFeature.tasks);
+  if (tasks.length === 0) return feature.status ?? "direncanakan";
+  if (tasks.every((task) => task.status === "done")) return "selesai";
+  if (tasks.some((task) => task.status === "done" || task.status === "in_progress" || task.status === "failed")) return "berjalan";
+  return "direncanakan";
+}
+
 export function PlanMap({ plan, liveTasks }: { plan: Plan; liveTasks?: Record<string, Task["status"]> }) {
   const [selected, setSelected] = useState<number | null>(null);
   const mergedPlan: Plan = useMemo(() => liveTasks
     ? { ...plan, features: plan.features.map((feature) => ({ ...feature, subFeatures: feature.subFeatures.map((subFeature) => ({ ...subFeature, tasks: subFeature.tasks.map((task) => ({ ...task, status: liveTasks[task.ref] ?? task.status })) })) })) }
     : plan, [plan, liveTasks]);
+
+  // Status fitur diturunkan dari task-nya supaya ikut live (polling), bukan cuma dari field DB.
+  const displayPlan: Plan = useMemo(() => ({
+    ...mergedPlan,
+    features: mergedPlan.features.map((feature) => ({ ...feature, status: deriveFeatureStatus(feature) })),
+  }), [mergedPlan]);
 
   const { nodes, edges } = useMemo(() => {
     const rowGap = 190;
@@ -231,10 +249,13 @@ export function PlanMap({ plan, liveTasks }: { plan: Plan; liveTasks?: Record<st
     }];
     const nextEdges: Edge[] = [];
 
-    mergedPlan.features.forEach((feature, featureIndex) => {
+    displayPlan.features.forEach((feature, featureIndex) => {
       const y = top + featureIndex * rowGap;
       const tasks = feature.subFeatures.flatMap((subFeature) => subFeature.tasks);
       const done = tasks.filter((task) => task.status === "done").length;
+      const isSubDone = (subFeature: Feature["subFeatures"][number]) => subFeature.tasks.length > 0 && subFeature.tasks.every((task) => task.status === "done");
+      const isSubActive = (subFeature: Feature["subFeatures"][number]) => subFeature.tasks.some((task) => task.status === "in_progress");
+      const subsDone = feature.subFeatures.filter(isSubDone).length;
       const phase = featureIndex + 1;
       const featureId = `feature-${featureIndex}`;
       const subFeatureId = `sub-features-${featureIndex}`;
@@ -242,7 +263,7 @@ export function PlanMap({ plan, liveTasks }: { plan: Plan; liveTasks?: Record<st
 
       nextNodes.push(
         { id: featureId, type: "mapNode", position: { x: 340, y }, data: { kind: "feature", label: feature.title, feature, phase, done, total: tasks.length } },
-        { id: subFeatureId, type: "mapNode", position: { x: 670, y: y - 16 }, data: { kind: "sub-features", label: "Sub fitur", feature, items: feature.subFeatures.map((subFeature) => ({ label: subFeature.title })), total: feature.subFeatures.length } },
+        { id: subFeatureId, type: "mapNode", position: { x: 670, y: y - 16 }, data: { kind: "sub-features", label: "Sub fitur", feature, items: feature.subFeatures.map((subFeature) => ({ label: subFeature.title, status: isSubDone(subFeature) ? "done" : isSubActive(subFeature) ? "in_progress" : "pending" })), total: feature.subFeatures.length, done: subsDone } },
         { id: taskId, type: "mapNode", position: { x: 1000, y: y - 16 }, data: { kind: "tasks", label: "Tasks", feature, items: tasks.map((task) => ({ label: task.title, status: task.status })), total: tasks.length, done, generating: plan.status === "generating" } },
       );
       nextEdges.push(
@@ -253,7 +274,7 @@ export function PlanMap({ plan, liveTasks }: { plan: Plan; liveTasks?: Record<st
     });
 
     return { nodes: nextNodes, edges: nextEdges };
-  }, [mergedPlan, plan.status, plan.title]);
+  }, [displayPlan, plan.status, plan.title]);
 
   return (
     <div className="relative h-[calc(100vh-150px)] min-h-[620px] bg-[#0A0A0A]">
@@ -267,7 +288,7 @@ export function PlanMap({ plan, liveTasks }: { plan: Plan; liveTasks?: Record<st
         fitViewOptions={{ padding: 0.12 }}
         onNodeClick={(_, node) => {
           const feature = node.data.feature;
-          if (feature) setSelected(mergedPlan.features.findIndex((candidate) => candidate.slug === feature.slug));
+          if (feature) setSelected(displayPlan.features.findIndex((candidate) => candidate.slug === feature.slug));
         }}
       >
         <Background variant={BackgroundVariant.Dots} gap={18} size={1} color="#1f2937" />
@@ -276,10 +297,10 @@ export function PlanMap({ plan, liveTasks }: { plan: Plan; liveTasks?: Record<st
       <AnimatePresence>
         {selected !== null && (
           <FeaturePanel
-            plan={mergedPlan}
+            plan={displayPlan}
             index={selected}
             onClose={() => setSelected(null)}
-            onNav={(direction) => setSelected((index) => index === null ? index : Math.max(0, Math.min(mergedPlan.features.length - 1, index + direction)))}
+            onNav={(direction) => setSelected((index) => index === null ? index : Math.max(0, Math.min(displayPlan.features.length - 1, index + direction)))}
           />
         )}
       </AnimatePresence>

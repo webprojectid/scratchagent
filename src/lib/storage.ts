@@ -3,10 +3,10 @@ import { getDb } from "@/db";
 import { plans, features, subFeatures, tasks, taskEvents, usageEvents, users } from "@/db/schema";
 import type { Plan } from "./types";
 import { demoPlan } from "./demo";
+import { applyArchFallback } from "./arch-fallback";
 import {
   memoryDeletePlan,
   memoryFindTask,
-  memoryFindTaskByRef,
   memoryGetPlan,
   memoryListAllPlans,
   memoryListPlans,
@@ -17,6 +17,21 @@ import {
 
 function isMemoryMode() {
   return !process.env.DATABASE_URL;
+}
+
+/**
+ * Pastikan architecture & databaseSchema punya diagram Mermaid.
+ * Kalau LLM cuma ngasih narasi tanpa diagram, suntikkan diagram fallback.
+ * Dipakai saat plan dibaca, supaya plan lama (yang tersimpan tanpa diagram)
+ * tetap menampilkan arsitektur & ERD.
+ */
+function withDiagrams(plan: Plan): Plan {
+  const { architecture, databaseSchema } = applyArchFallback(
+    { title: plan.title, stack: plan.stack ?? [], features: plan.features },
+    plan.architecture ?? "",
+    plan.databaseSchema ?? "",
+  );
+  return { ...plan, architecture, databaseSchema };
 }
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -67,8 +82,15 @@ export async function savePlan(plan: Plan, userId: string): Promise<void> {
       order: feature.order ?? 0,
     } as any).onConflictDoNothing();
 
+    const existingSubs = await db
+      .select({ id: subFeatures.id, title: subFeatures.title })
+      .from(subFeatures)
+      .where(eq(subFeatures.featureId, fid));
+    const titleToSid = new Map<string, string>(existingSubs.map((s) => [s.title, s.id]));
+
       for (const subFeature of (feature.subFeatures as any[])) {
-      const sid = subFeature.id || crypto.randomUUID();
+      const sid = subFeature.id || titleToSid.get(subFeature.title) || crypto.randomUUID();
+      titleToSid.set(subFeature.title, sid);
       await db.insert(subFeatures).values({
         id: sid,
         featureId: fid,
@@ -104,7 +126,10 @@ export async function savePlan(plan: Plan, userId: string): Promise<void> {
 
 export async function getPlan(planId: string): Promise<Plan | undefined> {
   if (planId === "demo") return { ...demoPlan, userId: "demo" } as Plan;
-  if (isMemoryMode()) return memoryGetPlan(planId);
+  if (isMemoryMode()) {
+    const p = memoryGetPlan(planId);
+    return p ? withDiagrams(p) : undefined;
+  }
   const db = getDb();
   const [plan] = await db.select().from(plans).where(eq(plans.id, planId));
   if (!plan) return undefined;
@@ -115,6 +140,7 @@ export async function getPlan(planId: string): Promise<Plan | undefined> {
     const subFeaturesWithTasks = await Promise.all(subs.map(async (sub) => {
       const taskRows = await db.select().from(tasks).where(eq(tasks.subFeatureId, sub.id));
         return {
+          id: sub.id,
           title: sub.title,
           tujuan: sub.tujuan ?? "",
           selesaiBila: sub.selesaiBila ?? [],
@@ -136,6 +162,7 @@ export async function getPlan(planId: string): Promise<Plan | undefined> {
       };
     }));
     return {
+      id: feature.id,
       slug: feature.slug,
       title: feature.title,
       icon: feature.icon,
@@ -151,7 +178,7 @@ export async function getPlan(planId: string): Promise<Plan | undefined> {
   const savedMeta = plan.techPrefs && !Array.isArray(plan.techPrefs) ? plan.techPrefs as any : {};
   const savedStack = Array.isArray(plan.techPrefs) ? plan.techPrefs as any[] : savedMeta.stack ?? [];
 
-  return {
+  const built: Plan = {
     id: plan.id,
     title: plan.title,
     brief: plan.brief,
@@ -167,6 +194,8 @@ export async function getPlan(planId: string): Promise<Plan | undefined> {
     createdAt: plan.createdAt?.toISOString(),
     userId: plan.userId ?? undefined,
   } as Plan;
+
+  return withDiagrams(built);
 }
 
 export async function listPlans(userId: string): Promise<Plan[]> {
@@ -235,17 +264,33 @@ export async function updateTask(planId: string, ref: string, patch: any): Promi
   } as any);
 }
 
-export async function findTaskByRef(ref: string): Promise<{ task: any; plan: Plan } | undefined> {
-  if (isMemoryMode()) return memoryFindTaskByRef(ref);
+// Sinkronkan status tiap fitur berdasarkan task-task-nya:
+// semua done -> "selesai"; ada yang done/in_progress/failed -> "berjalan"; selain itu "direncanakan".
+export async function syncFeatureStatuses(planId: string): Promise<void> {
+  if (isMemoryMode()) return;
   const db = getDb();
-  const taskRows = await db.select().from(tasks).where(eq(tasks.ref, ref));
-  const task = taskRows[0];
-  if (!task) return undefined;
+  const featureRows = await db.select().from(features).where(eq(features.planId, planId));
+  for (const feature of featureRows) {
+    const taskRows = await db
+      .select({ status: tasks.status })
+      .from(tasks)
+      .where(and(eq(tasks.planId, planId), eq(tasks.featureId, feature.id)));
+    let status: "direncanakan" | "berjalan" | "selesai" = "direncanakan";
+    if (taskRows.length > 0) {
+      if (taskRows.every((t) => t.status === "done")) status = "selesai";
+      else if (taskRows.some((t) => t.status === "done" || t.status === "in_progress" || t.status === "failed")) status = "berjalan";
+    }
+    if (feature.status !== status) {
+      await db.update(features).set({ status } as any).where(eq(features.id, feature.id));
+    }
+  }
+}
 
-  const plan = await getPlan(task.planId);
-  if (!plan) return undefined;
-
-  return { task, plan };
+// Kembalikan semua status fitur di plan ke "direncanakan" (dipakai reset-plan).
+export async function resetFeatureStatuses(planId: string): Promise<void> {
+  if (isMemoryMode()) return;
+  const db = getDb();
+  await db.update(features).set({ status: "direncanakan" } as any).where(eq(features.planId, planId));
 }
 
 export async function findTask(planId: string, ref: string): Promise<{ task: any; plan: Plan } | undefined> {

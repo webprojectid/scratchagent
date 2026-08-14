@@ -1,9 +1,13 @@
 import type { Plan } from "./types";
-import { allTasks, findTask, findTaskByRef, getPlan, updatePlanStatus, updateTask } from "./storage";
+import { allTasks, findTask, getPlan, syncFeatureStatuses, updatePlanStatus, updateTask } from "./storage";
 
 type Task = Plan["features"][0]["subFeatures"][0]["tasks"][0];
 
 const layerOrder: Record<string, number> = { frontend: 0, backend: 1, qa: 2 };
+// Urutan eksekusi: selesaikan per FASE dulu (fitur per fitur), baru di dalam
+// fase urut layer frontend -> backend -> qa. Kalau layer diprioritaskan di atas
+// fase, semua frontend lintas fase akan dikerjakan duluan dan fase 1 tidak
+// pernah tuntas sebelum fase 2 dimulai.
 
 export interface NextTaskResult {
   done: boolean;
@@ -43,7 +47,7 @@ export async function getNextTask(planId: string): Promise<NextTaskResult> {
 
   const eligible = tasks
     .filter((t) => t.status === "pending" && t.deps.every((d: string) => doneRefs.has(d)))
-    .sort((a, b) => layerOrder[a.layer] - layerOrder[b.layer] || a.phase - b.phase || a.ref.localeCompare(b.ref));
+    .sort((a, b) => a.phase - b.phase || layerOrder[a.layer] - layerOrder[b.layer] || a.ref.localeCompare(b.ref));
 
   const next = eligible[0];
   if (!next) {
@@ -75,54 +79,37 @@ export async function getNextTask(planId: string): Promise<NextTaskResult> {
   };
 }
 
-async function resolveByRef(ref: string): Promise<{ task: Task; plan: { id: string } } | null> {
-  const result = await findTaskByRef(ref);
-  if (result) return { task: result.task, plan: { id: result.plan.id } };
-  return null;
-}
-
-export async function startTask(planIdOrRef: string, ref?: string): Promise<Task | null> {
-  if (ref) {
-    const found = await findTask(planIdOrRef, ref);
-    if (!found) return null;
-    await updateTask(planIdOrRef, ref, { status: "in_progress", startedAt: new Date().toISOString() });
-    return found.task;
-  }
-  const found = await resolveByRef(planIdOrRef);
+export async function startTask(planId: string, ref: string): Promise<Task | null> {
+  const found = await findTask(planId, ref);
   if (!found) return null;
-  await updateTask(found.plan.id, planIdOrRef, { status: "in_progress", startedAt: new Date().toISOString() });
+  await updateTask(planId, ref, { status: "in_progress", startedAt: new Date().toISOString() });
+  await syncFeatureStatuses(planId);
   return found.task;
 }
 
-export async function completeTask(planIdOrRef: string, ref?: string): Promise<Task | null> {
-  const pid = ref ? planIdOrRef : (await resolveByRef(planIdOrRef))?.plan.id;
-  const r = ref ?? planIdOrRef;
-  if (!pid) return null;
-  const found = await findTask(pid, r);
+export async function completeTask(planId: string, ref: string): Promise<Task | null> {
+  const found = await findTask(planId, ref);
   if (!found) return null;
-  await updateTask(pid, r, { status: "done", completedAt: new Date().toISOString() });
-  const plan = await getPlan(pid);
-  if (plan) await checkPlanComplete(pid, plan);
+  await updateTask(planId, ref, { status: "done", completedAt: new Date().toISOString() });
+  await syncFeatureStatuses(planId);
+  const plan = await getPlan(planId);
+  if (plan) await checkPlanComplete(planId, plan);
   return found.task;
 }
 
-export async function failTask(planIdOrRef: string, reason: string, ref?: string): Promise<Task | null> {
-  const pid = ref ? planIdOrRef : (await resolveByRef(planIdOrRef))?.plan.id;
-  const r = ref ?? planIdOrRef;
-  if (!pid) return null;
-  const found = await findTask(pid, r);
+export async function failTask(planId: string, ref: string, reason: string): Promise<Task | null> {
+  const found = await findTask(planId, ref);
   if (!found) return null;
-  await updateTask(pid, r, { status: "failed", failReason: reason, lastFailReason: reason });
+  await updateTask(planId, ref, { status: "failed", failReason: reason, lastFailReason: reason });
+  await syncFeatureStatuses(planId);
   return found.task;
 }
 
-export async function retryTask(planIdOrRef: string, ref?: string): Promise<Task | null> {
-  const pid = ref ? planIdOrRef : (await resolveByRef(planIdOrRef))?.plan.id;
-  const r = ref ?? planIdOrRef;
-  if (!pid) return null;
-  const found = await findTask(pid, r);
+export async function retryTask(planId: string, ref: string): Promise<Task | null> {
+  const found = await findTask(planId, ref);
   if (!found) return null;
-  await updateTask(pid, r, { status: "pending", failReason: null, retryCount: (found.task.retryCount ?? 0) + 1 });
+  await updateTask(planId, ref, { status: "pending", failReason: null, retryCount: (found.task.retryCount ?? 0) + 1 });
+  await syncFeatureStatuses(planId);
   return found.task;
 }
 

@@ -1,10 +1,14 @@
 import { NextResponse } from "next/server";
+import { getRequestUser, planOwnerKey, unauthorized } from "@/lib/api-auth";
 import { listPlans } from "@/lib/storage";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const userId = searchParams.get("userId") ?? "shared";
-  const source = await listPlans(userId);
+  // Param userId hanya dipakai sebagai fallback di mode dev polos (tanpa DB & Supabase).
+  const user = await getRequestUser(searchParams.get("userId"));
+  if (!user) return unauthorized();
+
+  const source = await listPlans(planOwnerKey(user));
   const plans = source.map((p) => ({
     id: p.id,
     title: p.title,

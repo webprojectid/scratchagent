@@ -5,8 +5,9 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Loader2 } from "lucide-react";
 
-// Halaman bridge abis OAuth callback: baca session Supabase, tulis ke
-// localStorage (scratch_user) biar auth lama app tetep ngenalin login.
+// Halaman bridge setelah OAuth callback: pastikan session Supabase aktif,
+// lalu lanjut. Client sekarang membaca session Supabase langsung (via
+// getCurrentUser), jadi tidak perlu lagi menulis scratch_user ke localStorage.
 export default function AuthComplete() {
   const router = useRouter();
   const [error, setError] = useState("");
@@ -21,20 +22,6 @@ export default function AuthComplete() {
           setTimeout(() => router.push("/login"), 1500);
           return;
         }
-        const user = data.user;
-        const name =
-          user.user_metadata?.full_name ||
-          user.user_metadata?.name ||
-          user.email?.split("@")[0] ||
-          "User";
-        localStorage.setItem(
-          "scratch_user",
-          JSON.stringify({
-            email: user.email,
-            name,
-            provider: user.app_metadata?.provider ?? "oauth",
-          })
-        );
         router.push("/new");
       })
       .catch(() => {

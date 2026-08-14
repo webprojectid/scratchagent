@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 
 // Handle callback OAuth dari Supabase (Google / GitHub).
 // Abis tuker code jadi session, lempar ke /auth/complete (client) buat
-// nulis scratch_user ke localStorage biar auth lama app tetep jalan.
+// verifikasi session lalu lanjut. Client membaca session Supabase langsung.
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");

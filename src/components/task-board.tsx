@@ -22,7 +22,7 @@ const columns: { title: string; status: Task["status"]; chip: string; icon: Reac
     status: "in_progress",
     chip: "border-amber-400/25 bg-amber-400/[.08] text-amber-300",
     bar: "bg-amber-400",
-    icon: <span className="size-2 rounded-full border-[1.5px] border-amber-400 border-r-transparent" />,
+    icon: <span className="size-2 animate-spin rounded-full border-[1.5px] border-amber-400 border-r-transparent" />,
   },
   {
     title: "Selesai",
@@ -122,18 +122,22 @@ function TaskCard({ task, compact }: { task: BoardTask; compact?: boolean }) {
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.97 }}
         transition={{ duration: 0.3, ease: EASE }}
-        className="relative overflow-hidden rounded-lg border border-white/[.05] bg-white/[.02] p-1.5 pl-2.5"
+        className={`relative overflow-hidden rounded-lg border bg-white/[.02] p-1.5 pl-2.5 ${task.status === "in_progress" ? "border-amber-400/30 shadow-[0_0_12px_rgba(251,191,36,0.12)]" : "border-white/[.05]"}`}
       >
-        <span className={`absolute bottom-1 left-0 top-1 w-[2px] rounded-r-full ${accent}`} />
+        <span className={`absolute bottom-1 left-0 top-1 w-[2px] rounded-r-full ${accent} ${task.status === "in_progress" ? "animate-pulse" : ""}`} />
         <div className="flex items-center gap-1 text-[8px]">
           <span className="min-w-0 flex-1 truncate text-slate-500">{task.subFeature}</span>
           <span className={`inline-flex items-center gap-1 rounded-full border px-1.5 py-px text-[7px] font-semibold uppercase tracking-wide ${layer.badge}`}>
             <span className={`size-[3px] rounded-full ${layer.dot}`} />{layer.label}
           </span>
         </div>
-        <h3 className="mt-0.5 text-[10px] font-medium leading-4 text-white/80">{task.title}</h3>
-        <div className="mt-0.5 flex items-center justify-between font-mono text-[7px] tabular-nums text-slate-600">
-          <span>{task.ref}</span><span>P{task.phase}</span>
+        <h3 className={`mt-0.5 text-[10px] font-medium leading-4 ${task.status === "done" ? "line-through decoration-white/25 text-white/30" : "text-white/80"}`}>{task.title}</h3>
+        <div className="mt-0.5 flex items-center justify-between gap-1 font-mono text-[7px] tabular-nums text-slate-600">
+          <span className="flex min-w-0 items-center gap-1">
+            {task.status === "in_progress" && <span className="size-1.5 shrink-0 animate-spin rounded-full border border-amber-400 border-r-transparent" />}
+            <span className="truncate">{task.ref}</span>
+          </span>
+          <span>P{task.phase}</span>
         </div>
       </motion.article>
     );
@@ -147,19 +151,22 @@ function TaskCard({ task, compact }: { task: BoardTask; compact?: boolean }) {
       exit={{ opacity: 0, scale: 0.96 }}
       whileHover={{ y: -2 }}
       transition={{ duration: 0.35, ease: EASE }}
-      className="group relative overflow-hidden rounded-xl border border-white/[.06] bg-[#0E1114] p-3 pl-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition-colors duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-white/[.14] hover:bg-[#12161B]"
+      className={`group relative overflow-hidden rounded-xl border bg-[#0E1114] p-3 pl-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition-colors duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[#12161B] ${task.status === "in_progress" ? "border-amber-400/35 shadow-[0_0_18px_rgba(251,191,36,0.14)]" : "border-white/[.06] hover:border-white/[.14]"}`}
     >
-      <span className={`absolute bottom-2.5 left-0 top-2.5 w-[3px] rounded-r-full ${accent} transition-all duration-300 group-hover:bottom-2 group-hover:top-2`} />
+      <span className={`absolute bottom-2.5 left-0 top-2.5 w-[3px] rounded-r-full ${accent} transition-all duration-300 group-hover:bottom-2 group-hover:top-2 ${task.status === "in_progress" ? "animate-pulse" : ""}`} />
 
       <div className="flex items-center justify-between gap-2">
         <span className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wider ${layer.badge}`}>
           <span className={`size-1 rounded-full ${layer.dot}`} />
           {layer.label}
         </span>
-        <span className="font-mono text-[9px] tabular-nums text-slate-500">{task.ref}</span>
+        <span className="flex items-center gap-1.5 font-mono text-[9px] tabular-nums text-slate-500">
+          {task.status === "in_progress" && <span className="size-2 animate-spin rounded-full border border-amber-400 border-r-transparent" />}
+          {task.ref}
+        </span>
       </div>
 
-      <h3 className="mt-2 text-[13px] font-medium leading-snug text-white/90">{task.title}</h3>
+      <h3 className={`mt-2 text-[13px] font-medium leading-snug ${task.status === "done" ? "line-through decoration-white/25 text-white/35" : "text-white/90"}`}>{task.title}</h3>
 
       <div className="mt-2.5 flex items-center justify-between gap-2 border-t border-white/[.05] pt-2">
         <span className="min-w-0 flex-1 truncate text-[10px] text-slate-500">{task.subFeature}</span>
@@ -211,6 +218,15 @@ export function TaskBoard({ plan, liveTasks, compact = false }: { plan: Plan; li
                 <div className="flex items-center gap-1.5 px-1 py-0.5 text-[9px] font-semibold text-white/45">
                   <span className={`grid size-4 place-items-center rounded-full border ${column.chip}`}>{column.icon}</span>
                   <span>{column.title}</span>
+                  {column.status === "in_progress" && columnTasks.length > 0 && (
+                    <span className="flex items-center gap-1 text-[7px] font-bold uppercase tracking-wider text-amber-400">
+                      <span className="relative flex size-1.5">
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-60" />
+                        <span className="relative inline-flex size-1.5 rounded-full bg-amber-400" />
+                      </span>
+                      live
+                    </span>
+                  )}
                   <span className="ml-auto rounded-full bg-white/[.05] px-1.5 font-mono text-[8px] tabular-nums text-white/25">{columnTasks.length}</span>
                 </div>
                 <div className="mt-1 space-y-1">
@@ -259,6 +275,15 @@ export function TaskBoard({ plan, liveTasks, compact = false }: { plan: Plan; li
                 <div className="flex items-center gap-2 px-1.5 pb-2 pt-1">
                   <span className={`grid size-5 place-items-center rounded-full border ${column.chip}`}>{column.icon}</span>
                   <span className="text-[12px] font-semibold text-white/85">{column.title}</span>
+                  {column.status === "in_progress" && columnTasks.length > 0 && (
+                    <span className="flex items-center gap-1 rounded-full border border-amber-400/25 bg-amber-400/[.08] px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider text-amber-300">
+                      <span className="relative flex size-1.5">
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-60" />
+                        <span className="relative inline-flex size-1.5 rounded-full bg-amber-400" />
+                      </span>
+                      live
+                    </span>
+                  )}
                   <span className="ml-auto rounded-full bg-white/[.05] px-2 py-0.5 font-mono text-[10px] tabular-nums text-slate-400">{columnTasks.length}</span>
                 </div>
                 <div className="flex-1 space-y-2 overflow-y-auto pr-0.5">

@@ -32,6 +32,10 @@ export function memoryGetOrCreateUser(email: string, name?: string): StoredUser 
   return user;
 }
 
+export function memoryGetUserById(id: string): StoredUser | undefined {
+  return userStore.get(id);
+}
+
 export function memoryCreateToken(userId: string, hash: string, label: string): void {
   tokenStore.set(hash, { hash, userId, label, revokedAt: null, createdAt: new Date().toISOString() });
 }
@@ -97,18 +101,6 @@ export function memoryUpdateTask(planId: string, ref: string, patch: Partial<Tas
           Object.assign(t, patch);
           taskEventsStore.push({ planId, taskRef: ref, type: patch.status ?? "update", meta: patch, createdAt: new Date().toISOString() });
           return;
-        }
-      }
-    }
-  }
-}
-
-export function memoryFindTaskByRef(ref: string): { task: Task; plan: Plan } | undefined {
-  for (const p of planStore.values()) {
-    for (const f of p.features) {
-      for (const sf of f.subFeatures) {
-        for (const t of sf.tasks) {
-          if (t.ref === ref) return { task: clone(t), plan: clone(p) };
         }
       }
     }

@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
+import { devOnlyGate } from "@/lib/api-auth";
 import { savePlan } from "@/lib/storage";
 import type { Plan } from "@/lib/types";
 
 export async function GET() {
+  const blocked = devOnlyGate();
+  if (blocked) return blocked;
+
   const planId = randomUUID();
   const plan: Plan = {
     id: planId,

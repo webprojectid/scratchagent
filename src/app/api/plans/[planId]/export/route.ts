@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
-import { getPlan } from "@/lib/storage";
+import { accessPlan, getRequestUser } from "@/lib/api-auth";
 import { renderPrdMd } from "@/lib/zip";
 
-export async function GET(_request: Request, { params }: { params: Promise<{ planId: string }> }) {
+export async function GET(request: Request, { params }: { params: Promise<{ planId: string }> }) {
   const { planId } = await params;
-  const plan = await getPlan(planId);
-  if (!plan) return NextResponse.json({ error: "Plan tidak ditemukan" }, { status: 404 });
+  const { searchParams } = new URL(request.url);
+  const user = await getRequestUser(searchParams.get("userId"));
+  const { plan, error } = await accessPlan(planId, user);
+  if (error || !plan) return error;
 
-  const { searchParams } = new URL(_request.url);
   const format = searchParams.get("format") ?? "json";
 
   if (format === "md") {

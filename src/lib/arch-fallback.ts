@@ -11,6 +11,14 @@ function slugToEntity(slug: string): string {
   return slug.replace(/[^a-zA-Z0-9]+/g, "_").toUpperCase().slice(0, 24) || "ENTITY";
 }
 
+const MERMAID_RE = /```mermaid/i;
+
+/** Ambil blok ```mermaid ... ``` pertama dari sebuah teks (null kalau gak ada). */
+function extractMermaid(text: string): string | null {
+  const m = text.match(/```mermaid[\s\S]*?```/i);
+  return m ? m[0] : null;
+}
+
 export function buildFallbackArchitecture(title: string, stack: string[], featureTitles: string[]): string {
   const frontend = stack.find((s) => /next|react|vue|svelte|nuxt/i.test(s)) ?? "Next.js";
   const backend = stack.find((s) => /node|express|nest|fastify|django|laravel|go|rust/i.test(s)) ?? "API Routes";
@@ -131,10 +139,22 @@ export function applyArchFallback(
   if (!arch) {
     arch = buildFallbackArchitecture(plan.title, plan.stack ?? [], featureTitles);
     usedFallback.push("architecture");
+  } else if (!MERMAID_RE.test(arch)) {
+    // LLM kasih narasi tapi TANPA diagram → suntikkan diagram dari fallback
+    // supaya arsitektur selalu tergambar.
+    const diagram = extractMermaid(buildFallbackArchitecture(plan.title, plan.stack ?? [], featureTitles));
+    if (diagram) arch = `${arch}\n\n${diagram}`;
+    usedFallback.push("architecture:diagram");
   }
+
   if (!db) {
     db = buildFallbackDatabaseSchema(featureTitles);
     usedFallback.push("databaseSchema");
+  } else if (!MERMAID_RE.test(db)) {
+    // Sama: narasi ada tapi tanpa ERD → suntikkan ERD dari fallback.
+    const diagram = extractMermaid(buildFallbackDatabaseSchema(featureTitles));
+    if (diagram) db = `${db}\n\n${diagram}`;
+    usedFallback.push("databaseSchema:diagram");
   }
 
   return { architecture: arch, databaseSchema: db, usedFallback };

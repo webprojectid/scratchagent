@@ -1,15 +1,12 @@
 import { NextResponse } from "next/server";
-import { getAuthUser, unauthorized } from "@/lib/api-auth";
+import { accessPlan, getRequestUser } from "@/lib/api-auth";
 import { getNextTask } from "@/lib/tasks";
-import { getPlan } from "@/lib/storage";
 
 export async function GET(_request: Request, { params }: { params: Promise<{ planId: string }> }) {
-  const user = await getAuthUser();
-  if (!user) return unauthorized();
-
   const { planId } = await params;
-  const plan = await getPlan(planId);
-  if (!plan) return NextResponse.json({ error: "Plan tidak ditemukan" }, { status: 404 });
+  const user = await getRequestUser();
+  const { error } = await accessPlan(planId, user);
+  if (error) return error;
 
   return NextResponse.json(await getNextTask(planId));
 }

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { jsonrepair } from "jsonrepair";
 import { applyArchFallback } from "./arch-fallback";
 
 const prioritySchema = z.preprocess(
@@ -61,6 +62,7 @@ const stage2Schema = z.object({
 });
 
 const rawTaskSchema = z.object({
+  id: z.string().default(""),
   feature: z.string(),
   sub_feature: z.string(),
   title: z.string(),
@@ -104,7 +106,7 @@ function normalize(obj: unknown): unknown {
 function extractJson(value: string): string {
   // 1. Ambil JSON di dalam markdown fence ```json ... ``` atau ``` ... ```
   const fenced = value.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-  let candidates = fenced ? [fenced[1].trim()] : [];
+  const candidates = fenced ? [fenced[1].trim()] : [];
 
   // 2. Coba parse value mentah dan heuristic extract
   let clean = value.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
@@ -124,7 +126,6 @@ function extractJson(value: string): string {
       return raw;
     } catch { /* coba repair */ }
     try {
-      const { jsonrepair } = require("jsonrepair");
       const repaired = jsonrepair(raw);
       JSON.parse(repaired);
       return repaired;
@@ -246,6 +247,7 @@ export interface GenerateResult {
 
 export interface GenerateTask {
   ref: string;
+  id: string;
   feature: string;
   sub_feature: string;
   title: string;
@@ -329,7 +331,7 @@ export async function generatePlanStructure(
     techStack: reqDataRaw?.tech_stack ?? [],
   };
 
-  const features = one.features.map((f, fi) => {
+  const features = one.features.map((f) => {
     const mapped = two.features.find((x) => x.title === f.title);
     const subFeatures = (mapped?.sub_features ?? [{ title: "Umum", tujuan: "Fitur umum", selesai_bila: [] }]).map((sf) => ({
       title: sf.title,
@@ -379,7 +381,7 @@ export async function generateTasksForFeature(
   const usage: LlmUsage = { tokensIn: 0, tokensOut: 0 };
   const result = await callLlm(
     stage3Schema,
-    `Brief: ${brief}\nFitur: ${featureTitle}\nSub-fitur: ${JSON.stringify(subFeatures)}\n\nKamu adalah tech lead senior. Buat task untuk fitur ini saja dengan pendekatan kritis:\n1. Minimal 6 task, maksimal 20 task total.\n2. Setiap sub-fitur harus ada task frontend, backend, DAN QA/testing.\n3. Tiap task title WAJIB diawali kata kerja (Buat, Integrasikan, Uji, Deploy, Refactor, dll).\n4. Sertakan task untuk: validasi input, error handling, state management, integrasi antar komponen, unit/integration test, accessibility/perf jika relevan.\n5. Dependency (deps) harus realistis: tiap task boleh bergantung pada task sebelumnya di layer yang sama atau layer yang sudah selesai (frontend -> backend -> qa).\n6. Tandai task yang blocker atau high-risk.\n7. Setiap task wajib field: feature, sub_feature, title, layer (frontend/backend/qa), phase, page (null atau path), deps (array string ref).\n\nFormat: {"tasks":[{"feature":"...","sub_feature":"...","title":"...","layer":"frontend","phase":${featureIndex + 1},"page":null,"deps":[]}]}`,
+    `Brief: ${brief}\nFitur: ${featureTitle}\nSub-fitur: ${JSON.stringify(subFeatures)}\n\nKamu adalah tech lead senior. Buat task untuk fitur ini saja dengan pendekatan kritis:\n1. Minimal 6 task, maksimal 20 task total.\n2. Setiap sub-fitur harus ada task frontend, backend, DAN QA/testing.\n3. Tiap task title WAJIB diawali kata kerja (Buat, Integrasikan, Uji, Deploy, Refactor, dll).\n4. Sertakan task untuk: validasi input, error handling, state management, integrasi antar komponen, unit/integration test, accessibility/perf jika relevan.\n5. Beri SETIAP task id unik berurutan: "t1", "t2", "t3", dst.\n6. Dependency (deps): isi dengan id task lain yang harus selesai LEBIH DULU (hanya id dari daftar task ini, mis. ["t1","t3"]). Jangan membuat ketergantungan melingkar. Task yang bisa dikerjakan paralel tanpa prasyarat diberi deps [].\n7. Urutan logis layer: frontend -> backend -> qa. Tandai task yang blocker atau high-risk.\n8. Setiap task wajib field: id, feature, sub_feature, title, layer (frontend/backend/qa), phase, page (null atau path), deps (array id).\n\nFormat: {"tasks":[{"id":"t1","feature":"...","sub_feature":"...","title":"...","layer":"frontend","phase":${featureIndex + 1},"page":null,"deps":[]},{"id":"t2","feature":"...","sub_feature":"...","title":"...","layer":"backend","phase":${featureIndex + 1},"page":null,"deps":["t1"]}]}`,
     usage,
   );
   return { tasks: result.tasks, usage };
@@ -387,4 +389,38 @@ export async function generateTasksForFeature(
 
 export function buildTaskRef(featureIndex: number, subIndex: number, taskNum: number): string {
   return `F${String(featureIndex + 1).padStart(2, "0")}-S${String(subIndex + 1).padStart(2, "0")}-T${String(taskNum).padStart(2, "0")}`;
+}
+
+/**
+ * Bersihkan dependency graph: buang ref yang tidak dikenal, self-dependency,
+ * dan edge yang membentuk siklus. Return map ref -> deps final (urutan stabil).
+ * Algoritma: bangun graph secara incremental; tiap edge baru dicek apakah
+ * membuat jalur balik (siklus) — kalau ya, edge itu dibuang.
+ */
+export function sanitizeDeps(nodes: { ref: string; deps: string[] }[]): Map<string, string[]> {
+  const validRefs = new Set(nodes.map((n) => n.ref));
+  const graph = new Map<string, string[]>();
+  for (const n of nodes) graph.set(n.ref, []);
+
+  const reaches = (from: string, target: string, seen: Set<string>): boolean => {
+    if (from === target) return true;
+    if (seen.has(from)) return false;
+    seen.add(from);
+    for (const d of graph.get(from) ?? []) {
+      if (reaches(d, target, seen)) return true;
+    }
+    return false;
+  };
+
+  for (const n of nodes) {
+    const seenDeps = new Set<string>();
+    for (const dep of n.deps) {
+      if (!validRefs.has(dep) || dep === n.ref || seenDeps.has(dep)) continue;
+      seenDeps.add(dep);
+      // Edge n.ref -> dep bikin siklus kalau dep (transitif) mencapai n.ref.
+      if (reaches(dep, n.ref, new Set())) continue;
+      graph.get(n.ref)!.push(dep);
+    }
+  }
+  return graph;
 }

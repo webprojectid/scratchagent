@@ -6,6 +6,7 @@ import { motion } from "motion/react";
 import { Loader2 } from "lucide-react";
 import { Shell } from "@/components/brand";
 import { CircularCarousel, type CarouselItem } from "@/components/ui/circular-carousel";
+import { getCurrentUser } from "@/lib/current-user";
 
 const stages = [
   { title: "Membaca brief", desc: "Mendeteksi domain produk & konteks awal", tag: "Brief" },
@@ -57,36 +58,37 @@ export default function Generate() {
     }, 1500);
 
     if (!alreadyGenerating) {
-      const user = JSON.parse(localStorage.getItem("scratch_user") || '{}');
       const answersStr = sessionStorage.getItem("rv_answers");
-      fetch("/api/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          brief,
-          techPrefs: JSON.parse(prefsStr),
-          userId: user.email || "shared",
-          answers: answersStr ? JSON.parse(answersStr) : [],
-        }),
-      })
-        .then((r) => r.json())
-        .then((data) => {
-          sessionStorage.removeItem("rv_generating");
-          clearInterval(stageTimer);
-          clearInterval(elapsedTimer);
-          if (data.error) {
-            setError(data.error);
-            return;
-          }
-          setStep(stages.length);
-          setTimeout(() => router.push(`/p/${data.id}`), 400);
+      getCurrentUser().then((user) => {
+        fetch("/api/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            brief,
+            techPrefs: JSON.parse(prefsStr),
+            userId: user?.email || "shared",
+            answers: answersStr ? JSON.parse(answersStr) : [],
+          }),
         })
-        .catch((err) => {
-          sessionStorage.removeItem("rv_generating");
-          clearInterval(stageTimer);
-          clearInterval(elapsedTimer);
-          setError(err.message);
-        });
+          .then((r) => r.json())
+          .then((data) => {
+            sessionStorage.removeItem("rv_generating");
+            clearInterval(stageTimer);
+            clearInterval(elapsedTimer);
+            if (data.error) {
+              setError(data.error);
+              return;
+            }
+            setStep(stages.length);
+            setTimeout(() => router.push(`/project/${data.id}`), 400);
+          })
+          .catch((err) => {
+            sessionStorage.removeItem("rv_generating");
+            clearInterval(stageTimer);
+            clearInterval(elapsedTimer);
+            setError(err.message);
+          });
+      });
     }
 
     return () => {

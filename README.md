@@ -34,7 +34,7 @@ npm run dev
 Buka http://localhost:3000
 
 ## Demo tanpa konfigurasi
-- Welcome page + "Lihat contoh plan" → `/p/demo` (read-only, tanpa login)
+- Welcome page + "Lihat contoh plan" → `/project/demo` (read-only, tanpa login)
 - Mindmap, panel detail, PRD view, kanban semua bisa diuji dengan demo data
 
 ## CLI (untuk AI agent)

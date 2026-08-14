@@ -10,7 +10,11 @@ export function Brand() {
   );
 }
 
-export function Shell({ children, back, sidebar = true }: { children: React.ReactNode; back?: string; sidebar?: boolean }) {
+export function Shell({ children, back, sidebar = true, brand = true }: { children: React.ReactNode; back?: string; sidebar?: boolean; brand?: boolean }) {
+  // Brand kiri-atas:
+  // - Halaman tanpa sidebar: selalu tampil (di samping tombol back kalau ada).
+  // - Halaman bersidebar: tampil hanya di mobile (md:hidden), karena di desktop
+  //   brand sudah muncul di dalam Sidebar. plan-client render sendiri (brand={false}).
   return (
     <main className="relative min-h-screen">
       {back && (
@@ -21,6 +25,13 @@ export function Shell({ children, back, sidebar = true }: { children: React.Reac
         >
           <ArrowLeft size={18} />
         </Link>
+      )}
+      {brand && (
+        <div
+          className={`fixed top-4 z-40 flex h-9 items-center md:top-5 ${sidebar ? "md:hidden" : ""} ${back ? "left-16 md:left-[72px]" : "left-4 md:left-6"}`}
+        >
+          <Brand />
+        </div>
       )}
       <div className="flex">
         {sidebar && <Sidebar />}
