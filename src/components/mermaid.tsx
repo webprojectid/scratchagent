@@ -30,11 +30,11 @@ export function Mermaid({ code }: { code: string }) {
 }
 
 export function RichContent({ text, diagramOnly = false, flow = false }: { text: string; diagramOnly?: boolean; flow?: boolean }) {
-  const parts = text.split(/(```mermaid[\s\S]*?```)/g);
+  const parts = text.split(/(```mermaid[\s\S]*?```)/gi);
   return (
     <div className="space-y-2">
       {parts.map((part, i) => {
-        const mermaidMatch = part.match(/```mermaid\s*([\s\S]*?)```/);
+        const mermaidMatch = part.match(/```mermaid\s*([\s\S]*?)```/i);
         if (mermaidMatch) {
           const code = mermaidMatch[1];
           if (flow && mermaidToFlow(code)) {
@@ -51,11 +51,11 @@ export function RichContent({ text, diagramOnly = false, flow = false }: { text:
 
 /** Diagram interaktif + narasi (trade-off, alasan desain) dalam collapsible. */
 export function DiagramWithDetails({ text }: { text: string }) {
-  const parts = text.split(/(```mermaid[\s\S]*?```)/g);
+  const parts = text.split(/(```mermaid[\s\S]*?```)/gi);
   const diagrams: string[] = [];
   const narrativeParts: string[] = [];
   for (const part of parts) {
-    const m = part.match(/```mermaid\s*([\s\S]*?)```/);
+    const m = part.match(/```mermaid\s*([\s\S]*?)```/i);
     if (m) diagrams.push(m[1]);
     else if (part.trim()) narrativeParts.push(part.trim());
   }

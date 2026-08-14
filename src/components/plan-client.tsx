@@ -2,13 +2,21 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { motion } from "motion/react";
-import { Shell } from "@/components/brand";
+import { Shell, Brand } from "@/components/brand";
 import { PlanMap } from "@/components/plan-map";
 import { AgentPromptModal } from "@/components/agent-modal";
 import { TaskBoard } from "@/components/task-board";
 import { PrdView } from "@/components/prd-view";
 import { ProjectSwitcher } from "@/components/project-switcher";
 import type { Plan, Task } from "@/lib/types";
+import { getCurrentUser } from "@/lib/current-user";
+
+// Query param identitas fallback (dipakai server hanya di mode dev polos;
+// di mode Supabase, session cookie yang menang). Sumber: session Supabase.
+async function userQs(): Promise<string> {
+  const u = await getCurrentUser();
+  return u?.email ? `?userId=${encodeURIComponent(u.email)}` : "";
+}
 
 const statusMessages = [
   "Parsing sub-fitur dan menentukan layer...",
@@ -16,13 +24,6 @@ const statusMessages = [
   "Membuat task frontend, backend, dan QA...",
   "Memvalidasi urutan eksekusi task...",
 ];
-
-const planStatusChip: Record<string, { label: string; className: string }> = {
-  generating: { label: "menyusun", className: "border-amber-400/25 bg-amber-400/[.06] text-amber-300" },
-  ready: { label: "siap", className: "border-[#74FA6A]/25 bg-[#74FA6A]/[.06] text-[#74FA6A]" },
-  implementing: { label: "berjalan", className: "border-blue-400/25 bg-blue-400/[.06] text-blue-300" },
-  done: { label: "selesai", className: "border-emerald-400/25 bg-emerald-400/[.06] text-emerald-300" },
-};
 
 const viewTabs = [
   { key: "struktur", label: "Struktur" },
@@ -76,7 +77,7 @@ export function PlanClient({ plan: initialPlan }: { plan: Plan }) {
 
   const refreshPlan = useCallback(async () => {
     try {
-      const res = await fetch(`/api/plans/${plan.id}/progress`);
+      const res = await fetch(`/api/plans/${plan.id}/progress${await userQs()}`);
       const data = await res.json();
       if (data.features) {
         const map: Record<string, Task["status"]> = {};
@@ -135,7 +136,7 @@ export function PlanClient({ plan: initialPlan }: { plan: Plan }) {
       const statusTimer = setInterval(() => setStatusIdx((s) => (s + 1) % statusMessages.length), 2200);
 
       try {
-        const res = await fetch(`/api/plans/${plan.id}/generate-tasks`, {
+        const res = await fetch(`/api/plans/${plan.id}/generate-tasks${await userQs()}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ featureIndex }),
@@ -174,7 +175,7 @@ export function PlanClient({ plan: initialPlan }: { plan: Plan }) {
     let active = true;
     const poll = async () => {
       try {
-        const res = await fetch(`/api/plans/${plan.id}/progress`);
+        const res = await fetch(`/api/plans/${plan.id}/progress${await userQs()}`);
         const data = await res.json();
         if (!active) return;
         const map: Record<string, Task["status"]> = {};
@@ -194,13 +195,13 @@ export function PlanClient({ plan: initialPlan }: { plan: Plan }) {
     return () => { active = false; clearInterval(timer); };
   }, [plan.id, plan.status]);
 
-  const chip = planStatusChip[plan.status] ?? planStatusChip.ready;
-
   return (
-    <Shell sidebar={false}>
+    <Shell sidebar={false} brand={false}>
       <div className="border-b border-white/8">
         <div className="relative flex flex-wrap items-center justify-between gap-x-3 gap-y-2 px-4 py-2.5 md:flex-nowrap md:px-6">
-          <div className="flex min-w-0 items-center">
+          <div className="flex min-w-0 items-center gap-3">
+            <Brand />
+            <span className="h-4 w-px shrink-0 bg-white/10" aria-hidden="true" />
             <ProjectSwitcher currentId={plan.id} fallbackTitle={plan.title} />
           </div>
 
@@ -214,9 +215,6 @@ export function PlanClient({ plan: initialPlan }: { plan: Plan }) {
                 {doneCount}/{taskCount} task
               </span>
             )}
-            <span className={`hidden rounded-full border px-2 py-0.5 text-[10px] font-medium sm:inline-block ${chip.className}`}>
-              {chip.label}
-            </span>
             <button className="btn min-h-0 px-3.5 py-1.5 text-xs" onClick={() => setShowModal(true)} disabled={generatingTasks}>
               {generatingTasks ? "Menyusun task..." : "Mulai implementasi"}
             </button>

@@ -3,7 +3,20 @@ import { join } from "node:path";
 const AGENTS_MD = `# Scratch Agent Agent
 
 Kamu akan mengerjakan task dari Scratch Agent lewat CLI npx Scratch Agent.
-Prasyarat: Node.js. CLI otomatis ter-download via npx, tanpa install manual.
+Prasyarat: Node.js + Python 3.x. CLI otomatis ter-download via npx, tanpa install manual.
+
+## Install Skill Scratch Agent v2.4 (penting)
+Cek apakah sudah terpasang: \`uipro --version\`.
+- Jika SUDAH: lanjut.
+- Jika BELUM: install sekali lalu lanjut (TIDAK perlu restart):
+\`\`\`
+npm install -g ui-ux-pro-max-cli
+uipro init --ai opencode --global
+\`\`\`
+Saat mengerjakan task UI/frontend: CEK apakah Skill Scratch Agent aktif otomatis.
+Jika aktif, terapkan rekomendasinya (warna, tipografi, layout, best practice).
+Jika tidak aktif, beri tau user (mungkin perlu sesi baru agar ter-load), lalu
+tetap lanjutkan dengan best practice UI umum.
 
 ## Langkah 1 — Login & init (sekali saja)
 \`\`\`

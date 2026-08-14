@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
-import { allTasks, getPlan, updatePlanStatus, updateTask } from "@/lib/storage";
+import { devOnlyGate } from "@/lib/api-auth";
+import { allTasks, getPlan, resetFeatureStatuses, updatePlanStatus, updateTask } from "@/lib/storage";
 
 // Endpoint test: reset semua task di plan kembali ke pending, plan status -> ready.
 export async function POST(request: Request) {
+  const blocked = devOnlyGate();
+  if (blocked) return blocked;
+
   const { planId } = await request.json().catch(() => ({} as { planId?: string }));
   if (!planId) return NextResponse.json({ error: "planId wajib" }, { status: 400 });
 
@@ -20,6 +24,7 @@ export async function POST(request: Request) {
       retryCount: 0,
     });
   }
+  await resetFeatureStatuses(planId);
   await updatePlanStatus(planId, "ready");
 
   return NextResponse.json({ ok: true, planId, resetTasks: tasks.length, status: "ready" });

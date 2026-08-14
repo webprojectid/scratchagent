@@ -1,50 +1,70 @@
 import { NextResponse } from "next/server";
-import { eq } from "drizzle-orm";
-import { getDb } from "@/db";
-import { users } from "@/db/schema";
-import { createToken, listTokens, revokeToken, memoryGetOrCreateUser } from "@/lib/tokens";
+import { getRequestUser, unauthorized } from "@/lib/api-auth";
+import { createToken, findTokenByHash, listTokens, revokeToken } from "@/lib/tokens";
 
-async function getOrCreateUser(email: string): Promise<string> {
-  if (!process.env.DATABASE_URL) {
-    return memoryGetOrCreateUser(email).id;
-  }
-  const db = getDb();
-  const existing = await db.select().from(users).where(eq(users.email, email));
-  if (existing[0]) return existing[0].id;
-  const result = await db.insert(users).values({ email, name: email.split("@")[0] } as any).returning();
-  return result[0].id;
-}
+// Semua operasi token terikat ke identitas terautentikasi (session/Bearer).
+// userId dari body client TIDAK lagi dipercaya: token hanya bisa dibuat
+// untuk user yang sedang login, dan hanya token miliknya yang terlihat/dicabut.
 
-export async function GET() {
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const user = await getRequestUser(searchParams.get("userId"));
+  if (!user) return unauthorized();
+
   try {
-    if (!process.env.DATABASE_URL) {
-      const user = memoryGetOrCreateUser("admin@scratchagent.com");
-      const userTokens = await listTokens(user.id);
-      return NextResponse.json(userTokens.map((t: any) => ({ hash: t.hash, label: t.label, revoked: !!t.revokedAt, createdAt: t.createdAt })));
-    }
-    const db = getDb();
-    const allUsers = await db.select().from(users);
-    const tokens: any[] = [];
-    for (const user of allUsers) {
-      const userTokens = await listTokens(user.id);
-      tokens.push(...userTokens);
-    }
-    return NextResponse.json(tokens.map((t: any) => ({ hash: t.tokenHash, label: t.label, revoked: !!t.revokedAt, createdAt: t.createdAt })));
+    const rows = await listTokens(user.userId);
+    return NextResponse.json(
+      (rows as Array<{ hash?: string; tokenHash?: string; label: string; revokedAt?: string | Date | null; createdAt?: string | Date }>).map((t) => ({
+        hash: t.hash ?? t.tokenHash,
+        label: t.label,
+        revoked: !!t.revokedAt,
+        createdAt: t.createdAt,
+      })),
+    );
   } catch {
     return NextResponse.json([]);
   }
 }
 
 export async function POST(request: Request) {
-  const { label, userId } = await request.json().catch(() => ({ label: "CLI", userId: "" }));
-  const actualUserId = userId || await getOrCreateUser("admin@scratchagent.com");
-  const result = await createToken(actualUserId, label ?? "CLI");
+  let label = "CLI";
+  let legacyUserId: string | null = null;
+  try {
+    const body = await request.json();
+    if (typeof body?.label === "string" && body.label.trim()) label = body.label.trim();
+    if (typeof body?.userId === "string" && body.userId) legacyUserId = body.userId;
+  } catch {
+    /* body opsional */
+  }
+
+  const user = await getRequestUser(legacyUserId);
+  if (!user) return unauthorized();
+
+  const result = await createToken(user.userId, label);
   return NextResponse.json({ token: result.token, hash: result.hash });
 }
 
 export async function DELETE(request: Request) {
-  const { hash } = await request.json().catch(() => ({}));
+  let hash = "";
+  let legacyUserId: string | null = null;
+  try {
+    const body = await request.json();
+    if (typeof body?.hash === "string") hash = body.hash;
+    if (typeof body?.userId === "string" && body.userId) legacyUserId = body.userId;
+  } catch {
+    /* empty */
+  }
   if (!hash) return NextResponse.json({ error: "Hash wajib" }, { status: 400 });
+
+  const user = await getRequestUser(legacyUserId);
+  if (!user) return unauthorized();
+
+  // Ownership: hanya token milik sendiri yang boleh dicabut.
+  const existing = await findTokenByHash(hash);
+  if (!existing || existing.userId !== user.userId) {
+    return NextResponse.json({ error: "Token tidak ditemukan" }, { status: 404 });
+  }
+
   const ok = await revokeToken(hash);
   return NextResponse.json({ ok });
 }

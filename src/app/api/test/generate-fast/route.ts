@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
+import { devOnlyGate } from "@/lib/api-auth";
 import { savePlan } from "@/lib/storage";
-import { updatePlanStatus } from "@/lib/storage";
 import type { Plan } from "@/lib/types";
 
 function buildTaskRef(fi: number, si: number, ti: number): string {
@@ -9,6 +9,9 @@ function buildTaskRef(fi: number, si: number, ti: number): string {
 }
 
 export async function GET() {
+  const blocked = devOnlyGate();
+  if (blocked) return blocked;
+
   const planId = randomUUID();
   const features = [
     {

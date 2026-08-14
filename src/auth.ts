@@ -13,7 +13,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   callbacks: {
     authorized: ({ auth: session, request }) => {
       const path = request.nextUrl.pathname;
-      if (path === "/" || path.startsWith("/p/demo") || path.startsWith("/api/")) return true;
+      if (path === "/" || path.startsWith("/project/demo") || path.startsWith("/api/")) return true;
       return !!session;
     },
   },

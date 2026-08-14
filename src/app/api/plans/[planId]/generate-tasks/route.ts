@@ -1,15 +1,37 @@
 import { NextResponse } from "next/server";
-import { generateTasksForFeature, buildTaskRef } from "@/lib/generate";
-import { getPlan, savePlan, updatePlanStatus } from "@/lib/storage";
+import { accessPlan, getRequestUser } from "@/lib/api-auth";
+import { generateTasksForFeature, buildTaskRef, sanitizeDeps } from "@/lib/generate";
+import { savePlan, updatePlanStatus } from "@/lib/storage";
 
 const TUID = "701f135a-050a-4e08-bc97-b6d3ee91d7e5";
+
+interface FinalTask {
+  ref: string;
+  title: string;
+  layer: "frontend" | "backend" | "qa";
+  phase: number;
+  page: string | null;
+  deps: string[];
+  status: "pending";
+  retryCount: number;
+  lastFailReason: string | null;
+  failReason: string | null;
+  startedAt: string | null;
+  completedAt: string | null;
+}
+
+function makeTask(ref: string, title: string, layer: "frontend" | "backend" | "qa", phase: number, page: string | null): FinalTask {
+  return { ref, title, layer, phase, page, deps: [], status: "pending", retryCount: 0, lastFailReason: null, failReason: null, startedAt: null, completedAt: null };
+}
 
 export async function POST(request: Request, { params }: { params: Promise<{ planId: string }> }) {
   try {
     const { planId } = await params;
     const { featureIndex } = await request.json();
-    const plan = await getPlan(planId);
-    if (!plan) return NextResponse.json({ error: "Plan tidak ditemukan" }, { status: 404 });
+    const legacyUserId = new URL(request.url).searchParams.get("userId");
+    const user = await getRequestUser(legacyUserId);
+    const { plan, error } = await accessPlan(planId, user, { write: true });
+    if (error || !plan) return error;
 
     const feature = (plan.features ?? [])[featureIndex];
     if (!feature) return NextResponse.json({ error: "Feature tidak ditemukan" }, { status: 404 });
@@ -18,19 +40,20 @@ export async function POST(request: Request, { params }: { params: Promise<{ pla
       return NextResponse.json({ skipped: true, message: "Tasks sudah ada" });
     }
 
-    let tasks: { feature: string; sub_feature: string; title: string; layer: "frontend" | "backend" | "qa"; phase: number; page: string | null; deps: string[] }[] = [];
+    let tasks: { id: string; feature: string; sub_feature: string; title: string; layer: "frontend" | "backend" | "qa"; phase: number; page: string | null; deps: string[] }[] = [];
 
     if (process.env.MOCK_LLM === "1") {
       const layers: ("frontend" | "backend" | "qa")[] = ["frontend", "backend", "qa"];
       for (let i = 0; i < 6; i++) {
         tasks.push({
+          id: `t${i + 1}`,
           feature: feature.title,
           sub_feature: feature.subFeatures[0]?.title ?? "Umum",
           title: `Mock task ${i + 1} untuk ${feature.title}`,
           layer: layers[i % 3],
           phase: featureIndex + 1,
           page: null,
-          deps: [],
+          deps: i > 0 ? [`t${i}`] : [],
         });
       }
     } else {
@@ -39,30 +62,28 @@ export async function POST(request: Request, { params }: { params: Promise<{ pla
       tasks = result.tasks;
     }
 
+    // Kunci sementara per task: pakai id dari LLM, fallback index. Dipakai utk mapping deps.
+    const keyed = tasks.map((t, i) => ({ ...t, __key: (t.id && t.id.trim()) || `__auto${i}` }));
+    const tempKeyToRef = new Map<string, string>();
+    const assigned: { task: FinalTask; rawDeps: string[] }[] = [];
+
     let taskNum = 0;
     for (const sf of feature.subFeatures) {
-      const sfTasks = tasks.filter((t) => {
+      const sfTasks = keyed.filter((t) => {
         const a = t.sub_feature?.toLowerCase().trim();
         const b = sf.title.toLowerCase().trim();
         return a === b || a?.includes(b) || b.includes(a ?? "");
       });
-      sf.tasks = sfTasks.map((t) => ({
-        ref: buildTaskRef(featureIndex, plan.features[featureIndex].subFeatures.indexOf(sf), ++taskNum),
-        title: t.title,
-        layer: t.layer,
-        phase: featureIndex + 1,
-        page: t.page,
-        deps: [],
-        status: "pending" as const,
-        retryCount: 0,
-        lastFailReason: null,
-        failReason: null,
-        startedAt: null,
-        completedAt: null,
-      }));
+      sf.tasks = sfTasks.map((t) => {
+        const ref = buildTaskRef(featureIndex, plan.features[featureIndex].subFeatures.indexOf(sf), ++taskNum);
+        tempKeyToRef.set(t.__key, ref);
+        const task = makeTask(ref, t.title, t.layer, featureIndex + 1, t.page);
+        assigned.push({ task, rawDeps: t.deps ?? [] });
+        return task;
+      });
     }
 
-    const unmatched = tasks.filter((t) => {
+    const unmatched = keyed.filter((t) => {
       const a = t.sub_feature?.toLowerCase().trim();
       return !feature.subFeatures.some((sf) => {
         const b = sf.title.toLowerCase().trim();
@@ -70,25 +91,34 @@ export async function POST(request: Request, { params }: { params: Promise<{ pla
       });
     });
     if (unmatched.length && feature.subFeatures[0]) {
-      feature.subFeatures[0].tasks.push(...unmatched.map((t) => ({
-        ref: buildTaskRef(featureIndex, 0, ++taskNum),
-        title: t.title,
-        layer: t.layer,
-        phase: featureIndex + 1,
-        page: t.page,
-        deps: [],
-        status: "pending" as const,
-        retryCount: 0,
-        lastFailReason: null,
-        failReason: null,
-        startedAt: null,
-        completedAt: null,
-      })));
+      feature.subFeatures[0].tasks.push(...unmatched.map((t) => {
+        const ref = buildTaskRef(featureIndex, 0, ++taskNum);
+        tempKeyToRef.set(t.__key, ref);
+        const task = makeTask(ref, t.title, t.layer, featureIndex + 1, t.page);
+        assigned.push({ task, rawDeps: t.deps ?? [] });
+        return task;
+      }));
+    }
+
+    // Mapping deps: id sementara dari LLM -> ref final, lalu buang siklus.
+    const nodes = assigned.map(({ task, rawDeps }) => ({
+      ref: task.ref,
+      deps: rawDeps.map((d) => tempKeyToRef.get((d ?? "").trim())).filter((r): r is string => !!r),
+    }));
+    const cleanDeps = sanitizeDeps(nodes);
+    for (const { task } of assigned) {
+      task.deps = cleanDeps.get(task.ref) ?? [];
     }
 
     // Ready gate: plan baru boleh "ready" kalau SEMUA fitur sudah punya tasks.
     // Dievaluasi tiap call (aman untuk generate out-of-order / retry fitur yang
     // sempat gagal), dan idempoten lewat penanda sub-fitur "QA & Integrasi".
+    // Bersihkan dulu QA kosong duplikat hasil race/retry sebelumnya.
+    for (const f of plan.features ?? []) {
+      f.subFeatures = f.subFeatures.filter(
+        (sf: any) => !(sf.title === "QA & Integrasi" && (sf.tasks ?? []).length === 0),
+      );
+    }
     const allFeaturesHaveTasks = (plan.features ?? []).every((f: any) =>
       (f.subFeatures ?? []).some((sf: any) => (sf.tasks ?? []).length > 0),
     );
@@ -122,8 +152,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ pla
 
 export async function GET(request: Request, { params }: { params: Promise<{ planId: string }> }) {
   const { planId } = await params;
-  const plan = await getPlan(planId);
-  if (!plan) return NextResponse.json({ error: "Plan tidak ditemukan" }, { status: 404 });
+  const legacyUserId = new URL(request.url).searchParams.get("userId");
+  const user = await getRequestUser(legacyUserId);
+  const { plan, error } = await accessPlan(planId, user);
+  if (error || !plan) return error;
 
   const features = (plan.features ?? []).map((f: any, i) => ({
     index: i,

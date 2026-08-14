@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Check, Copy, FileText, Package, Sparkles, X } from "lucide-react";
+import { getCurrentUser } from "@/lib/current-user";
 
 const steps = [
   { title: "Salin prompt", desc: "Sudah berisi token akses dan ID plan — siap pakai." },
@@ -16,12 +17,21 @@ export function AgentPromptModal({ planId, onClose }: { planId: string; onClose:
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    fetch("/api/tokens", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ label: "CLI" }) })
-      .then((r) => r.json())
-      .then((d) => {
-        if (d.token) setToken(d.token);
-      })
-      .finally(() => setLoading(false));
+    let active = true;
+    getCurrentUser().then((u) => {
+      if (!active) return;
+      fetch("/api/tokens", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ label: "CLI", userId: u?.email }) })
+        .then((r) => r.json())
+        .then((d) => {
+          if (active && d.token) setToken(d.token);
+        })
+        .finally(() => {
+          if (active) setLoading(false);
+        });
+    });
+    return () => {
+      active = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -34,7 +44,14 @@ export function AgentPromptModal({ planId, onClose }: { planId: string; onClose:
 
   const prompt = token
     ? `Kamu akan mengerjakan task dari Scratch Agent lewat CLI npx Scratch Agent.
-Prasyarat: Node.js. CLI otomatis ter-download via npx, tanpa install manual.
+Prasyarat: Node.js + Python 3.x. CLI otomatis ter-download via npx, tanpa install manual.
+
+LANGKAH 0 — Install Skill Scratch Agent v2.4 (sekali saja):
+ Cek apakah sudah terpasang: uipro --version
+ Jika SUDAH: lanjut.
+ Jika BELUM: install sekali lalu lanjut (TIDAK perlu restart):
+  npm install -g ui-ux-pro-max-cli
+  uipro init --ai opencode --global
 
 LANGKAH 1 — Login & init (sekali saja):
  npx Scratch Agent login --token ${token}
@@ -56,6 +73,11 @@ ATURAN:
 - Jika respons blocked=true: berhenti, lapor daftar task gagal, tunggu perintah.
 - Jika respons checkpoint=true: JANGAN mulai task. Berhenti, lapor, tunggu "lanjut".
 - Jangan borong task; percayakan urutan ke server.
+- Saat mengerjakan task frontend/UI: CEK apakah Skill Scratch Agent aktif
+  otomatis. Jika AKTIF: terapkan rekomendasinya (warna, tipografi, layout,
+  best practice) supaya hasil profesional. Jika TIDAK aktif: beri tau user
+  "Skill Scratch Agent belum aktif (mungkin perlu sesi baru agar ter-load)",
+  lalu tetap lanjutkan dengan best practice UI umum.
 
 LANGKAH 4 — Setelah done=true:
  Jalankan aplikasi sekali lagi, verifikasi semua alur utama melawan "selesai bila"
@@ -68,8 +90,16 @@ LANGKAH 4 — Setelah done=true:
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const downloadMd = () => window.open(`/api/plans/${planId}/export?format=md`, "_blank");
-  const downloadZip = () => window.open(`/api/plans/${planId}/export?format=zip`, "_blank");
+  const exportQs = async () => {
+    const u = await getCurrentUser();
+    return u?.email ? `&userId=${encodeURIComponent(u.email)}` : "";
+  };
+  const downloadMd = () => {
+    exportQs().then((qs) => window.open(`/api/plans/${planId}/export?format=md${qs}`, "_blank"));
+  };
+  const downloadZip = () => {
+    exportQs().then((qs) => window.open(`/api/plans/${planId}/export?format=zip${qs}`, "_blank"));
+  };
 
   return (
     <AnimatePresence>
