@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
-import { getPlan } from "@/lib/storage";
+import { accessPlan, getRequestUser } from "@/lib/api-auth";
 import { allTasks } from "@/lib/storage";
 
-export async function GET(_request: Request, { params }: { params: Promise<{ planId: string }> }) {
+export async function GET(request: Request, { params }: { params: Promise<{ planId: string }> }) {
   const { planId } = await params;
-  const plan = await getPlan(planId);
-  if (!plan) return NextResponse.json({ error: "Plan tidak ditemukan" }, { status: 404 });
+  const legacyUserId = new URL(request.url).searchParams.get("userId");
+  const user = await getRequestUser(legacyUserId);
+  const { plan, error } = await accessPlan(planId, user);
+  if (error || !plan) return error;
 
   const tasks = allTasks(plan);
   const done = tasks.filter((t) => t.status === "done").length;

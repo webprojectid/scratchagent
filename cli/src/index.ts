@@ -80,9 +80,14 @@ program
 
 const taskCmd = program.commands.find((c) => c.name() === "task")!;
 
+// planId wajib untuk semua operasi task (tidak ada lagi fallback pencarian global).
 function planQs(): string {
   const config = loadConfig();
-  return config?.planId ? `?planId=${encodeURIComponent(config.planId)}` : "";
+  if (!config?.planId) {
+    console.error("Plan aktif belum diset. Jalankan dulu: Scratch Agent plan get <planId>");
+    process.exit(1);
+  }
+  return `?planId=${encodeURIComponent(config.planId)}`;
 }
 
 taskCmd.command("start <ref>").description("Mulai task").action(async (ref: string) => { await api(`/api/v1/tasks/${encodeURIComponent(ref)}/start${planQs()}`, { method: "POST" }); console.log(`▶ ${ref} dimulai`); });

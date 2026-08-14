@@ -18,6 +18,7 @@ export interface Task {
 }
 
 export interface SubFeature {
+  id?: string;
   title: string;
   tujuan?: string;
   selesaiBila?: string[];
@@ -25,6 +26,7 @@ export interface SubFeature {
 }
 
 export interface Feature {
+  id?: string;
   slug: string;
   title: string;
   icon: string;

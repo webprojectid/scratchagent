@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Shell } from "@/components/brand";
+import { getCurrentUser } from "@/lib/current-user";
 
 interface TokenInfo { hash: string; label: string; revoked: boolean; createdAt: string }
 interface QuotaInfo { remaining: number; limit: number; resetAt: number }
@@ -16,30 +17,44 @@ export default function Settings() {
   const router = useRouter();
 
   useEffect(() => {
-    const data = localStorage.getItem("scratch_user");
-    if (!data) { router.push("/login"); return; }
-    const user = JSON.parse(data);
-    if (user.role !== "admin") { router.push("/"); return; }
-    setAuthed(true);
+    let active = true;
+    getCurrentUser().then((u) => {
+      if (!active) return;
+      if (!u) {
+        router.push("/login");
+        return;
+      }
+      setAuthed(true);
+    });
+    return () => {
+      active = false;
+    };
   }, [router]);
 
   function load() {
-    fetch("/api/tokens").then((r) => r.json()).then((d) => { if (Array.isArray(d)) setTokens(d); });
-    fetch("/api/generate").then((r) => r.json()).then((d) => { if (d.remaining !== undefined) setQuota(d); });
+    getCurrentUser().then((u) => {
+      const qs = u?.email ? `?userId=${encodeURIComponent(u.email)}` : "";
+      fetch(`/api/tokens${qs}`).then((r) => r.json()).then((d) => { if (Array.isArray(d)) setTokens(d); });
+      fetch(`/api/generate${qs}`).then((r) => r.json()).then((d) => { if (d.remaining !== undefined) setQuota(d); });
+    });
   }
 
   useEffect(() => { load(); }, []);
 
   function createToken() {
-    fetch("/api/tokens", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ label: "CLI" }) })
-      .then((r) => r.json())
-      .then((d) => { if (d.token) { setNewToken(d.token); load(); } });
+    getCurrentUser().then((u) => {
+      fetch("/api/tokens", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ label: "CLI", userId: u?.email }) })
+        .then((r) => r.json())
+        .then((d) => { if (d.token) { setNewToken(d.token); load(); } });
+    });
   }
 
   function revoke(hash: string) {
-    fetch("/api/tokens", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ hash }) })
-      .then((r) => r.json())
-      .then(() => { setToast("Token dicabut"); setTimeout(() => setToast(null), 2000); load(); });
+    getCurrentUser().then((u) => {
+      fetch("/api/tokens", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ hash, userId: u?.email }) })
+        .then((r) => r.json())
+        .then(() => { setToast("Token dicabut"); setTimeout(() => setToast(null), 2000); load(); });
+    });
   }
 
   return (

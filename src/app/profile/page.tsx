@@ -1,44 +1,90 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, useReducedMotion } from "motion/react";
 import { Shell } from "@/components/brand";
-import { KeyRound, LogOut, Eye, EyeOff, FolderKanban, ShieldCheck } from "lucide-react";
+import { KeyRound, LogOut, Eye, EyeOff, FolderKanban, ShieldCheck, ArrowUpRight } from "lucide-react";
+import { getCurrentUser, refreshCurrentUser, supabaseConfigured } from "@/lib/current-user";
+import { createClient } from "@/lib/supabase/client";
 
 type User = { email: string; name: string; role?: string };
+type PlanItem = { id: string; title: string; status: string; createdAt?: string; taskCount: number };
+
+const statusDot: Record<string, string> = {
+  generating: "bg-amber-400",
+  ready: "bg-[#74FA6A]",
+  implementing: "bg-blue-400",
+  done: "bg-emerald-400",
+};
+const statusLabel: Record<string, string> = {
+  generating: "menyusun",
+  ready: "siap",
+  implementing: "berjalan",
+  done: "selesai",
+};
+
+function timeAgo(iso?: string): string {
+  if (!iso) return "";
+  const then = new Date(iso).getTime();
+  if (Number.isNaN(then)) return "";
+  const diff = Date.now() - then;
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return "baru saja";
+  if (m < 60) return `${m} mnt lalu`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h} jam lalu`;
+  const d = Math.floor(h / 24);
+  if (d < 7) return `${d} hari lalu`;
+  return new Date(iso).toLocaleDateString("id-ID", { day: "numeric", month: "short" });
+}
 
 export default function ProfilePage() {
   const router = useRouter();
   const reduce = useReducedMotion();
 
   const [user, setUser] = useState<User | null>(null);
-  const [planCount, setPlanCount] = useState<number | null>(null);
+  const [plans, setPlans] = useState<PlanItem[] | null>(null);
   const [showPass, setShowPass] = useState(false);
   const [newPass, setNewPass] = useState("");
   const [msg, setMsg] = useState("");
   const [msgType, setMsgType] = useState<"error" | "success">("error");
 
   useEffect(() => {
-    const data = localStorage.getItem("scratch_user");
-    if (!data) {
-      router.push("/login");
-      return;
-    }
-    const parsed = JSON.parse(data) as User;
-    const t = setTimeout(() => setUser(parsed), 0);
-
-    fetch(`/api/plans/list?userId=${encodeURIComponent(parsed.email || "shared")}`)
-      .then((r) => r.json())
-      .then((d) => setPlanCount(Array.isArray(d.plans) ? d.plans.length : 0))
-      .catch(() => setPlanCount(0));
-
-    return () => clearTimeout(t);
+    let active = true;
+    getCurrentUser().then((u) => {
+      if (!active) return;
+      if (!u) {
+        router.push("/login");
+        return;
+      }
+      setUser({ email: u.email, name: u.name, role: u.role });
+      fetch(`/api/plans/list?userId=${encodeURIComponent(u.email || "shared")}`)
+        .then((r) => r.json())
+        .then((d) => {
+          if (active) setPlans(Array.isArray(d.plans) ? d.plans : []);
+        })
+        .catch(() => {
+          if (active) setPlans([]);
+        });
+    });
+    return () => {
+      active = false;
+    };
   }, [router]);
 
   const handleLogout = () => {
     localStorage.removeItem("scratch_user");
-    router.push("/login");
+    refreshCurrentUser();
+    if (supabaseConfigured()) {
+      createClient()
+        .auth.signOut()
+        .catch(() => {})
+        .finally(() => router.push("/login"));
+    } else {
+      router.push("/login");
+    }
   };
 
   const handleChangePass = () => {
@@ -107,8 +153,48 @@ export default function ProfilePage() {
             )}
             <span className="inline-flex items-center gap-1.5 rounded-full border border-white/[.08] bg-white/[.03] px-2.5 py-1 font-mono text-[11px] tabular-nums text-slate-300">
               <FolderKanban size={13} className="text-white/40" />
-              {planCount === null ? "..." : `${planCount} project`}
+              {plans === null ? "..." : `${plans.length} project`}
             </span>
+          </div>
+        </motion.section>
+
+        {/* Plans */}
+        <motion.section
+          initial={enter}
+          animate={visible}
+          transition={{ duration: 0.5, ease, delay: reduce ? 0 : 0.04 }}
+          className="mt-4 rounded-2xl border border-white/[.08] bg-[#101417] p-6"
+        >
+          <div>
+            <h2 className="!m-0 !text-[15px] !font-semibold !leading-tight !tracking-[-.01em] text-white">Plan Kamu</h2>
+            <p className="mt-1 text-[12.5px] leading-5 text-slate-500">Semua project yang pernah kamu buat.</p>
+          </div>
+
+          <div className="mt-4 space-y-2">
+            {plans === null && (
+              <p className="rounded-[10px] border border-white/[.06] bg-[#0C0E10] px-4 py-3 text-[12.5px] text-slate-500">Memuat plan…</p>
+            )}
+            {plans !== null && plans.length === 0 && (
+              <p className="rounded-[10px] border border-white/[.06] bg-[#0C0E10] px-4 py-3 text-[12.5px] text-slate-500">
+                Belum ada plan. Mulai dari <Link href="/new" className="text-[#74FA6A] underline-offset-2 hover:underline">buat plan baru</Link>.
+              </p>
+            )}
+            {plans?.map((p) => (
+              <Link
+                key={p.id}
+                href={`/project/${p.id}`}
+                className="group flex items-center gap-3 rounded-[10px] border border-white/[.06] bg-[#0C0E10] px-4 py-3 transition hover:border-[#74FA6A]/40 hover:bg-[#0E1113]"
+              >
+                <span className={`size-2 shrink-0 rounded-full ${statusDot[p.status] ?? "bg-slate-500"}`} aria-hidden="true" />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[13px] font-medium text-white group-hover:text-[#74FA6A]">{p.title}</span>
+                  <span className="mt-0.5 block text-[11px] text-slate-500">
+                    {statusLabel[p.status] ?? p.status} · {p.taskCount} task{p.createdAt ? ` · ${timeAgo(p.createdAt)}` : ""}
+                  </span>
+                </span>
+                <ArrowUpRight size={14} className="shrink-0 text-slate-600 transition group-hover:text-[#74FA6A]" />
+              </Link>
+            ))}
           </div>
         </motion.section>
 

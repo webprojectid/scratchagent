@@ -7,6 +7,7 @@ import { Shell } from "@/components/brand";
 import { SplineSceneBasic } from "@/components/ui/demo";
 import Link from "next/link";
 import { User } from "lucide-react";
+import { getCurrentUser } from "@/lib/current-user";
 
 export default function NewPlan() {
   const router = useRouter();
@@ -16,9 +17,18 @@ export default function NewPlan() {
   const [authed, setAuthed] = useState(false);
 
   useEffect(() => {
-    const user = localStorage.getItem("scratch_user");
-    if (!user) { router.push("/login"); return; }
-    setAuthed(true);
+    let active = true;
+    getCurrentUser().then((u) => {
+      if (!active) return;
+      if (!u) {
+        router.push("/login");
+        return;
+      }
+      setAuthed(true);
+    });
+    return () => {
+      active = false;
+    };
   }, [router]);
 
   const sectionRef = useRef<HTMLElement>(null);
@@ -28,8 +38,12 @@ export default function NewPlan() {
   const yPct = useTransform(my, (v) => `${v * 100}%`);
 
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem("scratch_user") || '{}');
-    fetch(`/api/generate?userId=${encodeURIComponent(user.email || "shared")}`).then((r) => r.json()).then((d) => setQuota(d.remaining ?? null)).catch(() => {});
+    getCurrentUser().then((u) => {
+      fetch(`/api/generate?userId=${encodeURIComponent(u?.email ?? "shared")}`)
+        .then((r) => r.json())
+        .then((d) => setQuota(d.remaining ?? null))
+        .catch(() => {});
+    });
     requestAnimationFrame(() => setMounted(true));
   }, []);
 

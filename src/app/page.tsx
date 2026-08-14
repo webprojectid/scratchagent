@@ -6,6 +6,7 @@ import { ArrowUpRight, Play, X, Zap } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import DottedDemo from "@/components/ui/dotted-demo";
 import { ImageAutoSlider } from "@/components/ui/image-auto-slider";
+import { getCurrentUser, refreshCurrentUser } from "@/lib/current-user";
 
 function Magnetic({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -61,17 +62,18 @@ function Navbar() {
   const { scrollY } = useScroll();
   const [scrolled, setScrolled] = useState(false);
   const [mobileNav, setMobileNav] = useState(false);
-  const [loggedIn, setLoggedIn] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return !!localStorage.getItem("scratch_user");
-  });
+  const [loggedIn, setLoggedIn] = useState(false);
   useEffect(() => { const unsub = scrollY.on("change", (y) => setScrolled(y > 16)); return () => unsub(); }, [scrollY]);
   useEffect(() => { if (mobileNav) document.body.style.overflow = "hidden"; else document.body.style.overflow = ""; return () => { document.body.style.overflow = ""; }; }, [mobileNav]);
   useEffect(() => {
-    const onFocus = () => setLoggedIn(!!localStorage.getItem("scratch_user"));
+    let active = true;
+    const resolve = () => getCurrentUser().then((u) => { if (active) setLoggedIn(!!u); });
+    resolve();
+    const onFocus = () => { refreshCurrentUser(); resolve(); };
     window.addEventListener("focus", onFocus);
     window.addEventListener("storage", onFocus);
     return () => {
+      active = false;
       window.removeEventListener("focus", onFocus);
       window.removeEventListener("storage", onFocus);
     };
@@ -95,17 +97,19 @@ function Navbar() {
       </motion.nav>
       <motion.div className="fixed inset-0 z-[60] flex flex-col bg-[#0A0A0A] md:hidden" initial={false} animate={mobileNav ? { opacity: 1, pointerEvents: "auto" } : { opacity: 0, pointerEvents: "none" }} transition={{ duration: .35, ease: [0.16, 1, 0.3, 1] }}>
         <div className="flex h-[64px] items-center justify-between px-5"><span className="flex items-center gap-2 text-[18px] font-semibold tracking-[-.04em] text-[#E8F0E8]"><span className="size-6 skew-x-[-28deg] bg-[#74FA6A]" />Scratch Agent</span><button className="grid size-8 place-items-center text-white" onClick={() => setMobileNav(false)} aria-label="Tutup"><X size={18} /></button></div>
-        <div className="flex flex-1 flex-col justify-between px-5 py-12"><div className="space-y-1">{[{ href: "#platform", label: "platform" }, { href: "#workflow", label: "cara kerja" }, { href: "#agents", label: "agent api" }, { href: "/p/demo", label: "contoh plan" }].map((link, i) => (<motion.a key={link.href} href={link.href} onClick={() => setMobileNav(false)} className="block py-4 font-mono text-[14px] tracking-[0.08em] text-white/70 transition-colors hover:text-[#74FA6A]" initial={{ opacity: 0, y: 16 }} animate={mobileNav ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }} transition={{ delay: 0.08 + i * 0.05, duration: .4, ease: [0.16, 1, 0.3, 1] }}>{link.label}</motion.a>))}</div><motion.div initial={{ opacity: 0, y: 16 }} animate={mobileNav ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }} transition={{ delay: 0.32, duration: .4, ease: [0.16, 1, 0.3, 1] }}><Link href={loggedIn ? "/new" : "/login"} onClick={() => setMobileNav(false)} className="flex w-full items-center justify-center rounded-full border border-[#74FA6A] px-6 py-3.5 font-mono text-[13px] tracking-[0.06em] text-[#74FA6A] transition-colors hover:bg-[#74FA6A] hover:text-black">mulai gratis</Link><p className="mt-6 font-mono text-[11px] tracking-[.08em] text-white/30">{loggedIn ? <Link href="/profile" className="hover:text-[#74FA6A]">profile</Link> : "login segera"}</p></motion.div></div>
+        <div className="flex flex-1 flex-col justify-between px-5 py-12"><div className="space-y-1">{[{ href: "#platform", label: "platform" }, { href: "#workflow", label: "cara kerja" }, { href: "#agents", label: "agent api" }, { href: "/project/demo", label: "contoh plan" }].map((link, i) => (<motion.a key={link.href} href={link.href} onClick={() => setMobileNav(false)} className="block py-4 font-mono text-[14px] tracking-[0.08em] text-white/70 transition-colors hover:text-[#74FA6A]" initial={{ opacity: 0, y: 16 }} animate={mobileNav ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }} transition={{ delay: 0.08 + i * 0.05, duration: .4, ease: [0.16, 1, 0.3, 1] }}>{link.label}</motion.a>))}</div><motion.div initial={{ opacity: 0, y: 16 }} animate={mobileNav ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }} transition={{ delay: 0.32, duration: .4, ease: [0.16, 1, 0.3, 1] }}><Link href={loggedIn ? "/new" : "/login"} onClick={() => setMobileNav(false)} className="flex w-full items-center justify-center rounded-full border border-[#74FA6A] px-6 py-3.5 font-mono text-[13px] tracking-[0.06em] text-[#74FA6A] transition-colors hover:bg-[#74FA6A] hover:text-black">mulai gratis</Link><p className="mt-6 font-mono text-[11px] tracking-[.08em] text-white/30">{loggedIn ? <Link href="/profile" className="hover:text-[#74FA6A]">profile</Link> : "login segera"}</p></motion.div></div>
       </motion.div>
     </>
   );
 }
 
 export default function Home() {
-  const [loggedIn] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return !!localStorage.getItem("scratch_user");
-  });
+  const [loggedIn, setLoggedIn] = useState(false);
+  useEffect(() => {
+    let active = true;
+    getCurrentUser().then((u) => { if (active) setLoggedIn(!!u); });
+    return () => { active = false; };
+  }, []);
   useEffect(() => { import("@splinetool/react-spline").catch(() => {}); }, []);
   return (
     <main className="rv2-page relative isolate w-full max-w-full overflow-x-hidden bg-[#0A0A0A] text-[#E8EDEC] selection:bg-[#74FA6A]/30 selection:text-black">
@@ -121,7 +125,7 @@ export default function Home() {
            <p className="mt-5 max-w-[54ch] text-balance text-[15px] leading-[1.6] text-[#A9C5A7]">Ubah brief menjadi task terurut, konteks siap pakai, dan langkah berikutnya yang bisa langsung dikerjakan agent.</p>
            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
                <Magnetic><Link href={loggedIn ? "/new" : "/login"} className="rv2-button min-w-[146px] bg-[#74FA6A] text-black hover:bg-[#A8FF9B] group">Mulai <span className="grid size-6 place-items-center rounded-full bg-black/10 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5"><ArrowUpRight size={12} /></span></Link></Magnetic>
-             <Link href="/p/demo" className="rv2-button light min-w-[146px]"><Play size={13} fill="currentColor" /> Lihat demo</Link>
+             <Link href="/project/demo" className="rv2-button light min-w-[146px]"><Play size={13} fill="currentColor" /> Lihat demo</Link>
            </div>
         </motion.div>
       </section>
@@ -158,7 +162,7 @@ export default function Home() {
         <div className="mx-auto grid max-w-[1280px] gap-12 lg:grid-cols-2"><div><Eyebrow>agent-native cli</Eyebrow><h2 className="mt-4 text-[clamp(2.1rem,4.8vw,3.8rem)] font-semibold leading-[.95] tracking-[-.06em] text-white">Sewa agent.<br />Kirim misinya.</h2><p className="mt-5 max-w-[44ch] text-sm leading-6 text-[#8C97A5]">Satu prompt hubungkan agent ke plan. Server tentukan urutan, dependensi, retry, checkpoint. Agent tulis kode.</p><Magnetic className="mt-8 inline-block"><a href="https://paypal.me/notdeadlysins" target="_blank" rel="noopener noreferrer" className="btn-donate inline-flex items-center gap-2.5"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M7.174 2.037c-.46-.03-.94-.04-1.44-.04H2.53a.97.97 0 0 0-.96.83L.04 17.98a.97.97 0 0 0 .96 1.08h3.12l1.02-6.45-.02.13a.97.97 0 0 1 .96-.83h1.38c3.33 0 5.94-1.35 6.7-5.26.32-1.64.15-3.01-.52-4.08a4.03 4.03 0 0 0-2.05-1.53 7.9 7.9 0 0 0-2.07-.36 6.08 6.08 0 0 0-1.36.04zM9.81 6.82a3.5 3.5 0 0 1 .44-.02c1.14 0 1.82.25 2.23.76.41.5.52 1.28.28 2.44-.61 3.13-2.48 3.13-4.54 3.13H7.02l.76-4.82c.07-.46.46-.8.92-.83.35-.02.71-.04 1.11-.04.37 0 .7.01 1 .02z" /></svg> Donate — PayPal @notdeadlysins</a></Magnetic></div><DoubleBezel className="overflow-hidden !p-1.5"><div className="rounded-[calc(24px-10px)] bg-[#0A0A0A] p-5 font-mono text-[12px] leading-7 text-[#C5CDD7]"><div className="mb-3 flex gap-1.5"><i className="size-2.5 rounded-full bg-[#FF5F56]" /><i className="size-2.5 rounded-full bg-[#FFBD2E]" /><i className="size-2.5 rounded-full bg-[#74FA6A]" /></div><CLITerminal /></div></DoubleBezel></div>
       </section>
 
-      <footer className="px-5 py-10 md:px-10"><div className="mx-auto flex max-w-[1360px] flex-col justify-between gap-8 border-t border-white/10 pt-8 md:flex-row"><div><div className="font-semibold text-[13px] tracking-[-.02em] text-white">Scratch Agent</div><p className="mt-2 font-mono text-[11px] text-[#5B6676]">Hire your AI agent.</p></div><div className="flex flex-wrap gap-6 font-mono text-[11px] text-[#6C7787]"><Link href="/new">buat plan</Link><Link href="/p/demo">demo</Link><Link href="/settings">settings</Link><span>© 2026 Scratch Agent</span></div></div></footer>
+      <footer className="px-5 py-10 md:px-10"><div className="mx-auto flex max-w-[1360px] flex-col justify-between gap-8 border-t border-white/10 pt-8 md:flex-row"><div><div className="font-semibold text-[13px] tracking-[-.02em] text-white">Scratch Agent</div><p className="mt-2 font-mono text-[11px] text-[#5B6676]">Hire your AI agent.</p></div><div className="flex flex-wrap gap-6 font-mono text-[11px] text-[#6C7787]"><Link href="/new">buat plan</Link><Link href="/project/demo">demo</Link><Link href="/settings">settings</Link><span>© 2026 Scratch Agent</span></div></div></footer>
     </main>
   );
 }

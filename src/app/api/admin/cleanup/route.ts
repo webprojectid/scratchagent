@@ -2,8 +2,14 @@ import { NextResponse } from "next/server";
 import { getDb } from "@/db";
 import { plans, features, subFeatures, tasks, taskEvents, usageEvents } from "@/db/schema";
 import { eq, inArray } from "drizzle-orm";
+import { getRequestUser, requireAdmin } from "@/lib/api-auth";
 
 export async function POST() {
+  // Role-gate: hanya email yang terdaftar di env ADMIN_EMAILS.
+  const user = await getRequestUser();
+  const gate = await requireAdmin(user);
+  if (gate) return gate;
+
   try {
     const db = getDb();
     const allPlans = await db.select().from(plans);
