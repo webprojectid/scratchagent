@@ -1,11 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { motion, useMotionValue, useSpring, useScroll } from "motion/react";
-import { ArrowUpRight, Play, X, Zap } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { AnimatePresence, animate, motion, useMotionValue, useSpring, useScroll } from "motion/react";
+import { ArrowUpDown, ArrowUpRight, Bike, ChevronLeft, Clock, CreditCard, Delete, Footprints, MoreHorizontal, Play, QrCode, Sparkles, Star, User, Users, Wind, X, Zap } from "lucide-react";
+import { memo, useEffect, useRef, useState } from "react";
 import DottedDemo from "@/components/ui/dotted-demo";
-import { ImageAutoSlider } from "@/components/ui/image-auto-slider";
 import { getCurrentUser, refreshCurrentUser } from "@/lib/current-user";
 
 function Magnetic({ children, className = "" }: { children: React.ReactNode; className?: string }) {
@@ -83,7 +82,7 @@ function Navbar() {
       <motion.nav className={`sticky top-3 z-40 mx-auto flex h-[54px] w-[calc(100%-28px)] max-w-[1300px] items-center justify-between rounded-full px-4 transition-all duration-300 md:top-4 md:px-5 ${scrolled ? "border border-white/[.08] bg-[rgba(10,10,10,0.8)] shadow-[0_12px_40px_rgba(0,0,0,.3)] backdrop-blur-[12px]" : "border border-white/[.06] bg-[#1D2223]"}`} initial={{ y: -16, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: .5, ease: [0.16, 1, 0.3, 1] }}>
         <div className="flex items-center gap-8">
           <Link href="/" className="flex items-center gap-2 text-[18px] font-semibold tracking-[-.04em] text-[#E8F0E8]"><span className="relative grid size-7 place-items-center overflow-hidden text-[#74FA6A]" aria-hidden="true"><span className="absolute left-0 top-[7px] h-3 w-2.5 -skew-x-[28deg] rounded-sm bg-[#74FA6A]" /><span className="absolute left-[8px] top-[3px] h-3 w-2.5 -skew-x-[28deg] rounded-sm bg-[#9AFF82]" /><span className="absolute left-[16px] top-[7px] h-3 w-2.5 -skew-x-[28deg] rounded-sm bg-[#4DDC62]" /></span>Scratch Agent</Link>
-          <div className="hidden items-center gap-9 md:flex"><a href="#platform" className="font-mono text-[12px] tracking-[0.02em] text-white/70 transition-colors duration-200 hover:text-[#74FA6A]">Product</a><a href="#platform" className="font-mono text-[12px] tracking-[0.02em] text-white/70 transition-colors duration-200 hover:text-[#74FA6A]">Solutions</a><a href="#workflow" className="font-mono text-[12px] tracking-[0.02em] text-white/70 transition-colors duration-200 hover:text-[#74FA6A]">Resources</a><a href="#agents" className="font-mono text-[12px] tracking-[0.02em] text-white/70 transition-colors duration-200 hover:text-[#74FA6A]">Customers</a><Link href="/new" className="font-mono text-[12px] tracking-[0.02em] text-white/70 transition-colors duration-200 hover:text-[#74FA6A]">Pricing</Link><a href="#agents" className="font-mono text-[12px] tracking-[0.02em] text-white/70 transition-colors duration-200 hover:text-[#74FA6A]">Docs</a></div>
+          <div className="hidden items-center gap-9 md:flex"><a href="#product" className="font-mono text-[12px] tracking-[0.02em] text-white/70 transition-colors duration-200 hover:text-[#74FA6A]">Product</a><a href="#solutions" className="font-mono text-[12px] tracking-[0.02em] text-white/70 transition-colors duration-200 hover:text-[#74FA6A]">Solutions</a><a href="#customers" className="font-mono text-[12px] tracking-[0.02em] text-white/70 transition-colors duration-200 hover:text-[#74FA6A]">Customers</a><a href="#resources" className="font-mono text-[12px] tracking-[0.02em] text-white/70 transition-colors duration-200 hover:text-[#74FA6A]">Resources</a><Link href="/docs" className="font-mono text-[12px] tracking-[0.02em] text-white/70 transition-colors duration-200 hover:text-[#74FA6A]">Docs</Link></div>
         </div>
         <div className="hidden items-center gap-6 md:flex">
           {loggedIn ? (
@@ -97,7 +96,7 @@ function Navbar() {
       </motion.nav>
       <motion.div className="fixed inset-0 z-[60] flex flex-col bg-[#0A0A0A] md:hidden" initial={false} animate={mobileNav ? { opacity: 1, pointerEvents: "auto" } : { opacity: 0, pointerEvents: "none" }} transition={{ duration: .35, ease: [0.16, 1, 0.3, 1] }}>
         <div className="flex h-[64px] items-center justify-between px-5"><span className="flex items-center gap-2 text-[18px] font-semibold tracking-[-.04em] text-[#E8F0E8]"><span className="size-6 skew-x-[-28deg] bg-[#74FA6A]" />Scratch Agent</span><button className="grid size-8 place-items-center text-white" onClick={() => setMobileNav(false)} aria-label="Tutup"><X size={18} /></button></div>
-        <div className="flex flex-1 flex-col justify-between px-5 py-12"><div className="space-y-1">{[{ href: "#platform", label: "platform" }, { href: "#workflow", label: "cara kerja" }, { href: "#agents", label: "agent api" }, { href: "/project/demo", label: "contoh plan" }].map((link, i) => (<motion.a key={link.href} href={link.href} onClick={() => setMobileNav(false)} className="block py-4 font-mono text-[14px] tracking-[0.08em] text-white/70 transition-colors hover:text-[#74FA6A]" initial={{ opacity: 0, y: 16 }} animate={mobileNav ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }} transition={{ delay: 0.08 + i * 0.05, duration: .4, ease: [0.16, 1, 0.3, 1] }}>{link.label}</motion.a>))}</div><motion.div initial={{ opacity: 0, y: 16 }} animate={mobileNav ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }} transition={{ delay: 0.32, duration: .4, ease: [0.16, 1, 0.3, 1] }}><Link href={loggedIn ? "/new" : "/login"} onClick={() => setMobileNav(false)} className="flex w-full items-center justify-center rounded-full border border-[#74FA6A] px-6 py-3.5 font-mono text-[13px] tracking-[0.06em] text-[#74FA6A] transition-colors hover:bg-[#74FA6A] hover:text-black">mulai gratis</Link><p className="mt-6 font-mono text-[11px] tracking-[.08em] text-white/30">{loggedIn ? <Link href="/profile" className="hover:text-[#74FA6A]">profile</Link> : "login segera"}</p></motion.div></div>
+        <div className="flex flex-1 flex-col justify-between px-5 py-12"><div className="space-y-1">{[{ href: "#product", label: "product" }, { href: "#solutions", label: "solutions" }, { href: "#customers", label: "customers" }, { href: "#resources", label: "resources" }, { href: "/docs", label: "docs" }, { href: "/project/demo", label: "contoh plan" }].map((link, i) => (<motion.a key={link.href} href={link.href} onClick={() => setMobileNav(false)} className="block py-4 font-mono text-[14px] tracking-[0.08em] text-white/70 transition-colors hover:text-[#74FA6A]" initial={{ opacity: 0, y: 16 }} animate={mobileNav ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }} transition={{ delay: 0.08 + i * 0.05, duration: .4, ease: [0.16, 1, 0.3, 1] }}>{link.label}</motion.a>))}</div><motion.div initial={{ opacity: 0, y: 16 }} animate={mobileNav ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }} transition={{ delay: 0.32, duration: .4, ease: [0.16, 1, 0.3, 1] }}><Link href={loggedIn ? "/new" : "/login"} onClick={() => setMobileNav(false)} className="flex w-full items-center justify-center rounded-full border border-[#74FA6A] px-6 py-3.5 font-mono text-[13px] tracking-[0.06em] text-[#74FA6A] transition-colors hover:bg-[#74FA6A] hover:text-black">mulai gratis</Link><p className="mt-6 font-mono text-[11px] tracking-[.08em] text-white/30">{loggedIn ? <Link href="/profile" className="hover:text-[#74FA6A]">profile</Link> : "login segera"}</p></motion.div></div>
       </motion.div>
     </>
   );
@@ -133,16 +132,16 @@ export default function Home() {
        <StackMarquee />
        <motion.section initial={{ opacity: 0, y: 28 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .2 }} transition={{ duration: .7, ease: [0.16, 1, 0.3, 1] }} className="relative mx-auto mt-24 w-[min(1220px,calc(100%-32px))] overflow-hidden rounded-[26px] border border-white/10 bg-[#0E0E0E] p-2 shadow-[0_28px_90px_#000C] md:mt-32 md:p-3">
          <div className="rounded-[18px] border border-white/10 bg-[#151A21]">
-           <div className="flex h-11 items-center justify-between border-b border-white/10 px-4 font-mono text-[10px] text-white/40"><span className="flex items-center gap-1.5"><i className="size-2.5 rounded-full bg-[#FF5F56]" /><i className="size-2.5 rounded-full bg-[#FFBD2E]" /><i className="size-2.5 rounded-full bg-[#74FA6A]" /></span><span className="tracking-[.08em]">scratch-agent / mission-control</span><span className="inline-flex items-center gap-1.5 text-emerald-300/80"><span className="size-1.5 rounded-full bg-emerald-400 shadow-[0_0_10px_#34d399]" /> live • 5s</span></div>
+           <div className="flex h-11 items-center justify-between border-b border-white/10 px-4 font-mono text-[10px] text-white/40"><span className="flex items-center gap-1.5"><i className="size-2.5 rounded-full bg-[#FF5F56]" /><i className="size-2.5 rounded-full bg-[#FFBD2E]" /><i className="size-2.5 rounded-full bg-[#74FA6A]" /></span><span className="tracking-[.08em]">Scratch Agent · mission control</span><span className="inline-flex items-center gap-1.5 text-emerald-300/80"><span className="size-1.5 rounded-full bg-emerald-400 shadow-[0_0_10px_#34d399]" /> live • 5s</span></div>
            <div className="grid min-h-[420px] md:grid-cols-[176px_1fr_296px]">
              <aside className="hidden border-r border-white/10 p-4 md:block"><p className="font-mono text-[9px] uppercase tracking-[.18em] text-white/30">plan</p>{["Struktur", "PRD", "Task", "Checkpoint"].map((item, index) => (<div key={item} className={`mt-2 flex items-center gap-2 rounded-[10px] px-2.5 py-2 font-mono text-[11px] ${index === 0 ? "bg-[#74FA6A]/10 text-[#74FA6A] border border-[#74FA6A]/20" : "text-white/44"}`}><span className="size-1.5 rounded-full bg-current" />{item}</div>))}</aside>
              <div className="relative overflow-x-auto p-5 md:p-6"><div className="absolute inset-0 opacity-[.14] [background-image:radial-gradient(#9AA5B366_1px,transparent_1px)] [background-size:18px_18px]" /><div className="relative flex min-w-[640px] items-center gap-10 py-16"><BentoMock ok title="PROJECT" name="Kedai Senja" meta="0 / 28 task" /><Connector /><div className="space-y-5"><BentoMock eyebrow="PHASE 1" name="Pemesanan" meta="8 task" pulse /><BentoMock eyebrow="PHASE 2" name="Operasional" meta="12 task" /><BentoMock eyebrow="PHASE 3" name="Laporan" meta="8 task" /></div><Connector /><div className="space-y-5"><BentoMock title="SUB-FITUR" list={["Katalog menu", "Keranjang", "Checkout"]} /><BentoMock title="TASK" list={["Buat halaman katalog", "Tambah stub", "Integrasi API"]} typing /></div></div></div>
-             <aside className="hidden border-l border-white/10 bg-[#0E1115] p-5 lg:block"><Eyebrow>agent aktif</Eyebrow><h3 className="mt-3 text-[15px] font-semibold tracking-[-.02em] text-white">F01-S01-T02</h3><p className="mt-2 text-xs leading-5 text-white/48">Tambah pencarian + filter menu.</p><div className="mt-5 rounded-xl border border-white/10 bg-black/30 p-3 font-mono text-[10px] leading-6 text-white/50"><span className="text-[#74FA6A]">$</span> scratch task next<br /><span className="text-emerald-300">✓</span> dep ready<br /><span className="text-white">›</span> checkpoint: false</div><div className="mt-5 flex items-center gap-2 font-mono text-[10px] text-white/30"><Zap size={11} className="text-white/40" /> polling 5s</div></aside>
+             <aside className="hidden border-l border-white/10 bg-[#0E1115] p-5 lg:block"><Eyebrow>agent aktif</Eyebrow><h3 className="mt-3 text-[15px] font-semibold tracking-[-.02em] text-white">F01-S01-T02</h3><p className="mt-2 text-xs leading-5 text-white/48">Tambah pencarian + filter menu.</p><div className="mt-5 rounded-xl border border-white/10 bg-black/30 p-3 font-mono text-[10px] leading-6 text-white/50"><span className="text-white/70">task berikutnya</span><br /><span className="text-emerald-300">✓</span> dependensi ready<br /><span className="text-white">›</span> checkpoint: false</div><div className="mt-5 flex items-center gap-2 font-mono text-[10px] text-white/30"><Zap size={11} className="text-white/40" /> polling 5s</div></aside>
            </div>
          </div>
        </motion.section>
 
-      <section id="platform" className="mx-auto max-w-[1360px] px-5 pb-24 pt-24 md:px-10 md:pb-32 md:pt-28">
+      <section id="product" className="mx-auto max-w-[1360px] px-5 pb-24 pt-24 md:px-10 md:pb-32 md:pt-28">
         <div className="flex flex-wrap items-end justify-between gap-6"><div><Eyebrow>the planning cloud for agents</Eyebrow><h2 className="mt-5 max-w-[18ch] text-balance text-[clamp(2.35rem,4.2vw,3.75rem)] font-medium leading-[.98] tracking-[-.055em] text-[#F0F3F5]">Konteks penuh untuk agent dalam satu alur.</h2></div></div>
         <div className="mt-12 grid gap-5 md:grid-cols-2">
           <FeatureCard label="PRD ENGINE" title="Brief → graph terurut." copy="Asumsi diperkaya. Feature, sub-feature, task, deps." terminal={<AnimatedTerminalPRD />} />
@@ -154,15 +153,44 @@ export default function Home() {
 
 
 
-      <section id="workflow-replacement" className="relative w-full border-y border-[#1E252F] bg-[#0A0A0A]">
-        <ImageAutoSlider />
+      <section id="solutions" className="mx-auto max-w-[1360px] px-5 pb-24 md:px-10 md:pb-32">
+        <div className="flex flex-wrap items-end justify-between gap-6">
+          <div><Eyebrow>solutions</Eyebrow><h2 className="mt-5 max-w-[22ch] text-balance text-[clamp(2.35rem,4.2vw,3.75rem)] font-medium leading-[.98] tracking-[-.055em] text-[#F0F3F5]">Satu alur, berbagai cara kerja.</h2></div>
+          <p className="max-w-[42ch] text-sm leading-6 text-[#8C97A5]">Dari side project sampai brief klien — Scratch Agent mengubah ide jadi rencana yang bisa langsung dieksekusi agent.</p>
+        </div>
+        <div className="mt-12 grid gap-5 md:grid-cols-3">
+          <SolutionCard label="SOLO DEV" title="Side project gak mangkrak." copy="Tulis brief singkat, dapatkan rencana lengkap. Agent mengerjakan task satu per satu — kamu tinggal review hasilnya." points={["Brief 5 menit jadi plan siap eksekusi", "Progress agent kelihatan live di web", "Lanjut kapan saja tanpa kehilangan konteks"]} />
+          <SolutionCard label="FREELANCER / AGENCY" title="Brief klien jadi PRD profesional." copy="Ubah brief klien menjadi PRD terstruktur dengan feature, kriteria selesai, dan scope yang jelas sebelum coding dimulai." points={["PRD + task graph siap dipresentasikan", "Scope terukur dari feature & sub-feature", "Eksekusi bisa diserahkan ke agent coding"]} />
+          <SolutionCard label="AGENT OPERATOR" title="Agent coding yang gak bingung." copy="Pakai OpenCode, Claude Code, atau Cursor? Beri mereka plan terurut dengan dependensi dan checkpoint — bukan tebakan." points={["Urutan task deterministik dari server", "Checkpoint untuk verifikasi manual", "Retry otomatis saat task gagal"]} />
+        </div>
+      </section>
+
+      <section id="customers" className="mx-auto max-w-[1360px] px-5 pt-24 md:px-10 md:pt-28">
+        <div className="flex flex-wrap items-end justify-between gap-6">
+          <div><Eyebrow>case studies</Eyebrow><h2 className="mt-5 max-w-[20ch] text-balance text-[clamp(2.35rem,4.2vw,3.75rem)] font-medium leading-[.98] tracking-[-.055em] text-[#F0F3F5]">Dari brief jadi plan siap eksekusi.</h2></div>
+          <p className="max-w-[42ch] text-sm leading-6 text-[#8C97A5]">Project simulasi nyata: dihasilkan otomatis dari brief singkat, lalu dijalankan task demi task oleh agent jadi aplikasi mobile siap pakai.</p>
+        </div>
+        <DeviceShowcase />
+        <div className="mt-8 flex flex-wrap items-center justify-between gap-4 rounded-[16px] border border-[#74FA6A]/20 bg-[#74FA6A]/[.05] px-6 py-5">
+          <p className="max-w-[60ch] text-sm leading-6 text-[#A9C5A7]">Semua plan di atas dihasilkan otomatis dari brief singkat — struktur, PRD, sampai task terurut — tanpa ditulis manual.</p>
+          <Link href="/new" className="rv2-button min-w-[190px] bg-[#74FA6A] text-black hover:bg-[#A8FF9B]">Buat plan kamu sendiri <ArrowUpRight size={13} /></Link>
+        </div>
       </section>
 
       <section id="agents" className="mx-auto w-[calc(100%-32px)] max-w-[1280px] mb-8 mt-8 overflow-hidden rounded-[24px] border border-white/10 bg-[#111318] px-5 py-16 md:px-10 md:py-20">
-        <div className="mx-auto grid max-w-[1280px] gap-12 lg:grid-cols-2"><div><Eyebrow>agent-native cli</Eyebrow><h2 className="mt-4 text-[clamp(2.1rem,4.8vw,3.8rem)] font-semibold leading-[.95] tracking-[-.06em] text-white">Sewa agent.<br />Kirim misinya.</h2><p className="mt-5 max-w-[44ch] text-sm leading-6 text-[#8C97A5]">Satu prompt hubungkan agent ke plan. Server tentukan urutan, dependensi, retry, checkpoint. Agent tulis kode.</p><Magnetic className="mt-8 inline-block"><a href="https://paypal.me/notdeadlysins" target="_blank" rel="noopener noreferrer" className="btn-donate inline-flex items-center gap-2.5"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M7.174 2.037c-.46-.03-.94-.04-1.44-.04H2.53a.97.97 0 0 0-.96.83L.04 17.98a.97.97 0 0 0 .96 1.08h3.12l1.02-6.45-.02.13a.97.97 0 0 1 .96-.83h1.38c3.33 0 5.94-1.35 6.7-5.26.32-1.64.15-3.01-.52-4.08a4.03 4.03 0 0 0-2.05-1.53 7.9 7.9 0 0 0-2.07-.36 6.08 6.08 0 0 0-1.36.04zM9.81 6.82a3.5 3.5 0 0 1 .44-.02c1.14 0 1.82.25 2.23.76.41.5.52 1.28.28 2.44-.61 3.13-2.48 3.13-4.54 3.13H7.02l.76-4.82c.07-.46.46-.8.92-.83.35-.02.71-.04 1.11-.04.37 0 .7.01 1 .02z" /></svg> Donate — PayPal @notdeadlysins</a></Magnetic></div><DoubleBezel className="overflow-hidden !p-1.5"><div className="rounded-[calc(24px-10px)] bg-[#0A0A0A] p-5 font-mono text-[12px] leading-7 text-[#C5CDD7]"><div className="mb-3 flex gap-1.5"><i className="size-2.5 rounded-full bg-[#FF5F56]" /><i className="size-2.5 rounded-full bg-[#FFBD2E]" /><i className="size-2.5 rounded-full bg-[#74FA6A]" /></div><CLITerminal /></div></DoubleBezel></div>
+        <div className="mx-auto grid max-w-[1280px] gap-12 lg:grid-cols-2"><div><Eyebrow>prompt agent</Eyebrow><h2 className="mt-4 text-[clamp(2.1rem,4.8vw,3.8rem)] font-semibold leading-[.95] tracking-[-.06em] text-white">Sewa agent.<br />Kirim misinya.</h2><p className="mt-5 max-w-[44ch] text-sm leading-6 text-[#8C97A5]">Salin satu prompt, tempel ke AI agent favoritmu. Agent otomatis terhubung ke plan, membaca PRD, dan mengerjakan task satu per satu — urutan, dependensi, dan checkpoint diatur server.</p><Magnetic className="mt-8 inline-block"><a href="https://paypal.me/notdeadlysins" target="_blank" rel="noopener noreferrer" className="btn-donate inline-flex items-center gap-2.5"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M7.174 2.037c-.46-.03-.94-.04-1.44-.04H2.53a.97.97 0 0 0-.96.83L.04 17.98a.97.97 0 0 0 .96 1.08h3.12l1.02-6.45-.02.13a.97.97 0 0 1 .96-.83h1.38c3.33 0 5.94-1.35 6.7-5.26.32-1.64.15-3.01-.52-4.08a4.03 4.03 0 0 0-2.05-1.53 7.9 7.9 0 0 0-2.07-.36 6.08 6.08 0 0 0-1.36.04zM9.81 6.82a3.5 3.5 0 0 1 .44-.02c1.14 0 1.82.25 2.23.76.41.5.52 1.28.28 2.44-.61 3.13-2.48 3.13-4.54 3.13H7.02l.76-4.82c.07-.46.46-.8.92-.83.35-.02.71-.04 1.11-.04.37 0 .7.01 1 .02z" /></svg> Donate — PayPal @notdeadlysins</a></Magnetic></div><DoubleBezel className="overflow-hidden !p-1.5"><div className="rounded-[calc(24px-10px)] bg-[#0A0A0A] p-5 font-mono text-[12px] leading-7 text-[#C5CDD7]"><div className="mb-3 flex gap-1.5"><i className="size-2.5 rounded-full bg-[#FF5F56]" /><i className="size-2.5 rounded-full bg-[#FFBD2E]" /><i className="size-2.5 rounded-full bg-[#74FA6A]" /></div><PromptShowcase /></div></DoubleBezel></div>
       </section>
 
-      <footer className="px-5 py-10 md:px-10"><div className="mx-auto flex max-w-[1360px] flex-col justify-between gap-8 border-t border-white/10 pt-8 md:flex-row"><div><div className="font-semibold text-[13px] tracking-[-.02em] text-white">Scratch Agent</div><p className="mt-2 font-mono text-[11px] text-[#5B6676]">Hire your AI agent.</p></div><div className="flex flex-wrap gap-6 font-mono text-[11px] text-[#6C7787]"><Link href="/new">buat plan</Link><Link href="/project/demo">demo</Link><Link href="/settings">settings</Link><span>© 2026 Scratch Agent</span></div></div></footer>
+      <section id="resources" className="mx-auto max-w-[1360px] px-5 pb-10 pt-24 md:px-10 md:pt-28">
+        <div><Eyebrow>resources</Eyebrow><h2 className="mt-5 max-w-[24ch] text-balance text-[clamp(2.35rem,4.2vw,3.75rem)] font-medium leading-[.98] tracking-[-.055em] text-[#F0F3F5]">Semua yang kamu butuhkan untuk mulai.</h2></div>
+        <div className="mt-12 grid gap-5 md:grid-cols-3">
+          <ResourceCard href="/docs" label="DOKUMENTASI" title="Docs lengkap" copy="Quickstart, referensi CLI, konsep plan, dan FAQ." />
+          <ResourceCard href="/project/demo" label="DEMO PLAN" title="Jelajahi demo" copy="Lihat plan contoh lengkap — struktur, PRD, dan task — tanpa perlu login." />
+          <ResourceCard href="/docs#prompt" label="PROMPT AGENT" title="Satu prompt, misi terkirim" copy="Salin prompt, tempel ke agent kamu — plan, PRD, dan task langsung terhubung otomatis." />
+        </div>
+      </section>
+
+      <footer className="px-5 py-10 md:px-10"><div className="mx-auto flex max-w-[1360px] flex-col justify-between gap-8 border-t border-white/10 pt-8 md:flex-row"><div><div className="font-semibold text-[13px] tracking-[-.02em] text-white">Scratch Agent</div><p className="mt-2 font-mono text-[11px] text-[#5B6676]">Hire your AI agent. 100% gratis.</p></div><div className="flex flex-wrap gap-6 font-mono text-[11px] text-[#6C7787]"><Link href="/new">buat plan</Link><Link href="/project/demo">demo</Link><Link href="/docs">docs</Link><span>© 2026 Scratch Agent</span></div></div></footer>
     </main>
   );
 }
@@ -242,51 +270,44 @@ function AnimatedTerminalQueue() {
   );
 }
 
-function CLITerminal() {
-  const lines = [
-    { t: "# login sekali", c: "#5B6676" },
-    { t: "$ npx scratch-agent login --token rv_...", c: "cmd" },
-    { t: "$ npx scratch-agent plan get plan_id", c: "cmd" },
-    { t: "", c: "" },
-    { t: "# satu task per siklus", c: "#5B6676" },
-    { t: "$ npx scratch-agent task next --plan plan_id", c: "cmd" },
-    { t: "✓ F01-S01-T01 · Buat halaman katalog", c: "ok" },
-    { t: "$ npx scratch-agent task start F01-S01-T01", c: "cmd" },
-    { t: "agent sedang mengeksekusi_", c: "blink" },
+function PromptShowcase() {
+  const steps = [
+    { label: "Terhubung ke plan & membaca PRD" },
+    { label: "Ambil task berikutnya — urutan diatur server" },
+    { label: "Kerjakan task, lalu tandai selesai" },
+    { label: "Ulangi sampai semua task done" },
   ];
-  const [visible, setVisible] = useState(0);
-  const [char, setChar] = useState(0);
+  const [active, setActive] = useState(0);
   useEffect(() => {
-    if (visible >= lines.length) {
-      const r = setTimeout(() => { setVisible(0); setChar(0); }, 2000);
-      return () => clearTimeout(r);
-    }
-    const cur = lines[visible].t;
-    if (char >= cur.length) {
-      const d = setTimeout(() => { setVisible((v) => v + 1); setChar(0); }, cur === "" ? 200 : 400);
-      return () => clearTimeout(d);
-    }
-    const d = setTimeout(() => setChar((c) => c + 1), cur[0] === "$" || cur[0] === "✓" ? 24 : 16);
-    return () => clearTimeout(d);
-  }, [visible, char]);
+    const t = setInterval(() => setActive((s) => (s + 1) % (steps.length + 1)), 1300);
+    return () => clearInterval(t);
+  }, []);
   return (
-    <div className="min-h-[252px] space-y-0">
-      {lines.slice(0, visible).map((l, i) => <Line key={i} text={l.t} kind={l.c} />)}
-      {visible < lines.length && lines[visible].t === "" ? null : visible < lines.length ? <Line text={lines[visible].t.slice(0, char)} kind={lines[visible].c} typing /> : null}
+    <div className="min-h-[252px] space-y-4 leading-5">
+      <div className="flex items-center justify-between border-b border-white/10 pb-3 font-mono text-[10px] uppercase tracking-[.14em] text-white/40">
+        <span>mission prompt</span>
+        <span className="inline-flex items-center gap-1.5 text-[#74FA6A]"><span className="size-1.5 rounded-full bg-[#74FA6A] shadow-[0_0_8px_#74FA6A]" />siap tempel</span>
+      </div>
+      <div className="flex flex-wrap items-center gap-2 font-mono text-[10px]">
+        <span className="rounded border border-white/10 bg-[#11151B] px-2 py-1 text-white/45">token: rv_••••••••</span>
+        <span className="rounded border border-white/10 bg-[#11151B] px-2 py-1 text-white/45">plan: kedai-senja</span>
+        <span className="rounded border border-[#74FA6A]/25 bg-[#74FA6A]/[.07] px-2 py-1 text-[#74FA6A]">agent: apa saja</span>
+      </div>
+      <div className="space-y-2.5 pt-1">
+        {steps.map((step, i) => {
+          const done = active > i;
+          const current = active === i;
+          return (
+            <div key={step.label} className="flex items-center gap-2.5">
+              <span className={`grid size-5 shrink-0 place-items-center rounded-full border font-mono text-[9px] leading-none transition-colors duration-300 ${done ? "border-[#74FA6A] bg-[#74FA6A]/10 text-[#74FA6A]" : current ? "border-[#74FA6A]/50 text-white/50" : "border-white/15 text-white/25"}`}>{done ? "✓" : i + 1}</span>
+              <span className={`text-[11.5px] leading-4 transition-colors duration-300 ${current ? "text-white" : done ? "text-white/60" : "text-white/30"}`}>{step.label}</span>
+            </div>
+          );
+        })}
+      </div>
+      <p className="border-t border-white/10 pt-3 font-mono text-[9.5px] leading-5 text-white/35">Berhenti & lapor jika ada task gagal atau checkpoint. Salin prompt dari tombol &quot;Mulai implementasi&quot;, tempel ke OpenCode, Claude Code, Cursor, dll.</p>
     </div>
   );
-}
-
-function Line({ text, kind, typing = false }: { text: string; kind: string; typing?: boolean }) {
-  if (kind === "cmd") return <p><span className="text-[#74FA6A]">$</span> {text.replace(/^\$\s/, "")}{typing && <Caret />}</p>;
-  if (kind === "ok") return <p className="text-[#74FA6A]">{text}{typing && <Caret />}</p>;
-  if (kind === "blink") return <motion.p animate={{ opacity: [.35, 1, .35] }} transition={{ repeat: Infinity, duration: 1.2 }} className="text-white/55">{text}</motion.p>;
-  if (text === "") return <br />;
-  return <p className={kind === "#5B6676" ? "text-[#5B6676]" : ""}>{text}{typing && <Caret />}</p>;
-}
-
-function Caret() {
-  return <motion.span animate={{ opacity: [1, 0] }} transition={{ repeat: Infinity, duration: .6 }} className="ml-px inline-block h-[1em] w-[7px] translate-y-[2px] bg-white/80" />;
 }
 
 function FeatureCard({ label, title, copy, terminal }: { label: string; title: string; copy: string; terminal: React.ReactNode }) {
@@ -300,5 +321,582 @@ function FeatureCard({ label, title, copy, terminal }: { label: string; title: s
       </div>
       <div className="flex flex-1 flex-col p-5"><p className="font-mono text-[10px] tracking-[.18em] text-[#74FA6A]">{label}</p><h3 className="mt-2 text-[20px] font-medium tracking-[-.04em] text-[#E8F0E8]">{title}</h3><p className="mt-1.5 max-w-[44ch] text-[13px] leading-[1.5] text-[#8C97A5]">{copy}</p></div>
     </motion.article>
+  );
+}
+
+function SolutionCard({ label, title, copy, points }: { label: string; title: string; copy: string; points: string[] }) {
+  return (
+    <motion.article initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .2 }} transition={{ duration: .65, ease: [0.16, 1, 0.3, 1] }} className="flex flex-col rounded-[16px] border border-white/15 bg-[#111413] p-6 transition-colors duration-300 hover:border-[#74FA6A]/45">
+      <p className="font-mono text-[10px] tracking-[.18em] text-[#74FA6A]">{label}</p>
+      <h3 className="mt-3 text-[20px] font-medium tracking-[-.04em] text-[#E8F0E8]">{title}</h3>
+      <p className="mt-2 text-[13px] leading-[1.6] text-[#8C97A5]">{copy}</p>
+      <ul className="mt-5 space-y-2.5 border-t border-white/10 pt-5">
+        {points.map((point) => (
+          <li key={point} className="flex items-start gap-2.5 text-[12px] leading-5 text-[#A9B4C0]">
+            <span className="mt-[7px] size-1.5 shrink-0 rounded-full bg-[#74FA6A]/70" />{point}
+          </li>
+        ))}
+      </ul>
+    </motion.article>
+  );
+}
+
+// Bingkai hp portrait — bikin preview Android/iOS keliatan kayak jalan di device beneran.
+function PhoneFrame({ variant, children }: { variant: "android" | "ios"; children: React.ReactNode }) {
+  return (
+    <div className="flex h-full w-full items-center justify-center">
+      <div className="relative aspect-[9/19] h-full overflow-hidden rounded-[24px] border-[3px] border-[#2E343B] bg-black shadow-[0_14px_34px_rgba(0,0,0,.5),inset_0_0_0_1px_rgba(255,255,255,.04)]">
+        {variant === "ios" ? (
+          <span className="absolute left-1/2 top-1.5 z-20 h-[7px] w-12 -translate-x-1/2 rounded-full bg-black ring-1 ring-white/10" />
+        ) : (
+          <span className="absolute left-1/2 top-1.5 z-20 size-[7px] -translate-x-1/2 rounded-full bg-black ring-1 ring-white/15" />
+        )}
+        {children}
+      </div>
+    </div>
+  );
+}
+
+// Preview game Flappy Bird (Android) — game loop beneran: fisika gravitasi + burung
+// otomatis lompat menghindari tiap pipa. Jalan lewat requestAnimationFrame yang nulis
+// transform langsung ke DOM (tanpa re-render React) => mulus 60fps, gak lemot.
+// Cuma mount saat hover; di-memo biar terisolasi.
+const FlappyPreview = memo(function FlappyPreview() {
+  const areaRef = useRef<HTMLDivElement>(null);
+  const birdRef = useRef<HTMLDivElement>(null);
+  const scoreRef = useRef<HTMLSpanElement>(null);
+  const pipeRefs = useRef<Array<HTMLDivElement | null>>([]);
+
+  useEffect(() => {
+    const area = areaRef.current;
+    const bird = birdRef.current;
+    if (!area || !bird) return;
+
+    let W = area.clientWidth;
+    let H = area.clientHeight;
+    if (W === 0 || H === 0) return;
+
+    const birdX = W * 0.26;
+    const birdR = 9;
+    const pipeW = W * 0.16;
+    const gapH = H * 0.44;
+    const speed = W * 0.3;
+    const gravity = H * 2.0;
+    const flapV = -H * 0.82;
+    const NUM = 3;
+    const spacing = W * 0.62;
+    const randomGap = () => H * (0.25 + Math.random() * 0.37);
+
+    let birdY = H * 0.4;
+    let vel = 0;
+    let score = 0;
+
+    const pipes = Array.from({ length: NUM }, (_, i) => ({ x: W * 0.55 + i * spacing, gap: randomGap(), passed: false }));
+
+    const setGap = (i: number) => {
+      const el = pipeRefs.current[i];
+      if (!el || el.children.length < 2) return;
+      (el.children[0] as HTMLElement).style.height = `${pipes[i].gap - gapH / 2}px`;
+      (el.children[1] as HTMLElement).style.top = `${pipes[i].gap + gapH / 2}px`;
+    };
+    for (let i = 0; i < NUM; i++) setGap(i);
+
+    let last = performance.now();
+    let raf = 0;
+    const step = (now: number) => {
+      const dt = Math.min((now - last) / 1000, 0.033);
+      last = now;
+
+      for (let i = 0; i < NUM; i++) {
+        const p = pipes[i];
+        p.x -= speed * dt;
+        if (p.x < -pipeW - 4) {
+          p.x += NUM * spacing;
+          p.gap = randomGap();
+          p.passed = false;
+          setGap(i);
+        }
+        if (!p.passed && p.x + pipeW < birdX) {
+          p.passed = true;
+          score += 1;
+          if (scoreRef.current) scoreRef.current.textContent = String(score);
+        }
+      }
+
+      let nearest: (typeof pipes)[number] | null = null;
+      for (const p of pipes) if (p.x + pipeW > birdX && (!nearest || p.x < nearest.x)) nearest = p;
+
+      const target = nearest ? nearest.gap : H * 0.45;
+      if (birdY > target && vel > -H * 0.12) vel = flapV;
+
+      vel += gravity * dt;
+      birdY += vel * dt;
+      const minY = birdR;
+      const maxY = H - H * 0.13 - birdR;
+      if (birdY < minY) { birdY = minY; vel = 0; }
+      if (birdY > maxY) { birdY = maxY; vel = 0; }
+
+      const rot = Math.max(-26, Math.min(64, vel * 0.055));
+      bird.style.transform = `translate(${birdX - birdR}px, ${birdY - birdR}px) rotate(${rot}deg)`;
+      for (let i = 0; i < NUM; i++) {
+        const el = pipeRefs.current[i];
+        if (el) el.style.transform = `translateX(${pipes[i].x}px)`;
+      }
+
+      raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  return (
+    <div ref={areaRef} className="relative h-full w-full overflow-hidden bg-[#4EC0CA]">
+      {/* awan */}
+      <motion.div className="absolute left-0 top-[16%] h-3 w-10 rounded-full bg-white/70 blur-[1px]" animate={{ x: ["110%", "-30%"] }} transition={{ repeat: Infinity, duration: 9, ease: "linear" }} />
+      <motion.div className="absolute left-0 top-[34%] h-2.5 w-8 rounded-full bg-white/50 blur-[1px]" animate={{ x: ["120%", "-25%"] }} transition={{ repeat: Infinity, duration: 13, delay: 2, ease: "linear" }} />
+
+      {/* pipa — posisi digerakin game loop */}
+      {[0, 1, 2].map((i) => (
+        <div key={i} ref={(el) => { pipeRefs.current[i] = el; }} className="absolute inset-y-0 left-0 w-[16%] will-change-transform">
+          <div className="absolute inset-x-0 top-0 rounded-b-[3px] border border-[#2E7D32]/50 bg-[#61BB46]">
+            <span className="absolute inset-x-0 bottom-0 h-2 rounded-[2px] border border-[#2E7D32]/50 bg-[#74C65B]" />
+          </div>
+          <div className="absolute inset-x-0 bottom-0 rounded-t-[3px] border border-[#2E7D32]/50 bg-[#61BB46]">
+            <span className="absolute inset-x-0 top-0 h-2 rounded-[2px] border border-[#2E7D32]/50 bg-[#74C65B]" />
+          </div>
+        </div>
+      ))}
+
+      {/* burung — posisi & rotasi digerakin game loop */}
+      <div ref={birdRef} className="absolute left-0 top-0 z-10 will-change-transform">
+        <div className="relative size-[18px] rounded-full bg-[#F8C034] shadow-[0_2px_4px_rgba(0,0,0,.25)]">
+          <motion.span className="absolute left-[2px] top-[6px] size-[8px] rounded-full bg-[#FDE9B8]" animate={{ scaleY: [1, 0.55, 1] }} transition={{ repeat: Infinity, duration: 0.32, ease: "easeInOut" }} style={{ transformOrigin: "right center" }} />
+          <span className="absolute right-[3px] top-[3px] size-[6px] rounded-full bg-white"><span className="absolute right-[1px] top-[1.5px] size-[3px] rounded-full bg-[#1A1A1A]" /></span>
+          <span className="absolute -right-[5px] top-[7px] h-[6px] w-[8px] rounded-[2px] bg-[#F26D3D]" />
+        </div>
+      </div>
+
+      {/* skor */}
+      <span ref={scoreRef} className="absolute inset-x-0 top-[7%] z-10 text-center font-mono text-[22px] font-bold text-white drop-shadow-[0_2px_2px_rgba(0,0,0,.35)]">0</span>
+
+      {/* tanah scroll */}
+      <motion.div className="absolute bottom-0 left-0 z-[5] h-[13%] w-[200%]" animate={{ x: ["0%", "-50%"] }} transition={{ repeat: Infinity, duration: 2.5, ease: "linear" }}>
+        <div className="h-[35%] w-full bg-[#8ED16B]" />
+        <div className="h-[65%] w-full bg-[#D7C48A]" />
+      </motion.div>
+    </div>
+  );
+});
+
+// ===== iOS Fitness (Apple-style glass) — multi-screen preview =====
+// Design tokens ala Apple Fitness+: ring Move/Exercise/Stand + aksen lime.
+const AF = {
+  move: "#FA2D5A",
+  moveTrack: "#3A0010",
+  ex: "#A8FF00",
+  exTrack: "#1A3300",
+  stand: "#00CFFF",
+  standTrack: "#00202B",
+  muted: "#8E8E93",
+  card: "#1C1C1E",
+};
+
+// 3 activity ring konsentris (Move/Exercise/Stand), ngisi dari 0 tiap layar muncul.
+function AppleRings({ size = 58, delay = 0.3 }: { size?: number; delay?: number }) {
+  return (
+    <div className="relative shrink-0" style={{ width: size, height: size }}>
+      <svg viewBox="0 0 110 110" className="size-full -rotate-90">
+        <circle cx="55" cy="55" r="48" fill="none" stroke={AF.moveTrack} strokeWidth="10" />
+        <motion.circle cx="55" cy="55" r="48" fill="none" stroke={AF.move} strokeWidth="10" strokeLinecap="round" initial={{ pathLength: 0 }} animate={{ pathLength: 0.42 }} transition={{ duration: 1.4, ease: [0.4, 0, 0.2, 1], delay }} style={{ filter: "drop-shadow(0 0 3px rgba(250,45,90,0.45))" }} />
+        <circle cx="55" cy="55" r="36" fill="none" stroke={AF.exTrack} strokeWidth="10" />
+        <motion.circle cx="55" cy="55" r="36" fill="none" stroke={AF.ex} strokeWidth="10" strokeLinecap="round" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1.4, ease: [0.4, 0, 0.2, 1], delay: delay + 0.1 }} style={{ filter: "drop-shadow(0 0 3px rgba(168,255,0,0.4))" }} />
+        <circle cx="55" cy="55" r="24" fill="none" stroke={AF.standTrack} strokeWidth="10" />
+        <motion.circle cx="55" cy="55" r="24" fill="none" stroke={AF.stand} strokeWidth="10" strokeLinecap="round" initial={{ pathLength: 0 }} animate={{ pathLength: 0.25 }} transition={{ duration: 1.4, ease: [0.4, 0, 0.2, 1], delay: delay + 0.2 }} style={{ filter: "drop-shadow(0 0 3px rgba(0,207,255,0.4))" }} />
+      </svg>
+    </div>
+  );
+}
+
+// Ikon workout sesuai jenis (hike/walk & cycle = lime, breathe = cyan).
+function WorkoutIcon({ kind }: { kind: "hike" | "cycle" | "breathe" }) {
+  if (kind === "cycle") return <Bike size={13} style={{ color: AF.ex }} />;
+  if (kind === "breathe") return <Wind size={13} style={{ color: AF.stand }} />;
+  return <Footprints size={13} style={{ color: AF.ex }} />;
+}
+
+// Satu baris item workout (ikon dalem lingkaran hitam + nama + value + tanggal).
+function WorkoutRow({ kind, name, val, date, delay = 0 }: { kind: "hike" | "cycle" | "breathe"; name: string; val: string; date: string; delay?: number }) {
+  const cyan = kind === "breathe";
+  return (
+    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, ease: [0.2, 0.8, 0.2, 1], delay }} className="mx-3 mt-1.5 flex items-center gap-2 rounded-xl bg-[#1C1C1E] px-2.5 py-1.5">
+      <span className="grid size-6 shrink-0 place-items-center rounded-full bg-black"><WorkoutIcon kind={kind} /></span>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-[7px] font-medium text-white">{name}</p>
+        <p className="text-[9.5px] font-bold tracking-tight" style={{ color: cyan ? AF.stand : AF.ex }}>{val}</p>
+      </div>
+      <p className="shrink-0 text-[6px] text-[#8E8E93]">{date}</p>
+    </motion.div>
+  );
+}
+
+function AppleSummary() {
+  const stats = [
+    { l: "Move", v: "209", g: "/500 CAL", c: AF.move },
+    { l: "Exercise", v: "32", g: "/30 MIN", c: AF.ex },
+    { l: "Stand", v: "3", g: "/12 HRS", c: AF.stand },
+  ];
+  return (
+    <div className="flex h-full flex-col">
+      <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: [0.2, 0.8, 0.2, 1] }} className="px-3 pt-1.5 text-[13px] font-bold text-white">Summary</motion.p>
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, ease: [0.2, 0.8, 0.2, 1], delay: 0.05 }} className="mx-3 mt-1.5 flex items-center justify-between rounded-xl bg-[#1C1C1E] px-2.5 py-2">
+        <div className="flex-1 space-y-[3px]">
+          {stats.map((s) => (
+            <div key={s.l} className="flex items-baseline gap-1">
+              <span className="w-[34px] text-[6.5px] font-semibold text-white">{s.l}</span>
+              <span className="text-[6.5px] font-semibold text-[#8E8E93]"><span style={{ color: s.c }}>{s.v}</span>{s.g}</span>
+            </div>
+          ))}
+          <div className="flex gap-2.5 pt-[3px]">
+            <div><p className="text-[6px] text-white">Steps</p><p className="text-[7px] font-semibold text-[#8E8E93]">4,355</p></div>
+            <div><p className="text-[6px] text-white">Distance</p><p className="text-[7px] font-semibold text-[#8E8E93]">2.26 MI</p></div>
+          </div>
+        </div>
+        <AppleRings size={56} delay={0.35} />
+      </motion.div>
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.15 }} className="mt-2 flex items-center justify-between px-3">
+        <p className="text-[9.5px] font-bold text-white">History</p>
+        <p className="text-[7px] text-[#A8FF00]">Show More</p>
+      </motion.div>
+      <WorkoutRow kind="hike" name="Hiking" val="1.70 MI" date="Today" delay={0.2} />
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.25 }} className="mt-2 px-3"><p className="text-[9.5px] font-bold text-white">Trainer Tips</p></motion.div>
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, delay: 0.3 }} className="mx-3 mt-1.5 flex items-center gap-2 rounded-xl bg-[#1C1C1E] px-2.5 py-2">
+        <span className="grid size-7 shrink-0 place-items-center rounded-full bg-[#333]"><User size={13} className="text-[#9a9a9e]" /></span>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[6.5px] font-semibold leading-tight text-white">Set up your feet for warrior 1 in yoga</p>
+          <p className="text-[5.5px] text-[#8E8E93]">with Fitness+ Trainer Jonelle</p>
+          <p className="text-[6px] font-medium text-[#A8FF00]">Watch this Week's Tip</p>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+function AppleHistory({ month, items, showFilter = false }: { month: string; items: { kind: "hike" | "cycle" | "breathe"; name: string; val: string; date: string }[]; showFilter?: boolean }) {
+  return (
+    <div className="flex h-full flex-col">
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }} className="flex items-center gap-0.5 px-3 pt-1.5 text-[#A8FF00]">
+        <ChevronLeft size={10} strokeWidth={2.5} />
+        <span className="text-[7.5px]">Summary</span>
+      </motion.div>
+      <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.05 }} className="px-3 pt-0.5 text-[15px] font-bold tracking-tight text-white">History</motion.p>
+      {showFilter && (
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }} className="mt-1 flex gap-1 px-3">
+          <span className="rounded-full bg-[#A8FF00] px-2 py-[2px] text-[6px] font-semibold text-black">All</span>
+          <span className="rounded-full bg-[#2C2C2E] px-2 py-[2px] text-[6px] font-semibold text-[#A0A0A5]">Workouts</span>
+          <span className="rounded-full bg-[#2C2C2E] px-2 py-[2px] text-[6px] font-semibold text-[#A0A0A5]">Mindfulness</span>
+        </motion.div>
+      )}
+      <motion.p initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.15 }} className="px-3 pt-1.5 text-[9.5px] font-bold text-white">{month}</motion.p>
+      {items.map((it, i) => <WorkoutRow key={`${it.name}-${i}`} kind={it.kind} name={it.name} val={it.val} date={it.date} delay={0.2 + i * 0.06} />)}
+    </div>
+  );
+}
+
+const APPLE_HIST_AUG = [
+  { kind: "hike" as const, name: "Hiking", val: "1.70 MI", date: "Today" },
+  { kind: "hike" as const, name: "Outdoor Walk", val: "5.61 MI", date: "Sunday" },
+  { kind: "cycle" as const, name: "Outdoor Cycle", val: "7.72 MI", date: "Saturday" },
+  { kind: "cycle" as const, name: "Outdoor Cycle", val: "3.63 MI", date: "Wednesday" },
+];
+const APPLE_HIST_JUL = [
+  { kind: "hike" as const, name: "Outdoor Walk", val: "6.07 MI", date: "7/30/23" },
+  { kind: "cycle" as const, name: "Indoor Cycle", val: "171 CAL", date: "7/25/23" },
+  { kind: "hike" as const, name: "Outdoor Walk", val: "0.91 MI", date: "7/25/23" },
+  { kind: "breathe" as const, name: "Breathe", val: "5 MIN", date: "7/24/23" },
+  { kind: "breathe" as const, name: "Breathe", val: "2 MIN", date: "7/24/23" },
+];
+
+// Status bar tipis (jam + sinyal + baterai), dampingi Dynamic Island dari PhoneFrame.
+function AppleStatusBar() {
+  return (
+    <div className="flex items-center justify-between px-3.5 pt-2">
+      <span className="text-[7.5px] font-semibold text-white">2:34</span>
+      <span className="flex items-center gap-1 text-white">
+        <svg width="10" height="7" viewBox="0 0 17 12" fill="currentColor"><rect x="0" y="4" width="3" height="8" rx="1" /><rect x="4.5" y="2.5" width="3" height="9.5" rx="1" /><rect x="9" y="0.5" width="3" height="11.5" rx="1" /><rect x="13.5" y="0" width="3.5" height="12" rx="1" opacity=".35" /></svg>
+        <svg width="14" height="7" viewBox="0 0 25 12" fill="none"><rect x="0.5" y="1" width="21" height="10" rx="3" stroke="currentColor" strokeWidth="1" /><rect x="23" y="4" width="2" height="4" rx="1" fill="currentColor" opacity=".4" /><rect x="2" y="2.5" width="13" height="7" rx="1.5" fill="currentColor" /></svg>
+      </span>
+    </div>
+  );
+}
+
+// Tab bar iOS glass (Summary aktif), persist di bawah, gak ikut transisi layar.
+function AppleTabBar() {
+  return (
+    <div className="relative border-t border-white/[0.12] bg-black/50 px-5 pt-1.5 backdrop-blur-xl">
+      <div className="flex items-start justify-around">
+        <div className="flex flex-col items-center gap-[2px]">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="#A8FF00" strokeWidth="2.2" /><circle cx="12" cy="12" r="6" stroke="#A8FF00" strokeWidth="2.2" /><circle cx="12" cy="12" r="2.2" fill="#A8FF00" /></svg>
+          <span className="text-[5px] font-medium text-[#A8FF00]">Summary</span>
+        </div>
+        <div className="flex flex-col items-center gap-[2px] opacity-45">
+          <User size={13} className="text-white" />
+          <span className="text-[5px] font-medium text-white">Fitness+</span>
+        </div>
+        <div className="flex flex-col items-center gap-[2px] opacity-45">
+          <Users size={13} className="text-white" />
+          <span className="text-[5px] font-medium text-white">Sharing</span>
+        </div>
+      </div>
+      <div className="mx-auto mb-1 mt-1 h-[3px] w-14 rounded-full bg-white/30" />
+    </div>
+  );
+}
+
+// Preview fitness iOS (Apple-style glass) — 3 layar cycle dgn transisi slide, ring
+// aktivitas ngisi, item stagger. Cuma mount saat hover; di-memo biar terisolasi.
+const IosFitnessPreview = memo(function IosFitnessPreview() {
+  const [screen, setScreen] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setScreen((s) => (s + 1) % 3), 4500);
+    return () => clearInterval(t);
+  }, []);
+  return (
+    <div className="flex h-full w-full flex-col overflow-hidden bg-black">
+      <AppleStatusBar />
+      <div className="relative min-h-0 flex-1">
+        <AnimatePresence>
+          <motion.div key={screen} initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -24 }} transition={{ duration: 0.5, ease: [0.25, 1, 0.5, 1] }} className="absolute inset-0 overflow-hidden">
+            {screen === 0 && <AppleSummary />}
+            {screen === 1 && <AppleHistory month="August 2023" items={APPLE_HIST_AUG} showFilter />}
+            {screen === 2 && <AppleHistory month="July 2023" items={APPLE_HIST_JUL} />}
+          </motion.div>
+        </AnimatePresence>
+      </div>
+      <AppleTabBar />
+    </div>
+  );
+});
+
+// ===== Kripto Wallet (Android) — light-theme multi-screen preview =====
+const KRIPTO = {
+  green: "#4CAF50",
+  eth: "#627EEA",
+  ethDeep: "#3B5CE4",
+  red: "#E53935",
+  ink: "#111111",
+  muted: "#888888",
+  faint: "#999999",
+  surface: "#F5F5F5",
+};
+
+// Ikon ETH kecil (gradient biru-benar, huruf Xi sebagai glyph).
+function EthCoin({ size = 14, fontSize = 8 }: { size?: number; fontSize?: number }) {
+  return (
+    <span className="grid shrink-0 place-items-center rounded-full font-bold text-white" style={{ width: size, height: size, fontSize, background: `linear-gradient(135deg, ${KRIPTO.eth}, ${KRIPTO.ethDeep})` }}>Ξ</span>
+  );
+}
+
+// Chart harga: garis hijau ke-draw + fill gradient fade-in + dot pulse.
+function KriptoChart({ delay = 0.3 }: { delay?: number }) {
+  return (
+    <div className="relative mt-1 h-[52px] w-full">
+      <svg viewBox="0 0 360 120" preserveAspectRatio="none" className="size-full">
+        <defs>
+          <linearGradient id="kriptoChartGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={KRIPTO.green} stopOpacity="0.25" />
+            <stop offset="100%" stopColor={KRIPTO.green} stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <motion.path d="M0,80 C20,75 40,65 60,70 C80,75 100,60 120,50 C140,40 155,55 170,45 C185,35 200,55 220,60 C240,65 255,50 270,45 C285,40 300,55 320,48 C335,42 348,50 360,45 L360,120 L0,120 Z" fill="url(#kriptoChartGrad)" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.8, delay: delay + 0.5 }} />
+        <motion.path d="M0,80 C20,75 40,65 60,70 C80,75 100,60 120,50 C140,40 155,55 170,45 C185,35 200,55 220,60 C240,65 255,50 270,45 C285,40 300,55 320,48 C335,42 348,50 360,45" stroke={KRIPTO.green} strokeWidth="2.5" fill="none" strokeLinecap="round" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1.4, ease: "easeOut", delay }} />
+        <motion.circle cx="170" cy="45" r="5" fill={KRIPTO.green} initial={{ opacity: 0 }} animate={{ opacity: [0, 1, 0.5, 1] }} transition={{ duration: 1.2, delay: delay + 1.1, repeat: Infinity, repeatDelay: 1.5 }} />
+      </svg>
+    </div>
+  );
+}
+
+function KriptoDashboard() {
+  return (
+    <div className="flex h-full flex-col bg-white px-3">
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: [0.2, 0.8, 0.2, 1] }} className="flex items-center justify-between pt-1.5">
+        <ChevronLeft size={12} className="text-[#111]" />
+        <div className="flex items-center gap-1"><EthCoin size={15} fontSize={8} /><span className="text-[8px] font-semibold text-[#111]">Ethereum</span></div>
+        <div className="flex items-center gap-1.5"><Star size={9} className="text-[#111]" /><MoreHorizontal size={10} className="text-[#111]" /></div>
+      </motion.div>
+
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.05, ease: [0.2, 0.8, 0.2, 1] }} className="pt-1">
+        <p className="text-[14px] font-extrabold tracking-tight text-[#111]">Rp 41.285.600</p>
+        <div className="flex items-center gap-1.5"><span className="text-[5.5px] text-[#888]">pada 21 Jan, 11:42</span><span className="text-[5.5px] font-semibold text-[#E53935]">▼ 3,04%</span></div>
+      </motion.div>
+
+      <KriptoChart delay={0.3} />
+
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4, delay: 0.4 }} className="flex justify-around pt-1">
+        {["1J", "1H", "1M", "1B", "1T"].map((t) => (
+          <span key={t} className={`rounded-full px-1.5 py-[2px] text-[5.5px] font-medium ${t === "1M" ? "bg-[#4CAF50] font-semibold text-white" : "text-[#999]"}`}>{t}</span>
+        ))}
+      </motion.div>
+
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.45, ease: [0.2, 0.8, 0.2, 1] }} className="flex gap-1.5 pt-1.5">
+        <div className="flex-1 rounded-lg bg-[#F5F5F5] px-2 py-1.5">
+          <p className="text-[5px] font-medium text-[#999]">Saldo</p>
+          <div className="mt-0.5 flex items-center gap-1"><EthCoin size={11} fontSize={6} /><span className="text-[6.5px] font-bold text-[#111]">0,006714</span></div>
+        </div>
+        <div className="flex-1 rounded-lg bg-[#F5F5F5] px-2 py-1.5">
+          <p className="text-[5px] font-medium text-[#999]">Nilai</p>
+          <span className="mt-0.5 block text-[6.5px] font-bold text-[#111]">Rp 277.800</span>
+        </div>
+      </motion.div>
+
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.5, ease: [0.2, 0.8, 0.2, 1] }} className="pt-1.5">
+        <p className="text-[7px] font-bold text-[#111]">Deskripsi</p>
+        <p className="mt-0.5 text-[5.5px] leading-snug text-[#888]">Ethereum adalah platform global untuk aplikasi terdesentralisasi, bertujuan menghilangkan kebutuhan akan otoritas pusat. <span className="font-medium text-[#4CAF50]">Baca Selengkapnya</span></p>
+      </motion.div>
+
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.55, ease: [0.2, 0.8, 0.2, 1] }} className="mt-auto flex gap-1.5 pb-2 pt-2">
+        <span className="flex-1 rounded-full bg-[#111] py-1.5 text-center text-[7px] font-semibold text-white">Tukar</span>
+        <span className="flex-1 rounded-full bg-[#4CAF50] py-1.5 text-center text-[7px] font-semibold text-white">Kirim</span>
+      </motion.div>
+    </div>
+  );
+}
+
+function KriptoContact({ icon, name, sub, bg, delay = 0 }: { icon: React.ReactNode; name: string; sub: string; bg: string; delay?: number }) {
+  return (
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay, ease: [0.2, 0.8, 0.2, 1] }} className="mt-1 flex items-center gap-1.5 rounded-lg bg-[#F5F5F5] px-2 py-1.5">
+      <span className="grid size-6 shrink-0 place-items-center rounded-md" style={{ background: bg }}>{icon}</span>
+      <div className="min-w-0 flex-1"><p className="truncate text-[6.5px] font-semibold text-[#111]">{name}</p><p className="text-[5px] text-[#999]">{sub}</p></div>
+    </motion.div>
+  );
+}
+
+function KriptoSendSelect() {
+  return (
+    <div className="flex h-full flex-col bg-white px-3">
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="flex items-center justify-between border-b border-[#F0F0F0] pb-1.5 pt-1.5">
+        <p className="text-[10px] font-bold text-[#111]">Kirim</p>
+        <X size={10} className="text-[#555]" />
+      </motion.div>
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.05 }} className="mt-1.5 flex items-center rounded-lg bg-[#F5F5F5] px-2 py-1.5">
+        <span className="text-[6px] font-medium text-[#AAA]">Ke</span>
+        <span className="ml-1 flex-1 text-[6px] text-[#BBB]">ENS atau Alamat</span>
+        <span className="rounded-md bg-[#111] px-1.5 py-[2px] text-[5.5px] font-semibold text-white">Tempel</span>
+      </motion.div>
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }} className="mt-1.5 flex items-center gap-1.5 rounded-lg bg-[#F5F5F5] px-2 py-1.5">
+        <QrCode size={12} className="text-[#555]" />
+        <div><p className="text-[6.5px] font-semibold text-[#111]">Pindai Kode QR</p><p className="text-[5px] text-[#999]">Ketuk untuk memindai alamat</p></div>
+      </motion.div>
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3, delay: 0.15 }} className="flex items-center gap-1 pt-1.5"><Clock size={7} className="text-[#888]" /><span className="text-[6px] font-semibold text-[#888]">Terbaru</span></motion.div>
+      <KriptoContact icon={<Star size={11} className="text-[#C9A227]" />} name="Stash" sub="1 Transaksi Sebelumnya" bg="#E8E8E8" delay={0.2} />
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3, delay: 0.25 }} className="flex items-center gap-1 pt-1.5"><Sparkles size={7} className="text-[#888]" /><span className="text-[6px] font-semibold text-[#888]">Disarankan</span></motion.div>
+      <KriptoContact icon={<CreditCard size={11} className="text-[#627EEA]" />} name="0xb249....9768" sub="1 Transaksi Sebelumnya" bg="#E8EEFF" delay={0.3} />
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3, delay: 0.35 }} className="flex items-center gap-1 pt-1.5"><User size={7} className="text-[#888]" /><span className="text-[6px] font-semibold text-[#888]">Buku Alamat</span></motion.div>
+      <KriptoContact icon={<CreditCard size={11} className="text-[#888]" />} name="vitalik.eth" sub="Tidak Ada Transaksi Sebelumnya" bg="#F0F0F0" delay={0.4} />
+    </div>
+  );
+}
+
+function KriptoSendAmount() {
+  return (
+    <div className="flex h-full flex-col bg-white px-3">
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="flex items-center justify-between border-b border-[#F0F0F0] pb-1.5 pt-1.5">
+        <p className="text-[10px] font-bold text-[#111]">Kirim</p>
+        <X size={10} className="text-[#555]" />
+      </motion.div>
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.05 }} className="mt-1.5 flex items-center rounded-lg bg-[#F5F5F5] px-2 py-1.5">
+        <span className="text-[6px] font-medium text-[#AAA]">Ke</span>
+        <span className="ml-1 text-[6px] font-medium text-[#111]">0xb249....9768</span>
+      </motion.div>
+      <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.45, delay: 0.1 }} className="pt-2 text-center">
+        <p className="text-[16px] font-extrabold tracking-tight text-[#111]">Rp 41.285.600</p>
+        <div className="mt-0.5 flex items-center justify-center gap-1"><EthCoin size={12} fontSize={7} /><span className="text-[6px] font-medium text-[#888]">0,00001902</span><ArrowUpDown size={7} className="text-[#555]" /></div>
+      </motion.div>
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.15 }} className="mt-1.5 flex items-center gap-1.5 rounded-lg bg-[#F5F5F5] px-2 py-1.5">
+        <EthCoin size={20} fontSize={11} />
+        <div className="flex-1"><p className="text-[6.5px] font-semibold text-[#111]">Ethereum</p><p className="text-[5px] text-[#999]">0,006714</p></div>
+        <span className="rounded-md border border-[#DDD] px-1.5 py-[2px] text-[5.5px] font-semibold text-[#555]">Maks</span>
+      </motion.div>
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.2 }} className="grid grid-cols-3 gap-1 pt-1.5">
+        {["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0"].map((k) => (
+          <span key={k} className={`rounded-md py-1 text-center text-[8px] font-semibold ${k === "." ? "bg-[#F0F0F0] text-[#555]" : "bg-[#F5F5F5] text-[#111]"}`}>{k}</span>
+        ))}
+        <span className="grid place-items-center rounded-md bg-[#F0F0F0] py-1"><Delete size={9} className="text-[#555]" /></span>
+      </motion.div>
+      <motion.span initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.25 }} className="mt-1.5 rounded-full bg-[#4CAF50] py-1.5 text-center text-[7px] font-bold text-white">Lanjutkan</motion.span>
+    </div>
+  );
+}
+
+const KriptoPreview = memo(function KriptoPreview() {
+  const [screen, setScreen] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setScreen((s) => (s + 1) % 3), 4500);
+    return () => clearInterval(t);
+  }, []);
+  return (
+    <div className="flex h-full w-full flex-col overflow-hidden bg-white">
+      <div className="flex items-center justify-between px-4 pt-2">
+        <span className="text-[8px] font-semibold text-[#111]">9:41</span>
+        <span className="flex items-center gap-1 text-[#111]">
+          <svg width="10" height="7" viewBox="0 0 16 12" fill="currentColor"><rect x="0" y="6" width="3" height="6" rx="1" /><rect x="4.5" y="4" width="3" height="8" rx="1" /><rect x="9" y="2" width="3" height="10" rx="1" /><rect x="13.5" y="0" width="2.5" height="12" rx="1" /></svg>
+          <svg width="14" height="7" viewBox="0 0 22 12" fill="none"><rect x="0.5" y="0.5" width="18" height="11" rx="3" stroke="currentColor" strokeWidth="1" /><rect x="2" y="2" width="13" height="8" rx="1.5" fill="currentColor" /><path d="M20 4v4a2 2 0 000-4z" fill="currentColor" /></svg>
+        </span>
+      </div>
+      <div className="relative min-h-0 flex-1">
+        <AnimatePresence>
+          <motion.div key={screen} initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -24 }} transition={{ duration: 0.5, ease: [0.25, 1, 0.5, 1] }} className="absolute inset-0 overflow-hidden">
+            {screen === 0 && <KriptoDashboard />}
+            {screen === 1 && <KriptoSendSelect />}
+            {screen === 2 && <KriptoSendAmount />}
+          </motion.div>
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+});
+
+// Semua device auto-animasi tanpa hover.
+function DeviceShowcase() {
+  const phones = [
+    { platform: "ANDROID", name: "Flappy Bird", variant: "android" as const, node: <FlappyPreview /> },
+    { platform: "IOS", name: "Navyt Fitness", variant: "ios" as const, node: <IosFitnessPreview /> },
+    { platform: "ANDROID", name: "Kripto Wallet", variant: "android" as const, node: <KriptoPreview /> },
+  ];
+  return (
+    <div className="mt-16 pb-2">
+      {/* Smartphone (Android, iOS, Android) — baris sejajar */}
+      <div className="grid grid-cols-3 gap-4 lg:gap-12">
+        {phones.map((p, i) => (
+          <div key={p.name} className="flex flex-col items-center">
+            <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.7, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] }} className="h-[230px] w-full sm:h-[320px] lg:h-[430px]">
+              <PhoneFrame variant={p.variant}>{p.node}</PhoneFrame>
+            </motion.div>
+            <div className="mt-5 text-center">
+              <p className="font-mono text-[9px] tracking-[.18em] text-[#74FA6A]">{p.platform}</p>
+              <p className="mt-0.5 text-[14px] font-medium text-[#E8F0E8]">{p.name}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ResourceCard({ href, label, title, copy, external = false }: { href: string; label: string; title: string; copy: string; external?: boolean }) {
+  const content = (
+    <>
+      <div className="flex items-center justify-between">
+        <p className="font-mono text-[10px] tracking-[.18em] text-[#74FA6A]">{label}</p>
+        <ArrowUpRight size={14} className="shrink-0 text-[#5B6676] transition-colors duration-300 group-hover:text-[#74FA6A]" />
+      </div>
+      <h3 className="mt-4 break-words text-[16px] font-medium tracking-[-.02em] text-[#E8F0E8]">{title}</h3>
+      <p className="mt-1.5 text-[12.5px] leading-[1.6] text-[#8C97A5]">{copy}</p>
+    </>
+  );
+  const cardClass = "group flex h-full flex-col rounded-[16px] border border-white/15 bg-[#111413] p-6 transition-colors duration-300 hover:border-[#74FA6A]/45";
+  return (
+    <motion.div initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .2 }} transition={{ duration: .65, ease: [0.16, 1, 0.3, 1] }}>
+      {external ? <a href={href} target="_blank" rel="noopener noreferrer" className={cardClass}>{content}</a> : <Link href={href} className={cardClass}>{content}</Link>}
+    </motion.div>
   );
 }
