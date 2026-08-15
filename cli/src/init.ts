@@ -3,8 +3,8 @@ import { join } from "node:path";
 
 const AGENTS_MD = `# Scratch Agent Agent
 
-Kamu akan mengerjakan task dari Scratch Agent lewat CLI npx Scratch Agent.
-Prasyarat: Node.js + Python 3.x. CLI otomatis ter-download via npx, tanpa install manual.
+Kamu akan mengerjakan task dari Scratch Agent lewat CLI scratch-agent (package npm: @notdeadlysins/scratch-agent).
+Prasyarat: Node.js + Python 3.x.
 
 ## Install Skill Scratch Agent v2.4 (penting)
 Cek apakah sudah terpasang: \`uipro --version\`.
@@ -19,28 +19,29 @@ Jika aktif, terapkan rekomendasinya (warna, tipografi, layout, best practice).
 Jika tidak aktif, beri tau user (mungkin perlu sesi baru agar ter-load), lalu
 tetap lanjutkan dengan best practice UI umum.
 
-## Langkah 1 — Login & init (sekali saja)
+## Langkah 1 — Install CLI, login & init (sekali saja)
 \`\`\`
-npx Scratch Agent login --token <TOKEN>
-npx Scratch Agent init --agent opencode
+npm install -g @notdeadlysins/scratch-agent
+scratch-agent login --token <TOKEN>
+scratch-agent init --agent opencode
 \`\`\`
 
 ## Langkah 2 — Baca PRD (sekali)
 \`\`\`
-npx Scratch Agent plan get <PLAN_ID>
+scratch-agent plan get <PLAN_ID>
 \`\`\`
 
 ## Langkah 3 — LOOP kerjakan SATU task per siklus
 \`\`\`
-npx Scratch Agent task next --plan <PLAN_ID> --json
-npx Scratch Agent task start <REF>
+scratch-agent task next --plan <PLAN_ID> --json
+scratch-agent task start <REF>
 # ...kerjakan task ini (eksplor kode dulu, ikuti pola project)...
-npx Scratch Agent task complete <REF>
+scratch-agent task complete <REF>
 \`\`\`
 
 Jika ke-block:
 \`\`\`
-npx Scratch Agent task fail <REF> "alasan singkat"
+scratch-agent task fail <REF> "alasan singkat"
 \`\`\`
 
 Ulangi sampai done=true.

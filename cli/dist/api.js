@@ -2,7 +2,7 @@ import { getToken, getBaseUrl } from "./config.js";
 export async function api(path, options = {}) {
     const token = getToken();
     if (!token) {
-        console.error("Belum login. Jalankan: npx Scratch Agent login --token <token>");
+        console.error("Belum login. Jalankan: scratch-agent login --token <token>");
         process.exit(1);
     }
     const url = `${getBaseUrl()}${path}`;
