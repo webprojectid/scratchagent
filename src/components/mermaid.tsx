@@ -13,7 +13,7 @@ export function Mermaid({ code }: { code: string }) {
     (async () => {
       try {
         const mermaid = (await import("mermaid")).default;
-        mermaid.initialize({ startOnLoad: false, theme: "dark", securityLevel: "loose" });
+        mermaid.initialize({ startOnLoad: false, theme: "dark", securityLevel: "strict" });
         const id = `mmd-${Math.random().toString(36).slice(2, 9)}`;
         const { svg } = await mermaid.render(id, code.trim());
         if (active) setSvg(svg);

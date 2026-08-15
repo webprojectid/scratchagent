@@ -43,8 +43,8 @@ export function AgentPromptModal({ planId, onClose }: { planId: string; onClose:
   }, [onClose]);
 
   const prompt = token
-    ? `Kamu akan mengerjakan task dari Scratch Agent lewat CLI npx Scratch Agent.
-Prasyarat: Node.js + Python 3.x. CLI otomatis ter-download via npx, tanpa install manual.
+    ? `Kamu akan mengerjakan task dari Scratch Agent lewat CLI scratch-agent (package npm: @notdeadlysins/scratch-agent).
+Prasyarat: Node.js + Python 3.x.
 
 LANGKAH 0 — Install Skill Scratch Agent v2.4 (sekali saja):
  Cek apakah sudah terpasang: uipro --version
@@ -53,19 +53,20 @@ LANGKAH 0 — Install Skill Scratch Agent v2.4 (sekali saja):
   npm install -g ui-ux-pro-max-cli
   uipro init --ai opencode --global
 
-LANGKAH 1 — Login & init (sekali saja):
- npx Scratch Agent login --token ${token}
- npx Scratch Agent init --agent opencode
+LANGKAH 1 — Install CLI, login & init (sekali saja):
+ npm install -g @notdeadlysins/scratch-agent
+ scratch-agent login --token ${token}
+ scratch-agent init --agent opencode
 
 LANGKAH 2 — Baca PRD (sekali):
- npx Scratch Agent plan get ${planId}
+ scratch-agent plan get ${planId}
 
 LANGKAH 3 — LOOP kerjakan SATU task per siklus:
- npx Scratch Agent task next --plan ${planId} --json
- npx Scratch Agent task start <ref>
+ scratch-agent task next --plan ${planId} --json
+ scratch-agent task start <ref>
  # ...kerjakan task ini (eksplor kode dulu, ikuti pola project)...
- npx Scratch Agent task complete <ref>
- # Jika ke-block: npx Scratch Agent task fail <ref> "alasan singkat"
+ scratch-agent task complete <ref>
+ # Jika ke-block: scratch-agent task fail <ref> "alasan singkat"
  # Ulangi sampai done=true
 
 ATURAN:
