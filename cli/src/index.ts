@@ -84,7 +84,7 @@ const taskCmd = program.commands.find((c) => c.name() === "task")!;
 function planQs(): string {
   const config = loadConfig();
   if (!config?.planId) {
-    console.error("Plan aktif belum diset. Jalankan dulu: Scratch Agent plan get <planId>");
+    console.error("Plan aktif belum diset. Jalankan dulu: scratch-agent plan get <planId>");
     process.exit(1);
   }
   return `?planId=${encodeURIComponent(config.planId)}`;
