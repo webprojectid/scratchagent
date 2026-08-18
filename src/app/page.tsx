@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { animate, AnimatePresence, motion, useMotionValue, useSpring, useScroll } from "motion/react";
-import { ArrowUpDown, ArrowUpRight, Bike, ChevronLeft, Clock, CreditCard, Delete, Footprints, KeyRound, MoreHorizontal, Play, QrCode, Sparkles, Star, User, Users, Wind, X, Zap } from "lucide-react";
+import { ArrowUpDown, ArrowUpRight, Bike, ChevronLeft, Clock, CreditCard, Delete, Footprints, KeyRound, Lock, MoreHorizontal, Play, QrCode, Sparkles, Star, User, Users, Wind, X, Zap } from "lucide-react";
 import { memo, useEffect, useRef, useState } from "react";
 import DottedDemo from "@/components/ui/dotted-demo";
 import { getCurrentUser, refreshCurrentUser } from "@/lib/current-user";
@@ -178,10 +178,16 @@ export default function Home() {
             <div className="text-center"><p className="text-[15px] font-semibold text-[#E8F0E8]">Kripto Wallet</p><p className="mt-1 font-mono text-[10px] tracking-[.18em] text-[#8C97A5]">ANDROID</p></div>
           </div>
         </div>
-        {/* Button menuju halaman sample web project (sample 1 Spline + sample 2 neural-vortex, satu halaman) */}
-        <div className="mt-14 flex justify-center">
-          <Link href="/sample/web-project" className="rv2-button light">
-            <ArrowUpRight size={13} /> {lang === "en" ? "See sample web project" : "Lihat sample web project"}
+        {/* Preview sample web project (CSS murni, tanpa WebGL/Spline) — klik langsung
+            ke halaman sample masing-masing; tidak ada button terpisah */}
+        <div className="mt-12 grid gap-10 md:grid-cols-2 md:gap-12">
+          <Link href="/sample/web-project" className="group flex flex-col items-center gap-4" aria-label={lang === "en" ? "Open sample web project 1" : "Buka sample web project 1"}>
+            <div className="h-[220px] w-full max-w-[360px]"><GalaxyHeroPreview /></div>
+            <div className="text-center"><p className="text-[15px] font-semibold text-[#E8F0E8]">Galaxy Hero</p><p className="mt-1 font-mono text-[10px] tracking-[.18em] text-[#8C97A5]">WEB · SPLINE</p></div>
+          </Link>
+          <Link href="/sample/web-project-2" className="group flex flex-col items-center gap-4" aria-label={lang === "en" ? "Open sample web project 2" : "Buka sample web project 2"}>
+            <div className="h-[220px] w-full max-w-[360px]"><VortexPreview /></div>
+            <div className="text-center"><p className="text-[15px] font-semibold text-[#E8F0E8]">ImmersiaVR</p><p className="mt-1 font-mono text-[10px] tracking-[.18em] text-[#8C97A5]">WEB · WEBGL</p></div>
           </Link>
         </div>
       </section>
@@ -368,6 +374,59 @@ function PhoneFrame({ variant, children }: { variant: "android" | "ios"; childre
     </div>
   );
 }
+
+// Preview browser mini untuk sample web project — CSS murni, tanpa WebGL/Spline,
+// jadi homepage tetap ringan. Klik preview -> halaman sample masing-masing.
+// Chrome ditiru dari SafariFrame asli: traffic lights, URL pill, viewport gelap.
+function BrowserPreviewFrame({ url, children }: { url: string; children: React.ReactNode }) {
+  return (
+    <div className="relative aspect-[16/11] h-full overflow-hidden rounded-xl border border-white/10 bg-[#16161C] shadow-[0_14px_34px_rgba(0,0,0,.5)] transition group-hover:border-white/20 group-hover:shadow-[0_18px_44px_rgba(0,0,0,.6)]">
+      <div className="flex h-6 items-center gap-1.5 border-b border-white/[.06] bg-[#1F2023] px-2">
+        <span className="size-[7px] rounded-full bg-[#FF5F57]" />
+        <span className="size-[7px] rounded-full bg-[#FEBC2E]" />
+        <span className="size-[7px] rounded-full bg-[#28C840]" />
+        <span className="mx-auto flex min-w-0 max-w-[130px] flex-1 items-center justify-center gap-1 rounded-[4px] border border-white/[.08] bg-white/[.06] px-1.5 py-[2px]">
+          <Lock size={6} className="shrink-0 text-white/35" />
+          <span className="truncate font-mono text-[6.5px] text-white/60">{url}</span>
+        </span>
+      </div>
+      <div className="relative h-[calc(100%-24px)] overflow-hidden bg-[#0D0D18]">{children}</div>
+    </div>
+  );
+}
+
+const GalaxyHeroPreview = memo(function GalaxyHeroPreview() {
+  return (
+    <BrowserPreviewFrame url="scratchagent.app">
+      {/* Nebula statis tiruan scene Spline (radial gradient, tanpa animasi berat) */}
+      <div className="absolute inset-0" style={{ background: "radial-gradient(90% 70% at 30% 40%, rgba(120,80,220,.35), transparent 60%), radial-gradient(70% 60% at 75% 60%, rgba(60,180,160,.22), transparent 60%), radial-gradient(50% 45% at 60% 25%, rgba(116,250,106,.14), transparent 55%)" }} />
+      {/* Bintang kecil statis */}
+      <div className="absolute inset-0 opacity-70" style={{ backgroundImage: "radial-gradient(1px 1px at 18% 22%, rgba(255,255,255,.8), transparent), radial-gradient(1px 1px at 64% 18%, rgba(255,255,255,.6), transparent), radial-gradient(1.5px 1.5px at 82% 48%, rgba(255,255,255,.7), transparent), radial-gradient(1px 1px at 38% 68%, rgba(255,255,255,.5), transparent), radial-gradient(1px 1px at 52% 42%, rgba(255,255,255,.65), transparent)" }} />
+      {/* Hero card tiruan */}
+      <div className="absolute left-1/2 top-1/2 w-[62%] -translate-x-1/2 -translate-y-1/2 rounded-md border border-white/10 bg-white/[.03] px-3 py-2.5 text-center backdrop-blur-[2px]">
+        <div className="mx-auto h-1.5 w-[70%] rounded-full bg-white/70" />
+        <div className="mx-auto mt-1 h-1.5 w-[45%] rounded-full bg-white/40" />
+        <div className="mx-auto mt-2 h-3 w-12 rounded-[4px] border border-[#74FA6A]/50 bg-[#74FA6A]/10" />
+      </div>
+    </BrowserPreviewFrame>
+  );
+});
+
+const VortexPreview = memo(function VortexPreview() {
+  return (
+    <BrowserPreviewFrame url="immersiavr.app">
+      {/* Vortex tiruan: ring konsentris ungu-cyan, CSS animasi ringan (rotate pelan) */}
+      <div className="nv-spin-slow absolute left-1/2 top-1/2 size-[240%] -translate-x-1/2 -translate-y-1/2" style={{ background: "conic-gradient(from 0deg, transparent 0deg, rgba(128,38,166,.5) 80deg, transparent 160deg, rgba(5,178,230,.35) 240deg, transparent 320deg)", maskImage: "radial-gradient(circle, black 8%, transparent 62%)", WebkitMaskImage: "radial-gradient(circle, black 8%, transparent 62%)" }} />
+      <div className="nv-spin-slower absolute left-1/2 top-1/2 size-[180%] -translate-x-1/2 -translate-y-1/2" style={{ background: "conic-gradient(from 120deg, transparent 0deg, rgba(128,38,166,.4) 100deg, transparent 200deg, rgba(5,178,230,.28) 290deg, transparent 360deg)", maskImage: "radial-gradient(circle, black 5%, transparent 55%)", WebkitMaskImage: "radial-gradient(circle, black 5%, transparent 55%)" }} />
+      {/* Hero card tiruan */}
+      <div className="absolute left-1/2 top-1/2 w-[62%] -translate-x-1/2 -translate-y-1/2 rounded-md border border-white/10 bg-white/[.03] px-3 py-2.5 text-center backdrop-blur-[2px]">
+        <div className="mx-auto h-1.5 w-[65%] rounded-full bg-white/70" />
+        <div className="mx-auto mt-1 h-1.5 w-[40%] rounded-full bg-white/40" />
+        <div className="mx-auto mt-2 h-3 w-12 rounded-[4px] border border-white/20" />
+      </div>
+    </BrowserPreviewFrame>
+  );
+});
 
 // Preview game Flappy Bird (Android) ΓÇö game loop beneran: fisika gravitasi + burung
 // otomatis lompat menghindari tiap pipa. Jalan lewat requestAnimationFrame yang nulis

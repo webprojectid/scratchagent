@@ -200,3 +200,10 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--accent); outline-of
 .nv-rise{animation:nv-rise .8s cubic-bezier(.16,1,.3,1) both}
 @media(prefers-reduced-motion:reduce){.nv-rise{animation:none}}
 
+/* Rotasi pelan untuk preview vortex di homepage (transform-only, GPU-friendly).
+   Catatan: translate dipisah via inset/center di markup; keyframe hanya rotate. */
+@keyframes nv-rotate{from{transform:translate(-50%,-50%) rotate(0deg)}to{transform:translate(-50%,-50%) rotate(360deg)}}
+.nv-spin-slow{animation:nv-rotate 16s linear infinite}
+.nv-spin-slower{animation:nv-rotate 26s linear infinite reverse}
+@media(prefers-reduced-motion:reduce){.nv-spin-slow,.nv-spin-slower{animation:none}}
+
