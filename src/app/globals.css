@@ -195,3 +195,8 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--accent); outline-of
 .price-rise{animation:price-rise .7s cubic-bezier(.16,1,.3,1) both}
 @media(prefers-reduced-motion:reduce){.price-rise{animation:none}}
 
+/* Entry animation hero neural-vortex (konversi slideInUp dari styled-jsx referensi) */
+@keyframes nv-rise{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:none}}
+.nv-rise{animation:nv-rise .8s cubic-bezier(.16,1,.3,1) both}
+@media(prefers-reduced-motion:reduce){.nv-rise{animation:none}}
+
