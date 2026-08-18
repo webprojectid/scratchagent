@@ -72,7 +72,17 @@ export function PricingCards() {
         </div>
       </div>
 
-      <div className="mx-auto mt-8 flex flex-wrap items-stretch justify-center gap-6">
+      <div className="relative mx-auto mt-8 flex flex-wrap items-stretch justify-center gap-6">
+        {/* Ambient glow di belakang kartu: bahan untuk backdrop-blur kaca,
+            sekaligus focal point ke kartu Pro. */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 top-1/2 -z-10 h-[420px] -translate-y-1/2"
+          style={{
+            background:
+              "radial-gradient(ellipse 38% 60% at 72% 50%, rgba(116,250,106,.14), transparent 70%), radial-gradient(ellipse 30% 50% at 28% 50%, rgba(255,255,255,.04), transparent 70%)",
+          }}
+        />
         {/* Kartu Free — glass card standar, CTA outline */}
         <PricingCard.Card className="price-rise">
           <PricingCard.Header>
@@ -89,7 +99,10 @@ export function PricingCards() {
             </PricingCard.Price>
             <Button
               variant="outline"
-              className="w-full rounded-full border-white/15 font-semibold text-white transition-colors hover:border-[#74FA6A]/50 hover:text-[#74FA6A] active:scale-[.985]"
+              // hover:bg-accent dari variant outline ter-compile ke var(--accent)=lime
+              // (token brand menimpa token shadcn); timpa dengan lift putih halus biar
+              // teks hover lime tetap kebaca.
+              className="w-full rounded-full border-white/15 font-semibold text-white transition-colors hover:border-[#74FA6A]/50 hover:bg-white/[.06] hover:text-[#74FA6A] active:scale-[.985]"
               asChild
             >
               <Link href="/login">{c.freeCta}</Link>
@@ -120,9 +133,11 @@ export function PricingCards() {
           </PricingCard.Body>
         </PricingCard.Card>
 
-        {/* Kartu Pro — border lime, CTA lime solid, semua fitur tampil sebagai aktif */}
-        <PricingCard.Card className="price-rise border-[#74FA6A]/35 shadow-[0_20px_60px_-30px_rgba(116,250,106,.3)]" style={{ animationDelay: ".06s" }}>
-          <PricingCard.Header className="border-[#74FA6A]/25 bg-[#11170F]">
+        {/* Kartu Pro — border lime, CTA lime solid, semua fitur tampil sebagai aktif.
+            Override dark: eksplisit biar emphasis lime gak ditimpa dark:border-border/80
+            dari komponen dasar. */}
+        <PricingCard.Card className="price-rise border-[#74FA6A]/35 dark:border-[#74FA6A]/35 shadow-[0_20px_60px_-30px_rgba(116,250,106,.3)]" style={{ animationDelay: ".06s" }}>
+          <PricingCard.Header className="border-[#74FA6A]/25 bg-[#11170F] dark:bg-[#11170F]">
             <PricingCard.Plan>
               <PricingCard.PlanName>
                 <Sparkles aria-hidden="true" className="text-[#74FA6A]" />

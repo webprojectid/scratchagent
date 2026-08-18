@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Shell } from "@/components/brand";
+import { Shell, Brand } from "@/components/brand";
+import { ProjectSwitcher } from "@/components/project-switcher";
 import { getCurrentUser } from "@/lib/current-user";
 
 interface TokenInfo { hash: string; label: string; revoked: boolean; createdAt: string }
@@ -95,8 +96,18 @@ export default function Settings() {
   }
 
   return (
-    <Shell>
+    <Shell sidebar={false} brand={false}>
       {!authed ? null : (
+      <>
+      {/* Topbar: brand + dropdown riwayat project (pengganti sidebar;
+          dropdown memakai ProjectSwitcher yang sama dengan halaman project). */}
+      <div className="border-b border-white/8">
+        <div className="flex items-center gap-3 px-4 py-2.5 md:px-6">
+          <Brand />
+          <span className="h-4 w-px shrink-0 bg-white/10" aria-hidden="true" />
+          <ProjectSwitcher fallbackTitle="Project" />
+        </div>
+      </div>
       <section className="mx-auto max-w-3xl px-5 py-14">
         <h1 className="text-3xl font-black">Pengaturan</h1>
 
@@ -148,7 +159,17 @@ export default function Settings() {
               </div>
               <div>
                 <label className="text-xs text-slate-400">Model</label>
-                <input className="field mt-1 w-full font-mono text-sm" value={llmForm.model} onChange={(e) => setLlmForm((f) => ({ ...f, model: e.target.value }))} placeholder="mis. deepseek-chat, gemini-...-flash" />
+                <textarea
+                  className="field mt-1 w-full resize-y font-mono text-sm"
+                  rows={3}
+                  value={llmForm.model}
+                  onChange={(e) => setLlmForm((f) => ({ ...f, model: e.target.value }))}
+                  placeholder={"mis. deepseek-chat\natau banyak model (failover):\nqmodel_38max\nqmodel_25pro\nmimo-v2.5"}
+                />
+                <p className="mt-1 text-[11px] leading-4 text-slate-500">
+                  Bisa isi beberapa model (pisahkan dengan koma atau baris baru) untuk satu base URL + API key yang sama.
+                  Kalau satu model kehabisan quota, otomatis pindah ke model berikutnya.
+                </p>
               </div>
               <div>
                 <label className="text-xs text-slate-400">API Key {llmCfg.apiKeySet ? `(sekarang: ${llmCfg.apiKeyMasked})` : "(belum ada)"}</label>
@@ -159,6 +180,7 @@ export default function Settings() {
           </div>
         )}
       </section>
+      </>
       )}
       {toast && (
         <div className="fixed bottom-6 right-6 z-50 surface border-[#74FA6A] px-4 py-3 text-sm">{toast}</div>

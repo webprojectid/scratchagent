@@ -26,7 +26,9 @@ function Header({
 	return (
 		<div
 			className={cn(
-				'bg-muted/80 dark:bg-muted/50 relative mb-4 rounded-xl border p-4',
+				// Tailwind v4: default border = currentColor; pakai white/10 biar halus
+				// dan konsisten dengan token garis situs (border-white/10).
+				'bg-muted/80 dark:bg-muted/50 relative mb-4 rounded-xl border border-white/10 p-4',
 				className,
 			)}
 			{...props}

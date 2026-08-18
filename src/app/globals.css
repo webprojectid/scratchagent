@@ -1,6 +1,10 @@
 @import "tailwindcss";
 @import "@xyflow/react/dist/style.css";
 
+/* Dark-mode berbasis class (standar shadcn v4): komponen ui/pricing-card.tsx
+   mengandalkan varian dark: (dark:bg-transparent, dark:border-border/80, dll). */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* === shadcn/ui theme — identitas brand: dark + hijau #74FA6A === */
 :root {
   --radius: 0.625rem;
@@ -60,7 +64,10 @@
   --accent:#74FA6A;
   --accent-ink:#0A1A10;
   --paper:#E9EDED;
-  --muted:#7A838F;
+  /* --muted sengaja TIDAK didefinisikan ulang di sini: redefinisi lama
+     (#7A838F, abu terang) menimpa token shadcn --muted: #181b1f dan bikin
+     header glass pricing-card (bg-muted/50) jadi abu terang, bukan panel gelap.
+     --muted-foreground tetap dipakai via token shadcn sendiri. */
   --panel:#111418;
   scroll-behavior:smooth;
   --orange: var(--accent);

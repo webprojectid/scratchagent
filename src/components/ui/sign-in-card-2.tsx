@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { motion, AnimatePresence, useMotionValue, useTransform } from "framer-motion";
+import { motion, AnimatePresence, useMotionValue, useTransform, useSpring, useMotionTemplate } from "framer-motion";
 import { Mail, Lock, Eye, EyeClosed, ArrowRight, ArrowLeft, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLang } from "@/lib/lang";
@@ -45,11 +45,31 @@ export function SignInCard2() {
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
 
-  // Efek 3D card — rotasi mengikuti kursor
+  // Efek 3D card: rotasi mengikuti kursor, dibungkus useSpring supaya card
+  // meluncur halus (tidak loncat di tiap mousemove). Tilt ±12 derajat, plus:
+  // card bergeser ke arah kursor, glare cahaya mengikuti kursor, dan isi card
+  // bergerak berlawanan arah (parallax) supaya terasa ada kedalamannya.
+  const [hovering, setHovering] = useState(false);
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
-  const rotateX = useTransform(mouseY, [-300, 300], [10, -10]);
-  const rotateY = useTransform(mouseX, [-300, 300], [-10, 10]);
+  const tiltSpring = { stiffness: 250, damping: 24, mass: 0.5 };
+  const rotateX = useSpring(useTransform(mouseY, [-280, 280], [12, -12]), tiltSpring);
+  const rotateY = useSpring(useTransform(mouseX, [-200, 200], [-12, 12]), tiltSpring);
+
+  // Card bergeser sedikit ke arah kursor: terasa "mengejar" kursor.
+  const cardShiftX = useSpring(useTransform(mouseX, [-200, 200], [-4, 4]), tiltSpring);
+  const cardShiftY = useSpring(useTransform(mouseY, [-280, 280], [-4, 4]), tiltSpring);
+
+  // Glare: highlight cahaya mengikuti kursor, menjual ilusi kaca 3D
+  // (sumber cahaya seolah ada di posisi kursor).
+  const glareX = useSpring(useTransform(mouseX, [-200, 200], [15, 85]), tiltSpring);
+  const glareY = useSpring(useTransform(mouseY, [-280, 280], [8, 92]), tiltSpring);
+  const glareBackground = useMotionTemplate`radial-gradient(circle at ${glareX}% ${glareY}%, rgba(255,255,255,0.12) 0%, rgba(116,250,106,0.05) 30%, transparent 60%)`;
+
+  // Isi card bergerak berlawanan arah dengan card: dua layer bergerak berbeda
+  // menciptakan kedalaman (parallax), sekaligus mengarahkan fokus ke form.
+  const contentX = useSpring(useTransform(mouseX, [-200, 200], [6, -6]), tiltSpring);
+  const contentY = useSpring(useTransform(mouseY, [-280, 280], [6, -6]), tiltSpring);
 
   const handleMouseMove = (e: React.MouseEvent) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -58,6 +78,7 @@ export function SignInCard2() {
   };
 
   const handleMouseLeave = () => {
+    setHovering(false);
     mouseX.set(0);
     mouseY.set(0);
   };
@@ -266,14 +287,17 @@ export function SignInCard2() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8 }}
+        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
         className="relative z-10 w-full max-w-sm px-4"
-        style={{ perspective: 1500 }}
+        style={{ perspective: 1100 }}
       >
         <motion.div
           className="relative"
-          style={{ rotateX, rotateY }}
+          style={{ rotateX, rotateY, x: cardShiftX, y: cardShiftY }}
+          animate={{ scale: hovering ? 1.02 : 1 }}
+          transition={{ scale: { type: "spring", stiffness: 250, damping: 24 } }}
           onMouseMove={handleMouseMove}
+          onMouseEnter={() => setHovering(true)}
           onMouseLeave={handleMouseLeave}
         >
           <div className="group relative">
@@ -291,44 +315,46 @@ export function SignInCard2() {
               transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", repeatType: "mirror" }}
             />
 
-            {/* Berkas cahaya berjalan di tepi card */}
+            {/* Berkas cahaya berjalan di tepi card. Animasi memakai transform (x/y)
+                yang jalan di GPU, bukan left/top/right/bottom yang memicu layout
+                ulang setiap frame dan bikin gerak tersendat. */}
             <div className="absolute -inset-[1px] overflow-hidden rounded-2xl">
               <motion.div
                 className="absolute left-0 top-0 h-[3px] w-[50%] bg-gradient-to-r from-transparent via-[#74FA6A] to-transparent opacity-70"
-                initial={{ filter: "blur(2px)" }}
-                animate={{ left: ["-50%", "100%"], opacity: [0.3, 0.7, 0.3], filter: ["blur(1px)", "blur(2.5px)", "blur(1px)"] }}
+                initial={{ filter: "blur(2px)", x: "-100%" }}
+                animate={{ x: ["-100%", "200%"], opacity: [0.3, 0.7, 0.3], filter: ["blur(1px)", "blur(2.5px)", "blur(1px)"] }}
                 transition={{
-                  left: { duration: 2.5, ease: "easeInOut", repeat: Infinity, repeatDelay: 1 },
+                  x: { duration: 2.5, ease: "easeInOut", repeat: Infinity, repeatDelay: 1 },
                   opacity: { duration: 1.2, repeat: Infinity, repeatType: "mirror" },
                   filter: { duration: 1.5, repeat: Infinity, repeatType: "mirror" },
                 }}
               />
               <motion.div
                 className="absolute right-0 top-0 h-[50%] w-[3px] bg-gradient-to-b from-transparent via-[#74FA6A] to-transparent opacity-70"
-                initial={{ filter: "blur(2px)" }}
-                animate={{ top: ["-50%", "100%"], opacity: [0.3, 0.7, 0.3], filter: ["blur(1px)", "blur(2.5px)", "blur(1px)"] }}
+                initial={{ filter: "blur(2px)", y: "-100%" }}
+                animate={{ y: ["-100%", "200%"], opacity: [0.3, 0.7, 0.3], filter: ["blur(1px)", "blur(2.5px)", "blur(1px)"] }}
                 transition={{
-                  top: { duration: 2.5, ease: "easeInOut", repeat: Infinity, repeatDelay: 1, delay: 0.6 },
+                  y: { duration: 2.5, ease: "easeInOut", repeat: Infinity, repeatDelay: 1, delay: 0.6 },
                   opacity: { duration: 1.2, repeat: Infinity, repeatType: "mirror", delay: 0.6 },
                   filter: { duration: 1.5, repeat: Infinity, repeatType: "mirror", delay: 0.6 },
                 }}
               />
               <motion.div
                 className="absolute bottom-0 right-0 h-[3px] w-[50%] bg-gradient-to-r from-transparent via-[#74FA6A] to-transparent opacity-70"
-                initial={{ filter: "blur(2px)" }}
-                animate={{ right: ["-50%", "100%"], opacity: [0.3, 0.7, 0.3], filter: ["blur(1px)", "blur(2.5px)", "blur(1px)"] }}
+                initial={{ filter: "blur(2px)", x: "200%" }}
+                animate={{ x: ["200%", "-100%"], opacity: [0.3, 0.7, 0.3], filter: ["blur(1px)", "blur(2.5px)", "blur(1px)"] }}
                 transition={{
-                  right: { duration: 2.5, ease: "easeInOut", repeat: Infinity, repeatDelay: 1, delay: 1.2 },
+                  x: { duration: 2.5, ease: "easeInOut", repeat: Infinity, repeatDelay: 1, delay: 1.2 },
                   opacity: { duration: 1.2, repeat: Infinity, repeatType: "mirror", delay: 1.2 },
                   filter: { duration: 1.5, repeat: Infinity, repeatType: "mirror", delay: 1.2 },
                 }}
               />
               <motion.div
                 className="absolute bottom-0 left-0 h-[50%] w-[3px] bg-gradient-to-b from-transparent via-[#74FA6A] to-transparent opacity-70"
-                initial={{ filter: "blur(2px)" }}
-                animate={{ bottom: ["-50%", "100%"], opacity: [0.3, 0.7, 0.3], filter: ["blur(1px)", "blur(2.5px)", "blur(1px)"] }}
+                initial={{ filter: "blur(2px)", y: "200%" }}
+                animate={{ y: ["200%", "-100%"], opacity: [0.3, 0.7, 0.3], filter: ["blur(1px)", "blur(2.5px)", "blur(1px)"] }}
                 transition={{
-                  bottom: { duration: 2.5, ease: "easeInOut", repeat: Infinity, repeatDelay: 1, delay: 1.8 },
+                  y: { duration: 2.5, ease: "easeInOut", repeat: Infinity, repeatDelay: 1, delay: 1.8 },
                   opacity: { duration: 1.2, repeat: Infinity, repeatType: "mirror", delay: 1.8 },
                   filter: { duration: 1.5, repeat: Infinity, repeatType: "mirror", delay: 1.8 },
                 }}
@@ -354,6 +380,18 @@ export function SignInCard2() {
                 }}
               />
 
+              {/* Glare: highlight cahaya mengikuti kursor (pointer-events-none
+                  supaya tidak mengganggu klik; hanya efek visual). */}
+              <motion.div
+                className="pointer-events-none absolute inset-0"
+                style={{ background: glareBackground }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: hovering ? 1 : 0 }}
+                transition={{ duration: 0.4 }}
+              />
+
+              {/* Isi card: digeser berlawanan arah card untuk kedalaman parallax */}
+              <motion.div className="relative" style={{ x: contentX, y: contentY }}>
               {/* Logo dan header */}
               <div className="mb-5 space-y-1 text-center">
                 <motion.div
@@ -398,7 +436,7 @@ export function SignInCard2() {
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: "auto" }}
                         exit={{ opacity: 0, height: 0 }}
-                        transition={{ duration: 0.25 }}
+                        transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
                         className={`relative overflow-hidden ${focusedInput === "name" ? "z-10" : ""}`}
                       >
                         <div className="relative flex items-center overflow-hidden rounded-lg">
@@ -418,11 +456,10 @@ export function SignInCard2() {
                   </AnimatePresence>
 
                   {/* Email */}
-                  <motion.div
-                    className={`relative ${focusedInput === "email" ? "z-10" : ""}`}
-                    whileHover={{ scale: 1.01 }}
-                    transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                  >
+                  {/* Skala hover input dihapus: bikin gerak terasa kasar dan tidak
+                      punya tujuan UX; feedback fokus sudah ada lewat warna border
+                      dan latar (R-19). */}
+                  <div className={`relative ${focusedInput === "email" ? "z-10" : ""}`}>
                     <div className="relative flex items-center overflow-hidden rounded-lg">
                       <Mail className={`absolute left-3 h-4 w-4 transition-all duration-300 ${focusedInput === "email" ? "text-[#74FA6A]" : "text-white/40"}`} />
                       <Input
@@ -435,14 +472,10 @@ export function SignInCard2() {
                         className="h-10 w-full border-transparent bg-white/5 pl-10 pr-3 text-white transition-all duration-300 placeholder:text-white/30 focus:border-[#74FA6A]/30 focus:bg-white/10"
                       />
                     </div>
-                  </motion.div>
+                  </div>
 
                   {/* Password */}
-                  <motion.div
-                    className={`relative ${focusedInput === "password" ? "z-10" : ""}`}
-                    whileHover={{ scale: 1.01 }}
-                    transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                  >
+                  <div className={`relative ${focusedInput === "password" ? "z-10" : ""}`}>
                     <div className="relative flex items-center overflow-hidden rounded-lg">
                       <Lock className={`absolute left-3 h-4 w-4 transition-all duration-300 ${focusedInput === "password" ? "text-[#74FA6A]" : "text-white/40"}`} />
                       <Input
@@ -467,7 +500,7 @@ export function SignInCard2() {
                         )}
                       </div>
                     </div>
-                  </motion.div>
+                  </div>
                 </motion.div>
 
                 {(error || info) && (
@@ -518,7 +551,7 @@ export function SignInCard2() {
                 )}
 
                 {/* Tombol submit */}
-                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} type="submit" disabled={isLoading || oauthLoading !== null} className="group/button relative mt-5 w-full">
+                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 400, damping: 25 }} type="submit" disabled={isLoading || oauthLoading !== null} className="group/button relative mt-5 w-full">
                   <div className="absolute inset-0 rounded-lg bg-[#74FA6A]/10 opacity-0 blur-lg transition-opacity duration-300 group-hover/button:opacity-70" />
                   <div className="relative flex h-10 items-center justify-center overflow-hidden rounded-lg bg-gradient-to-b from-[#8CFF80] to-[#54C94A] text-black transition-all duration-300">
                     <AnimatePresence mode="wait">
@@ -554,6 +587,7 @@ export function SignInCard2() {
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 25 }}
                   type="button"
                   onClick={() => handleOAuth("google")}
                   disabled={isLoading || oauthLoading !== null}
@@ -579,6 +613,7 @@ export function SignInCard2() {
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 25 }}
                   type="button"
                   onClick={() => handleOAuth("github")}
                   disabled={isLoading || oauthLoading !== null}
@@ -608,6 +643,7 @@ export function SignInCard2() {
                   </button>
                 </motion.p>
               </form>
+              </motion.div>
             </div>
           </div>
         </motion.div>
