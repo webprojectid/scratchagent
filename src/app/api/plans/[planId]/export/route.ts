@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { accessPlan, getRequestUser } from "@/lib/api-auth";
+import { getAccountState } from "@/lib/billing";
 import { renderPrdMd } from "@/lib/zip";
 
 export async function GET(request: Request, { params }: { params: Promise<{ planId: string }> }) {
@@ -9,7 +10,15 @@ export async function GET(request: Request, { params }: { params: Promise<{ plan
   const { plan, error } = await accessPlan(planId, user);
   if (error || !plan) return error;
 
+  // Export PRD adalah fitur Pro (sesuai tabel pricing). Format json tetap
+  // terbuka karena dipakai UI internal; hanya md/zip yang digate.
   const format = searchParams.get("format") ?? "json";
+  if (format === "md" || format === "zip") {
+    const account = user ? await getAccountState(user.userId) : null;
+    if ((account?.tier ?? "free") !== "pro") {
+      return NextResponse.json({ error: "Export PRD hanya untuk paket Pro." }, { status: 403 });
+    }
+  }
 
   if (format === "md") {
     const md = renderPrdMd(plan);

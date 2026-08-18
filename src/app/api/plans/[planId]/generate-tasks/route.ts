@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { accessPlan, getRequestUser } from "@/lib/api-auth";
-import { generateTasksForFeature, buildTaskRef, sanitizeDeps } from "@/lib/generate";
+import { generateTasksForFeature, buildTaskRef, sanitizeDeps, assignTasksToSubFeatures } from "@/lib/generate";
 import { savePlan, updatePlanStatus } from "@/lib/storage";
 
 const TUID = "701f135a-050a-4e08-bc97-b6d3ee91d7e5";
@@ -58,7 +58,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ pla
       }
     } else {
       const subTitles = (feature.subFeatures ?? []).map((sf: any) => sf.title);
-      const result = await generateTasksForFeature(plan.brief, feature.title, subTitles, featureIndex);
+      // Ide user (Pro, maks 2/project) WAJIB ikut terbaca AI sebagai referensi tambahan.
+      const result = await generateTasksForFeature(plan.brief, feature.title, subTitles, featureIndex, plan.tier ?? "free", plan.features.length, plan.ideas);
       tasks = result.tasks;
     }
 
@@ -67,37 +68,22 @@ export async function POST(request: Request, { params }: { params: Promise<{ pla
     const tempKeyToRef = new Map<string, string>();
     const assigned: { task: FinalTask; rawDeps: string[] }[] = [];
 
+    // Distribusi task ke sub-fitur: SATU task masuk SATU sub-fitur saja
+    // (exact match dulu, lalu substring fallback; sisa masuk sub-fitur pertama).
+    // Tanpa dedupe jumlah task membengkak dan melanggar batas tier.
     let taskNum = 0;
-    for (const sf of feature.subFeatures) {
-      const sfTasks = keyed.filter((t) => {
-        const a = t.sub_feature?.toLowerCase().trim();
-        const b = sf.title.toLowerCase().trim();
-        return a === b || a?.includes(b) || b.includes(a ?? "");
-      });
-      sf.tasks = sfTasks.map((t) => {
-        const ref = buildTaskRef(featureIndex, plan.features[featureIndex].subFeatures.indexOf(sf), ++taskNum);
+    const assignment = assignTasksToSubFeatures(keyed, feature.subFeatures.map((sf: any) => sf.title));
+    for (const [subIndex, taskIndexes] of Array.from(assignment.entries()).sort(([a], [b]) => a - b)) {
+      const sf = feature.subFeatures[subIndex];
+      if (!sf) continue;
+      sf.tasks = taskIndexes.map((ti) => {
+        const t = keyed[ti];
+        const ref = buildTaskRef(featureIndex, subIndex, ++taskNum);
         tempKeyToRef.set(t.__key, ref);
         const task = makeTask(ref, t.title, t.layer, featureIndex + 1, t.page);
         assigned.push({ task, rawDeps: t.deps ?? [] });
         return task;
       });
-    }
-
-    const unmatched = keyed.filter((t) => {
-      const a = t.sub_feature?.toLowerCase().trim();
-      return !feature.subFeatures.some((sf) => {
-        const b = sf.title.toLowerCase().trim();
-        return a === b || a?.includes(b) || b.includes(a ?? "");
-      });
-    });
-    if (unmatched.length && feature.subFeatures[0]) {
-      feature.subFeatures[0].tasks.push(...unmatched.map((t) => {
-        const ref = buildTaskRef(featureIndex, 0, ++taskNum);
-        tempKeyToRef.set(t.__key, ref);
-        const task = makeTask(ref, t.title, t.layer, featureIndex + 1, t.page);
-        assigned.push({ task, rawDeps: t.deps ?? [] });
-        return task;
-      }));
     }
 
     // Mapping deps: id sementara dari LLM -> ref final, lalu buang siklus.

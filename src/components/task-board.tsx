@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { Check, ChevronDown, Circle, Search, X } from "lucide-react";
+import { Check, ChevronDown, Circle, Search, Trash2, X } from "lucide-react";
 import type { Plan, Task } from "@/lib/types";
 
 type BoardTask = Task & { feature: string; featureSlug: string; subFeature: string; subFeatureKey: string };
@@ -110,7 +110,7 @@ function FeaturePicker({ plan, selected, onSelect }: { plan: Plan; selected: str
   );
 }
 
-function TaskCard({ task, compact }: { task: BoardTask; compact?: boolean }) {
+function TaskCard({ task, compact, onDelete }: { task: BoardTask; compact?: boolean; onDelete?: () => void }) {
   const layer = layerStyle[task.layer] ?? layerStyle.qa;
   const accent = columns.find((c) => c.status === task.status)?.bar ?? "bg-slate-500/70";
 
@@ -170,13 +170,23 @@ function TaskCard({ task, compact }: { task: BoardTask; compact?: boolean }) {
 
       <div className="mt-2.5 flex items-center justify-between gap-2 border-t border-white/[.05] pt-2">
         <span className="min-w-0 flex-1 truncate text-[10px] text-slate-500">{task.subFeature}</span>
-        <span className="shrink-0 rounded-full bg-white/[.05] px-2 py-0.5 font-mono text-[9px] tabular-nums text-slate-400">P{task.phase}</span>
+        <span className="flex shrink-0 items-center gap-1.5">
+          <span className="rounded-full bg-white/[.05] px-2 py-0.5 font-mono text-[9px] tabular-nums text-slate-400">P{task.phase}</span>
+          {onDelete && (
+            <button
+              onClick={onDelete}
+              title={`Hapus task ${task.ref}`}
+              className="grid size-5 place-items-center rounded text-slate-600 opacity-0 transition group-hover:opacity-100 hover:bg-rose-400/10 hover:text-rose-400"
+              aria-label={`Hapus task ${task.ref}`}
+            ><Trash2 size={10} /></button>
+          )}
+        </span>
       </div>
     </motion.article>
   );
 }
 
-export function TaskBoard({ plan, liveTasks, compact = false }: { plan: Plan; liveTasks?: Record<string, Task["status"]>; compact?: boolean }) {
+export function TaskBoard({ plan, liveTasks, compact = false, isPro = false, onRemoveTask }: { plan: Plan; liveTasks?: Record<string, Task["status"]>; compact?: boolean; isPro?: boolean; onRemoveTask?: (ref: string, label: string) => void }) {
   const [selected, setSelected] = useState("all");
   const allTasks: BoardTask[] = plan.features.flatMap((feature) => feature.subFeatures.flatMap((subFeature) => subFeature.tasks.map((task) => ({ ...task, status: liveTasks?.[task.ref] ?? task.status ?? "pending", feature: feature.title, featureSlug: feature.slug, subFeature: subFeature.title, subFeatureKey: `${feature.slug}::${subFeature.title}` }))));
   const tasks = selected === "all" ? allTasks : selected.includes("::") ? allTasks.filter((task) => task.subFeatureKey === selected) : allTasks.filter((task) => task.featureSlug === selected);
@@ -288,7 +298,7 @@ export function TaskBoard({ plan, liveTasks, compact = false }: { plan: Plan; li
                 </div>
                 <div className="flex-1 space-y-2 overflow-y-auto pr-0.5">
                   <AnimatePresence mode="popLayout">
-                    {columnTasks.map((task) => <TaskCard key={task.ref} task={task} />)}
+                    {columnTasks.map((task) => <TaskCard key={task.ref} task={task} onDelete={isPro && onRemoveTask ? () => onRemoveTask(task.ref, `task ${task.ref}`) : undefined} />)}
                   </AnimatePresence>
                   {columnTasks.length === 0 && (
                     <div className="grid place-items-center rounded-xl border border-dashed border-white/[.06] py-8">

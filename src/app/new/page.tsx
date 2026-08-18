@@ -78,7 +78,7 @@ export default function NewPlan() {
 
           <div className="relative z-10 grid items-center gap-8 lg:grid-cols-[.9fr_1.1fr] lg:gap-10">
             <div>
-              <p className="eyebrow">Misi baru {quota !== null && `· ${quota} generate tersisa`}</p>
+              <p className="eyebrow">Misi baru {quota !== null && `· ${quota} dari 3 generate tersisa dalam 24 jam`}</p>
               <h1 className="mt-5 max-w-[10ch] text-[clamp(2.8rem,5.2vw,5rem)] font-semibold leading-[.92] tracking-[-.065em] text-white">Apa yang harus dibangun?</h1>
               <p className="mt-4 max-w-[42ch] text-[14px] leading-6 text-[#9AA5B3]">Tulis ide mentah. Scratch Agent menyusun asumsi, fitur, dan task graph.</p>
               <form
