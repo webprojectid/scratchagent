@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { HeaderNav } from "@/components/header-nav";
 import { HeroSectionBasic } from "@/components/ui/hero-spline-basic-demo";
-import { DemoOne } from "@/components/ui/neural-vortex-demo";
 import { useLang } from "@/lib/lang";
 
 function Logo() {
@@ -42,27 +41,14 @@ export default function SampleWebProjectPage() {
           </div>
           <p className="max-w-[42ch] text-sm leading-6 text-[#8C97A5]">
             {lang === "en"
-              ? "Websites generated from a short brief, running below as if you opened them directly in the browser."
+              ? "A website generated from a short brief, running below as if you opened it directly in the browser."
               : "Website hasil generasi dari brief singkat, berjalan di bawah seolah kamu membukanya langsung di browser."}
           </p>
         </div>
 
-        {/* Sample 1: hero Spline galaxy — berjalan di dalam frame Safari dark-mode */}
+        {/* Sample berjalan di dalam frame Safari dark-mode; scroll di dalam frame */}
         <div className="mt-10">
-          <div className="mb-4 flex items-center gap-3">
-            <span className="font-mono text-[10px] uppercase tracking-[.2em] text-[#9CA9B8]">sample 01</span>
-            <span className="h-px flex-1 bg-white/[.08]" aria-hidden="true" />
-          </div>
           <HeroSectionBasic />
-        </div>
-
-        {/* Sample 2: neural-vortex WebGL — frame Safari dark-mode */}
-        <div id="sample-2" className="mt-16 scroll-mt-20">
-          <div className="mb-4 flex items-center gap-3">
-            <span className="font-mono text-[10px] uppercase tracking-[.2em] text-[#9CA9B8]">sample 02</span>
-            <span className="h-px flex-1 bg-white/[.08]" aria-hidden="true" />
-          </div>
-          <DemoOne />
         </div>
       </section>
     </main>
