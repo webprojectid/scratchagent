@@ -159,7 +159,7 @@ export default function Prefs() {
             </AnimatePresence>
 
             <div className="mt-6 flex justify-end">
-              <button className="rounded-full border border-[#74FA6A] bg-transparent px-6 py-2.5 font-mono text-[12px] tracking-[.06em] text-[#74FA6A] transition-colors hover:bg-[#74FA6A] hover:text-black" onClick={start}>lanjut — klarifikasi dulu</button>
+              <button className="rounded-full border border-[#74FA6A] bg-transparent px-6 py-2.5 font-mono text-[12px] tracking-[.06em] text-[#74FA6A] transition-colors hover:bg-[#74FA6A] hover:text-black" onClick={start}>lanjut, klarifikasi dulu</button>
             </div>
           </div>
 
@@ -174,7 +174,7 @@ export default function Prefs() {
                       <div className="flex justify-between rounded-[8px] border border-white/10 bg-[#0A0A0A] px-3 py-2.5"><span className="text-white/40">mobile</span><span className="text-white">Flutter / Firebase / Store</span></div>
                       <div className="flex justify-between rounded-[8px] border border-white/10 bg-[#0A0A0A] px-3 py-2.5"><span className="text-white/40">desktop</span><span className="text-white">Tauri / Rust / SQLite</span></div>
                     </div>
-                    <p className="mt-4 flex items-center gap-1.5 font-mono text-[10px] text-white/30"><Clock size={12} /> 30–90s · no placeholder · strict json</p>
+                    <p className="mt-4 flex items-center gap-1.5 font-mono text-[10px] text-white/30"><Clock size={12} /> 30 sampai 90s · no placeholder · strict json</p>
                   </div>
 
                   <div className="rounded-[12px] border border-[#74FA6A]/20 bg-[#0F1317] p-4 font-mono text-[10px] leading-5 tracking-[.02em] text-white/40">
@@ -191,7 +191,7 @@ export default function Prefs() {
                         return <div key={label} className="flex items-center justify-between rounded-[8px] border border-white/10 bg-[#0A0A0A] px-3 py-2.5"><span className="font-mono text-[10px] uppercase tracking-[.06em] text-white/30">{label}</span><span className="max-w-[160px] truncate font-mono text-[11px] text-[#74FA6A]">{value}</span></div>;
                       })}
                     </div>
-                    <div className="mt-4 rounded-[8px] border border-[#74FA6A]/20 bg-[#74FA6A]/5 px-3 py-2 font-mono text-[10px] leading-5 text-[#74FA6A]"><Layers size={12} className="inline-block -translate-y-px" /> lock di PRD — jadi acuan agent, bukan saran.</div>
+                    <div className="mt-4 rounded-[8px] border border-[#74FA6A]/20 bg-[#74FA6A]/5 px-3 py-2 font-mono text-[10px] leading-5 text-[#74FA6A]"><Layers size={12} className="inline-block -translate-y-px" /> lock di PRD, jadi acuan agent, bukan saran.</div>
                   </div>
                 </motion.div>
               )}

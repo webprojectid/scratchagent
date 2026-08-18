@@ -4,6 +4,8 @@ import { getRequestUser, planOwnerKey, unauthorized } from "@/lib/api-auth";
 import { generatePlanStructure } from "@/lib/generate";
 import { savePlan } from "@/lib/storage";
 import { consumeQuota, finalizeQuota, getQuota, refundQuota } from "@/lib/quota";
+import { getAccountState } from "@/lib/billing";
+import { RATE_LIMITS, blockedIpResponse, clientKey, getClientIp, logSecurity, rateLimit, rateLimitedResponse } from "@/lib/security";
 import { randomUUID } from "crypto";
 
 const input = z.object({
@@ -28,25 +30,49 @@ const input = z.object({
 });
 
 export async function POST(request: Request) {
+  const ip = await getClientIp(request);
+
+  // IP yang diblokir admin dari Pusat Keamanan ditolak sebelum apa pun
+  // (menghentikan serangan biaya LLM dari IP yang sudah ditandai).
+  const blocked = await blockedIpResponse(request, ip);
+  if (blocked) return blocked;
+
   try {
     const data = input.parse(await request.json());
 
     // Identitas dari session/token; body userId cuma fallback di mode dev polos.
     const user = await getRequestUser(data.userId);
-    if (!user) return unauthorized();
+    if (!user) {
+      await logSecurity("auth_failed", { route: "/api/generate", reason: "no identity" }, { ip, request });
+      return unauthorized();
+    }
     const ownerId = planOwnerKey(user);
+
+    // Rem kedua selain kuota harian: maks 10 generate per 10 menit per akun.
+    const rl = RATE_LIMITS.generate;
+    const retryIn = rateLimit(clientKey(user.userId, ip), rl.limit, rl.windowMs);
+    if (retryIn !== null) return rateLimitedResponse(clientKey(user.userId, ip), retryIn, { ip, userId: user.userId, route: "/api/generate" });
+
+    // Tier + status banned: Pro bypass kuota, banned ditolak total.
+    const account = await getAccountState(user.userId);
+    if (account?.bannedAt) {
+      await logSecurity("access_denied", { route: "/api/generate", reason: "banned" }, { ip, userId: user.userId, request });
+      return NextResponse.json({ error: "Akun ini telah diblokir secara permanen." }, { status: 403 });
+    }
+    const tier = account?.tier ?? "free";
 
     if (!process.env.LLM_BASE_URL || !process.env.LLM_API_KEY || !process.env.LLM_MODEL) {
       return NextResponse.json({ error: "Konfigurasi LLM belum lengkap. Set LLM_BASE_URL, LLM_API_KEY, LLM_MODEL di .env" }, { status: 503 });
     }
 
-    const receipt = await consumeQuota(ownerId);
+    const receipt = await consumeQuota(ownerId, tier);
     if (!receipt) {
+      await logSecurity("quota_exhausted", { route: "/api/generate", tier }, { ip, userId: user.userId, request });
       return NextResponse.json({ error: "Kuota generate harian habis. Coba besok." }, { status: 429 });
     }
 
     try {
-      const result = await generatePlanStructure(data.brief, data.techPrefs, data.answers);
+      const result = await generatePlanStructure(data.brief, data.techPrefs, data.answers, tier);
       const planId = randomUUID();
       await savePlan(
         {
@@ -62,13 +88,16 @@ export async function POST(request: Request) {
           databaseSchema: result.databaseSchema,
           status: "generating",
           features: result.features as never,
+          warnings: result.warnings,
+          tier,
           createdAt: new Date().toISOString(),
         },
         ownerId,
       );
 
       await finalizeQuota(receipt, planId, result.usage);
-      return NextResponse.json({ id: planId });
+      await logSecurity("generate", { planId, tier, features: result.features.length, tokens: result.usage.tokensIn + result.usage.tokensOut }, { ip, userId: user.userId, request });
+      return NextResponse.json({ id: planId, warnings: result.warnings });
     } catch (error) {
       await refundQuota(receipt);
       throw error;
@@ -84,5 +113,7 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const user = await getRequestUser(searchParams.get("userId"));
   if (!user) return unauthorized();
-  return NextResponse.json(await getQuota(planOwnerKey(user)));
+  const account = await getAccountState(user.userId);
+  const tier = account?.tier ?? "free";
+  return NextResponse.json(await getQuota(planOwnerKey(user), tier));
 }

@@ -447,7 +447,7 @@ export function PrdView({ plan }: { plan: Plan }) {
   const num = (i: number) => String(i + 1).padStart(2, "0");
 
   return (
-    <div className="mx-auto w-full max-w-6xl">
+    <div className="w-full">
       {/* Mobile horizontal nav */}
       <nav className="sticky top-0 z-20 -mx-4 overflow-x-auto border-b border-white/8 bg-[#0A0A0A]/85 px-4 py-2 backdrop-blur-xl md:hidden">
         <div className="flex w-max items-center gap-1">
@@ -504,7 +504,7 @@ export function PrdView({ plan }: { plan: Plan }) {
 
         {/* Content */}
         <div className="min-w-0 flex-1">
-          <article className="mx-auto max-w-3xl">
+          <article className="w-full">
             <p className="eyebrow">Product requirements document</p>
             <h1 className="mt-2 !text-2xl !font-bold !leading-tight !tracking-tight text-white">
               {plan.title}

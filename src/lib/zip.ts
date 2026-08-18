@@ -1,7 +1,7 @@
 import type { Plan } from "./types";
 
 export function renderPrdMd(plan: Plan): string {
-  let md = `# PRD — Project Requirements Document\n\n## 1. Overview\n${plan.brief}\n\n## 2. Requirements\n`;
+  let md = `# PRD: Project Requirements Document\n\n## 1. Overview\n${plan.brief}\n\n## 2. Requirements\n`;
 
   if (plan.requirements) {
     md += `\n### Fungsional\n${plan.requirements.fungsional.map((r) => `- ${r}`).join("\n")}\n`;
@@ -22,7 +22,7 @@ export function renderPrdMd(plan: Plan): string {
     md += `\n### Fase ${fase}\n`;
     for (const f of faseMap.get(fase)!) {
       const priority = f.priority ? ` [${f.priority}]` : "";
-      md += `\n**${f.title}**${priority} — ${f.description}\n`;
+      md += `\n**${f.title}**${priority}. ${f.description}\n`;
       for (const sf of f.subFeatures) {
         md += `- **${sf.title}**\n`;
       }
@@ -46,7 +46,7 @@ export function renderPrdMd(plan: Plan): string {
 
   md += `\n## 7. Tech Stack\n`;
   if (plan.techStack?.length) {
-    md += plan.techStack.map((t) => `- **${t.name}** — ${t.desc}`).join("\n") + "\n";
+    md += plan.techStack.map((t) => `- **${t.name}**: ${t.desc}`).join("\n") + "\n";
   } else {
     md += plan.stack.map((s) => `- **${s}**`).join("\n") + "\n";
   }

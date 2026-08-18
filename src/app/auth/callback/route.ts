@@ -14,6 +14,9 @@ export async function GET(request: Request) {
     if (!error) {
       return NextResponse.redirect(`${origin}/auth/complete`);
     }
+    console.error("[auth/callback] exchangeCodeForSession gagal:", error.message);
+  } else {
+    console.error("[auth/callback] tidak ada param 'code' di callback URL");
   }
   return NextResponse.redirect(`${origin}/login?error=oauth`);
 }

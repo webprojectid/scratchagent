@@ -1,7 +1,7 @@
 import type { ClarifyQuestion } from "./generate";
 
 /**
- * Pertanyaan klarifikasi STATIS — template tetap, tidak digenerate LLM.
+ * Pertanyaan klarifikasi STATIS: template tetap, tidak digenerate LLM.
  * Sama untuk semua brief, biar cepat (instan) dan deterministik.
  * Urutan & isi sengaja generik supaya relevan untuk ide apa pun.
  */

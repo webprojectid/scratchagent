@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
+import { Lightbulb } from "lucide-react";
 import { Shell, Brand } from "@/components/brand";
 import { PlanMap } from "@/components/plan-map";
 import { AgentPromptModal } from "@/components/agent-modal";
+import { IdeaChatPanel } from "@/components/idea-chat";
 import { TaskBoard } from "@/components/task-board";
 import { PrdView } from "@/components/prd-view";
 import { ProjectSwitcher } from "@/components/project-switcher";
@@ -32,6 +34,18 @@ const viewTabs = [
 ] as const;
 
 type ViewKey = (typeof viewTabs)[number]["key"];
+
+/** Banner jujur: bagian PRD ini template generik karena LLM gagal saat generate. */
+function FallbackWarningBanner({ warnings }: { warnings?: string[] }) {
+  if (!warnings || warnings.length === 0) return null;
+  return (
+    <div className="border-b border-amber-400/20 bg-amber-400/[.06] px-4 py-2 md:px-6">
+      <p className="text-[11px] leading-relaxed text-amber-200/90">
+        <span className="font-semibold">⚠ Catatan:</span> {warnings.join(" · ")}. Narasi lainnya tetap spesifik untuk project ini.
+      </p>
+    </div>
+  );
+}
 
 function ViewTabs({ view, setView, pillId }: { view: ViewKey; setView: (v: ViewKey) => void; pillId: string }) {
   return (
@@ -62,13 +76,16 @@ function ViewTabs({ view, setView, pillId }: { view: ViewKey; setView: (v: ViewK
   );
 }
 
-export function PlanClient({ plan: initialPlan }: { plan: Plan }) {
+export function PlanClient({ plan: initialPlan, tier = "free" }: { plan: Plan; tier?: "free" | "pro" }) {
   const [plan, setPlan] = useState(initialPlan);
   const [liveTasks, setLiveTasks] = useState<Record<string, Task["status"]> | undefined>(undefined);
   const [showModal, setShowModal] = useState(false);
+  const [showIdeas, setShowIdeas] = useState(false);
   const [view, setView] = useState<"struktur" | "prd" | "task">("struktur");
   const [statusIdx, setStatusIdx] = useState(0);
+  const [notice, setNotice] = useState<string | null>(null);
   const generatingTasks = plan.status === "generating";
+  const isPro = tier === "pro";
 
   const taskCount = plan.features.reduce((acc, f) => acc + f.subFeatures.reduce((a, sf) => a + sf.tasks.length, 0), 0);
   const doneCount = liveTasks
@@ -115,6 +132,34 @@ export function PlanClient({ plan: initialPlan }: { plan: Plan }) {
       }
     } catch { /* ignore */ }
   }, [plan.id, plan.status]);
+
+  // Hapus struktur (fitur Pro). Target: fase, sub-fitur, atau task.
+  // Server menolak bila plan sedang dikerjakan agent (409) atau Free (403).
+  const removeStructure = useCallback(async (type: "feature" | "subfeature" | "task", params: Record<string, string>, label: string) => {
+    if (!window.confirm(`Hapus ${label}? Task di dalamnya ikut terhapus.`)) return;
+    try {
+      const qs = new URLSearchParams({ type, ...params }).toString();
+      const res = await fetch(`/api/plans/${plan.id}/structure?${qs}`, { method: "DELETE" });
+      const data = await res.json();
+      if (!res.ok) {
+        setNotice(data.error ?? "Gagal menghapus struktur.");
+        return;
+      }
+      setNotice(null);
+      // Update optimis lokal, lalu sinkronkan penuh dari server.
+      setPlan((prev) => ({
+        ...prev,
+        features: type === "feature"
+          ? prev.features.filter((f) => f.slug !== params.slug)
+          : prev.features.map((f) => type === "subfeature"
+            ? { ...f, subFeatures: f.subFeatures.filter((sf) => sf.title !== params.title) }
+            : { ...f, subFeatures: f.subFeatures.map((sf) => ({ ...sf, tasks: sf.tasks.filter((t) => t.ref !== params.ref) })) }),
+      }));
+      await refreshPlan();
+    } catch {
+      setNotice("Gagal menghapus struktur. Coba lagi.");
+    }
+  }, [plan.id, refreshPlan]);
 
   useEffect(() => {
     if (plan.status !== "generating") {
@@ -215,6 +260,15 @@ export function PlanClient({ plan: initialPlan }: { plan: Plan }) {
                 {doneCount}/{taskCount} task
               </span>
             )}
+            <button
+              className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[.03] px-3 py-1.5 text-xs font-medium text-white/70 transition hover:border-[#74FA6A]/40 hover:text-white"
+              onClick={() => setShowIdeas((v) => !v)}
+              aria-pressed={showIdeas}
+              title="Kolom chat ide — fitur Pro, maksimal 2 kali per project"
+            >
+              <Lightbulb size={13} className={showIdeas ? "text-[#74FA6A]" : undefined} />
+              Ide Kamu
+            </button>
             <button className="btn min-h-0 px-3.5 py-1.5 text-xs" onClick={() => setShowModal(true)} disabled={generatingTasks}>
               {generatingTasks ? "Menyusun task..." : "Mulai implementasi"}
             </button>
@@ -226,10 +280,23 @@ export function PlanClient({ plan: initialPlan }: { plan: Plan }) {
         </div>
       </div>
 
+      <FallbackWarningBanner warnings={plan.warnings} />
+      <AnimatePresence>
+        {showIdeas && <IdeaChatPanel planId={plan.id} isPro={isPro} open={showIdeas} onClose={() => setShowIdeas(false)} />}
+      </AnimatePresence>
+      {notice && (
+        <div className="border-b border-rose-400/20 bg-rose-400/[.06] px-4 py-2 md:px-6">
+          <p className="text-[11px] leading-relaxed text-rose-200/90">
+            <span className="font-semibold">✕</span> {notice}{" "}
+            {!isPro && <a href="/pricing" className="underline hover:text-white">Upgrade ke Pro</a>}
+          </p>
+        </div>
+      )}
+
       <div className="min-w-0 flex-1">
-        {view === "struktur" && <PlanMap plan={plan} liveTasks={liveTasks} />}
+        {view === "struktur" && <PlanMap plan={plan} liveTasks={liveTasks} isPro={isPro} onRemoveStructure={removeStructure} />}
         {view === "prd" && <PrdView plan={plan} />}
-        {view === "task" && <TaskBoard plan={plan} liveTasks={liveTasks} />}
+        {view === "task" && <TaskBoard plan={plan} liveTasks={liveTasks} isPro={isPro} onRemoveTask={(ref, label) => removeStructure("task", { ref }, label)} />}
       </div>
 
       {showModal && <AgentPromptModal planId={plan.id} onClose={() => setShowModal(false)} />}

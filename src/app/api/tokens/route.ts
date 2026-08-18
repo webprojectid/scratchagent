@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getRequestUser, unauthorized } from "@/lib/api-auth";
 import { createToken, findTokenByHash, listTokens, revokeToken } from "@/lib/tokens";
+import { RATE_LIMITS, clientKey, getClientIp, logSecurity, rateLimit, rateLimitedResponse } from "@/lib/security";
 
 // Semua operasi token terikat ke identitas terautentikasi (session/Bearer).
 // userId dari body client TIDAK lagi dipercaya: token hanya bisa dibuat
@@ -40,7 +41,14 @@ export async function POST(request: Request) {
   const user = await getRequestUser(legacyUserId);
   if (!user) return unauthorized();
 
+  // Rem laju: cegah spam pembuatan token (vektor penyalahgunaan akun).
+  const ip = await getClientIp(request);
+  const rl = RATE_LIMITS.tokens;
+  const retryIn = rateLimit(clientKey(user.userId, ip), rl.limit, rl.windowMs);
+  if (retryIn !== null) return rateLimitedResponse(clientKey(user.userId, ip), retryIn, { ip, userId: user.userId, route: "/api/tokens" });
+
   const result = await createToken(user.userId, label);
+  await logSecurity("admin_action", { action: "token_created", label }, { ip, userId: user.userId });
   return NextResponse.json({ token: result.token, hash: result.hash });
 }
 

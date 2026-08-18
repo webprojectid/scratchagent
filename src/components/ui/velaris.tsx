@@ -58,7 +58,7 @@ void main() {
 
   float t = u_time * 0.1;
 
-  // tebal, berkarakter — higher frequency + domain warp
+  // tebal, berkarakter: higher frequency + domain warp
   vec2 warp = vec2(snoise(p * 0.8 + vec2(t * 0.12, 0.0)), snoise(p * 0.8 + vec2(0.0, t * 0.12))) * 0.35;
   vec2 q = p + warp;
 
@@ -72,7 +72,7 @@ void main() {
   float dist = length(p) * 1.15;
   float vignette = 1.0 - smoothstep(0.15, 1.15, dist);
 
-  // bold, sharp edges — tighter smoothstep, higher alpha
+  // bold, sharp edges: tighter smoothstep, higher alpha
   float m1 = smoothstep(-0.12, 0.18, n1);
   float m2 = smoothstep(-0.08, 0.28, n2);
   float m3 = smoothstep(-0.15, 0.20, n3);
@@ -87,12 +87,12 @@ void main() {
   // extra texture speckles
   col = mix(col, u_colors[0] * 0.4 + u_colors[1] * 0.6, m5 * 0.45);
 
-  // central glow — subtle
+  // central glow: subtle
   float glow = smoothstep(0.85, 0.0, dist) * 0.22;
   col += u_colors[1] * glow;
 
   col = mix(col * 0.28, col, vignette);
-  // contrast boost — tebal berkarakter
+  // contrast boost: tebal berkarakter
   col = pow(col, vec3(0.78));
   col = clamp(col * 1.15, 0.0, 1.0);
 

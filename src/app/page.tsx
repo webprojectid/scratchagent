@@ -1,11 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { AnimatePresence, animate, motion, useMotionValue, useSpring, useScroll } from "motion/react";
-import { ArrowUpDown, ArrowUpRight, Bike, ChevronLeft, Clock, CreditCard, Delete, Footprints, MoreHorizontal, Play, QrCode, Sparkles, Star, User, Users, Wind, X, Zap } from "lucide-react";
+import { animate, AnimatePresence, motion, useMotionValue, useSpring, useScroll } from "motion/react";
+import { ArrowUpDown, ArrowUpRight, Bike, ChevronLeft, Clock, CreditCard, Delete, Footprints, KeyRound, MoreHorizontal, Play, QrCode, Sparkles, Star, User, Users, Wind, X, Zap } from "lucide-react";
 import { memo, useEffect, useRef, useState } from "react";
 import DottedDemo from "@/components/ui/dotted-demo";
 import { getCurrentUser, refreshCurrentUser } from "@/lib/current-user";
+import { LanguageToggle } from "@/components/lang-toggle";
+import { useLang } from "@/lib/lang";
+import { t } from "@/lib/i18n";
+import { homeCopy } from "@/lib/copy-home";
 
 function Magnetic({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -49,7 +53,7 @@ const stackRows = [
 function StackMarquee() {
   const repeated = (row: typeof stackRows[number]) => [...row, ...row, ...row];
 
-  return <section className="relative mx-auto mt-24 w-full overflow-hidden py-5 md:mt-32 md:py-8" aria-label="Scratch Agent stack">
+  return <section className="relative top-12 mx-auto mt-24 w-full overflow-hidden py-5 md:top-20 md:mt-32 md:py-8" aria-label="Scratch Agent stack">
     <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-24 bg-gradient-to-r from-[#0A0A0A] to-transparent md:w-48" />
     <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-24 bg-gradient-to-l from-[#0A0A0A] to-transparent md:w-48" />
     <div className="stack-row"><div className="stack-track stack-track-right">{[0, 1].map((copy) => <div key={copy} className="stack-group">{repeated(stackRows[0]).map((item, i) => <span key={`${item.name}-${i}`} className="stack-brand"><img src={`https://cdn.simpleicons.org/${item.slug}/B7C8B9`} alt="" />{item.name}</span>)}</div>)}</div></div>
@@ -58,6 +62,7 @@ function StackMarquee() {
 }
 
 function Navbar() {
+  const lang = useLang();
   const { scrollY } = useScroll();
   const [scrolled, setScrolled] = useState(false);
   const [mobileNav, setMobileNav] = useState(false);
@@ -82,27 +87,30 @@ function Navbar() {
       <motion.nav className={`sticky top-3 z-40 mx-auto flex h-[54px] w-[calc(100%-28px)] max-w-[1300px] items-center justify-between rounded-full px-4 transition-all duration-300 md:top-4 md:px-5 ${scrolled ? "border border-white/[.08] bg-[rgba(10,10,10,0.8)] shadow-[0_12px_40px_rgba(0,0,0,.3)] backdrop-blur-[12px]" : "border border-white/[.06] bg-[#1D2223]"}`} initial={{ y: -16, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: .5, ease: [0.16, 1, 0.3, 1] }}>
         <div className="flex items-center gap-8">
           <Link href="/" className="flex items-center gap-2 text-[18px] font-semibold tracking-[-.04em] text-[#E8F0E8]"><span className="relative grid size-7 place-items-center overflow-hidden text-[#74FA6A]" aria-hidden="true"><span className="absolute left-0 top-[7px] h-3 w-2.5 -skew-x-[28deg] rounded-sm bg-[#74FA6A]" /><span className="absolute left-[8px] top-[3px] h-3 w-2.5 -skew-x-[28deg] rounded-sm bg-[#9AFF82]" /><span className="absolute left-[16px] top-[7px] h-3 w-2.5 -skew-x-[28deg] rounded-sm bg-[#4DDC62]" /></span>Scratch Agent</Link>
-          <div className="hidden items-center gap-9 md:flex"><a href="#product" className="font-mono text-[12px] tracking-[0.02em] text-white/70 transition-colors duration-200 hover:text-[#74FA6A]">Product</a><a href="#solutions" className="font-mono text-[12px] tracking-[0.02em] text-white/70 transition-colors duration-200 hover:text-[#74FA6A]">Solutions</a><a href="#customers" className="font-mono text-[12px] tracking-[0.02em] text-white/70 transition-colors duration-200 hover:text-[#74FA6A]">Customers</a><a href="#resources" className="font-mono text-[12px] tracking-[0.02em] text-white/70 transition-colors duration-200 hover:text-[#74FA6A]">Resources</a><Link href="/docs" className="font-mono text-[12px] tracking-[0.02em] text-white/70 transition-colors duration-200 hover:text-[#74FA6A]">Docs</Link></div>
+          <div className="hidden items-center gap-9 md:flex"><Link href="/pricing" className="font-mono text-[12px] tracking-[0.02em] text-white/70 transition-colors duration-200 hover:text-[#74FA6A]">{t("nav", "pricing", lang)}</Link><Link href="/solutions" className="font-mono text-[12px] tracking-[0.02em] text-white/70 transition-colors duration-200 hover:text-[#74FA6A]">{t("nav", "solutions", lang)}</Link><Link href="/docs" className="font-mono text-[12px] tracking-[0.02em] text-white/70 transition-colors duration-200 hover:text-[#74FA6A]">{t("nav", "docs", lang)}</Link><a href="https://scratchagent.store/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 font-mono text-[12px] tracking-[0.02em] text-[#74FA6A] transition-colors duration-200 hover:text-[#A8FF9B]"><KeyRound size={13} strokeWidth={2.2} aria-hidden="true" />Api Key</a></div>
         </div>
         <div className="hidden items-center gap-6 md:flex">
+          <LanguageToggle />
           {loggedIn ? (
-            <Link href="/profile" className="font-mono text-[12px] tracking-[0.02em] text-white/80 transition-colors hover:text-[#74FA6A]">Profile</Link>
+            <Link href="/profile" className="font-mono text-[12px] tracking-[0.02em] text-white/80 transition-colors hover:text-[#74FA6A]">{t("nav", "profile", lang)}</Link>
           ) : (
-            <Link href="/login" className="font-mono text-[12px] tracking-[0.02em] text-white/80 transition-colors hover:text-[#74FA6A]">Login</Link>
+            <Link href="/login" className="font-mono text-[12px] tracking-[0.02em] text-white/80 transition-colors hover:text-[#74FA6A]">{t("nav", "login", lang)}</Link>
           )}
           <Link href={loggedIn ? "/new" : "/login"} className="grid size-8 place-items-center rounded-full bg-[#74FA6A] text-black transition hover:scale-105 hover:bg-[#A8FF9B]" aria-label="Mulai sekarang"><ArrowUpRight size={16} /></Link>
         </div>
         <button className="grid size-8 place-items-center text-white md:hidden" onClick={() => setMobileNav((v) => !v)} aria-label="Navigasi"><span className="relative block h-3.5 w-5"><span className={`absolute left-0 top-0 block h-px w-full bg-white transition-all duration-300 ${mobileNav ? "translate-y-[7px] rotate-45" : ""}`} /><span className={`absolute left-0 top-[7px] block h-px w-full bg-white transition-opacity duration-200 ${mobileNav ? "opacity-0" : "opacity-100"}`} /><span className={`absolute left-0 top-[14px] block h-px w-full bg-white transition-all duration-300 ${mobileNav ? "translate-y-[-7px] -rotate-45" : ""}`} /></span></button>
       </motion.nav>
       <motion.div className="fixed inset-0 z-[60] flex flex-col bg-[#0A0A0A] md:hidden" initial={false} animate={mobileNav ? { opacity: 1, pointerEvents: "auto" } : { opacity: 0, pointerEvents: "none" }} transition={{ duration: .35, ease: [0.16, 1, 0.3, 1] }}>
-        <div className="flex h-[64px] items-center justify-between px-5"><span className="flex items-center gap-2 text-[18px] font-semibold tracking-[-.04em] text-[#E8F0E8]"><span className="size-6 skew-x-[-28deg] bg-[#74FA6A]" />Scratch Agent</span><button className="grid size-8 place-items-center text-white" onClick={() => setMobileNav(false)} aria-label="Tutup"><X size={18} /></button></div>
-        <div className="flex flex-1 flex-col justify-between px-5 py-12"><div className="space-y-1">{[{ href: "#product", label: "product" }, { href: "#solutions", label: "solutions" }, { href: "#customers", label: "customers" }, { href: "#resources", label: "resources" }, { href: "/docs", label: "docs" }, { href: "/project/demo", label: "contoh plan" }].map((link, i) => (<motion.a key={link.href} href={link.href} onClick={() => setMobileNav(false)} className="block py-4 font-mono text-[14px] tracking-[0.08em] text-white/70 transition-colors hover:text-[#74FA6A]" initial={{ opacity: 0, y: 16 }} animate={mobileNav ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }} transition={{ delay: 0.08 + i * 0.05, duration: .4, ease: [0.16, 1, 0.3, 1] }}>{link.label}</motion.a>))}</div><motion.div initial={{ opacity: 0, y: 16 }} animate={mobileNav ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }} transition={{ delay: 0.32, duration: .4, ease: [0.16, 1, 0.3, 1] }}><Link href={loggedIn ? "/new" : "/login"} onClick={() => setMobileNav(false)} className="flex w-full items-center justify-center rounded-full border border-[#74FA6A] px-6 py-3.5 font-mono text-[13px] tracking-[0.06em] text-[#74FA6A] transition-colors hover:bg-[#74FA6A] hover:text-black">mulai gratis</Link><p className="mt-6 font-mono text-[11px] tracking-[.08em] text-white/30">{loggedIn ? <Link href="/profile" className="hover:text-[#74FA6A]">profile</Link> : "login segera"}</p></motion.div></div>
+        <div className="flex h-[64px] items-center justify-between px-5"><span className="flex items-center gap-2 text-[18px] font-semibold tracking-[-.04em] text-[#E8F0E8]"><span className="size-6 skew-x-[-28deg] bg-[#74FA6A]" />Scratch Agent</span><div className="flex items-center gap-3"><LanguageToggle /><button className="grid size-8 place-items-center text-white" onClick={() => setMobileNav(false)} aria-label="Tutup"><X size={18} /></button></div></div>
+        <div className="flex flex-1 flex-col justify-between px-5 py-12"><div className="space-y-1">{[{ href: "/pricing", label: t("nav", "pricing", lang) }, { href: "/solutions", label: t("nav", "solutions", lang) }, { href: "/docs", label: t("nav", "docs", lang) }, { href: "https://scratchagent.store/", label: "Api Key", external: true }, { href: "/project/demo", label: t("cta", "examplePlan", lang) }].map((link, i) => (<motion.a key={link.href} href={link.href} target={link.external ? "_blank" : undefined} rel={link.external ? "noopener noreferrer" : undefined} onClick={() => setMobileNav(false)} className={`block py-4 font-mono text-[14px] tracking-[0.08em] transition-colors hover:text-[#74FA6A] ${link.external ? "text-[#74FA6A]" : "text-white/70"}`} initial={{ opacity: 0, y: 16 }} animate={mobileNav ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }} transition={{ delay: 0.08 + i * 0.05, duration: .4, ease: [0.16, 1, 0.3, 1] }}>{link.label}</motion.a>))}</div><motion.div initial={{ opacity: 0, y: 16 }} animate={mobileNav ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }} transition={{ delay: 0.32, duration: .4, ease: [0.16, 1, 0.3, 1] }}><Link href={loggedIn ? "/new" : "/login"} onClick={() => setMobileNav(false)} className="flex w-full items-center justify-center rounded-full border border-[#74FA6A] px-6 py-3.5 font-mono text-[13px] tracking-[0.06em] text-[#74FA6A] transition-colors hover:bg-[#74FA6A] hover:text-black">{t("cta", "startFree", lang)}</Link><p className="mt-6 font-mono text-[11px] tracking-[.08em] text-white/30">{loggedIn ? <Link href="/profile" className="hover:text-[#74FA6A]">{t("nav", "profile", lang)}</Link> : t("cta", "login", lang)}</p></motion.div></div>
       </motion.div>
     </>
   );
 }
 
 export default function Home() {
+  const lang = useLang();
+  const hc = homeCopy(lang);
   const [loggedIn, setLoggedIn] = useState(false);
   useEffect(() => {
     let active = true;
@@ -115,16 +123,16 @@ export default function Home() {
       <link rel="preload" href="https://prod.spline.design/kZDDjO5HuC9GJUM2/scene.splinecode" as="fetch" crossOrigin="anonymous" />
       <DottedDemo />
       <div className="pointer-events-none fixed inset-0 z-[70] opacity-[.055] mix-blend-soft-light" style={{ backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>")` }} />
-      <a href="#agents" className="relative z-30 mb-3 flex min-h-8 items-center justify-center gap-2 bg-[#74FA6A] px-4 py-1.5 text-center text-[11px] font-medium leading-4 text-black transition-colors hover:bg-[#9AFF82] md:mb-4 md:text-[12px]">Scratch Agent is free to use. Enjoying it? Support the project <span className="underline underline-offset-2">Donate</span><span aria-hidden="true">→</span></a>
+      <a href="#agents" className="relative z-30 mb-3 flex min-h-8 items-center justify-center gap-2 bg-[#74FA6A] px-4 py-1.5 text-center text-[11px] font-medium leading-4 text-black transition-colors hover:bg-[#9AFF82] md:mb-4 md:text-[12px]">{hc.banner}<span aria-hidden="true">→</span></a>
       <Navbar />
 
        <section className="relative mx-auto max-w-[980px] px-5 pb-14 pt-10 md:px-10 md:pb-18 md:pt-12">
          <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .6, ease: [0.16, 1, 0.3, 1] }} className="relative z-10 mx-auto flex max-w-[760px] flex-col items-center text-center">
-           <h1 className="max-w-[16ch] text-balance text-[clamp(2.8rem,5.8vw,5rem)] font-medium leading-[.96] tracking-[-.065em] text-[#E8F8E5]"><span className="text-[#74FA6A]">Rencana yang jelas.</span><br />Agent yang terus bergerak.</h1>
-           <p className="mt-5 max-w-[54ch] text-balance text-[15px] leading-[1.6] text-[#A9C5A7]">Ubah brief menjadi task terurut, konteks siap pakai, dan langkah berikutnya yang bisa langsung dikerjakan agent.</p>
+           <h1 className="max-w-[16ch] text-balance text-[clamp(2.8rem,5.8vw,5rem)] font-medium leading-[.96] tracking-[-.065em] text-[#E8F8E5]"><span className="text-[#74FA6A]">{hc.heroA}</span><br />{hc.heroB}</h1>
+           <p className="mt-5 max-w-[54ch] text-balance text-[15px] leading-[1.6] text-[#A9C5A7]">{hc.heroSub}</p>
            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-               <Magnetic><Link href={loggedIn ? "/new" : "/login"} className="rv2-button min-w-[146px] bg-[#74FA6A] text-black hover:bg-[#A8FF9B] group">Mulai <span className="grid size-6 place-items-center rounded-full bg-black/10 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5"><ArrowUpRight size={12} /></span></Link></Magnetic>
-             <Link href="/project/demo" className="rv2-button light min-w-[146px]"><Play size={13} fill="currentColor" /> Lihat demo</Link>
+               <Magnetic><Link href={loggedIn ? "/new" : "/login"} className="rv2-button min-w-[146px] bg-[#74FA6A] text-black hover:bg-[#A8FF9B] group">{hc.heroStart} <span className="grid size-6 place-items-center rounded-full bg-black/10 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5"><ArrowUpRight size={12} /></span></Link></Magnetic>
+             <Link href="/project/demo" className="rv2-button light min-w-[146px]"><Play size={13} fill="currentColor" /> {hc.heroDemo}</Link>
            </div>
         </motion.div>
       </section>
@@ -134,63 +142,63 @@ export default function Home() {
          <div className="rounded-[18px] border border-white/10 bg-[#151A21]">
            <div className="flex h-11 items-center justify-between border-b border-white/10 px-4 font-mono text-[10px] text-white/40"><span className="flex items-center gap-1.5"><i className="size-2.5 rounded-full bg-[#FF5F56]" /><i className="size-2.5 rounded-full bg-[#FFBD2E]" /><i className="size-2.5 rounded-full bg-[#74FA6A]" /></span><span className="tracking-[.08em]">Scratch Agent · mission control</span><span className="inline-flex items-center gap-1.5 text-emerald-300/80"><span className="size-1.5 rounded-full bg-emerald-400 shadow-[0_0_10px_#34d399]" /> live • 5s</span></div>
            <div className="grid min-h-[420px] md:grid-cols-[176px_1fr_296px]">
-             <aside className="hidden border-r border-white/10 p-4 md:block"><p className="font-mono text-[9px] uppercase tracking-[.18em] text-white/30">plan</p>{["Struktur", "PRD", "Task", "Checkpoint"].map((item, index) => (<div key={item} className={`mt-2 flex items-center gap-2 rounded-[10px] px-2.5 py-2 font-mono text-[11px] ${index === 0 ? "bg-[#74FA6A]/10 text-[#74FA6A] border border-[#74FA6A]/20" : "text-white/44"}`}><span className="size-1.5 rounded-full bg-current" />{item}</div>))}</aside>
-             <div className="relative overflow-x-auto p-5 md:p-6"><div className="absolute inset-0 opacity-[.14] [background-image:radial-gradient(#9AA5B366_1px,transparent_1px)] [background-size:18px_18px]" /><div className="relative flex min-w-[640px] items-center gap-10 py-16"><BentoMock ok title="PROJECT" name="Kedai Senja" meta="0 / 28 task" /><Connector /><div className="space-y-5"><BentoMock eyebrow="PHASE 1" name="Pemesanan" meta="8 task" pulse /><BentoMock eyebrow="PHASE 2" name="Operasional" meta="12 task" /><BentoMock eyebrow="PHASE 3" name="Laporan" meta="8 task" /></div><Connector /><div className="space-y-5"><BentoMock title="SUB-FITUR" list={["Katalog menu", "Keranjang", "Checkout"]} /><BentoMock title="TASK" list={["Buat halaman katalog", "Tambah stub", "Integrasi API"]} typing /></div></div></div>
-             <aside className="hidden border-l border-white/10 bg-[#0E1115] p-5 lg:block"><Eyebrow>agent aktif</Eyebrow><h3 className="mt-3 text-[15px] font-semibold tracking-[-.02em] text-white">F01-S01-T02</h3><p className="mt-2 text-xs leading-5 text-white/48">Tambah pencarian + filter menu.</p><div className="mt-5 rounded-xl border border-white/10 bg-black/30 p-3 font-mono text-[10px] leading-6 text-white/50"><span className="text-white/70">task berikutnya</span><br /><span className="text-emerald-300">✓</span> dependensi ready<br /><span className="text-white">›</span> checkpoint: false</div><div className="mt-5 flex items-center gap-2 font-mono text-[10px] text-white/30"><Zap size={11} className="text-white/40" /> polling 5s</div></aside>
+             <aside className="hidden border-r border-white/10 p-4 md:block"><p className="font-mono text-[9px] uppercase tracking-[.18em] text-white/30">{hc.mockPlanLabel}</p>{hc.mockPlanItems.map((item, index) => (<div key={item} className={`mt-2 flex items-center gap-2 rounded-[10px] px-2.5 py-2 font-mono text-[11px] ${index === 0 ? "bg-[#74FA6A]/10 text-[#74FA6A] border border-[#74FA6A]/20" : "text-white/44"}`}><span className="size-1.5 rounded-full bg-current" />{item}</div>))}</aside>
+             <div className="relative overflow-x-auto p-5 md:p-6"><div className="absolute inset-0 opacity-[.14] [background-image:radial-gradient(#9AA5B366_1px,transparent_1px)] [background-size:18px_18px]" /><div className="relative flex min-w-[640px] items-center gap-10 py-16"><BentoMock ok title={hc.mockProjectTitle} name={hc.mockProjectName} meta="0 / 120 task" /><Connector /><div className="space-y-5"><BentoMock eyebrow={`${hc.mockPhase} 1`} name={hc.mockPhaseOrder[0]} meta="20 task" pulse /><BentoMock eyebrow={`${hc.mockPhase} 2`} name={hc.mockPhaseOrder[1]} meta="14 task" /><BentoMock eyebrow={`${hc.mockPhase} 3`} name={hc.mockPhaseOrder[2]} meta="16 task" /></div><Connector /><div className="space-y-5"><BentoMock title={hc.mockSubFeatureTitle} list={hc.mockSubFeatures} /><BentoMock title={hc.mockTaskTitle} list={hc.mockTasks} typing /></div></div></div>
+             <aside className="hidden border-l border-white/10 bg-[#0E1115] p-5 lg:block"><Eyebrow>{hc.mockAgentLabel}</Eyebrow><h3 className="mt-3 text-[15px] font-semibold tracking-[-.02em] text-white">F01-S01-T02</h3><p className="mt-2 text-xs leading-5 text-white/48">{hc.mockAgentTask}</p><div className="mt-5 rounded-xl border border-white/10 bg-black/30 p-3 font-mono text-[10px] leading-6 text-white/50"><span className="text-white/70">{hc.mockNextTask}</span><br /><span className="text-emerald-300">✓</span> {hc.mockDepsReady}<br /><span className="text-white">›</span> checkpoint: false</div><div className="mt-5 flex items-center gap-2 font-mono text-[10px] text-white/30"><Zap size={11} className="text-white/40" /> polling 5s</div></aside>
            </div>
          </div>
        </motion.section>
 
       <section id="product" className="mx-auto max-w-[1360px] px-5 pb-24 pt-24 md:px-10 md:pb-32 md:pt-28">
-        <div className="flex flex-wrap items-end justify-between gap-6"><div><Eyebrow>the planning cloud for agents</Eyebrow><h2 className="mt-5 max-w-[18ch] text-balance text-[clamp(2.35rem,4.2vw,3.75rem)] font-medium leading-[.98] tracking-[-.055em] text-[#F0F3F5]">Konteks penuh untuk agent dalam satu alur.</h2></div></div>
+        <div className="flex flex-wrap items-end justify-between gap-6"><div><Eyebrow>{hc.productEyebrow}</Eyebrow><h2 className="mt-5 max-w-[18ch] text-balance text-[clamp(2.35rem,4.2vw,3.75rem)] font-medium leading-[.98] tracking-[-.055em] text-[#F0F3F5]">{hc.productTitle}</h2></div></div>
         <div className="mt-12 grid gap-5 md:grid-cols-2">
-          <FeatureCard label="PRD ENGINE" title="Brief → graph terurut." copy="Asumsi diperkaya. Feature, sub-feature, task, deps." terminal={<AnimatedTerminalPRD />} />
-          <FeatureCard label="AGENT-NATIVE RUNTIME" title="Built untuk eksekusi fokus." copy="Satu task aktif. Status, layer, checkpoint terbaca." terminal={<AnimatedTerminalRuntime />} />
-          <FeatureCard label="TASK GRAPH" title="Ordering deterministik." copy="Frontend, backend, QA. Server menentukan urutan." terminal={<AnimatedTerminalQueue />} />
-          <FeatureCard label="LIVE PROGRESS" title="Lihat agent bergerak." copy="Polling lima detik. Telemetry tetap terlihat." terminal={<><div className="flex items-center justify-between"><span>LIVE TELEMETRY</span><span className="text-[#74FA6A]">5s poll</span></div><div className="relative mt-6 h-[96px] overflow-hidden rounded border border-white/10 bg-[#111312] p-3"><motion.svg viewBox="0 0 330 100" preserveAspectRatio="none" className="h-full w-full"><motion.polyline points="0,70 28,35 55,72 88,65 118,82 148,45 175,58 208,29 235,66 260,51 290,76 315,42 330,48" fill="none" stroke="#74FA6A" strokeWidth="2" strokeLinecap="round" animate={{ pathLength: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 2.8, ease: "easeInOut" }} /></motion.svg></div><p className="mt-3 text-[10px] text-white/35">active · 03 &nbsp; done today · 08 &nbsp; checkpoint false</p></>} />
+          <FeatureCard label={hc.features[0].label} title={hc.features[0].title} copy={hc.features[0].copy} terminal={<AnimatedTerminalPRD />} />
+          <FeatureCard label={hc.features[1].label} title={hc.features[1].title} copy={hc.features[1].copy} terminal={<AnimatedTerminalRuntime />} />
+          <FeatureCard label={hc.features[2].label} title={hc.features[2].title} copy={hc.features[2].copy} terminal={<AnimatedTerminalQueue />} />
+          <FeatureCard label={hc.features[3].label} title={hc.features[3].title} copy={hc.features[3].copy} terminal={<><div className="flex items-center justify-between"><span>LIVE TELEMETRY</span><span className="text-[#74FA6A]">5s poll</span></div><div className="relative mt-6 h-[96px] overflow-hidden rounded border border-white/10 bg-[#111312] p-3"><motion.svg viewBox="0 0 330 100" preserveAspectRatio="none" className="h-full w-full"><motion.polyline points="0,70 28,35 55,72 88,65 118,82 148,45 175,58 208,29 235,66 260,51 290,76 315,42 330,48" fill="none" stroke="#74FA6A" strokeWidth="2" strokeLinecap="round" animate={{ pathLength: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 2.8, ease: "easeInOut" }} /></motion.svg></div><p className="mt-3 text-[10px] text-white/35">{hc.termActiveLine}</p></>} />
         </div>
       </section>
 
-
+      <section id="showcase" className="mx-auto max-w-[1360px] px-5 pb-24 md:px-10 md:pb-32">
+        <div className="flex flex-wrap items-end justify-between gap-6">
+          <div><Eyebrow>case studies</Eyebrow><h2 className="mt-5 max-w-[20ch] text-balance text-[clamp(2.35rem,4.2vw,3.75rem)] font-medium leading-[.98] tracking-[-.055em] text-[#F0F3F5]">Dari brief jadi plan siap eksekusi.</h2></div>
+          <p className="max-w-[42ch] text-sm leading-6 text-[#8C97A5]">Project simulasi nyata: dihasilkan otomatis dari brief singkat, lalu dijalankan task demi task oleh agent — dari aplikasi mobile sampai website.</p>
+        </div>
+        <div className="mt-12 grid gap-10 md:grid-cols-3">
+          <div className="flex flex-col items-center gap-4">
+            <div className="h-[480px] w-full max-w-[240px]"><PhoneFrame variant="android"><FlappyPreview /></PhoneFrame></div>
+            <div className="text-center"><p className="text-[15px] font-semibold text-[#E8F0E8]">Flappy Bird</p><p className="mt-1 font-mono text-[10px] tracking-[.18em] text-[#8C97A5]">ANDROID</p></div>
+          </div>
+          <div className="flex flex-col items-center gap-4">
+            <div className="h-[480px] w-full max-w-[240px]"><PhoneFrame variant="ios"><IosFitnessPreview /></PhoneFrame></div>
+            <div className="text-center"><p className="text-[15px] font-semibold text-[#E8F0E8]">Navyt Habit Tracker</p><p className="mt-1 font-mono text-[10px] tracking-[.18em] text-[#8C97A5]">IOS</p></div>
+          </div>
+          <div className="flex flex-col items-center gap-4">
+            <div className="h-[480px] w-full max-w-[240px]"><PhoneFrame variant="android"><KriptoPreview /></PhoneFrame></div>
+            <div className="text-center"><p className="text-[15px] font-semibold text-[#E8F0E8]">Kripto Wallet</p><p className="mt-1 font-mono text-[10px] tracking-[.18em] text-[#8C97A5]">ANDROID</p></div>
+          </div>
+        </div>
+      </section>
 
       <section id="solutions" className="mx-auto max-w-[1360px] px-5 pb-24 md:px-10 md:pb-32">
         <div className="flex flex-wrap items-end justify-between gap-6">
-          <div><Eyebrow>solutions</Eyebrow><h2 className="mt-5 max-w-[22ch] text-balance text-[clamp(2.35rem,4.2vw,3.75rem)] font-medium leading-[.98] tracking-[-.055em] text-[#F0F3F5]">Satu alur, berbagai cara kerja.</h2></div>
-          <p className="max-w-[42ch] text-sm leading-6 text-[#8C97A5]">Dari side project sampai brief klien — Scratch Agent mengubah ide jadi rencana yang bisa langsung dieksekusi agent.</p>
+          <div><Eyebrow>{hc.solutionsEyebrow}</Eyebrow><h2 className="mt-5 max-w-[22ch] text-balance text-[clamp(2.35rem,4.2vw,3.75rem)] font-medium leading-[.98] tracking-[-.055em] text-[#F0F3F5]">{hc.solutionsTitle}</h2></div>
+          <p className="max-w-[42ch] text-sm leading-6 text-[#8C97A5]">{hc.solutionsSub}</p>
         </div>
         <div className="mt-12 grid gap-5 md:grid-cols-3">
-          <SolutionCard label="SOLO DEV" title="Side project gak mangkrak." copy="Tulis brief singkat, dapatkan rencana lengkap. Agent mengerjakan task satu per satu — kamu tinggal review hasilnya." points={["Brief 5 menit jadi plan siap eksekusi", "Progress agent kelihatan live di web", "Lanjut kapan saja tanpa kehilangan konteks"]} />
-          <SolutionCard label="FREELANCER / AGENCY" title="Brief klien jadi PRD profesional." copy="Ubah brief klien menjadi PRD terstruktur dengan feature, kriteria selesai, dan scope yang jelas sebelum coding dimulai." points={["PRD + task graph siap dipresentasikan", "Scope terukur dari feature & sub-feature", "Eksekusi bisa diserahkan ke agent coding"]} />
-          <SolutionCard label="AGENT OPERATOR" title="Agent coding yang gak bingung." copy="Pakai OpenCode, Claude Code, atau Cursor? Beri mereka plan terurut dengan dependensi dan checkpoint — bukan tebakan." points={["Urutan task deterministik dari server", "Checkpoint untuk verifikasi manual", "Retry otomatis saat task gagal"]} />
+          {hc.solutions.map((sol) => (
+            <SolutionCard key={sol.label} label={sol.label} title={sol.title} copy={sol.copy} points={sol.points} />
+          ))}
         </div>
       </section>
 
-      <section id="customers" className="mx-auto max-w-[1360px] px-5 pt-24 md:px-10 md:pt-28">
-        <div className="flex flex-wrap items-end justify-between gap-6">
-          <div><Eyebrow>case studies</Eyebrow><h2 className="mt-5 max-w-[20ch] text-balance text-[clamp(2.35rem,4.2vw,3.75rem)] font-medium leading-[.98] tracking-[-.055em] text-[#F0F3F5]">Dari brief jadi plan siap eksekusi.</h2></div>
-          <p className="max-w-[42ch] text-sm leading-6 text-[#8C97A5]">Project simulasi nyata: dihasilkan otomatis dari brief singkat, lalu dijalankan task demi task oleh agent jadi aplikasi mobile siap pakai.</p>
-        </div>
-        <DeviceShowcase />
-        <div className="mt-8 flex flex-wrap items-center justify-between gap-4 rounded-[16px] border border-[#74FA6A]/20 bg-[#74FA6A]/[.05] px-6 py-5">
-          <p className="max-w-[60ch] text-sm leading-6 text-[#A9C5A7]">Semua plan di atas dihasilkan otomatis dari brief singkat — struktur, PRD, sampai task terurut — tanpa ditulis manual.</p>
-          <Link href="/new" className="rv2-button min-w-[190px] bg-[#74FA6A] text-black hover:bg-[#A8FF9B]">Buat plan kamu sendiri <ArrowUpRight size={13} /></Link>
-        </div>
-      </section>
 
       <section id="agents" className="mx-auto w-[calc(100%-32px)] max-w-[1280px] mb-8 mt-8 overflow-hidden rounded-[24px] border border-white/10 bg-[#111318] px-5 py-16 md:px-10 md:py-20">
-        <div className="mx-auto grid max-w-[1280px] gap-12 lg:grid-cols-2"><div><Eyebrow>prompt agent</Eyebrow><h2 className="mt-4 text-[clamp(2.1rem,4.8vw,3.8rem)] font-semibold leading-[.95] tracking-[-.06em] text-white">Sewa agent.<br />Kirim misinya.</h2><p className="mt-5 max-w-[44ch] text-sm leading-6 text-[#8C97A5]">Salin satu prompt, tempel ke AI agent favoritmu. Agent otomatis terhubung ke plan, membaca PRD, dan mengerjakan task satu per satu — urutan, dependensi, dan checkpoint diatur server.</p><Magnetic className="mt-8 inline-block"><a href="https://paypal.me/notdeadlysins" target="_blank" rel="noopener noreferrer" className="btn-donate inline-flex items-center gap-2.5"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M7.174 2.037c-.46-.03-.94-.04-1.44-.04H2.53a.97.97 0 0 0-.96.83L.04 17.98a.97.97 0 0 0 .96 1.08h3.12l1.02-6.45-.02.13a.97.97 0 0 1 .96-.83h1.38c3.33 0 5.94-1.35 6.7-5.26.32-1.64.15-3.01-.52-4.08a4.03 4.03 0 0 0-2.05-1.53 7.9 7.9 0 0 0-2.07-.36 6.08 6.08 0 0 0-1.36.04zM9.81 6.82a3.5 3.5 0 0 1 .44-.02c1.14 0 1.82.25 2.23.76.41.5.52 1.28.28 2.44-.61 3.13-2.48 3.13-4.54 3.13H7.02l.76-4.82c.07-.46.46-.8.92-.83.35-.02.71-.04 1.11-.04.37 0 .7.01 1 .02z" /></svg> Donate — PayPal @notdeadlysins</a></Magnetic></div><DoubleBezel className="overflow-hidden !p-1.5"><div className="rounded-[calc(24px-10px)] bg-[#0A0A0A] p-5 font-mono text-[12px] leading-7 text-[#C5CDD7]"><div className="mb-3 flex gap-1.5"><i className="size-2.5 rounded-full bg-[#FF5F56]" /><i className="size-2.5 rounded-full bg-[#FFBD2E]" /><i className="size-2.5 rounded-full bg-[#74FA6A]" /></div><PromptShowcase /></div></DoubleBezel></div>
+        <div className="mx-auto grid max-w-[1280px] gap-12 lg:grid-cols-2"><div><Eyebrow>{hc.agentsEyebrow}</Eyebrow><h2 className="mt-4 text-[clamp(2.1rem,4.8vw,3.8rem)] font-semibold leading-[.95] tracking-[-.06em] text-white">{hc.agentsTitleA}<br />{hc.agentsTitleB}</h2><p className="mt-5 max-w-[44ch] text-sm leading-6 text-[#8C97A5]">{hc.agentsSub}</p><Magnetic className="mt-8 inline-block"><a href="https://scratchagent.store/" target="_blank" rel="noopener noreferrer" className="btn-donate inline-flex items-center gap-2.5"><KeyRound size={18} strokeWidth={2.2} aria-hidden="true" /> {lang === "en" ? "Get your Api Key" : "Ambil Api Key kamu"}</a></Magnetic></div><DoubleBezel className="overflow-hidden !p-1.5"><div className="rounded-[calc(24px-10px)] bg-[#0A0A0A] p-5 font-mono text-[12px] leading-7 text-[#C5CDD7]"><div className="mb-3 flex gap-1.5"><i className="size-2.5 rounded-full bg-[#FF5F56]" /><i className="size-2.5 rounded-full bg-[#FFBD2E]" /><i className="size-2.5 rounded-full bg-[#74FA6A]" /></div><PromptShowcase /></div></DoubleBezel></div>
       </section>
 
-      <section id="resources" className="mx-auto max-w-[1360px] px-5 pb-10 pt-24 md:px-10 md:pt-28">
-        <div><Eyebrow>resources</Eyebrow><h2 className="mt-5 max-w-[24ch] text-balance text-[clamp(2.35rem,4.2vw,3.75rem)] font-medium leading-[.98] tracking-[-.055em] text-[#F0F3F5]">Semua yang kamu butuhkan untuk mulai.</h2></div>
-        <div className="mt-12 grid gap-5 md:grid-cols-3">
-          <ResourceCard href="/docs" label="DOKUMENTASI" title="Docs lengkap" copy="Quickstart, referensi CLI, konsep plan, dan FAQ." />
-          <ResourceCard href="/project/demo" label="DEMO PLAN" title="Jelajahi demo" copy="Lihat plan contoh lengkap — struktur, PRD, dan task — tanpa perlu login." />
-          <ResourceCard href="/docs#prompt" label="PROMPT AGENT" title="Satu prompt, misi terkirim" copy="Salin prompt, tempel ke agent kamu — plan, PRD, dan task langsung terhubung otomatis." />
-        </div>
-      </section>
 
-      <footer className="px-5 py-10 md:px-10"><div className="mx-auto flex max-w-[1360px] flex-col justify-between gap-8 border-t border-white/10 pt-8 md:flex-row"><div><div className="font-semibold text-[13px] tracking-[-.02em] text-white">Scratch Agent</div><p className="mt-2 font-mono text-[11px] text-[#5B6676]">Hire your AI agent. 100% gratis.</p></div><div className="flex flex-wrap gap-6 font-mono text-[11px] text-[#6C7787]"><Link href="/new">buat plan</Link><Link href="/project/demo">demo</Link><Link href="/docs">docs</Link><span>© 2026 Scratch Agent</span></div></div></footer>
+      <footer className="px-5 py-10 md:px-10"><div className="mx-auto flex max-w-[1360px] flex-col justify-between gap-8 border-t border-white/10 pt-8 md:flex-row"><div><div className="font-semibold text-[13px] tracking-[-.02em] text-white">Scratch Agent</div><p className="mt-2 font-mono text-[11px] text-[#5B6676]">{hc.footerTagline}</p></div><div className="flex flex-wrap gap-6 font-mono text-[11px] text-[#6C7787]"><Link href="/new">{hc.footerCreate}</Link><Link href="/project/demo">demo</Link><Link href="/docs">docs</Link><span>© 2026 Scratch Agent</span></div></div></footer>
     </main>
   );
 }
@@ -212,12 +220,13 @@ function TypingText({ text, speed = 32, loop = true, className = "" }: { text: s
 }
 
 function AnimatedTerminalPRD() {
+  const hc = homeCopy(useLang());
   return (
     <div className="space-y-1">
       <p><span className="text-[#74FA6A]">$</span> <TypingText text="scratch plan parse" speed={38} loop /></p>
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: .9 }} className="space-y-[4px] pt-3">
-        <p className="text-white/50">brief: &quot;booking studio musik&quot;</p>
-        <p className="text-[#74FA6A]">✓ 03 fase · 09 sub-fitur</p>
+        <p className="text-white/50">{hc.termBrief}</p>
+        <p className="text-[#74FA6A]">{hc.termPhases}</p>
         <p className="text-white/65">graph.edges: 28 · deps acyclic</p>
       </motion.div>
     </div>
@@ -225,7 +234,8 @@ function AnimatedTerminalPRD() {
 }
 
 function AnimatedTerminalRuntime() {
-  const items = [{ label: "Membaca PRD" }, { label: "Menyusun graph" }, { label: "Menunggu agent" }];
+  const hc = homeCopy(useLang());
+  const items = [{ label: hc.termReadingPrd }, { label: hc.termBuildingGraph }, { label: hc.termWaitingAgent }];
   const [step, setStep] = useState(0);
   useEffect(() => {
     const t = setInterval(() => setStep((s) => (s + 1) % (items.length + 1)), 1100);
@@ -242,7 +252,7 @@ function AnimatedTerminalRuntime() {
             <div key={it.label} className="flex items-center gap-3">
               <span className={`relative grid size-4 place-items-center rounded-full border leading-none transition-colors duration-300 ${done ? "border-[#74FA6A] bg-[#74FA6A]/10 text-[#74FA6A]" : active ? "border-[#74FA6A]/50 text-white/40" : "border-white/15 text-transparent"}`}><span className="text-[10px] leading-none">{done ? "✓" : ""}</span></span>
               <span className={`${active ? "text-white" : done ? "text-white/65" : "text-white/30"} transition-colors`}>{it.label}</span>
-              <span className="ml-auto text-[9px] text-white/30">{done ? "done" : active ? "…" : "next"}</span>
+              <span className="ml-auto text-[9px] text-white/30">{done ? hc.termDone : active ? "…" : hc.termNext}</span>
             </div>
           );
         })}
@@ -271,12 +281,8 @@ function AnimatedTerminalQueue() {
 }
 
 function PromptShowcase() {
-  const steps = [
-    { label: "Terhubung ke plan & membaca PRD" },
-    { label: "Ambil task berikutnya — urutan diatur server" },
-    { label: "Kerjakan task, lalu tandai selesai" },
-    { label: "Ulangi sampai semua task done" },
-  ];
+  const hc = homeCopy(useLang());
+  const steps = hc.promptSteps;
   const [active, setActive] = useState(0);
   useEffect(() => {
     const t = setInterval(() => setActive((s) => (s + 1) % (steps.length + 1)), 1300);
@@ -286,12 +292,12 @@ function PromptShowcase() {
     <div className="min-h-[252px] space-y-4 leading-5">
       <div className="flex items-center justify-between border-b border-white/10 pb-3 font-mono text-[10px] uppercase tracking-[.14em] text-white/40">
         <span>mission prompt</span>
-        <span className="inline-flex items-center gap-1.5 text-[#74FA6A]"><span className="size-1.5 rounded-full bg-[#74FA6A] shadow-[0_0_8px_#74FA6A]" />siap tempel</span>
+        <span className="inline-flex items-center gap-1.5 text-[#74FA6A]"><span className="size-1.5 rounded-full bg-[#74FA6A] shadow-[0_0_8px_#74FA6A]" />{hc.promptReadyBadge}</span>
       </div>
       <div className="flex flex-wrap items-center gap-2 font-mono text-[10px]">
         <span className="rounded border border-white/10 bg-[#11151B] px-2 py-1 text-white/45">token: rv_••••••••</span>
-        <span className="rounded border border-white/10 bg-[#11151B] px-2 py-1 text-white/45">plan: kedai-senja</span>
-        <span className="rounded border border-[#74FA6A]/25 bg-[#74FA6A]/[.07] px-2 py-1 text-[#74FA6A]">agent: apa saja</span>
+        <span className="rounded border border-white/10 bg-[#11151B] px-2 py-1 text-white/45">plan: futsalgo</span>
+        <span className="rounded border border-[#74FA6A]/25 bg-[#74FA6A]/[.07] px-2 py-1 text-[#74FA6A]">{hc.promptAgentAny}</span>
       </div>
       <div className="space-y-2.5 pt-1">
         {steps.map((step, i) => {
@@ -305,7 +311,7 @@ function PromptShowcase() {
           );
         })}
       </div>
-      <p className="border-t border-white/10 pt-3 font-mono text-[9.5px] leading-5 text-white/35">Berhenti & lapor jika ada task gagal atau checkpoint. Salin prompt dari tombol &quot;Mulai implementasi&quot;, tempel ke OpenCode, Claude Code, Cursor, dll.</p>
+      <p className="border-t border-white/10 pt-3 font-mono text-[9.5px] leading-5 text-white/35">{hc.promptFoot}</p>
     </div>
   );
 }
@@ -341,7 +347,7 @@ function SolutionCard({ label, title, copy, points }: { label: string; title: st
   );
 }
 
-// Bingkai hp portrait — bikin preview Android/iOS keliatan kayak jalan di device beneran.
+// ===== RESTORED: preview device (Flappy Bird, iOS Fitness, Kripto Wallet) =====
 function PhoneFrame({ variant, children }: { variant: "android" | "ios"; children: React.ReactNode }) {
   return (
     <div className="flex h-full w-full items-center justify-center">
@@ -357,7 +363,7 @@ function PhoneFrame({ variant, children }: { variant: "android" | "ios"; childre
   );
 }
 
-// Preview game Flappy Bird (Android) — game loop beneran: fisika gravitasi + burung
+// Preview game Flappy Bird (Android) ΓÇö game loop beneran: fisika gravitasi + burung
 // otomatis lompat menghindari tiap pipa. Jalan lewat requestAnimationFrame yang nulis
 // transform langsung ke DOM (tanpa re-render React) => mulus 60fps, gak lemot.
 // Cuma mount saat hover; di-memo biar terisolasi.
@@ -455,7 +461,7 @@ const FlappyPreview = memo(function FlappyPreview() {
       <motion.div className="absolute left-0 top-[16%] h-3 w-10 rounded-full bg-white/70 blur-[1px]" animate={{ x: ["110%", "-30%"] }} transition={{ repeat: Infinity, duration: 9, ease: "linear" }} />
       <motion.div className="absolute left-0 top-[34%] h-2.5 w-8 rounded-full bg-white/50 blur-[1px]" animate={{ x: ["120%", "-25%"] }} transition={{ repeat: Infinity, duration: 13, delay: 2, ease: "linear" }} />
 
-      {/* pipa — posisi digerakin game loop */}
+      {/* pipa ΓÇö posisi digerakin game loop */}
       {[0, 1, 2].map((i) => (
         <div key={i} ref={(el) => { pipeRefs.current[i] = el; }} className="absolute inset-y-0 left-0 w-[16%] will-change-transform">
           <div className="absolute inset-x-0 top-0 rounded-b-[3px] border border-[#2E7D32]/50 bg-[#61BB46]">
@@ -467,7 +473,7 @@ const FlappyPreview = memo(function FlappyPreview() {
         </div>
       ))}
 
-      {/* burung — posisi & rotasi digerakin game loop */}
+      {/* burung ΓÇö posisi & rotasi digerakin game loop */}
       <div ref={birdRef} className="absolute left-0 top-0 z-10 will-change-transform">
         <div className="relative size-[18px] rounded-full bg-[#F8C034] shadow-[0_2px_4px_rgba(0,0,0,.25)]">
           <motion.span className="absolute left-[2px] top-[6px] size-[8px] rounded-full bg-[#FDE9B8]" animate={{ scaleY: [1, 0.55, 1] }} transition={{ repeat: Infinity, duration: 0.32, ease: "easeInOut" }} style={{ transformOrigin: "right center" }} />
@@ -488,7 +494,7 @@ const FlappyPreview = memo(function FlappyPreview() {
   );
 });
 
-// ===== iOS Fitness (Apple-style glass) — multi-screen preview =====
+// ===== iOS Fitness (Apple-style glass) ΓÇö multi-screen preview =====
 // Design tokens ala Apple Fitness+: ring Move/Exercise/Stand + aksen lime.
 const AF = {
   move: "#FA2D5A",
@@ -652,7 +658,7 @@ function AppleTabBar() {
   );
 }
 
-// Preview fitness iOS (Apple-style glass) — 3 layar cycle dgn transisi slide, ring
+// Preview fitness iOS (Apple-style glass) ΓÇö 3 layar cycle dgn transisi slide, ring
 // aktivitas ngisi, item stagger. Cuma mount saat hover; di-memo biar terisolasi.
 const IosFitnessPreview = memo(function IosFitnessPreview() {
   const [screen, setScreen] = useState(0);
@@ -677,7 +683,7 @@ const IosFitnessPreview = memo(function IosFitnessPreview() {
   );
 });
 
-// ===== Kripto Wallet (Android) — light-theme multi-screen preview =====
+// ===== Kripto Wallet (Android) ΓÇö light-theme multi-screen preview =====
 const KRIPTO = {
   green: "#4CAF50",
   eth: "#627EEA",
@@ -692,7 +698,7 @@ const KRIPTO = {
 // Ikon ETH kecil (gradient biru-benar, huruf Xi sebagai glyph).
 function EthCoin({ size = 14, fontSize = 8 }: { size?: number; fontSize?: number }) {
   return (
-    <span className="grid shrink-0 place-items-center rounded-full font-bold text-white" style={{ width: size, height: size, fontSize, background: `linear-gradient(135deg, ${KRIPTO.eth}, ${KRIPTO.ethDeep})` }}>Ξ</span>
+    <span className="grid shrink-0 place-items-center rounded-full font-bold text-white" style={{ width: size, height: size, fontSize, background: `linear-gradient(135deg, ${KRIPTO.eth}, ${KRIPTO.ethDeep})` }}>╬₧</span>
   );
 }
 
@@ -726,7 +732,7 @@ function KriptoDashboard() {
 
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.05, ease: [0.2, 0.8, 0.2, 1] }} className="pt-1">
         <p className="text-[14px] font-extrabold tracking-tight text-[#111]">Rp 41.285.600</p>
-        <div className="flex items-center gap-1.5"><span className="text-[5.5px] text-[#888]">pada 21 Jan, 11:42</span><span className="text-[5.5px] font-semibold text-[#E53935]">▼ 3,04%</span></div>
+        <div className="flex items-center gap-1.5"><span className="text-[5.5px] text-[#888]">pada 21 Jan, 11:42</span><span className="text-[5.5px] font-semibold text-[#E53935]">Γû╝ 3,04%</span></div>
       </motion.div>
 
       <KriptoChart delay={0.3} />
@@ -856,47 +862,4 @@ const KriptoPreview = memo(function KriptoPreview() {
 });
 
 // Semua device auto-animasi tanpa hover.
-function DeviceShowcase() {
-  const phones = [
-    { platform: "ANDROID", name: "Flappy Bird", variant: "android" as const, node: <FlappyPreview /> },
-    { platform: "IOS", name: "Navyt Fitness", variant: "ios" as const, node: <IosFitnessPreview /> },
-    { platform: "ANDROID", name: "Kripto Wallet", variant: "android" as const, node: <KriptoPreview /> },
-  ];
-  return (
-    <div className="mt-16 pb-2">
-      {/* Smartphone (Android, iOS, Android) — baris sejajar */}
-      <div className="grid grid-cols-3 gap-4 lg:gap-12">
-        {phones.map((p, i) => (
-          <div key={p.name} className="flex flex-col items-center">
-            <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.7, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] }} className="h-[230px] w-full sm:h-[320px] lg:h-[430px]">
-              <PhoneFrame variant={p.variant}>{p.node}</PhoneFrame>
-            </motion.div>
-            <div className="mt-5 text-center">
-              <p className="font-mono text-[9px] tracking-[.18em] text-[#74FA6A]">{p.platform}</p>
-              <p className="mt-0.5 text-[14px] font-medium text-[#E8F0E8]">{p.name}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
 
-function ResourceCard({ href, label, title, copy, external = false }: { href: string; label: string; title: string; copy: string; external?: boolean }) {
-  const content = (
-    <>
-      <div className="flex items-center justify-between">
-        <p className="font-mono text-[10px] tracking-[.18em] text-[#74FA6A]">{label}</p>
-        <ArrowUpRight size={14} className="shrink-0 text-[#5B6676] transition-colors duration-300 group-hover:text-[#74FA6A]" />
-      </div>
-      <h3 className="mt-4 break-words text-[16px] font-medium tracking-[-.02em] text-[#E8F0E8]">{title}</h3>
-      <p className="mt-1.5 text-[12.5px] leading-[1.6] text-[#8C97A5]">{copy}</p>
-    </>
-  );
-  const cardClass = "group flex h-full flex-col rounded-[16px] border border-white/15 bg-[#111413] p-6 transition-colors duration-300 hover:border-[#74FA6A]/45";
-  return (
-    <motion.div initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .2 }} transition={{ duration: .65, ease: [0.16, 1, 0.3, 1] }}>
-      {external ? <a href={href} target="_blank" rel="noopener noreferrer" className={cardClass}>{content}</a> : <Link href={href} className={cardClass}>{content}</Link>}
-    </motion.div>
-  );
-}

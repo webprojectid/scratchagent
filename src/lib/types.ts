@@ -36,6 +36,8 @@ export interface Feature {
   priority?: FeaturePriority;
   status: "direncanakan" | "berjalan" | "selesai";
   subFeatures: SubFeature[];
+  /** Urutan fase di plan (0-based). Dipakai saat insert fase baru dari ide user. */
+  order?: number;
 }
 
 export interface TechStackItem {
@@ -68,6 +70,22 @@ export interface Plan {
   features: Feature[];
   createdAt?: string;
   userId?: string;
+  /** Bagian yang memakai template fallback karena LLM gagal; ditampilkan sebagai banner di UI. */
+  warnings?: string[];
+  /** Tier akun saat plan digenerate; menentukan batas struktur PRD yang dipaksakan. */
+  tier?: "free" | "pro";
+  /** Ide user dari kolom chat (Pro, maks 2/project). Sudah dikonversi AI menjadi fase > sub-fitur > task; wajib dibaca AI sebagai referensi tambahan. */
+  ideas?: PlanIdea[];
+}
+
+/** Satu ide dari kolom chat "Ide Kamu" (khusus Pro). */
+export interface PlanIdea {
+  /** Teks ide mentah dari user. */
+  text: string;
+  createdAt: string;
+  /** Judul fase yang dibuat AI dari ide ini (fase > sub-fitur > task). */
+  featureTitle?: string;
+  phase?: number;
 }
 
 export interface TechPrefs {

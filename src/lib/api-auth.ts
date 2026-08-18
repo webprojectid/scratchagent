@@ -182,15 +182,15 @@ export function devOnlyGate(): NextResponse | null {
   return null;
 }
 
-/** Gate admin berbasis daftar email di env ADMIN_EMAILS (dipisah koma). */
+/**
+ * Gate admin berbasis daftar email: env ADMIN_EMAILS (dipisah koma)
+ * ditambah email admin bawaan (teguhends@gmail.com) dari lib/billing.
+ */
 export async function requireAdmin(user: AuthUser | null): Promise<NextResponse | null> {
   if (!user?.email) return unauthorized();
-  const admins = (process.env.ADMIN_EMAILS ?? "")
-    .split(",")
-    .map((s) => s.trim().toLowerCase())
-    .filter(Boolean);
-  if (admins.length === 0 || !admins.includes(user.email.toLowerCase())) {
-    return forbidden("Akses admin ditolak. Daftarkan email di env ADMIN_EMAILS.");
+  const { isAdminEmail } = await import("@/lib/billing");
+  if (!isAdminEmail(user.email)) {
+    return forbidden("Akses admin ditolak. Hanya email admin yang terdaftar.");
   }
   return null;
 }

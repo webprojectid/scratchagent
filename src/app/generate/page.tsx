@@ -147,7 +147,7 @@ export default function Generate() {
             </div>
 
             <p className="mt-8 text-center text-xs text-slate-500">
-              {elapsed > 60 ? "Masih bekerja — LLM sedang menyusun struktur kompleks. Sabar ya." : elapsed > 30 ? "Hampir selesai..." : "Biasanya 20–60 detik. Task akan menyusul di halaman plan."}
+              {elapsed > 60 ? "Masih bekerja. LLM sedang menyusun struktur kompleks, sabar ya." : elapsed > 30 ? "Hampir selesai..." : "Biasanya 20 sampai 60 detik. Task akan menyusul di halaman plan."}
             </p>
           </>
         )}

@@ -10,6 +10,8 @@ export const users = pgTable("users", {
   email: varchar({ length: 320 }).notNull().unique(),
   name: text(),
   avatar: text(),
+  tier: text().notNull().default("free"),
+  bannedAt: timestamp("banned_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -93,7 +95,63 @@ export const usageEvents = pgTable("usage_events", {
   userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }),
   planId: uuid("plan_id").references(() => plans.id, { onDelete: "cascade" }),
   stage: text().notNull(),
+  tier: text().notNull().default("free"),
   tokensIn: integer("tokens_in").notNull().default(0),
   tokensOut: integer("tokens_out").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/**
+ * Log kejadian keamanan: jejak deteksi serangan (401/403/429, generate,
+ * hapus struktur, aksi admin). Dilihat lewat /admin/security.
+ */
+export const securityEvents = pgTable("security_events", {
+  id: uuid().primaryKey().defaultRandom(),
+  type: text().notNull(),
+  detail: jsonb().notNull().default({}),
+  userId: uuid("user_id").references(() => users.id, { onDelete: "set null" }),
+  ip: text(),
+  /** Ditandai admin sebagai false positive → tidak dihitung sebagai serangan. */
+  dismissed: boolean("dismissed").notNull().default(false),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/**
+ * IP yang diblokir admin dari Pusat Keamanan. Setiap request dari IP ini
+ * ditolak 403 di endpoint sensitif. expiresAt null = blokir permanen.
+ */
+export const blockedIps = pgTable("blocked_ips", {
+  id: uuid().primaryKey().defaultRandom(),
+  ip: text("ip").notNull().unique(),
+  reason: text().notNull().default(""),
+  blockedBy: text("blocked_by"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }),
+});
+
+/**
+ * Riwayat langganan Pro. Satu baris per periode:
+ * startedAt = pertama kali aktif di periode itu, endedAt = berakhir (null = masih aktif).
+ * expiresAt = masa berlaku dari durasi yang dipilih admin (7/14/28/31/93 hari).
+ * Pro aktif bila endedAt null DAN expiresAt null atau masih di masa depan.
+ * Dipakai admin untuk catatan subs dan audit pemakaian.
+ */
+export const subscriptions = pgTable("subscriptions", {
+  id: uuid().primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  startedAt: timestamp("started_at", { withTimezone: true }).notNull().defaultNow(),
+  endedAt: timestamp("ended_at", { withTimezone: true }),
+  expiresAt: timestamp("expires_at", { withTimezone: true }),
+  grantedBy: text("granted_by"),
+  endedBy: text("ended_by"),
+});
+
+// Konfigurasi LLM runtime (single row, id=1). Dibaca generate.ts sebelum fallback ke env,
+// supaya token/model bisa diganti lewat Settings tanpa redeploy.
+export const llmSettings = pgTable("llm_settings", {
+  id: integer("id").primaryKey(),
+  baseUrl: text("base_url"),
+  apiKey: text("api_key"),
+  model: text("model"),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });

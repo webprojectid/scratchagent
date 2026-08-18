@@ -5,39 +5,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, useReducedMotion } from "motion/react";
 import { Shell } from "@/components/brand";
-import { KeyRound, LogOut, Eye, EyeOff, FolderKanban, ShieldCheck, ArrowUpRight } from "lucide-react";
+import { KeyRound, LogOut, Eye, EyeOff, Plus, Settings2, ShieldCheck, Crown } from "lucide-react";
 import { getCurrentUser, refreshCurrentUser, supabaseConfigured } from "@/lib/current-user";
 import { createClient } from "@/lib/supabase/client";
 
-type User = { email: string; name: string; role?: string };
-type PlanItem = { id: string; title: string; status: string; createdAt?: string; taskCount: number };
+type User = { email: string; name: string; role?: string; tier?: string };
 
-const statusDot: Record<string, string> = {
-  generating: "bg-amber-400",
-  ready: "bg-[#74FA6A]",
-  implementing: "bg-blue-400",
-  done: "bg-emerald-400",
-};
-const statusLabel: Record<string, string> = {
-  generating: "menyusun",
-  ready: "siap",
-  implementing: "berjalan",
-  done: "selesai",
-};
-
-function timeAgo(iso?: string): string {
-  if (!iso) return "";
-  const then = new Date(iso).getTime();
-  if (Number.isNaN(then)) return "";
-  const diff = Date.now() - then;
-  const m = Math.floor(diff / 60000);
-  if (m < 1) return "baru saja";
-  if (m < 60) return `${m} mnt lalu`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h} jam lalu`;
-  const d = Math.floor(h / 24);
-  if (d < 7) return `${d} hari lalu`;
-  return new Date(iso).toLocaleDateString("id-ID", { day: "numeric", month: "short" });
+function SectionTitle({ children }: { children: string }) {
+  return <p className="font-mono text-[10px] font-bold uppercase tracking-[.18em] text-white/35">{children}</p>;
 }
 
 export default function ProfilePage() {
@@ -45,7 +20,6 @@ export default function ProfilePage() {
   const reduce = useReducedMotion();
 
   const [user, setUser] = useState<User | null>(null);
-  const [plans, setPlans] = useState<PlanItem[] | null>(null);
   const [showPass, setShowPass] = useState(false);
   const [newPass, setNewPass] = useState("");
   const [msg, setMsg] = useState("");
@@ -53,22 +27,34 @@ export default function ProfilePage() {
 
   useEffect(() => {
     let active = true;
+    // Semua fetch ditembak paralel, bukan berantai. Sebelumnya tombol
+    // Settings / Developer setting menunggu getCurrentUser() selesai dulu,
+    // baru /api/me dipanggil, sehingga terasa lambat. Session cookie
+    // Supabase sudah ikut di setiap fetch, jadi keduanya bisa jalan bareng.
+
     getCurrentUser().then((u) => {
       if (!active) return;
       if (!u) {
         router.push("/login");
         return;
       }
-      setUser({ email: u.email, name: u.name, role: u.role });
-      fetch(`/api/plans/list?userId=${encodeURIComponent(u.email || "shared")}`)
-        .then((r) => r.json())
-        .then((d) => {
-          if (active) setPlans(Array.isArray(d.plans) ? d.plans : []);
-        })
-        .catch(() => {
-          if (active) setPlans([]);
-        });
+      setUser((prev) => ({ email: u.email, name: u.name, role: prev?.role, tier: prev?.tier }));
     });
+
+    // Role admin + tier langganan berasal dari server (/api/me),
+    // supaya tag Admin dan menu Developer setting akurat.
+    fetch("/api/me")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!active || !d) return;
+        setUser((prev) =>
+          prev
+            ? { ...prev, email: prev.email || d.email || prev.email, role: d.role ?? prev.role, tier: d.tier ?? prev.tier }
+            : { email: d.email ?? "", name: (d.email ?? "").split("@")[0] || "user", role: d.role, tier: d.tier },
+        );
+      })
+      .catch(() => {});
+
     return () => {
       active = false;
     };
@@ -119,150 +105,125 @@ export default function ProfilePage() {
     .join("")
     .toUpperCase();
 
-  const enter = reduce ? {} : { opacity: 0, y: 12 };
+  const enter = reduce ? {} : { opacity: 0, y: 8 };
   const visible = reduce ? {} : { opacity: 1, y: 0 };
   const ease = [0.16, 1, 0.3, 1] as const;
 
   return (
     <Shell back="/" sidebar={false}>
-      <div className="mx-auto w-full max-w-[560px] px-5 py-12 md:py-16">
-        {/* Identity */}
+      <div className="mx-auto w-full max-w-[1080px] px-5 pb-12 pt-14 md:pt-16">
+        {/* Identitas */}
         <motion.section
           initial={enter}
           animate={visible}
-          transition={{ duration: 0.5, ease }}
-          className="rounded-2xl border border-white/[.08] bg-[#101417] p-6 shadow-[0_18px_60px_#0009,inset_0_1px_0_#FFFFFF08]"
+          transition={{ duration: 0.25, ease }}
+          className="flex flex-wrap items-center justify-between gap-6"
         >
           <div className="flex items-center gap-4">
-            <div className="grid size-14 shrink-0 place-items-center rounded-2xl border border-[#74FA6A]/25 bg-[#74FA6A]/[.08] text-[17px] font-semibold tracking-tight text-[#74FA6A]">
+            <div className="grid size-16 shrink-0 place-items-center rounded-[18px] border border-[#74FA6A]/25 bg-[#74FA6A]/[.08] text-[19px] font-semibold tracking-tight text-[#74FA6A]">
               {initials || "?"}
             </div>
             <div className="min-w-0">
-              <h1 className="!m-0 truncate !text-[21px] !font-semibold !leading-tight !tracking-[-.02em] text-white">
-                {user.name}
-              </h1>
-              <p className="mt-0.5 truncate text-[13px] text-slate-400">{user.email}</p>
-            </div>
-          </div>
-
-          <div className="mt-5 flex flex-wrap items-center gap-2 border-t border-white/[.06] pt-4">
-            {user.role === "admin" && (
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-[#74FA6A]/25 bg-[#74FA6A]/[.07] px-2.5 py-1 text-[11px] font-medium text-[#74FA6A]">
-                <ShieldCheck size={13} /> Admin
-              </span>
-            )}
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/[.08] bg-white/[.03] px-2.5 py-1 font-mono text-[11px] tabular-nums text-slate-300">
-              <FolderKanban size={13} className="text-white/40" />
-              {plans === null ? "..." : `${plans.length} project`}
-            </span>
-          </div>
-        </motion.section>
-
-        {/* Plans */}
-        <motion.section
-          initial={enter}
-          animate={visible}
-          transition={{ duration: 0.5, ease, delay: reduce ? 0 : 0.04 }}
-          className="mt-4 rounded-2xl border border-white/[.08] bg-[#101417] p-6"
-        >
-          <div>
-            <h2 className="!m-0 !text-[15px] !font-semibold !leading-tight !tracking-[-.01em] text-white">Plan Kamu</h2>
-            <p className="mt-1 text-[12.5px] leading-5 text-slate-500">Semua project yang pernah kamu buat.</p>
-          </div>
-
-          <div className="mt-4 space-y-2">
-            {plans === null && (
-              <p className="rounded-[10px] border border-white/[.06] bg-[#0C0E10] px-4 py-3 text-[12.5px] text-slate-500">Memuat plan…</p>
-            )}
-            {plans !== null && plans.length === 0 && (
-              <p className="rounded-[10px] border border-white/[.06] bg-[#0C0E10] px-4 py-3 text-[12.5px] text-slate-500">
-                Belum ada plan. Mulai dari <Link href="/new" className="text-[#74FA6A] underline-offset-2 hover:underline">buat plan baru</Link>.
-              </p>
-            )}
-            {plans?.map((p) => (
-              <Link
-                key={p.id}
-                href={`/project/${p.id}`}
-                className="group flex items-center gap-3 rounded-[10px] border border-white/[.06] bg-[#0C0E10] px-4 py-3 transition hover:border-[#74FA6A]/40 hover:bg-[#0E1113]"
-              >
-                <span className={`size-2 shrink-0 rounded-full ${statusDot[p.status] ?? "bg-slate-500"}`} aria-hidden="true" />
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[13px] font-medium text-white group-hover:text-[#74FA6A]">{p.title}</span>
-                  <span className="mt-0.5 block text-[11px] text-slate-500">
-                    {statusLabel[p.status] ?? p.status} · {p.taskCount} task{p.createdAt ? ` · ${timeAgo(p.createdAt)}` : ""}
+              <h1 className="truncate text-[22px] font-semibold leading-tight tracking-[-.02em] text-white">{user.name}</h1>
+              <p className="mt-1 flex flex-wrap items-center gap-2 text-[13px] text-[#8C97A5]">
+                <span className="truncate">{user.email}</span>
+                {user.role === "admin" && (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-[#74FA6A]/30 bg-[#74FA6A]/[.08] px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-[.12em] text-[#74FA6A]">admin</span>
+                )}
+                {user.tier === "pro" && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-[#74FA6A] px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-[.12em] text-black">
+                    <Crown size={11} /> Pro Eksklusif
                   </span>
-                </span>
-                <ArrowUpRight size={14} className="shrink-0 text-slate-600 transition group-hover:text-[#74FA6A]" />
-              </Link>
-            ))}
-          </div>
-        </motion.section>
-
-        {/* Security */}
-        <motion.section
-          initial={enter}
-          animate={visible}
-          transition={{ duration: 0.5, ease, delay: reduce ? 0 : 0.06 }}
-          className="mt-4 rounded-2xl border border-white/[.08] bg-[#101417] p-6"
-        >
-          <h2 className="!m-0 !text-[15px] !font-semibold !leading-tight !tracking-[-.01em] text-white">Keamanan</h2>
-          <p className="mt-1 text-[12.5px] leading-5 text-slate-500">Ganti password akun kamu. Minimal 6 karakter.</p>
-
-          <div className="mt-4">
-            <label htmlFor="new-pass" className="mb-1.5 block text-[12px] font-medium text-slate-300">
-              Password baru
-            </label>
-            <div className="relative">
-              <KeyRound className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
-              <input
-                id="new-pass"
-                type={showPass ? "text" : "password"}
-                placeholder="Tulis password baru"
-                value={newPass}
-                onChange={(e) => setNewPass(e.target.value)}
-                className="w-full rounded-[10px] border border-white/10 bg-[#0C0E10] py-2.5 pl-10 pr-11 text-[13px] text-white placeholder:text-slate-600 focus:border-[#74FA6A]/50 focus:outline-none"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPass(!showPass)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 transition hover:text-white"
-                aria-label={showPass ? "Sembunyikan password" : "Tampilkan password"}
-              >
-                {showPass ? <EyeOff size={15} /> : <Eye size={15} />}
-              </button>
+                )}
+                {user.tier === "free" && (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-white/12 bg-white/[.05] px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-[.12em] text-white/45">free</span>
+                )}
+              </p>
             </div>
-
-            {msg && (
-              <p className={`mt-2 text-[12px] ${msgType === "error" ? "text-red-400" : "text-[#74FA6A]"}`}>{msg}</p>
+          </div>
+          <div className="flex items-center gap-2.5">
+            <Link href="/new" className="inline-flex items-center gap-1.5 rounded-full bg-[#74FA6A] px-4 py-2 text-[12.5px] font-semibold text-black transition hover:bg-[#A8FF9B] active:scale-[.985]">
+              <Plus size={14} /> Buat plan baru
+            </Link>
+            {user.role === "admin" && (
+              <>
+                <Link href="/settings" className="inline-flex items-center gap-1.5 rounded-full border border-white/15 px-4 py-2 text-[12.5px] font-medium text-white/80 transition hover:border-[#74FA6A]/50 hover:text-[#74FA6A]" title="Konfigurasi LLM dan pengaturan server">
+                  <Settings2 size={14} /> Settings
+                </Link>
+                <Link href="/admin/users" className="inline-flex items-center gap-1.5 rounded-full border border-[#74FA6A]/40 bg-[#74FA6A]/[.08] px-4 py-2 text-[12.5px] font-semibold text-[#74FA6A] transition hover:bg-[#74FA6A]/[.14] active:scale-[.985]" title="Kelola akun: akses Pro, banned, dan catatan pemakaian">
+                  <ShieldCheck size={14} /> Developer setting
+                </Link>
+              </>
             )}
+          </div>
+        </motion.section>
 
-            <button
-              onClick={handleChangePass}
-              className="mt-4 w-full rounded-full bg-[#74FA6A] py-2.5 text-[13px] font-semibold text-black transition hover:bg-[#67E85E] active:scale-[.985]"
+        {/* Konten utama: keamanan & sesi */}
+        <div className="mt-6 grid items-start gap-6 lg:grid-cols-2">
+            {/* Keamanan */}
+            <motion.section
+              initial={enter}
+              animate={visible}
+              transition={{ duration: 0.5, ease, delay: reduce ? 0 : 0.13 }}
+              className="rounded-[16px] border border-white/[.08] bg-[#101417] p-6"
             >
-              Simpan password
-            </button>
-          </div>
-        </motion.section>
+              <SectionTitle>keamanan</SectionTitle>
+              <p className="mt-2 text-[12.5px] leading-5 text-[#8C97A5]">Ganti password akun kamu. Minimal 6 karakter.</p>
 
-        {/* Session */}
-        <motion.section
-          initial={enter}
-          animate={visible}
-          transition={{ duration: 0.5, ease, delay: reduce ? 0 : 0.12 }}
-          className="mt-4 flex items-center justify-between gap-4 rounded-2xl border border-white/[.08] bg-[#101417] p-6"
-        >
-          <div>
-            <h2 className="!m-0 !text-[15px] !font-semibold !leading-tight !tracking-[-.01em] text-white">Sesi</h2>
-            <p className="mt-1 text-[12.5px] leading-5 text-slate-500">Keluar dari akun di perangkat ini.</p>
-          </div>
-          <button
-            onClick={handleLogout}
-            className="inline-flex shrink-0 items-center gap-2 rounded-full border border-red-500/30 px-4 py-2 text-[12.5px] font-medium text-red-400 transition hover:border-red-500/60 hover:bg-red-500/[.06] active:scale-[.985]"
-          >
-            <LogOut size={14} /> Keluar
-          </button>
-        </motion.section>
+              <div className="mt-4">
+                <label htmlFor="new-pass" className="mb-1.5 block font-mono text-[10.5px] font-bold uppercase tracking-[.14em] text-white/40">
+                  password baru
+                </label>
+                <div className="relative">
+                  <KeyRound className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/30" />
+                  <input
+                    id="new-pass"
+                    type={showPass ? "text" : "password"}
+                    placeholder="Tulis password baru"
+                    value={newPass}
+                    onChange={(e) => setNewPass(e.target.value)}
+                    className="w-full rounded-[10px] border border-white/10 bg-[#0C0E10] py-2.5 pl-10 pr-11 text-[13px] text-white placeholder:text-white/25 focus:border-[#74FA6A]/50 focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPass(!showPass)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white/35 transition hover:text-white"
+                    aria-label={showPass ? "Sembunyikan password" : "Tampilkan password"}
+                  >
+                    {showPass ? <EyeOff size={15} /> : <Eye size={15} />}
+                  </button>
+                </div>
+
+                {msg && (
+                  <p className={`mt-2 text-[12px] ${msgType === "error" ? "text-red-400" : "text-[#74FA6A]"}`}>{msg}</p>
+                )}
+
+                <button
+                  onClick={handleChangePass}
+                  className="mt-4 w-full rounded-full bg-[#74FA6A] py-2.5 text-[13px] font-semibold text-black transition hover:bg-[#A8FF9B] active:scale-[.985]"
+                >
+                  Simpan password
+                </button>
+              </div>
+            </motion.section>
+
+            {/* Sesi */}
+            <motion.section
+              initial={enter}
+              animate={visible}
+              transition={{ duration: 0.5, ease, delay: reduce ? 0 : 0.17 }}
+              className="rounded-[16px] border border-white/[.08] bg-[#101417] p-6"
+            >
+              <SectionTitle>sesi</SectionTitle>
+              <p className="mt-2 text-[12.5px] leading-5 text-[#8C97A5]">Keluar dari akun di perangkat ini. Semua plan kamu tetap tersimpan.</p>
+              <button
+                onClick={handleLogout}
+                className="mt-4 inline-flex items-center gap-2 rounded-full border border-red-500/30 px-4 py-2 text-[12.5px] font-medium text-red-400 transition hover:border-red-500/60 hover:bg-red-500/[.06] active:scale-[.985]"
+              >
+                <LogOut size={14} /> Keluar
+              </button>
+            </motion.section>
+        </div>
       </div>
     </Shell>
   );
