@@ -180,18 +180,22 @@ export default function Home() {
         </div>
         {/* Preview sample web project (CSS murni, tanpa WebGL/Spline) — klik langsung
             ke halaman sample masing-masing; tidak ada button terpisah */}
-        <div className="mt-12 grid gap-10 md:grid-cols-3 md:gap-8">
+        <div className="mt-12 grid gap-8 sm:grid-cols-2 xl:grid-cols-4">
           <Link href="/sample/web-project" className="group flex flex-col items-center gap-4" aria-label={lang === "en" ? "Open sample web project 1" : "Buka sample web project 1"}>
-            <div className="h-[200px] w-full max-w-[320px]"><GalaxyHeroPreview /></div>
+            <div className="h-[180px] w-full max-w-[300px]"><GalaxyHeroPreview /></div>
             <div className="text-center"><p className="text-[15px] font-semibold text-[#E8F0E8]">Galaxy Hero</p><p className="mt-1 font-mono text-[10px] tracking-[.18em] text-[#8C97A5]">WEB · SPLINE</p></div>
           </Link>
           <Link href="/sample/web-project-2" className="group flex flex-col items-center gap-4" aria-label={lang === "en" ? "Open sample web project 2" : "Buka sample web project 2"}>
-            <div className="h-[200px] w-full max-w-[320px]"><VortexPreview /></div>
+            <div className="h-[180px] w-full max-w-[300px]"><VortexPreview /></div>
             <div className="text-center"><p className="text-[15px] font-semibold text-[#E8F0E8]">ImmersiaVR</p><p className="mt-1 font-mono text-[10px] tracking-[.18em] text-[#8C97A5]">WEB · WEBGL</p></div>
           </Link>
           <Link href="/sample/web-project-3" className="group flex flex-col items-center gap-4" aria-label={lang === "en" ? "Open sample web project 3" : "Buka sample web project 3"}>
-            <div className="h-[200px] w-full max-w-[320px]"><SaasPreview /></div>
+            <div className="h-[180px] w-full max-w-[300px]"><SaasPreview /></div>
             <div className="text-center"><p className="text-[15px] font-semibold text-[#E8F0E8]">Landing Kit</p><p className="mt-1 font-mono text-[10px] tracking-[.18em] text-[#8C97A5]">WEB · SAAS</p></div>
+          </Link>
+          <Link href="/sample/web-project-4" className="group flex flex-col items-center gap-4" aria-label={lang === "en" ? "Open sample web project 4" : "Buka sample web project 4"}>
+            <div className="h-[180px] w-full max-w-[300px]"><DashboardPreview /></div>
+            <div className="text-center"><p className="text-[15px] font-semibold text-[#E8F0E8]">Efferd Dashboard</p><p className="mt-1 font-mono text-[10px] tracking-[.18em] text-[#8C97A5]">WEB · ANALYTICS</p></div>
           </Link>
         </div>
       </section>
@@ -454,6 +458,53 @@ const SaasPreview = memo(function SaasPreview() {
           <div className="w-[9%] rounded-t-[2px] bg-white/60" style={{ height: "78%" }} />
           <div className="w-[9%] rounded-t-[2px] bg-white/30" style={{ height: "52%" }} />
           <div className="w-[9%] rounded-t-[2px] bg-white/45" style={{ height: "68%" }} />
+        </div>
+      </div>
+    </BrowserPreviewFrame>
+  );
+});
+
+const DashboardPreview = memo(function DashboardPreview() {
+  return (
+    <BrowserPreviewFrame url="efferd.app/dashboard">
+      {/* Sidebar mini */}
+      <div className="absolute inset-y-0 left-0 w-[18%] border-r border-white/[.06] bg-[#0E0E11] p-1.5">
+        <div className="size-2.5 rounded-[3px] bg-[#74FA6A]" />
+        <div className="mt-2 space-y-1">
+          <div className="h-1 w-full rounded-full bg-white/25" />
+          <div className="h-1 w-[80%] rounded-full bg-white/12" />
+          <div className="h-1 w-[90%] rounded-full bg-white/12" />
+          <div className="h-1 w-[70%] rounded-full bg-white/12" />
+        </div>
+      </div>
+      {/* Konten: stat cards + chart tiruan */}
+      <div className="absolute inset-y-0 left-[18%] right-0 p-2">
+        <div className="flex gap-1.5">
+          <div className="flex-1 rounded-[4px] border border-white/[.07] bg-white/[.03] p-1">
+            <div className="h-0.5 w-[70%] rounded-full bg-white/25" />
+            <div className="mt-1 h-1 w-[50%] rounded-full bg-white/60" />
+          </div>
+          <div className="flex-1 rounded-[4px] border border-white/[.07] bg-white/[.03] p-1">
+            <div className="h-0.5 w-[70%] rounded-full bg-white/25" />
+            <div className="mt-1 h-1 w-[50%] rounded-full bg-white/60" />
+          </div>
+          <div className="flex-1 rounded-[4px] border border-white/[.07] bg-white/[.03] p-1">
+            <div className="h-0.5 w-[70%] rounded-full bg-white/25" />
+            <div className="mt-1 h-1 w-[50%] rounded-full bg-white/60" />
+          </div>
+        </div>
+        <div className="mt-1.5 flex h-[calc(100%-38px)] gap-1.5">
+          <div className="flex flex-1 items-end justify-around rounded-[4px] border border-white/[.07] bg-white/[.03] px-1 pb-1">
+            <div className="w-[10%] rounded-t-[2px] bg-[#74FA6A]/50" style={{ height: "40%" }} />
+            <div className="w-[10%] rounded-t-[2px] bg-[#74FA6A]/65" style={{ height: "58%" }} />
+            <div className="w-[10%] rounded-t-[2px] bg-[#74FA6A]/45" style={{ height: "36%" }} />
+            <div className="w-[10%] rounded-t-[2px] bg-[#74FA6A]/80" style={{ height: "74%" }} />
+            <div className="w-[10%] rounded-t-[2px] bg-[#74FA6A]/55" style={{ height: "50%" }} />
+            <div className="w-[10%] rounded-t-[2px] bg-[#74FA6A]" style={{ height: "88%" }} />
+          </div>
+          <div className="grid w-[30%] place-items-center rounded-[4px] border border-white/[.07] bg-white/[.03]">
+            <div className="size-7 rounded-full" style={{ background: "conic-gradient(#74FA6A 0 42%, #4DDCF0 42% 70%, #B48CFF 70% 88%, #3A3A44 88% 100%)", maskImage: "radial-gradient(circle, transparent 42%, black 44%)", WebkitMaskImage: "radial-gradient(circle, transparent 42%, black 44%)" }} />
+          </div>
         </div>
       </div>
     </BrowserPreviewFrame>
