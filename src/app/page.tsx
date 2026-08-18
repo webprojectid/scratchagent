@@ -178,6 +178,12 @@ export default function Home() {
             <div className="text-center"><p className="text-[15px] font-semibold text-[#E8F0E8]">Kripto Wallet</p><p className="mt-1 font-mono text-[10px] tracking-[.18em] text-[#8C97A5]">ANDROID</p></div>
           </div>
         </div>
+        {/* Button menuju halaman sample web project (halaman masih kosong) */}
+        <div className="mt-14 flex justify-center">
+          <Link href="/sample/web-project" className="rv2-button light">
+            <ArrowUpRight size={13} /> {lang === "en" ? "See sample web project" : "Lihat sample web project"}
+          </Link>
+        </div>
       </section>
 
       <section id="solutions" className="mx-auto max-w-[1360px] px-5 pb-24 md:px-10 md:pb-32">
