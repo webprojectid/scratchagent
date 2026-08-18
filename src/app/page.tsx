@@ -180,14 +180,18 @@ export default function Home() {
         </div>
         {/* Preview sample web project (CSS murni, tanpa WebGL/Spline) — klik langsung
             ke halaman sample masing-masing; tidak ada button terpisah */}
-        <div className="mt-12 grid gap-10 md:grid-cols-2 md:gap-12">
+        <div className="mt-12 grid gap-10 md:grid-cols-3 md:gap-8">
           <Link href="/sample/web-project" className="group flex flex-col items-center gap-4" aria-label={lang === "en" ? "Open sample web project 1" : "Buka sample web project 1"}>
-            <div className="h-[220px] w-full max-w-[360px]"><GalaxyHeroPreview /></div>
+            <div className="h-[200px] w-full max-w-[320px]"><GalaxyHeroPreview /></div>
             <div className="text-center"><p className="text-[15px] font-semibold text-[#E8F0E8]">Galaxy Hero</p><p className="mt-1 font-mono text-[10px] tracking-[.18em] text-[#8C97A5]">WEB · SPLINE</p></div>
           </Link>
           <Link href="/sample/web-project-2" className="group flex flex-col items-center gap-4" aria-label={lang === "en" ? "Open sample web project 2" : "Buka sample web project 2"}>
-            <div className="h-[220px] w-full max-w-[360px]"><VortexPreview /></div>
+            <div className="h-[200px] w-full max-w-[320px]"><VortexPreview /></div>
             <div className="text-center"><p className="text-[15px] font-semibold text-[#E8F0E8]">ImmersiaVR</p><p className="mt-1 font-mono text-[10px] tracking-[.18em] text-[#8C97A5]">WEB · WEBGL</p></div>
+          </Link>
+          <Link href="/sample/web-project-3" className="group flex flex-col items-center gap-4" aria-label={lang === "en" ? "Open sample web project 3" : "Buka sample web project 3"}>
+            <div className="h-[200px] w-full max-w-[320px]"><SaasPreview /></div>
+            <div className="text-center"><p className="text-[15px] font-semibold text-[#E8F0E8]">Landing Kit</p><p className="mt-1 font-mono text-[10px] tracking-[.18em] text-[#8C97A5]">WEB · SAAS</p></div>
           </Link>
         </div>
       </section>
@@ -423,6 +427,34 @@ const VortexPreview = memo(function VortexPreview() {
         <div className="mx-auto h-1.5 w-[65%] rounded-full bg-white/70" />
         <div className="mx-auto mt-1 h-1.5 w-[40%] rounded-full bg-white/40" />
         <div className="mx-auto mt-2 h-3 w-12 rounded-[4px] border border-white/20" />
+      </div>
+    </BrowserPreviewFrame>
+  );
+});
+
+const SaasPreview = memo(function SaasPreview() {
+  return (
+    <BrowserPreviewFrame url="template.app">
+      {/* Glow lembut di belakang, tiruan glows.png */}
+      <div className="absolute left-1/2 top-1/2 h-[120%] w-[80%] -translate-x-1/2 -translate-y-[38%] rounded-full opacity-40 blur-xl" style={{ background: "radial-gradient(closest-side, rgba(120,140,255,.35), rgba(255,255,255,.06) 60%, transparent)" }} />
+      {/* Heading gradient tiruan */}
+      <div className="absolute left-1/2 top-[18%] w-[70%] -translate-x-1/2 text-center">
+        <div className="mx-auto h-1.5 w-[85%] rounded-full bg-gradient-to-b from-white to-white/60" />
+        <div className="mx-auto mt-1 h-1.5 w-[60%] rounded-full bg-gradient-to-b from-white/80 to-white/40" />
+        <div className="mx-auto mt-1.5 h-1 w-[55%] rounded-full bg-white/25" />
+        {/* CTA putih tiruan variant gradient */}
+        <div className="mx-auto mt-2.5 h-3.5 w-16 rounded-[5px] bg-gradient-to-b from-white to-white/60 shadow-[0_2px_10px_rgba(255,255,255,.25)]" />
+      </div>
+      {/* Dashboard preview tiruan: bar chart mini */}
+      <div className="absolute bottom-[8%] left-1/2 h-[38%] w-[72%] -translate-x-1/2 overflow-hidden rounded-[6px] border border-white/10 bg-[#101014] shadow-lg">
+        <div className="flex h-full items-end justify-around gap-1 px-2 pb-1.5 pt-2">
+          <div className="w-[9%] rounded-t-[2px] bg-white/25" style={{ height: "45%" }} />
+          <div className="w-[9%] rounded-t-[2px] bg-white/40" style={{ height: "62%" }} />
+          <div className="w-[9%] rounded-t-[2px] bg-white/25" style={{ height: "38%" }} />
+          <div className="w-[9%] rounded-t-[2px] bg-white/60" style={{ height: "78%" }} />
+          <div className="w-[9%] rounded-t-[2px] bg-white/30" style={{ height: "52%" }} />
+          <div className="w-[9%] rounded-t-[2px] bg-white/45" style={{ height: "68%" }} />
+        </div>
       </div>
     </BrowserPreviewFrame>
   );
