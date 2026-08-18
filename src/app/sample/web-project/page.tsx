@@ -31,7 +31,7 @@ export default function SampleWebProjectPage() {
         </div>
       </header>
 
-      <section className="mx-auto max-w-[1100px] px-5 pb-24 pt-14 md:pt-20">
+      <section className="mx-auto max-w-[1100px] px-5 pt-14 md:pt-20">
         <div className="flex flex-wrap items-end justify-between gap-6">
           <div>
             <p className="font-mono text-[10px] uppercase tracking-[.2em] text-[#9CA9B8]">web project</p>
@@ -45,11 +45,11 @@ export default function SampleWebProjectPage() {
               : "Website hasil generasi dari brief singkat, berjalan di bawah seolah kamu membukanya langsung di browser."}
           </p>
         </div>
+      </section>
 
-        {/* Sample berjalan di dalam frame Safari dark-mode; scroll di dalam frame */}
-        <div className="mt-10">
-          <HeroSectionBasic />
-        </div>
+      {/* Sample full-width di bawah header: edge ke edge, tidak di-stretch */}
+      <section className="px-3 pb-16 pt-10 sm:px-5">
+        <HeroSectionBasic />
       </section>
     </main>
   );

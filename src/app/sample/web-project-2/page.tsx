@@ -31,7 +31,7 @@ export default function SampleWebProjectTwoPage() {
         </div>
       </header>
 
-      <section className="mx-auto max-w-[1100px] px-5 pb-24 pt-14 md:pt-20">
+      <section className="mx-auto max-w-[1100px] px-5 pt-14 md:pt-20">
         <div className="flex flex-wrap items-end justify-between gap-6">
           <div>
             <p className="font-mono text-[10px] uppercase tracking-[.2em] text-[#9CA9B8]">web project 02</p>
@@ -45,11 +45,11 @@ export default function SampleWebProjectTwoPage() {
               : "Landing page dengan shader neural-vortex interaktif, dihasilkan dari brief singkat dan berjalan di bawah seolah kamu membukanya langsung di browser."}
           </p>
         </div>
+      </section>
 
-        {/* Sample berjalan di dalam frame Safari dark-mode */}
-        <div className="mt-10">
-          <DemoOne />
-        </div>
+      {/* Sample full-width di bawah header: edge ke edge, tidak di-stretch */}
+      <section className="px-3 pb-16 pt-10 sm:px-5">
+        <DemoOne />
       </section>
     </main>
   );
