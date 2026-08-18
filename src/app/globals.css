@@ -207,3 +207,10 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--accent); outline-of
 .nv-spin-slower{animation:nv-rotate 26s linear infinite reverse}
 @media(prefers-reduced-motion:reduce){.nv-spin-slow,.nv-spin-slower{animation:none}}
 
+/* Animasi entry SaaS template (konversi fadeIn/slideDown inline-style referensi) */
+@keyframes saas-fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.saas-fade{animation:saas-fade .6s ease-out both}
+@keyframes saas-slide-down{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}
+.saas-slide-down{animation:saas-slide-down .3s ease-out both}
+@media(prefers-reduced-motion:reduce){.saas-fade,.saas-slide-down{animation:none}}
+
