@@ -6,7 +6,7 @@ import {
   hasMermaidDiagram,
   normalizeMermaidFences,
 } from "./arch-fallback";
-import { resolveLlmConfig } from "./llm-config";
+import { isExhaustedError, parseModelList, resolveLlmConfig } from "./llm-config";
 import { structureLimits, taskRangePerFeature, trimToMax, type Tier } from "./plan-limits";
 import type { PlanIdea } from "./types";
 
@@ -168,17 +168,23 @@ function extractJson(value: string): string {
 
 interface LlmUsage { tokensIn: number; tokensOut: number; }
 
-async function callLlm<T>(schema: z.ZodType<T>, prompt: string, usage?: LlmUsage): Promise<T> {
-  const cfg = await resolveLlmConfig();
-  const baseUrl = cfg.baseUrl;
-  const apiKey = cfg.apiKey;
-  const model = cfg.model;
-  if (!baseUrl || !apiKey || !model) throw new Error("Konfigurasi LLM belum lengkap (isi lewat Settings atau env)");
+// Model yang terakhir sukses / sedang dipakai. Kalau satu model kehabisan
+// quota, kursor maju ke model berikutnya dan tetap di situ sampai habis lagi,
+// jadi kita tidak bolak-balik nabrak model yang sudah pasti exhausted.
+let modelCursor = 0;
 
+/** Satu request ke satu model dengan retry internal (maks 3x). */
+async function attemptModel<T>(
+  schema: z.ZodType<T>,
+  prompt: string,
+  cfg: { baseUrl: string; apiKey: string; model: string },
+  usage?: LlmUsage,
+): Promise<T> {
+  const { baseUrl, apiKey, model } = cfg;
   const timeoutMs = Number(process.env.LLM_TIMEOUT_MS) || 180_000;
   let lastError: unknown;
   for (let attempt = 0; attempt < 3; attempt++) {
-    // Retry pakai prompt sedikit berbeda: hindari replay respons rus yang di-cache proxy,
+    // Retry pakai prompt sedikit berbeda: hindari replay respons rusak yang di-cache proxy,
     // sekaligus mengarahkan model untuk menulis ulang JSON dengan benar.
     // Nonce bikin tiap retry unik supaya varian prompt pun tidak ikut ter-cache.
     const userContent = attempt === 0
@@ -209,6 +215,8 @@ async function callLlm<T>(schema: z.ZodType<T>, prompt: string, usage?: LlmUsage
       if (!res.ok) {
         const text = await res.text();
         console.error(`[LLM] error body: ${text.slice(0, 500)}`);
+        // Pesan error menyertakan status HTTP supaya isExhaustedError (429/402)
+        // bisa mengenali quota habis dan langsung failover tanpa retry di sini.
         throw new Error(`LLM gagal: ${res.status} ${text.slice(0, 200)}`);
       }
       const responseBody = await res.json();
@@ -231,6 +239,8 @@ async function callLlm<T>(schema: z.ZodType<T>, prompt: string, usage?: LlmUsage
     } catch (error) {
       clearTimeout(timeout);
       lastError = error;
+      // Error quota tidak retry di model yang sama; biarkan failover yang handle.
+      if (isExhaustedError(error)) throw error;
       if (attempt === 2) throw error;
       if (error instanceof Error && error.name === "AbortError") {
         console.warn(`[LLM] timeout pada attempt ${attempt + 1} setelah ${Date.now() - start}ms, retry...`);
@@ -240,6 +250,48 @@ async function callLlm<T>(schema: z.ZodType<T>, prompt: string, usage?: LlmUsage
     }
   }
   throw lastError instanceof Error ? lastError : new Error("Parsing LLM gagal setelah 3 percobaan");
+}
+
+/**
+ * Panggil LLM dengan failover antar-model: config boleh berisi banyak model
+ * dalam satu base URL + API key (pola 9router). Kalau satu model kehabisan
+ * quota (429/402/exhausted), langsung coba model berikutnya dalam daftar.
+ */
+async function callLlm<T>(schema: z.ZodType<T>, prompt: string, usage?: LlmUsage): Promise<T> {
+  const cfg = await resolveLlmConfig();
+  const baseUrl = cfg.baseUrl;
+  const apiKey = cfg.apiKey;
+  const models = cfg.models.length > 0 ? cfg.models : parseModelList(cfg.model ?? "");
+  if (!baseUrl || !apiKey || models.length === 0) throw new Error("Konfigurasi LLM belum lengkap (isi lewat Settings atau env)");
+
+  if (modelCursor >= models.length) modelCursor = 0;
+  const order = [...models.slice(modelCursor), ...models.slice(0, modelCursor)];
+  let lastError: unknown;
+  let exhaustedCount = 0;
+  for (let i = 0; i < order.length; i++) {
+    const model = order[i];
+    try {
+      const result = await attemptModel(schema, prompt, { baseUrl, apiKey, model }, usage);
+      modelCursor = models.indexOf(model);
+      return result;
+    } catch (error) {
+      lastError = error;
+      if (isExhaustedError(error)) {
+        exhaustedCount++;
+        const nextModel = order[i + 1];
+        if (nextModel) {
+          console.warn(`[LLM] model ${model} kehabisan quota, pindah ke ${nextModel}`);
+          modelCursor = models.indexOf(nextModel);
+          continue;
+        }
+      }
+      throw error;
+    }
+  }
+  if (exhaustedCount === order.length && order.length > 1) {
+    throw new Error(`Semua model (${models.join(", ")}) kehabisan quota. Coba lagi nanti atau tambah model di Settings.`);
+  }
+  throw lastError instanceof Error ? lastError : new Error("Semua model gagal");
 }
 
 /**
