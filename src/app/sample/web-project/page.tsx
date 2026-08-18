@@ -1,5 +1,9 @@
+"use client";
+
 import Link from "next/link";
 import { HeaderNav } from "@/components/header-nav";
+import { HeroSectionBasic } from "@/components/ui/hero-spline-basic-demo";
+import { useLang } from "@/lib/lang";
 
 function Logo() {
   return (
@@ -15,6 +19,8 @@ function Logo() {
 }
 
 export default function SampleWebProjectPage() {
+  const lang = useLang();
+
   return (
     <main className="min-h-screen bg-[#0A0A0A] text-[#E8EDEC] selection:bg-[#74FA6A]/30 selection:text-black">
       {/* Header konsisten dengan /solutions, /pricing, /docs */}
@@ -25,7 +31,26 @@ export default function SampleWebProjectPage() {
         </div>
       </header>
 
-      {/* Halaman sengaja masih kosong: konten sample web project menyusul. */}
+      <section className="mx-auto max-w-[1100px] px-5 pb-24 pt-14 md:pt-20">
+        <div className="flex flex-wrap items-end justify-between gap-6">
+          <div>
+            <p className="font-mono text-[10px] uppercase tracking-[.2em] text-[#9CA9B8]">{lang === "en" ? "web project" : "web project"}</p>
+            <h1 className="mt-4 max-w-[22ch] text-balance text-[clamp(2rem,3.6vw,3.1rem)] font-medium leading-[1.02] tracking-[-.05em] text-[#F0F3F5]">
+              {lang === "en" ? "One brief, one full website." : "Satu brief, satu website utuh."}
+            </h1>
+          </div>
+          <p className="max-w-[42ch] text-sm leading-6 text-[#8C97A5]">
+            {lang === "en"
+              ? "A website generated from a short brief, running below as if you opened it directly in the browser."
+              : "Website hasil generasi dari brief singkat, berjalan di bawah seolah kamu membukanya langsung di browser."}
+          </p>
+        </div>
+
+        {/* Sample berjalan di dalam frame Safari dark-mode; scroll di dalam frame */}
+        <div className="mt-10">
+          <HeroSectionBasic />
+        </div>
+      </section>
     </main>
   );
 }
