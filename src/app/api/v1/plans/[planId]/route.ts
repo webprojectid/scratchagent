@@ -11,6 +11,11 @@ export async function GET(_request: Request, { params }: { params: Promise<{ pla
     id: plan.id,
     title: plan.title,
     brief: plan.brief,
+    tier: plan.tier ?? "free",
+    warnings: plan.warnings ?? [],
+    // Ide tambahan dari user (kolom chat, Pro maks 2/project). WAJIB dibaca
+    // agent sebagai referensi tambahan saat mengerjakan task.
+    ideas: (plan.ideas ?? []).map((i) => ({ text: i.text, phase: i.phase ?? null, featureTitle: i.featureTitle ?? null })),
     stack: plan.stack,
     asumsi: plan.asumsi,
     features: (plan.features ?? []).map((f) => ({

@@ -1,17 +1,27 @@
 import { and, eq, gte } from "drizzle-orm";
 import { getDb } from "@/db";
 import { usageEvents } from "@/db/schema";
+import {
+  memoryAddUsage,
+  memoryCountUsageSinceByTier,
+  memoryRemoveUsage,
+  memorySetUsagePlan,
+} from "@/lib/memory-store";
 
 export interface QuotaInfo {
   remaining: number;
   limit: number;
   resetAt: number;
+  tier: "free" | "pro";
+  /** Pro tidak dibatasi kuota; UI menampilkan teks berbeda saat true. */
+  unlimited: boolean;
 }
 
-/** Tanda terima konsumsi kuota. `eventId` hanya ada di DB mode. */
+/** Tanda terima konsumsi kuota. `eventId` ada di DB mode dan memory mode. */
 export interface QuotaReceipt {
   userId: string;
   eventId?: string;
+  tier: "free" | "pro";
 }
 
 export interface TokenUsage {
@@ -30,74 +40,75 @@ function quotaLimit(): number {
   return Number(process.env.QUOTA_GENERATE_DAILY ?? 3);
 }
 
-// ---- Fallback in-memory (dev tanpa DATABASE_URL). Reset saat restart, sesuai tujuan dev. ----
-const counts = new Map<string, { count: number; resetAt: number }>();
+function freeInfo(limit: number, used: number, oldestMs: number | null): QuotaInfo {
+  let resetAt = Date.now() + DAY_MS;
+  if (oldestMs != null) resetAt = oldestMs + DAY_MS;
+  return { remaining: Math.max(0, limit - used), limit, resetAt, tier: "free", unlimited: false };
+}
 
-function memoryGetQuota(userId: string): QuotaInfo {
+function proInfo(): QuotaInfo {
+  return { remaining: Infinity, limit: quotaLimit(), resetAt: Date.now() + DAY_MS, tier: "pro", unlimited: true };
+}
+
+/**
+ * Cek kuota generate user dalam rolling 24 jam.
+ * Pro: unlimited. Free: dihitung dari usage_events tier free 24 jam terakhir.
+ */
+export async function getQuota(userId: string, tier: "free" | "pro" = "free"): Promise<QuotaInfo> {
+  if (tier === "pro") return proInfo();
   const limit = quotaLimit();
-  const now = Date.now();
-  const record = counts.get(userId);
-  if (!record || record.resetAt < now) {
-    counts.set(userId, { count: 0, resetAt: now + DAY_MS });
-    return { remaining: limit, limit, resetAt: now + DAY_MS };
+
+  if (isMemoryMode()) {
+    const sinceIso = new Date(Date.now() - DAY_MS).toISOString();
+    const used = memoryCountUsageSinceByTier(userId, GENERATE_STAGE, "free", sinceIso);
+    return freeInfo(limit, used, null);
   }
-  return { remaining: Math.max(0, limit - record.count), limit, resetAt: record.resetAt };
-}
 
-function memoryConsume(userId: string): boolean {
-  const { remaining } = memoryGetQuota(userId);
-  if (remaining <= 0) return false;
-  const record = counts.get(userId)!;
-  record.count++;
-  return true;
-}
-
-function memoryRefund(userId: string): void {
-  const record = counts.get(userId);
-  if (record && record.count > 0) record.count--;
-}
-
-/** Jumlah event generate user dalam 24 jam terakhir (DB mode). */
-async function countRecentGenerate(userId: string): Promise<number> {
-  const db = getDb();
-  const since = new Date(Date.now() - DAY_MS);
-  const rows = await db
-    .select({ id: usageEvents.id })
-    .from(usageEvents)
-    .where(and(eq(usageEvents.userId, userId), eq(usageEvents.stage, GENERATE_STAGE), gte(usageEvents.createdAt, since)));
-  return rows.length;
-}
-
-export async function getQuota(userId: string): Promise<QuotaInfo> {
-  if (isMemoryMode()) return memoryGetQuota(userId);
-
-  const limit = quotaLimit();
-  const used = await countRecentGenerate(userId);
   const db = getDb();
   const since = new Date(Date.now() - DAY_MS);
   const rows = await db
     .select({ createdAt: usageEvents.createdAt })
     .from(usageEvents)
-    .where(and(eq(usageEvents.userId, userId), eq(usageEvents.stage, GENERATE_STAGE), gte(usageEvents.createdAt, since)));
-
-  let resetAt = Date.now() + DAY_MS;
-  if (rows.length > 0) {
-    const oldest = Math.min(...rows.map((r) => r.createdAt.getTime()));
-    resetAt = oldest + DAY_MS;
-  }
-  return { remaining: Math.max(0, limit - used), limit, resetAt };
+    .where(
+      and(
+        eq(usageEvents.userId, userId),
+        eq(usageEvents.stage, GENERATE_STAGE),
+        eq(usageEvents.tier, "free"),
+        gte(usageEvents.createdAt, since),
+      ),
+    );
+  const oldest = rows.length > 0 ? Math.min(...rows.map((r) => r.createdAt.getTime())) : null;
+  return freeInfo(limit, rows.length, oldest);
 }
 
 /**
  * Konsumsi kuota secara atomik.
- * - DB mode: dalam satu transaksi, cek jumlah event 24 jam terakhir < limit,
+ * - Pro: tanpa limit, tetap dicatat sebagai usage_events tier pro (untuk audit admin).
+ * - Free DB mode: dalam satu transaksi, cek event tier free 24 jam terakhir < limit,
  *   lalu INSERT baris usage_events (stage=generate, planId masih null).
- *   Return receipt berisi eventId; null kalau kuota habis.
- * - Memory mode: counter in-memory.
+ * - Free memory mode: hitung dari usageStore rolling 24 jam.
+ * Return null kalau kuota free habis.
  */
-export async function consumeQuota(userId: string): Promise<QuotaReceipt | null> {
+export async function consumeQuota(userId: string, tier: "free" | "pro" = "free"): Promise<QuotaReceipt | null> {
+  if (tier === "pro") {
+    if (isMemoryMode()) {
+      const ev = memoryAddUsage(userId, GENERATE_STAGE, "pro");
+      return { userId, eventId: ev.id, tier };
+    }
+    const db = getDb();
+    const inserted = await db
+      .insert(usageEvents)
+      .values({ userId, stage: GENERATE_STAGE, tier: "pro" } as never)
+      .returning();
+    return { userId, eventId: inserted[0]?.id ?? undefined, tier };
+  }
+
   if (isMemoryMode()) {
-    return memoryConsume(userId) ? { userId } : null;
+    const sinceIso = new Date(Date.now() - DAY_MS).toISOString();
+    const used = memoryCountUsageSinceByTier(userId, GENERATE_STAGE, "free", sinceIso);
+    if (used >= quotaLimit()) return null;
+    const ev = memoryAddUsage(userId, GENERATE_STAGE, "free");
+    return { userId, eventId: ev.id, tier };
   }
 
   const limit = quotaLimit();
@@ -108,28 +119,35 @@ export async function consumeQuota(userId: string): Promise<QuotaReceipt | null>
     const usedRows = await tx
       .select({ id: usageEvents.id })
       .from(usageEvents)
-      .where(and(eq(usageEvents.userId, userId), eq(usageEvents.stage, GENERATE_STAGE), gte(usageEvents.createdAt, since)));
+      .where(
+        and(
+          eq(usageEvents.userId, userId),
+          eq(usageEvents.stage, GENERATE_STAGE),
+          eq(usageEvents.tier, "free"),
+          gte(usageEvents.createdAt, since),
+        ),
+      );
     if (usedRows.length >= limit) return;
     const inserted = await tx
       .insert(usageEvents)
-      .values({ userId, stage: GENERATE_STAGE } as never)
+      .values({ userId, stage: GENERATE_STAGE, tier: "free" } as never)
       .returning();
     eventId = inserted[0]?.id ?? null;
   });
-  return eventId ? { userId, eventId } : null;
+  return eventId ? { userId, eventId, tier } : null;
 }
 
 /**
  * Refund kuota karena generate gagal.
  * - DB mode: hapus baris usage_events yang tadi dibuat (berdasar eventId).
- * - Memory mode: kurangi counter.
+ * - Memory mode: hapus event dari usageStore.
  */
 export async function refundQuota(receipt: QuotaReceipt): Promise<void> {
+  if (!receipt.eventId) return;
   if (isMemoryMode()) {
-    memoryRefund(receipt.userId);
+    memoryRemoveUsage(receipt.eventId);
     return;
   }
-  if (!receipt.eventId) return;
   const db = getDb();
   await db.delete(usageEvents).where(eq(usageEvents.id, receipt.eventId));
 }
@@ -139,8 +157,11 @@ export async function refundQuota(receipt: QuotaReceipt): Promise<void> {
  * Dipanggil setelah savePlan berhasil (planId kini valid untuk FK).
  */
 export async function finalizeQuota(receipt: QuotaReceipt, planId: string, usage: TokenUsage): Promise<void> {
-  if (isMemoryMode()) return;
   if (!receipt.eventId) return;
+  if (isMemoryMode()) {
+    memorySetUsagePlan(receipt.eventId, planId);
+    return;
+  }
   const db = getDb();
   await db
     .update(usageEvents)

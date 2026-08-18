@@ -1,15 +1,27 @@
-import { and, eq, inArray, isNull } from "drizzle-orm";
+import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import { getDb } from "@/db";
 import { plans, features, subFeatures, tasks, taskEvents, usageEvents, users } from "@/db/schema";
 import type { Plan } from "./types";
 import { demoPlan } from "./demo";
-import { applyArchFallback } from "./arch-fallback";
+import {
+  buildFallbackArchitecture,
+  buildFallbackDatabaseSchema,
+  containsTemplateArchitectureDiagram,
+  containsTemplateErDiagram,
+  isFullArchitectureTemplate,
+  isFullDatabaseTemplate,
+  normalizeMermaidFences,
+  stripTemplateDiagrams,
+} from "./arch-fallback";
 import {
   memoryDeletePlan,
   memoryFindTask,
   memoryGetPlan,
   memoryListAllPlans,
   memoryListPlans,
+  memoryRemoveFeature,
+  memoryRemoveSubFeature,
+  memoryRemoveTask,
   memorySavePlan,
   memoryUpdatePlanStatus,
   memoryUpdateTask,
@@ -20,18 +32,50 @@ function isMemoryMode() {
 }
 
 /**
- * Pastikan architecture & databaseSchema punya diagram Mermaid.
- * Kalau LLM cuma ngasih narasi tanpa diagram, suntikkan diagram fallback.
- * Dipakai saat plan dibaca, supaya plan lama (yang tersimpan tanpa diagram)
- * tetap menampilkan arsitektur & ERD.
+ * Siapkan arsitektur & databaseSchema sebelum ditampilkan:
+ * 1. Normalisasi fence tanpa label yang isinya mermaid (biar ke-render).
+ * 2. STRIP blok diagram template yang tersuntik ke narasi unik LLM
+ *    (biang "semua project kelihatan template"); narasi asli dipertahankan.
+ * 3. Isi dengan template HANYA kalau konten benar-benar kosong.
+ * Kalau ada bagian yang murni template generik, catat di plan.warnings
+ * supaya UI bisa menampilkan banner jujur.
  */
 function withDiagrams(plan: Plan): Plan {
-  const { architecture, databaseSchema } = applyArchFallback(
-    { title: plan.title, stack: plan.stack ?? [], features: plan.features },
-    plan.architecture ?? "",
-    plan.databaseSchema ?? "",
-  );
-  return { ...plan, architecture, databaseSchema };
+  let arch = normalizeMermaidFences(plan.architecture ?? "");
+  let db = normalizeMermaidFences(plan.databaseSchema ?? "");
+
+  const fullArchTemplate = isFullArchitectureTemplate(arch);
+  const fullDbTemplate = isFullDatabaseTemplate(db);
+
+  // Narasi unik + diagram template suntikan -> buang diagram palsunya.
+  if (!fullArchTemplate && containsTemplateArchitectureDiagram(arch)) {
+    arch = stripTemplateDiagrams(arch, "architecture");
+  }
+  if (!fullDbTemplate && containsTemplateErDiagram(db)) {
+    db = stripTemplateDiagrams(db, "database");
+  }
+
+  // Konten kosong total -> template fallback biar PRD tidak blank.
+  if (!arch.trim()) {
+    arch = buildFallbackArchitecture(plan.title, plan.stack ?? [], plan.features.map((f) => f.title));
+  }
+  if (!db.trim()) {
+    db = buildFallbackDatabaseSchema(plan.features.map((f) => f.title));
+  }
+
+  const result = { ...plan, architecture: arch, databaseSchema: db };
+
+  // Bagian yang murni template generik dicatat sebagai warning (tanpa duplikat)
+  // supaya UI bisa menampilkan banner jujur.
+  const templateWarnings: string[] = [];
+  if (fullArchTemplate) templateWarnings.push("Arsitektur memakai template generik karena LLM gagal");
+  if (fullDbTemplate) templateWarnings.push("Database schema memakai template generik karena LLM gagal");
+  if (templateWarnings.length) {
+    const existing = plan.warnings ?? [];
+    const extra = templateWarnings.filter((w) => !existing.includes(w));
+    if (extra.length) result.warnings = [...existing, ...extra];
+  }
+  return result;
 }
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -60,11 +104,18 @@ export async function savePlan(plan: Plan, userId: string): Promise<void> {
       databaseSchema: plan.databaseSchema ?? "",
       requirements: plan.requirements ?? { fungsional: [], nonFungsional: [] },
       userFlow: plan.userFlow ?? [],
+      warnings: plan.warnings ?? [],
+      tier: plan.tier ?? "free",
+      ideas: plan.ideas ?? [],
     },
     assumptions: plan.asumsi ?? [],
     status: plan.status ?? "generating",
     createdAt: plan.createdAt ? new Date(plan.createdAt) : new Date(),
-  } as any).onConflictDoNothing();
+  } as any)
+    // onConflict update tech_prefs: metadata dinamis (ideas, tier, warnings)
+    // hidup di tech_prefs dan HARUS ikut ter-update saat plan disimpan ulang
+    // (contoh: submit ide dari kolom chat "Ide Kamu").
+    .onConflictDoUpdate({ target: plans.id, set: { techPrefs: { stack: plan.stack ?? [], techStack: plan.techStack ?? [], architecture: plan.architecture ?? "", databaseSchema: plan.databaseSchema ?? "", requirements: plan.requirements ?? { fungsional: [], nonFungsional: [] }, userFlow: plan.userFlow ?? [], warnings: plan.warnings ?? [], tier: plan.tier ?? "free", ideas: plan.ideas ?? [] } } });
 
   for (const feature of (plan.features as any[])) {
     const fid = feature.id || crypto.randomUUID();
@@ -171,9 +222,31 @@ export async function getPlan(planId: string): Promise<Plan | undefined> {
       selesaiBila: feature.selesaiBila,
       priority: (feature.priority as any) ?? "medium",
       status: feature.status as any,
+      order: feature.order,
       subFeatures: subFeaturesWithTasks,
     };
   }));
+
+  // Urutan fase: (1) kolom order; plan lama punya order=0 semua, jadi
+  // tiebreak (2) phase terkecil dari task di dalamnya (= posisi asli fitur
+  // saat generate); tiebreak (3) urutan insert dari DB. Fase baru dari
+  // kolom chat ide dapat order = posisi akhir, sehingga selalu tampil akhir.
+  resultFeatures
+    .map((f, i) => ({ f, i }))
+    .sort((a, b) => {
+      const orderA = a.f.order ?? 0;
+      const orderB = b.f.order ?? 0;
+      if (orderA !== orderB) return orderA - orderB;
+      const phaseOf = (x: { f: typeof a.f }) => {
+        const phases = x.f.subFeatures.flatMap((sf) => sf.tasks.map((t) => t.phase)).filter((p) => Number.isFinite(p));
+        return phases.length ? Math.min(...phases) : Number.POSITIVE_INFINITY;
+      };
+      const pa = phaseOf(a);
+      const pb = phaseOf(b);
+      if (pa !== pb) return pa - pb;
+      return a.i - b.i;
+    })
+    .forEach((entry, idx) => { resultFeatures[idx] = entry.f; });
 
   const savedMeta = plan.techPrefs && !Array.isArray(plan.techPrefs) ? plan.techPrefs as any : {};
   const savedStack = Array.isArray(plan.techPrefs) ? plan.techPrefs as any[] : savedMeta.stack ?? [];
@@ -193,6 +266,9 @@ export async function getPlan(planId: string): Promise<Plan | undefined> {
     status: plan.status as any,
     createdAt: plan.createdAt?.toISOString(),
     userId: plan.userId ?? undefined,
+    warnings: Array.isArray(savedMeta.warnings) ? savedMeta.warnings : undefined,
+    tier: savedMeta.tier === "pro" ? "pro" : "free",
+    ideas: Array.isArray(savedMeta.ideas) ? savedMeta.ideas : undefined,
   } as Plan;
 
   return withDiagrams(built);
@@ -206,6 +282,101 @@ export async function listPlans(userId: string): Promise<Plan[]> {
   const rows = await db.select().from(plans).where(eq(plans.userId, dbUserId));
   const result = await Promise.all(rows.map((r) => getPlan(r.id).then((p) => p!).catch(() => undefined)));
   return result.filter((p): p is Plan => !!p);
+}
+
+/** Ringkasan plan untuk halaman daftar: tanpa hydrate penuh, tanpa diagram. */
+export type PlanSummary = {
+  id: string;
+  title: string;
+  status: string;
+  createdAt: string | undefined;
+  userId: string | null;
+  stack: string[];
+  featureCount: number;
+  taskCount: number;
+  tasksDone: number;
+  tasksActive: number;
+  tasksFailed: number;
+};
+
+function summaryFromPlan(p: Plan): PlanSummary {
+  const allTasks = (p.features ?? []).flatMap((f) => (f.subFeatures ?? []).flatMap((sf) => sf.tasks ?? []));
+  return {
+    id: p.id,
+    title: p.title,
+    status: p.status,
+    createdAt: p.createdAt,
+    userId: p.userId ?? null,
+    stack: (p.stack ?? []).slice(0, 3),
+    featureCount: (p.features ?? []).length,
+    taskCount: allTasks.length,
+    tasksDone: allTasks.filter((t) => t.status === "done").length,
+    tasksActive: allTasks.filter((t) => t.status === "in_progress").length,
+    tasksFailed: allTasks.filter((t) => t.status === "failed").length,
+  };
+}
+
+/**
+ * Ringkasan semua plan milik user, dioptimalkan untuk halaman profile:
+ * hanya 3 query tetap (plans, hitung task, hitung feature) berapa pun
+ * jumlah plan-nya. Jalur lama memanggil getPlan() per plan sehingga
+ * setiap plan menambah beberapa round trip ke database.
+ */
+export async function listPlanSummaries(userId: string): Promise<PlanSummary[]> {
+  if (isMemoryMode()) return memoryListPlans(userId).map(summaryFromPlan);
+  const dbUserId = await resolveDbUserId(userId);
+  if (!dbUserId) return [];
+  const db = getDb();
+  const rows = await db
+    .select({ id: plans.id, title: plans.title, status: plans.status, createdAt: plans.createdAt, techPrefs: plans.techPrefs })
+    .from(plans)
+    .where(eq(plans.userId, dbUserId))
+    .orderBy(sql`${plans.createdAt} desc`);
+  if (rows.length === 0) return [];
+
+  const planIds = rows.map((r) => r.id);
+  const taskAgg = await db
+    .select({ planId: tasks.planId, status: tasks.status, n: sql<number>`count(*)::int` })
+    .from(tasks)
+    .where(inArray(tasks.planId, planIds))
+    .groupBy(tasks.planId, tasks.status);
+  const featureAgg = await db
+    .select({ planId: features.planId, n: sql<number>`count(*)::int` })
+    .from(features)
+    .where(inArray(features.planId, planIds))
+    .groupBy(features.planId);
+
+  const taskByPlan = new Map<string, { total: number; done: number; active: number; failed: number }>();
+  for (const t of taskAgg) {
+    const acc = taskByPlan.get(t.planId) ?? { total: 0, done: 0, active: 0, failed: 0 };
+    acc.total += Number(t.n);
+    if (t.status === "done") acc.done += Number(t.n);
+    if (t.status === "in_progress") acc.active += Number(t.n);
+    if (t.status === "failed") acc.failed += Number(t.n);
+    taskByPlan.set(t.planId, acc);
+  }
+  const featureByPlan = new Map<string, number>();
+  for (const f of featureAgg) featureByPlan.set(f.planId, Number(f.n));
+
+  return rows.map((r) => {
+    const meta = r.techPrefs && !Array.isArray(r.techPrefs) ? (r.techPrefs as Record<string, unknown>) : {};
+    const rawStack = Array.isArray(r.techPrefs) ? (r.techPrefs as unknown[]) : (meta.stack as unknown[] | undefined) ?? [];
+    const stack = rawStack.map((t: unknown) => ((t as { name?: string })?.name ?? String(t))).slice(0, 3);
+    const agg = taskByPlan.get(r.id) ?? { total: 0, done: 0, active: 0, failed: 0 };
+    return {
+      id: r.id,
+      title: r.title,
+      status: r.status,
+      createdAt: r.createdAt?.toISOString(),
+      userId: dbUserId,
+      stack,
+      featureCount: featureByPlan.get(r.id) ?? 0,
+      taskCount: agg.total,
+      tasksDone: agg.done,
+      tasksActive: agg.active,
+      tasksFailed: agg.failed,
+    };
+  });
 }
 
 export async function listAllPlans(): Promise<Plan[]> {
@@ -309,4 +480,73 @@ export async function findTask(planId: string, ref: string): Promise<{ task: any
 
 export function allTasks(plan: Plan): any[] {
   return plan.features.flatMap((f) => f.subFeatures.flatMap((s) => s.tasks));
+}
+
+// ============================================================
+// Edit struktur: hapus fase / sub-fitur / task (fitur Pro).
+// FK database memakai onDelete: cascade, jadi baris anak ikut
+// terhapus otomatis. Ref yang dihapus juga dibersihkan dari
+// deps task lain supaya plan tidak macet permanen di scheduler.
+// ============================================================
+
+async function stripDeps(db: any, planId: string, removedRefs: string[]) {
+  if (removedRefs.length === 0) return;
+  const rows = await db
+    .select({ id: tasks.id, deps: tasks.deps })
+    .from(tasks)
+    .where(eq(tasks.planId, planId));
+  for (const row of rows) {
+    const deps = Array.isArray(row.deps) ? row.deps : [];
+    const next = deps.filter((d: string) => !removedRefs.includes(d));
+    if (next.length !== deps.length) {
+      await db.update(tasks).set({ deps: next } as any).where(eq(tasks.id, row.id));
+    }
+  }
+}
+
+/** Hapus satu fase (feature) beserta sub-fitur dan task-nya. */
+export async function removeFeature(planId: string, featureSlug: string): Promise<boolean> {
+  if (isMemoryMode()) return memoryRemoveFeature(planId, featureSlug);
+  const db = getDb();
+  const featureRows = await db.select({ id: features.id }).from(features).where(and(eq(features.planId, planId), eq(features.slug, featureSlug)));
+  if (featureRows.length === 0) return false;
+  const featureIds = featureRows.map((f) => f.id);
+  // Kumpulkan ref task milik feature ini dulu untuk pembersihan deps.
+  const taskRows = await db.select({ ref: tasks.ref }).from(tasks).where(and(eq(tasks.planId, planId), inArray(tasks.featureId, featureIds)));
+  // taskEvents ikut lewat cascade tasks.id; hapus feature (subFeatures & tasks cascade).
+  await db.delete(features).where(inArray(features.id, featureIds));
+  await stripDeps(db, planId, taskRows.map((t) => t.ref));
+  await syncFeatureStatuses(planId);
+  return true;
+}
+
+/** Hapus satu sub-fitur beserta task-nya. */
+export async function removeSubFeature(planId: string, featureSlug: string, subTitle: string): Promise<boolean> {
+  if (isMemoryMode()) return memoryRemoveSubFeature(planId, featureSlug, subTitle);
+  const db = getDb();
+  const featureRows = await db.select({ id: features.id }).from(features).where(and(eq(features.planId, planId), eq(features.slug, featureSlug)));
+  if (featureRows.length === 0) return false;
+  const sfRows = await db
+    .select({ id: subFeatures.id })
+    .from(subFeatures)
+    .where(and(eq(subFeatures.featureId, featureRows[0].id), eq(subFeatures.title, subTitle)));
+  if (sfRows.length === 0) return false;
+  const sfIds = sfRows.map((s) => s.id);
+  const taskRows = await db.select({ ref: tasks.ref }).from(tasks).where(and(eq(tasks.planId, planId), inArray(tasks.subFeatureId, sfIds)));
+  await db.delete(subFeatures).where(inArray(subFeatures.id, sfIds));
+  await stripDeps(db, planId, taskRows.map((t) => t.ref));
+  await syncFeatureStatuses(planId);
+  return true;
+}
+
+/** Hapus satu task berdasarkan ref. */
+export async function removeTask(planId: string, ref: string): Promise<boolean> {
+  if (isMemoryMode()) return memoryRemoveTask(planId, ref);
+  const db = getDb();
+  const taskRows = await db.select({ id: tasks.id, featureId: tasks.featureId }).from(tasks).where(and(eq(tasks.planId, planId), eq(tasks.ref, ref)));
+  if (taskRows.length === 0) return false;
+  await db.delete(tasks).where(eq(tasks.id, taskRows[0].id));
+  await stripDeps(db, planId, [ref]);
+  await syncFeatureStatuses(planId);
+  return true;
 }

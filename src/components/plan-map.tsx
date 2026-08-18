@@ -115,7 +115,7 @@ function MapNode({ data }: { data: MapNodeData }) {
 
 const nodeTypes = { mapNode: MapNode };
 
-function FeaturePanel({ plan, index, onClose, onNav }: { plan: Plan; index: number; onClose: () => void; onNav: (direction: number) => void }) {
+function FeaturePanel({ plan, index, onClose, onNav, isPro, onDeleteFeature, onDeleteSubFeature }: { plan: Plan; index: number; onClose: () => void; onNav: (direction: number) => void; isPro?: boolean; onDeleteFeature?: (slug: string, title: string) => void; onDeleteSubFeature?: (slug: string, title: string) => void }) {
   const feature = plan.features[index];
 
   useEffect(() => {
@@ -149,7 +149,13 @@ function FeaturePanel({ plan, index, onClose, onNav }: { plan: Plan; index: numb
         </div>
         <div className="flex items-center gap-1 text-slate-500">
           <button disabled title="Segera" className="grid size-8 place-items-center rounded transition hover:bg-white/5 disabled:opacity-40" aria-label="Revisi fitur"><Pencil size={14} /></button>
-          <button disabled title="Penghapusan fitur segera tersedia" className="grid size-8 place-items-center rounded transition hover:bg-white/5 disabled:opacity-40" aria-label="Hapus fitur"><Trash2 size={14} /></button>
+          <button
+            disabled={!isPro}
+            onClick={() => isPro && onDeleteFeature?.(feature.slug, feature.title)}
+            title={isPro ? "Hapus fase ini" : "Hapus struktur hanya untuk paket Pro"}
+            className="grid size-8 place-items-center rounded transition hover:bg-white/5 hover:text-rose-400 disabled:opacity-40 disabled:hover:text-slate-500"
+            aria-label="Hapus fitur"
+          ><Trash2 size={14} /></button>
           <button title="Perbesar panel" className="grid size-8 place-items-center rounded transition hover:bg-white/5 hover:text-[#74FA6A]" onClick={() => document.querySelector('[data-feature-panel]')?.classList.toggle('sm:w-[560px]')} aria-label="Perbesar panel"><Maximize2 size={14} /></button>
           <button onClick={onClose} className="grid size-8 place-items-center rounded transition hover:bg-white/5 hover:text-[#74FA6A]" aria-label="Tutup"><X size={15} /></button>
         </div>
@@ -191,7 +197,17 @@ function FeaturePanel({ plan, index, onClose, onNav }: { plan: Plan; index: numb
                     {subActive && <span className="size-1.5 shrink-0 animate-spin rounded-full border border-amber-400 border-r-transparent" />}
                     <span className="truncate text-[10px] font-medium text-slate-200">{subFeature.title}</span>
                   </span>
-                  <span className="shrink-0 text-[8px] text-slate-500">{subDone}/{subTasks.length}</span>
+                  <span className="flex shrink-0 items-center gap-1.5">
+                    <span className="text-[8px] text-slate-500">{subDone}/{subTasks.length}</span>
+                    {/* Hapus sub-fitur: Pro only, lewat tombol trash kecil di tiap baris. */}
+                    <button
+                      disabled={!isPro || subActive}
+                      onClick={() => isPro && onDeleteSubFeature?.(feature.slug, subFeature.title)}
+                      title={!isPro ? "Hapus struktur hanya untuk paket Pro" : subActive ? "Sub-fitur sedang dikerjakan agent" : `Hapus sub-fitur "${subFeature.title}"`}
+                      className="grid size-4 place-items-center rounded text-slate-600 transition hover:bg-rose-400/10 hover:text-rose-400 disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-slate-600"
+                      aria-label={`Hapus sub-fitur ${subFeature.title}`}
+                    ><Trash2 size={9} /></button>
+                  </span>
                 </div>
                 {subTasks.length > 0 && <p className="mt-0.5 truncate text-[8px] text-slate-500">{subTasks[0].title}</p>}
               </div>
@@ -226,7 +242,7 @@ function deriveFeatureStatus(feature: Feature): Feature["status"] {
   return "direncanakan";
 }
 
-export function PlanMap({ plan, liveTasks }: { plan: Plan; liveTasks?: Record<string, Task["status"]> }) {
+export function PlanMap({ plan, liveTasks, isPro, onRemoveStructure }: { plan: Plan; liveTasks?: Record<string, Task["status"]>; isPro?: boolean; onRemoveStructure?: (type: "feature" | "subfeature" | "task", params: Record<string, string>, label: string) => void }) {
   const [selected, setSelected] = useState<number | null>(null);
   const mergedPlan: Plan = useMemo(() => liveTasks
     ? { ...plan, features: plan.features.map((feature) => ({ ...feature, subFeatures: feature.subFeatures.map((subFeature) => ({ ...subFeature, tasks: subFeature.tasks.map((task) => ({ ...task, status: liveTasks[task.ref] ?? task.status })) })) })) }
@@ -300,6 +316,14 @@ export function PlanMap({ plan, liveTasks }: { plan: Plan; liveTasks?: Record<st
             plan={displayPlan}
             index={selected}
             onClose={() => setSelected(null)}
+            isPro={isPro}
+            onDeleteFeature={(slug, title) => {
+              onRemoveStructure?.("feature", { slug }, `fase "${title}"`);
+              setSelected(null);
+            }}
+            onDeleteSubFeature={(slug, title) => {
+              onRemoveStructure?.("subfeature", { slug, title }, `sub-fitur "${title}"`);
+            }}
             onNav={(direction) => setSelected((index) => index === null ? index : Math.max(0, Math.min(displayPlan.features.length - 1, index + direction)))}
           />
         )}
