@@ -13,8 +13,10 @@
 import { forwardRef, type ReactNode } from "react";
 import { ChevronLeft, ChevronRight, Lock, PanelLeft, Plus, Share, Shield } from "lucide-react";
 
-export const SafariFrame = forwardRef<HTMLDivElement, { children: ReactNode; className?: string }>(
-  function SafariFrame({ children, className = "" }, ref) {
+export const SafariFrame = forwardRef<
+  HTMLDivElement,
+  { children: ReactNode; className?: string; url?: string }
+>(function SafariFrame({ children, className = "", url = "scratchagent.app/sample/web-project" }, ref) {
     return (
       <div className={`overflow-hidden rounded-xl border border-white/10 bg-[#16161C] shadow-[0_40px_120px_-20px_rgba(0,0,0,0.8)] ${className}`}>
         {/* Toolbar Safari, dark mode */}
@@ -35,7 +37,7 @@ export const SafariFrame = forwardRef<HTMLDivElement, { children: ReactNode; cla
           {/* URL bar */}
           <div className="mx-auto flex min-w-0 max-w-[400px] flex-1 items-center justify-center gap-1.5 rounded-md border border-white/[.08] bg-white/[.06] px-3 py-1.5">
             <Lock size={11} className="shrink-0 text-white/40" aria-hidden="true" />
-            <span className="truncate font-mono text-[11px] tracking-[.02em] text-white/75">scratchagent.app/sample/web-project</span>
+            <span className="truncate font-mono text-[11px] tracking-[.02em] text-white/75">{url}</span>
           </div>
 
           {/* Tools kanan */}
