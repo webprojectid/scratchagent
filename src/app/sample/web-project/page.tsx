@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { HeaderNav } from "@/components/header-nav";
+import { SafariFrame } from "@/components/ui/safari-browser-frame";
 import { VideoAssetManager } from "@/components/ui/video-asset-manager";
 import { useLang } from "@/lib/lang";
 
@@ -44,14 +45,11 @@ export default function SampleWebProjectPage() {
             </p>
           </div>
 
-          {/* Video Asset Manager — menggantikan Spline hero */}
+          {/* Sample di samping copy — Safari frame identik dengan web-project 2/3/4 */}
           <div className="mx-auto w-full max-w-[880px]">
-            {/* Wrapper ratio 16:9 supaya proporsional di dalam SafariBrowserFrame */}
-            <div className="relative w-full overflow-hidden rounded-md" style={{ aspectRatio: "16/9" }}>
-              <div className="absolute inset-0">
-                <VideoAssetManager />
-              </div>
-            </div>
+            <SafariFrame url="frameio.app" ratio="desktop">
+              <VideoAssetManager />
+            </SafariFrame>
           </div>
         </div>
       </section>
