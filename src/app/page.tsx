@@ -373,119 +373,23 @@ function SolutionCard({ label, title, copy, points }: { label: string; title: st
 }
 
 // ===== RESTORED: preview device (Flappy Bird, iOS Fitness, Kripto Wallet) =====
-function AndroidFrame({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="flex h-full w-full items-center justify-center">
-      {/* Outer shell — matte graphite, flat sides ala Pixel 9 */}
-      <div
-        className="relative flex h-full flex-col overflow-visible"
-        style={{ width: "calc(100% - 4px)" }}
-      >
-        {/* Volume down + up — kiri */}
-        <div className="absolute -left-[3.5px] top-[18%] h-[28px] w-[3px] rounded-l-full"
-          style={{ background: "linear-gradient(to right, #1a1f24, #2c333b)" }} />
-        <div className="absolute -left-[3.5px] top-[27%] h-[44px] w-[3px] rounded-l-full"
-          style={{ background: "linear-gradient(to right, #1a1f24, #2c333b)" }} />
-        <div className="absolute -left-[3.5px] top-[36%] h-[44px] w-[3px] rounded-l-full"
-          style={{ background: "linear-gradient(to right, #1a1f24, #2c333b)" }} />
-        {/* Power button — kanan */}
-        <div className="absolute -right-[3.5px] top-[26%] h-[52px] w-[3px] rounded-r-full"
-          style={{ background: "linear-gradient(to left, #1a1f24, #2c333b)" }} />
-
-        {/* Main body */}
-        <div
-          className="relative flex h-full w-full flex-col overflow-hidden"
-          style={{
-            borderRadius: "36px",
-            background: "linear-gradient(145deg, #22272e 0%, #161b21 60%, #1c2128 100%)",
-            boxShadow: "0 24px 64px rgba(0,0,0,.75), inset 0 0 0 1px rgba(255,255,255,.07), inset 0 1px 0 rgba(255,255,255,.12)",
-            border: "2.5px solid #2c333b",
-          }}
-        >
-          {/* Top speaker grille */}
-          <div className="relative flex shrink-0 flex-col items-center pt-2.5">
-            <div className="flex items-center gap-[3px]">
-              {Array.from({ length: 10 }).map((_, i) => (
-                <span key={i} className="h-[3px] w-[3px] rounded-full bg-white/20" />
-              ))}
-            </div>
-
-            {/* Status bar */}
-            <div className="mt-1.5 flex w-full items-center justify-between px-5">
-              <span className="font-sans text-[8px] font-semibold text-white/90">9:41</span>
-              {/* Punch-hole camera — center */}
-              <span className="absolute left-1/2 -translate-x-1/2">
-                <span className="flex size-[11px] items-center justify-center rounded-full bg-black ring-1 ring-white/10">
-                  <span className="size-[5px] rounded-full bg-[#1a1a2e]" />
-                </span>
-              </span>
-              {/* Status icons */}
-              <span className="flex items-center gap-1 text-white/80">
-                {/* Signal */}
-                <svg width="11" height="8" viewBox="0 0 17 12" fill="currentColor">
-                  <rect x="0" y="6" width="3" height="6" rx="1" />
-                  <rect x="4.5" y="4" width="3" height="8" rx="1" />
-                  <rect x="9" y="2" width="3" height="10" rx="1" />
-                  <rect x="13.5" y="0" width="3" height="12" rx="1" opacity=".3" />
-                </svg>
-                {/* WiFi */}
-                <svg width="10" height="8" viewBox="0 0 20 14" fill="currentColor">
-                  <path d="M10 11a1.5 1.5 0 110 3 1.5 1.5 0 010-3zm0-4a5.5 5.5 0 014.5 2.4l-1.5 1.5A3.5 3.5 0 0010 9.5a3.5 3.5 0 00-3 1.4L5.5 9.4A5.5 5.5 0 0110 7zm0-4a9.5 9.5 0 017.8 4.1l-1.6 1.6A7.5 7.5 0 0010 5.5a7.5 7.5 0 00-6.2 3.2L2.2 7.1A9.5 9.5 0 0110 3z" opacity=".9" />
-                </svg>
-                {/* Battery */}
-                <svg width="16" height="8" viewBox="0 0 25 12" fill="none">
-                  <rect x="0.5" y="1" width="21" height="10" rx="3" stroke="currentColor" strokeWidth="1" />
-                  <rect x="23" y="4" width="2" height="4" rx="1" fill="currentColor" opacity=".4" />
-                  <rect x="2" y="2.5" width="15" height="7" rx="1.5" fill="currentColor" />
-                </svg>
-              </span>
-            </div>
-          </div>
-
-          {/* Screen content */}
-          <div className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-            {children}
-          </div>
-
-          {/* Bottom gesture bar */}
-          <div className="flex shrink-0 items-center justify-center py-2">
-            <div className="h-[4px] w-[90px] rounded-full bg-white/25" />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function PhoneFrame({ variant, children }: { variant: "android" | "ios"; children: React.ReactNode }) {
-  if (variant === "android") return <AndroidFrame>{children}</AndroidFrame>;
   return (
     <div className="flex h-full w-full items-center justify-center">
-      <div className="relative aspect-[9/19] h-full overflow-hidden rounded-[36px] border-[2.5px] border-[#2E343B] bg-black shadow-[0_20px_60px_rgba(0,0,0,.7),inset_0_0_0_1px_rgba(255,255,255,.08)]">
-        {/* Dynamic Island */}
-        <span className="absolute left-1/2 top-2 z-20 h-[18px] w-[88px] -translate-x-1/2 rounded-full bg-black ring-1 ring-white/[.06]" />
-        {/* iOS status bar */}
-        <div className="flex items-center justify-between px-6 pt-3 pb-1">
-          <span className="text-[8px] font-semibold text-white">9:41</span>
-          <span className="flex items-center gap-1 text-white">
-            <svg width="11" height="8" viewBox="0 0 17 12" fill="currentColor">
-              <rect x="0" y="4" width="3" height="8" rx="1" />
-              <rect x="4.5" y="2.5" width="3" height="9.5" rx="1" />
-              <rect x="9" y="0.5" width="3" height="11.5" rx="1" />
-              <rect x="13.5" y="0" width="3.5" height="12" rx="1" opacity=".3" />
-            </svg>
-            <svg width="16" height="8" viewBox="0 0 25 12" fill="none">
-              <rect x="0.5" y="1" width="21" height="10" rx="3" stroke="currentColor" strokeWidth="1" />
-              <rect x="23" y="4" width="2" height="4" rx="1" fill="currentColor" opacity=".4" />
-              <rect x="2" y="2.5" width="14" height="7" rx="1.5" fill="currentColor" />
-            </svg>
-          </span>
-        </div>
+      <div className={`relative aspect-[9/19] h-full overflow-hidden bg-black ${
+        variant === "ios"
+          ? "rounded-[36px] shadow-[0_20px_60px_rgba(0,0,0,.7),inset_0_0_0_1px_rgba(255,255,255,.08)]"
+          : "rounded-[24px] shadow-[0_14px_34px_rgba(0,0,0,.5),inset_0_0_0_1px_rgba(255,255,255,.04)]"
+      }`} style={{ border: `2.5px solid #2C2C30` }}>
+        {variant === "ios" ? (
+          <span className="absolute left-1/2 top-2 z-20 h-[18px] w-[88px] -translate-x-1/2 rounded-full bg-black ring-1 ring-white/[.06]" />
+        ) : (
+          <span className="absolute left-1/2 top-1.5 z-20 size-[8px] -translate-x-1/2 rounded-full bg-black ring-1 ring-white/15" />
+        )}
         {children}
-        {/* Home indicator */}
-        <div className="absolute bottom-2 left-1/2 -translate-x-1/2">
-          <div className="h-[4px] w-[100px] rounded-full bg-white/30" />
-        </div>
+        {variant === "ios" && (
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-[2px] rounded-t-[36px] bg-gradient-to-r from-transparent via-white/15 to-transparent" />
+        )}
       </div>
     </div>
   );
