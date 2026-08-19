@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { HeaderNav } from "@/components/header-nav";
-import { DemoOne } from "@/components/ui/neural-vortex-demo";
+import { DemoOne } from "@/components/ui/caleido-crm-demo";
 import { useLang } from "@/lib/lang";
 
 function Logo() {
@@ -36,12 +36,12 @@ export default function SampleWebProjectTwoPage() {
           <div className="lg:sticky lg:top-24">
             <p className="font-mono text-[10px] uppercase tracking-[.2em] text-[#9CA9B8]">web project 02</p>
             <h1 className="mt-4 max-w-[22ch] text-balance text-[clamp(2rem,3.6vw,3.1rem)] font-medium leading-[1.02] tracking-[-.05em] text-[#F0F3F5]">
-              {lang === "en" ? "A WebGL hero, one brief away." : "Hero WebGL, cukup satu brief."}
+              {lang === "en" ? "A full CRM, one brief away." : "CRM lengkap, cukup satu brief."}
             </h1>
             <p className="mt-4 max-w-[42ch] text-sm leading-6 text-[#8C97A5]">
               {lang === "en"
-                ? "A landing page with an interactive neural-vortex shader, generated from a short brief and running below as if you opened it directly in the browser."
-                : "Landing page dengan shader neural-vortex interaktif, dihasilkan dari brief singkat dan berjalan di bawah seolah kamu membukanya langsung di browser."}
+                ? "A sales CRM dashboard with activity feed, contact details, and task tracking — generated from a brief and running below as if opened directly in the browser."
+                : "Dashboard CRM penjualan dengan activity feed, detail kontak, dan pelacakan tugas — dihasilkan dari brief singkat dan berjalan di bawah seolah dibuka langsung di browser."}
             </p>
           </div>
 
