@@ -86,7 +86,7 @@ export const SafariFrame = forwardRef<
       <div
         ref={viewportRef}
         className={`relative overscroll-contain bg-[#0D0D18] ${
-          ratio === "desktop" ? "aspect-[16/9] w-full overflow-y-auto" : "h-[72vh] overflow-y-auto"
+          ratio === "desktop" ? "aspect-[16/9] w-full overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]" : "h-[72vh] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
         }`}
       >
         {ratio === "desktop" ? (
