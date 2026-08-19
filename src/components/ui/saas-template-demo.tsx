@@ -7,7 +7,7 @@ import SaasTemplate from "@/components/ui/saa-s-template";
 
 const DemoSaas = () => {
   return (
-    <SafariFrame url="template.app">
+    <SafariFrame url="template.app" ratio="desktop">
       <SaasTemplate />
     </SafariFrame>
   );

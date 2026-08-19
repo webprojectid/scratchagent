@@ -7,7 +7,7 @@ import { EfferdDashboard2 } from "@/components/ui/efferd-dashboard-2";
 
 const DemoEfferd = () => {
   return (
-    <SafariFrame url="efferd.app/dashboard" className="min-h-0">
+    <SafariFrame url="efferd.app/dashboard" ratio="desktop">
       <EfferdDashboard2 />
     </SafariFrame>
   );
