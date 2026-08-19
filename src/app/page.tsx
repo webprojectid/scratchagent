@@ -5,6 +5,7 @@ import { animate, AnimatePresence, motion, useMotionValue, useSpring, useScroll 
 import { ArrowUpDown, ArrowUpRight, Bike, ChevronLeft, Clock, CreditCard, Delete, Footprints, KeyRound, Lock, MoreHorizontal, Play, QrCode, Sparkles, Star, User, Users, Wind, X, Zap } from "lucide-react";
 import { memo, useEffect, useRef, useState } from "react";
 import DottedDemo from "@/components/ui/dotted-demo";
+import { IPhone17ShopDemo } from "@/components/ui/iphone17-shop-demo";
 import { getCurrentUser, refreshCurrentUser } from "@/lib/current-user";
 import { LanguageToggle } from "@/components/lang-toggle";
 import { useLang } from "@/lib/lang";
@@ -164,7 +165,7 @@ export default function Home() {
           <div><Eyebrow>case studies</Eyebrow><h2 className="mt-5 max-w-[20ch] text-balance text-[clamp(2.35rem,4.2vw,3.75rem)] font-medium leading-[.98] tracking-[-.055em] text-[#F0F3F5]">Dari brief jadi plan siap eksekusi.</h2></div>
           <p className="max-w-[42ch] text-sm leading-6 text-[#8C97A5]">Project simulasi nyata: dihasilkan otomatis dari brief singkat, lalu dijalankan task demi task oleh agent — dari aplikasi mobile sampai website.</p>
         </div>
-        <div className="mt-12 grid gap-10 md:grid-cols-3">
+        <div className="mt-12 grid gap-10 md:grid-cols-4">
           <div className="flex flex-col items-center gap-4">
             <div className="h-[480px] w-full max-w-[240px]"><PhoneFrame variant="android"><FlappyPreview /></PhoneFrame></div>
             <div className="text-center"><p className="text-[15px] font-semibold text-[#E8F0E8]">Flappy Bird</p><p className="mt-1 font-mono text-[10px] tracking-[.18em] text-[#8C97A5]">ANDROID</p></div>
@@ -176,6 +177,10 @@ export default function Home() {
           <div className="flex flex-col items-center gap-4">
             <div className="h-[480px] w-full max-w-[240px]"><PhoneFrame variant="android"><KriptoPreview /></PhoneFrame></div>
             <div className="text-center"><p className="text-[15px] font-semibold text-[#E8F0E8]">Kripto Wallet</p><p className="mt-1 font-mono text-[10px] tracking-[.18em] text-[#8C97A5]">ANDROID</p></div>
+          </div>
+          <div className="flex flex-col items-center gap-4">
+            <div className="h-[480px] w-full max-w-[240px] aspect-[9/19.5]"><IPhone17ShopDemo /></div>
+            <div className="text-center"><p className="text-[15px] font-semibold text-[#E8F0E8]">Nike Shop</p><p className="mt-1 font-mono text-[10px] tracking-[.18em] text-[#8C97A5]">IPHONE 17</p></div>
           </div>
         </div>
         {/* Preview sample web project (CSS murni, tanpa WebGL/Spline) — klik langsung
