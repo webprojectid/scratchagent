@@ -3,62 +3,55 @@
 import { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { ChevronLeft, ChevronRight, ArrowUpRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useLang } from "@/lib/lang";
 import { HeaderNav } from "@/components/header-nav";
 
-// ─── Project data ─────────────────────────────────────────────────────────────
+// demos
+import { SafariFrame } from "@/components/ui/safari-browser-frame";
+import { VideoAssetManager } from "@/components/ui/video-asset-manager";
+import { CaleidoCrmDashboard } from "@/components/ui/caleido-crm-demo";
+import { AutoFinanceDashboard } from "@/components/ui/auto-finance-demo";
+import { EfferdDashboard2 } from "@/components/ui/efferd-dashboard-2";
+import { CopyPrompt } from "@/components/ui/copy-prompt";
 
-const PROJECTS = [
-  {
-    number: "01",
-    slug: "/sample/web-project",
-    type: { en: "Video Asset Management", id: "Manajemen Aset Video" },
-    title: { en: "Video asset manager for film teams.", id: "Manajemen aset video untuk tim film." },
-    desc: {
-      en: "A production-grade video asset management platform for film crews and post-production teams to organize, review, and tag dailies, key scenes, and episode footage.",
-      id: "Platform manajemen aset video skala produksi untuk kru film dan tim pasca produksi agar dapat mengorganisir, mereview, dan menandai rekaman harian, adegan kunci, dan footage episode.",
-    },
-    accent: "#38bdf8",
-    bg: "radial-gradient(ellipse 80% 60% at 60% 40%, rgba(56,189,248,.12) 0%, transparent 70%)",
-  },
-  {
-    number: "02",
-    slug: "/sample/web-project-2",
-    type: { en: "CRM & Sales Dashboard", id: "Dashboard CRM & Penjualan" },
-    title: { en: "CRM dashboard for sales teams.", id: "Dashboard CRM untuk tim penjualan." },
-    desc: {
-      en: "A full-featured sales CRM platform. Manages pipelines, tracks activity history per contact, logs calls and meetings with recordings, and monitors daily task completion.",
-      id: "Platform CRM penjualan berfitur lengkap. Mengelola pipeline, melacak riwayat aktivitas per kontak, mencatat panggilan dan meeting, dan memantau penyelesaian tugas harian.",
-    },
-    accent: "#f97316",
-    bg: "radial-gradient(ellipse 80% 60% at 60% 40%, rgba(249,115,22,.12) 0%, transparent 70%)",
-  },
-  {
-    number: "03",
-    slug: "/sample/web-project-3",
-    type: { en: "Auto Finance Platform", id: "Platform Pembiayaan Otomotif" },
-    title: { en: "Auto finance platform, built to close.", id: "Platform otomotif, dirancang untuk closing." },
-    desc: {
-      en: "A full vehicle purchase and financing interface for auto dealerships. Buyers browse specs, flip through photo galleries, review financing breakdown, and contact the dealer.",
-      id: "Antarmuka pembelian dan pembiayaan kendaraan lengkap untuk dealer otomotif. Pembeli jelajahi spesifikasi, galeri foto, rincian pembiayaan, dan hubungi dealer.",
-    },
-    accent: "#4ade80",
-    bg: "radial-gradient(ellipse 80% 60% at 60% 40%, rgba(74,222,128,.10) 0%, transparent 70%)",
-  },
-  {
-    number: "04",
-    slug: "/sample/web-project-4",
-    type: { en: "SaaS Analytics Dashboard", id: "Dashboard Analitik SaaS" },
-    title: { en: "Analytics dashboard for SaaS teams.", id: "Dashboard analitik untuk tim SaaS." },
-    desc: {
-      en: "A data-rich analytics dashboard for SaaS companies. Surfaces revenue trends, user growth, and conversion metrics — with KPI cards, charts, a transaction feed, and channel attribution.",
-      id: "Dashboard analitik kaya data untuk perusahaan SaaS. Menampilkan tren revenue, pertumbuhan pengguna, dan metrik konversi dengan kartu KPI, grafik, dan atribusi channel.",
-    },
-    accent: "#a78bfa",
-    bg: "radial-gradient(ellipse 80% 60% at 60% 40%, rgba(167,139,250,.12) 0%, transparent 70%)",
-  },
+// ─── Data ────────────────────────────────────────────────────────────────────
+
+const PROMPTS = {
+  en: [
+    `Build a dark-themed video asset management dashboard for a film production team. Include a left sidebar with asset collections (Key Scenes, Episodes, Locations). Main area shows a 2×4 grid of video thumbnails with filename, uploader, date, duration badge, and status tag. Add a top breadcrumb bar with search, user avatar, and notification icons. Dark navy color scheme (#0d1117). Stack: React, Tailwind CSS, TypeScript.`,
+    `Build a light-mode CRM sales dashboard called "Caleido". Layout: left sidebar with welcome greeting, 2×3 stat cards, and task progress bars. Center panel: orange gradient banner, activity feed tabs, and a vertical timeline of CRM events with audio waveform player. Right panel: contact detail view with profile photo, action buttons, and deal metadata rows. Accent color orange (#ef672f). Stack: React, Tailwind CSS, TypeScript.`,
+    `Build a vehicle purchase and financing web app on a dark navy gradient background. Top nav with logo and Vehicles / Application / Profile links. Main content: vehicle header with specs and monthly payment, interactive image gallery with 4 thumbnails, collapsible spec accordion, financing breakdown table, and dealer info card with contact button. Stack: React, Tailwind CSS, TypeScript.`,
+    `Build a dark-mode analytics dashboard for a SaaS business. Left sidebar with navigation icons. Main area: 4 KPI cards with trend indicators, a revenue line chart spanning 12 months, and a weekly active users bar chart. Right panel: recent transactions list and top channels breakdown with progress bars. Color scheme: dark (#0f1117) with purple accent (#7c3aed). Stack: React, Tailwind CSS, TypeScript.`,
+  ],
+  id: [
+    `Buat dashboard manajemen aset video bertema gelap untuk tim produksi film. Sidebar kiri dengan koleksi aset (Key Scenes, Episodes, Locations). Area utama menampilkan grid 2×4 thumbnail video lengkap dengan nama file, uploader, tanggal, badge durasi, dan tag status. Top bar breadcrumb dengan pencarian, avatar, dan notifikasi. Skema warna navy gelap (#0d1117). Stack: React, Tailwind CSS, TypeScript.`,
+    `Buat dashboard CRM sales bertema terang bernama "Caleido". Layout: sidebar kiri dengan salam, grid 2×3 kartu statistik, dan progress bar tugas. Panel tengah: banner gradien oranye, tab activity feed, dan timeline vertikal event CRM dengan audio waveform. Panel kanan: detail kontak dengan foto, tombol aksi, dan baris metadata deal. Aksen oranye (#ef672f). Stack: React, Tailwind CSS, TypeScript.`,
+    `Buat aplikasi web pembelian dan pembiayaan kendaraan dengan latar gradien navy gelap. Navbar atas dengan logo dan tautan Vehicles / Application / Profile. Konten utama: header kendaraan dengan spesifikasi dan cicilan bulanan, galeri gambar interaktif dengan 4 thumbnail, accordion spesifikasi, tabel rincian pembiayaan, dan kartu dealer. Stack: React, Tailwind CSS, TypeScript.`,
+    `Buat dashboard analitik dark-mode untuk bisnis SaaS. Sidebar kiri dengan ikon navigasi. Area utama: 4 kartu KPI dengan indikator tren, grafik garis revenue 12 bulan, dan grafik batang pengguna aktif mingguan. Panel kanan: daftar transaksi terbaru dan rincian top channel dengan progress bar. Skema gelap (#0f1117) aksen ungu (#7c3aed). Stack: React, Tailwind CSS, TypeScript.`,
+  ],
+};
+
+const META = {
+  en: [
+    { num: "01", type: "Video Asset Management",   title: "Video asset manager for film teams.",          url: "frameio.app" },
+    { num: "02", type: "CRM & Sales Dashboard",     title: "CRM dashboard for sales teams.",              url: "caleido.app/dashboard" },
+    { num: "03", type: "Auto Finance Platform",     title: "Auto finance platform, built to close.",      url: "autoapp.io/vehicles" },
+    { num: "04", type: "SaaS Analytics Dashboard",  title: "Analytics dashboard for SaaS teams.",         url: "efferd.app/dashboard" },
+  ],
+  id: [
+    { num: "01", type: "Manajemen Aset Video",      title: "Manajemen aset video untuk tim film.",        url: "frameio.app" },
+    { num: "02", type: "Dashboard CRM & Penjualan", title: "Dashboard CRM untuk tim penjualan.",          url: "caleido.app/dashboard" },
+    { num: "03", type: "Platform Pembiayaan Otomotif", title: "Platform otomotif, dirancang untuk closing.", url: "autoapp.io/vehicles" },
+    { num: "04", type: "Dashboard Analitik SaaS",   title: "Dashboard analitik untuk tim SaaS.",          url: "efferd.app/dashboard" },
+  ],
+};
+
+const DEMOS = [
+  <SafariFrame key="1" url="frameio.app"            ratio="desktop"><VideoAssetManager /></SafariFrame>,
+  <SafariFrame key="2" url="caleido.app/dashboard"  ratio="desktop"><CaleidoCrmDashboard /></SafariFrame>,
+  <SafariFrame key="3" url="autoapp.io/vehicles"    ratio="desktop"><AutoFinanceDashboard /></SafariFrame>,
+  <SafariFrame key="4" url="efferd.app/dashboard"   ratio="desktop"><EfferdDashboard2 /></SafariFrame>,
 ];
 
 // ─── Arrow Button ─────────────────────────────────────────────────────────────
@@ -68,72 +61,55 @@ function ArrowBtn({ dir, onClick, disabled }: { dir: "left" | "right"; onClick: 
     <motion.button
       onClick={onClick}
       disabled={disabled}
-      className="group relative flex h-14 w-14 items-center justify-center"
-      whileHover={disabled ? {} : { scale: 1.08 }}
-      whileTap={disabled ? {} : { scale: 0.94 }}
+      aria-label={dir === "left" ? "Previous" : "Next"}
+      className="group relative flex h-12 w-12 items-center justify-center"
+      whileHover={disabled ? {} : { scale: 1.1 }}
+      whileTap={disabled ? {} : { scale: 0.92 }}
+      transition={{ type: "spring", stiffness: 400, damping: 25 }}
     >
-      {/* Outer glow ring */}
       <motion.span
         className="absolute inset-0 rounded-full"
-        initial={{ opacity: 0 }}
-        whileHover={{ opacity: 1 }}
-        transition={{ duration: 0.2 }}
-        style={{ boxShadow: "0 0 0 1.5px rgba(255,255,255,.15), 0 0 24px rgba(255,255,255,.06)" }}
+        initial={{ opacity: 0, scale: 0.8 }}
+        whileHover={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.18 }}
+        style={{ boxShadow: "0 0 0 1px rgba(255,255,255,.14), 0 0 28px rgba(255,255,255,.06)" }}
       />
-      {/* Background fill */}
-      <span className={`absolute inset-0 rounded-full border border-white/[.09] transition-colors duration-200 ${disabled ? "bg-white/[.03]" : "bg-white/[.06] group-hover:bg-white/[.11]"}`} />
-      {/* Icon */}
-      <span className={`relative transition-all duration-200 ${disabled ? "text-white/20" : "text-white/60 group-hover:text-white"}`}>
-        {dir === "left" ? <ChevronLeft size={22} strokeWidth={1.8} /> : <ChevronRight size={22} strokeWidth={1.8} />}
+      <span className={`absolute inset-0 rounded-full border transition-colors duration-200 ${
+        disabled ? "border-white/[.05] bg-white/[.02]" : "border-white/[.10] bg-white/[.05] group-hover:border-white/[.20] group-hover:bg-white/[.10]"
+      }`} />
+      <span className={`relative transition-all duration-200 ${disabled ? "text-white/15" : "text-white/50 group-hover:text-white"}`}>
+        {dir === "left"
+          ? <ChevronLeft  size={20} strokeWidth={1.6} />
+          : <ChevronRight size={20} strokeWidth={1.6} />}
       </span>
     </motion.button>
   );
 }
 
-// ─── Dot indicator ────────────────────────────────────────────────────────────
+// ─── Dot Bar ──────────────────────────────────────────────────────────────────
 
-function Dots({ count, active }: { count: number; active: number }) {
+function DotBar({ count, active }: { count: number; active: number }) {
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-1.5">
       {Array.from({ length: count }).map((_, i) => (
         <motion.span
           key={i}
           className="block rounded-full bg-white"
-          animate={{ width: i === active ? 20 : 6, opacity: i === active ? 1 : 0.25 }}
-          transition={{ type: "spring", stiffness: 400, damping: 30 }}
-          style={{ height: 6 }}
+          animate={{ width: i === active ? 18 : 5, opacity: i === active ? 0.9 : 0.22 }}
+          transition={{ type: "spring", stiffness: 420, damping: 32 }}
+          style={{ height: 5 }}
         />
       ))}
     </div>
   );
 }
 
-// ─── Slide variants ───────────────────────────────────────────────────────────
-
-const variants = {
-  enter: (dir: number) => ({
-    x: dir > 0 ? 60 : -60,
-    opacity: 0,
-    filter: "blur(8px)",
-  }),
-  center: {
-    x: 0,
-    opacity: 1,
-    filter: "blur(0px)",
-  },
-  exit: (dir: number) => ({
-    x: dir > 0 ? -60 : 60,
-    opacity: 0,
-    filter: "blur(8px)",
-  }),
-};
-
 // ─── Logo ─────────────────────────────────────────────────────────────────────
 
 function Logo() {
   return (
     <Link href="/" className="flex items-center gap-2 text-[16px] font-semibold tracking-[-.04em] text-[#E8F0E8]">
-      <span className="relative grid size-6 place-items-center overflow-hidden text-[#74FA6A]" aria-hidden="true">
+      <span className="relative grid size-6 place-items-center overflow-hidden" aria-hidden="true">
         <span className="absolute left-0 top-[6px] h-2.5 w-2 -skew-x-[28deg] rounded-sm bg-[#74FA6A]" />
         <span className="absolute left-[7px] top-[2.5px] h-2.5 w-2 -skew-x-[28deg] rounded-sm bg-[#9AFF82]" />
         <span className="absolute left-[14px] top-[6px] h-2.5 w-2 -skew-x-[28deg] rounded-sm bg-[#4DDC62]" />
@@ -147,28 +123,27 @@ function Logo() {
 
 export default function WebProjectsPage() {
   const lang = useLang();
-  const router = useRouter();
   const [[index, dir], setPage] = useState([0, 0]);
-  const project = PROJECTS[index];
+  const meta = (META[lang] ?? META.en)[index];
+  const prompt = (PROMPTS[lang] ?? PROMPTS.en)[index];
 
-  const go = useCallback((newDir: number) => {
-    const next = index + newDir;
-    if (next < 0 || next >= PROJECTS.length) return;
-    setPage([next, newDir]);
+  const go = useCallback((d: number) => {
+    const next = index + d;
+    if (next < 0 || next >= DEMOS.length) return;
+    setPage([next, d]);
   }, [index]);
 
   useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "ArrowLeft") go(-1);
-      if (event.key === "ArrowRight") go(1);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft")  go(-1);
+      if (e.key === "ArrowRight") go(1);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [go]);
 
   return (
-    <main className="flex min-h-screen flex-col bg-[#0A0A0A] text-[#E8EDEC]">
-      {/* Header */}
+    <main className="min-h-screen bg-[#0A0A0A] text-[#E8EDEC]">
       <header className="sticky top-0 z-40 border-b border-white/[.06] bg-[rgba(10,10,10,0.85)] backdrop-blur-[12px]">
         <div className="mx-auto flex h-[54px] max-w-[1100px] items-center justify-between px-5">
           <Logo />
@@ -176,93 +151,57 @@ export default function WebProjectsPage() {
         </div>
       </header>
 
-      {/* Main */}
-      <div className="flex flex-1 flex-col items-center justify-center px-6 py-16">
+      <section className="w-full px-6 py-14 md:px-10 md:py-20">
+        <div className="sample-project-layout">
 
-        {/* Ambient glow bg */}
-        <motion.div
-          className="pointer-events-none fixed inset-0"
-          animate={{ background: project.bg }}
-          transition={{ duration: 0.7, ease: "easeInOut" }}
-        />
-
-        <div className="relative z-10 w-full max-w-[760px]">
-
-          {/* Top — number + type */}
-          <AnimatePresence mode="wait" custom={dir}>
-            <motion.div
-              key={index + "-meta"}
-              custom={dir}
-              variants={variants}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
-              className="mb-6 flex items-center gap-3"
-            >
-              <span className="font-mono text-[11px] tracking-[.2em] text-white/30">{project.number} / {String(PROJECTS.length).padStart(2,"0")}</span>
-              <span className="h-px flex-1 bg-white/[.07]" />
-              <span className="rounded-full border px-3 py-1 font-mono text-[9px] uppercase tracking-[.16em]"
-                style={{ borderColor: project.accent + "40", color: project.accent }}>
-                {lang === "en" ? project.type.en : project.type.id}
-              </span>
-            </motion.div>
-          </AnimatePresence>
-
-          {/* Title + description */}
-          <AnimatePresence mode="wait" custom={dir}>
-            <motion.div
-              key={index + "-copy"}
-              custom={dir}
-              variants={variants}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              transition={{ duration: 0.38, ease: [0.25, 0.46, 0.45, 0.94], delay: 0.04 }}
-            >
-              <div className="max-w-[26ch] text-[clamp(1.45rem,2.4vw,2.1rem)] font-medium leading-[1.2] tracking-[-.035em] text-[#F0F3F5]">
-                {lang === "en" ? project.title.en : project.title.id}
-              </div>
-              <p className="mt-4 max-w-[48ch] text-[13px] leading-[1.7] text-[#6B7A8D]">
-                {lang === "en" ? project.desc.en : project.desc.id}
-              </p>
-            </motion.div>
-          </AnimatePresence>
-
-          {/* CTA */}
-          <AnimatePresence mode="wait" custom={dir}>
-            <motion.div
-              key={index + "-cta"}
-              custom={dir}
-              variants={variants}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              transition={{ duration: 0.38, ease: [0.25, 0.46, 0.45, 0.94], delay: 0.08 }}
-              className="mt-8"
-            >
-              <motion.button
-                onClick={() => router.push(project.slug)}
-                className="group flex items-center gap-2 rounded-full border px-5 py-2.5 text-[12px] font-medium transition-colors"
-                style={{ borderColor: project.accent + "50", color: project.accent, backgroundColor: project.accent + "10" }}
-                whileHover={{ scale: 1.04, backgroundColor: project.accent + "1a" }}
-                whileTap={{ scale: 0.97 }}
+          {/* ── Left: meta + copy prompt ── */}
+          <div className="lg:sticky lg:top-24">
+            <AnimatePresence mode="wait" custom={dir}>
+              <motion.div
+                key={index}
+                custom={dir}
+                initial={{ opacity: 0, x: dir > 0 ? 24 : -24, filter: "blur(6px)" }}
+                animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
+                exit={{ opacity: 0, x: dir > 0 ? -24 : 24, filter: "blur(6px)" }}
+                transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
               >
-                {lang === "en" ? "View sample" : "Lihat sample"}
-                <ArrowUpRight size={13} className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-              </motion.button>
-            </motion.div>
-          </AnimatePresence>
+                <p className="font-mono text-[10px] uppercase tracking-[.2em] text-[#9CA9B8]">
+                  web project {meta.num}
+                </p>
+                <div className="mt-2 text-[18px] font-medium leading-[1.25] tracking-[-.025em] text-[#F0F3F5]">
+                  {meta.title}
+                </div>
+                <p className="mt-1.5 text-[11px] font-medium text-[#5C6A7A]">{meta.type}</p>
+                <CopyPrompt prompt={prompt} />
+              </motion.div>
+            </AnimatePresence>
 
-          {/* Controls */}
-          <div className="mt-14 flex items-center gap-6">
-            <ArrowBtn dir="left" onClick={() => go(-1)} disabled={index === 0} />
-            <Dots count={PROJECTS.length} active={index} />
-            <ArrowBtn dir="right" onClick={() => go(1)} disabled={index === PROJECTS.length - 1} />
+            {/* Arrows + dots */}
+            <div className="mt-8 flex items-center gap-4">
+              <ArrowBtn dir="left"  onClick={() => go(-1)} disabled={index === 0} />
+              <DotBar count={DEMOS.length} active={index} />
+              <ArrowBtn dir="right" onClick={() => go(1)}  disabled={index === DEMOS.length - 1} />
+            </div>
+          </div>
+
+          {/* ── Right: demo ── */}
+          <div className="mx-auto w-full max-w-[880px]">
+            <AnimatePresence mode="wait" custom={dir}>
+              <motion.div
+                key={index + "-demo"}
+                custom={dir}
+                initial={{ opacity: 0, x: dir > 0 ? 48 : -48, filter: "blur(10px)" }}
+                animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
+                exit={{ opacity: 0, x: dir > 0 ? -48 : 48, filter: "blur(10px)" }}
+                transition={{ duration: 0.38, ease: [0.25, 0.46, 0.45, 0.94] }}
+              >
+                {DEMOS[index]}
+              </motion.div>
+            </AnimatePresence>
           </div>
 
         </div>
-      </div>
+      </section>
     </main>
   );
 }
