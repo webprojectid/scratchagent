@@ -183,24 +183,18 @@ export default function Home() {
             <div className="text-center"><p className="text-[15px] font-semibold text-[#E8F0E8]">Sneakers Shop</p><p className="mt-1 flex items-center justify-center"><img src="https://cdn.simpleicons.org/apple/E8F0E8" alt="iOS" className="h-4 w-4" /></p></div>
           </div>
         </div>
-        {/* Preview sample web project (CSS murni, tanpa WebGL/Spline) — klik langsung
-            ke halaman sample masing-masing; tidak ada button terpisah */}
-        <div className="mt-12 grid gap-8 sm:grid-cols-2 xl:grid-cols-4">
-          <Link href="/sample/web-project" className="group flex flex-col items-center gap-4" aria-label={lang === "en" ? "Open sample web project 1" : "Buka sample web project 1"}>
-            <div className="h-[180px] w-full max-w-[300px]"><GalaxyHeroPreview /></div>
-            <div className="text-center"><p className="text-[15px] font-semibold text-[#E8F0E8]">Galaxy Hero</p><p className="mt-1 font-mono text-[10px] tracking-[.18em] text-[#8C97A5]">WEB · SPLINE</p></div>
-          </Link>
-          <Link href="/sample/web-project-2" className="group flex flex-col items-center gap-4" aria-label={lang === "en" ? "Open sample web project 2" : "Buka sample web project 2"}>
-            <div className="h-[180px] w-full max-w-[300px]"><VortexPreview /></div>
-            <div className="text-center"><p className="text-[15px] font-semibold text-[#E8F0E8]">ImmersiaVR</p><p className="mt-1 font-mono text-[10px] tracking-[.18em] text-[#8C97A5]">WEB · WEBGL</p></div>
-          </Link>
-          <Link href="/sample/web-project-3" className="group flex flex-col items-center gap-4" aria-label={lang === "en" ? "Open sample web project 3" : "Buka sample web project 3"}>
-            <div className="h-[180px] w-full max-w-[300px]"><SaasPreview /></div>
-            <div className="text-center"><p className="text-[15px] font-semibold text-[#E8F0E8]">Landing Kit</p><p className="mt-1 font-mono text-[10px] tracking-[.18em] text-[#8C97A5]">WEB · SAAS</p></div>
-          </Link>
-          <Link href="/sample/web-project-4" className="group flex flex-col items-center gap-4" aria-label={lang === "en" ? "Open sample web project 4" : "Buka sample web project 4"}>
-            <div className="h-[180px] w-full max-w-[300px]"><DashboardPreview /></div>
-            <div className="text-center"><p className="text-[15px] font-semibold text-[#E8F0E8]">Efferd Dashboard</p><p className="mt-1 font-mono text-[10px] tracking-[.18em] text-[#8C97A5]">WEB · ANALYTICS</p></div>
+        {/* Single CTA button mengarah ke halaman carousel web samples */}
+        <div className="mt-12 flex justify-center">
+          <Link
+            href="/sample/web-projects"
+            className="group flex items-center gap-2.5 rounded-full border border-white/[.12] bg-white/[.05] px-6 py-3 text-[13px] font-medium text-[#C8D4E0] transition-all duration-200 hover:border-white/[.22] hover:bg-white/[.09] hover:text-white"
+          >
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#74FA6A] opacity-60" />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#74FA6A]" />
+            </span>
+            {lang === "en" ? "View web samples" : "Lihat web samples"}
+            <ArrowUpRight size={14} className="transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 text-white/40 group-hover:text-white/70" />
           </Link>
         </div>
       </section>
