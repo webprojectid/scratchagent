@@ -114,26 +114,29 @@ function IPhone17Frame({ children }: { children: React.ReactNode }) {
 export function IPhone17ShopDemo() {
   return (
     <IPhone17Frame>
-      <ProductCard
-        name="Nike Air Force 1"
-        price={129.99}
-        originalPrice={169.99}
-        rating={4.7}
-        reviewCount={325}
-        discount={25}
-        freeShipping
-        isNew
-        isBestSeller
-        autoPlay
-        autoPlayInterval={2200}
-        colors={["#1e293b", "#f43f5e", "#0ea5e9", "#10b981"]}
-        sizes={["38", "39", "40", "41", "42", "43"]}
-        images={[
-          "https://images.unsplash.com/photo-1543508282-6319a3e2621f?q=80&w=800&auto=format&fit=crop",
-          "https://images.unsplash.com/photo-1656230259229-aa2634e3352c?q=80&w=800&auto=format&fit=crop",
-          "https://images.unsplash.com/photo-1579338559194-a162d19bf842?q=80&w=800&auto=format&fit=crop",
-        ]}
-      />
+      {/* w-full override max-w-sm supaya Card stretch penuh ke sisi kanan-kiri frame */}
+      <div className="w-full [&>*]:max-w-none [&>*]:rounded-none [&>*]:border-x-0 [&>*]:shadow-none">
+        <ProductCard
+          name="Nike Air Force 1"
+          price={129.99}
+          originalPrice={169.99}
+          rating={4.7}
+          reviewCount={325}
+          discount={25}
+          freeShipping
+          isNew
+          isBestSeller
+          autoPlay
+          autoPlayInterval={2200}
+          colors={["#1e293b", "#f43f5e", "#0ea5e9", "#10b981"]}
+          sizes={["38", "39", "40", "41", "42", "43"]}
+          images={[
+            "https://images.unsplash.com/photo-1543508282-6319a3e2621f?q=80&w=800&auto=format&fit=crop",
+            "https://images.unsplash.com/photo-1656230259229-aa2634e3352c?q=80&w=800&auto=format&fit=crop",
+            "https://images.unsplash.com/photo-1579338559194-a162d19bf842?q=80&w=800&auto=format&fit=crop",
+          ]}
+        />
+      </div>
     </IPhone17Frame>
   );
 }
