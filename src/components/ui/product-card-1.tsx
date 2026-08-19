@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,8 @@ export interface ProductCardProps {
   isBestSeller?: boolean;
   discount?: number;
   freeShipping?: boolean;
+  autoPlay?: boolean;
+  autoPlayInterval?: number;
 }
 
 export function ProductCard({
@@ -43,6 +45,8 @@ export function ProductCard({
   isBestSeller = true,
   discount = 30,
   freeShipping = true,
+  autoPlay = false,
+  autoPlayInterval = 2200,
 }: ProductCardProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [selectedColor, setSelectedColor] = useState(colors[0]);
@@ -50,6 +54,15 @@ export function ProductCard({
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [isAddedToCart, setIsAddedToCart] = useState(false);
+
+  // Auto-cycle gambar
+  useEffect(() => {
+    if (!autoPlay || images.length <= 1) return;
+    const t = setInterval(() => {
+      setCurrentImageIndex((prev) => (prev + 1) % images.length);
+    }, autoPlayInterval);
+    return () => clearInterval(t);
+  }, [autoPlay, autoPlayInterval, images.length]);
 
   const nextImage = (e: React.MouseEvent) => {
     e.stopPropagation();
