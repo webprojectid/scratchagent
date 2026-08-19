@@ -100,7 +100,7 @@ export function CaleidoCrmDashboard() {
           <Search size={14}/><Settings size={14}/><Grid2X2 size={14}/><MessageCircle size={14}/>
           <div className="h-5 w-px bg-[#e5e0da]" />
           <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&h=80&fit=crop&crop=face" alt="" className="size-8 rounded-full object-cover" />
-          <span className="text-[10px] font-medium text-[#3d3935]">Dulce Culhane</span><ChevronDown size={10}/>
+          <span className="text-[10px] font-medium text-[#3d3935]">Rudi Hartono</span><ChevronDown size={10}/>
         </div>
       </header>
 
@@ -108,7 +108,7 @@ export function CaleidoCrmDashboard() {
         {/* left */}
         <aside className="overflow-y-auto border-r border-[#e6e2dc] bg-[#faf9f6] px-4 py-3 [&::-webkit-scrollbar]:hidden">
           <p className="text-[8px] font-semibold uppercase tracking-[.16em] text-[#a09a93]">Welcome back,</p>
-          <div className="mt-1 text-[22px] font-semibold leading-[1.1] tracking-[-.04em] text-[#292623]">Dulce Culhane</div>
+          <div className="mt-1 text-[22px] font-semibold leading-[1.1] tracking-[-.04em] text-[#292623]">Rudi Hartono</div>
           <p className="mt-2 max-w-[220px] text-[9px] leading-[1.55] text-[#9a948d]">Track the entire history associated with the client and project here.</p>
 
           <div className="mt-3 grid grid-cols-2 gap-1.5">
@@ -139,12 +139,12 @@ export function CaleidoCrmDashboard() {
 
           <div className="relative px-6 pb-8">
             <div className="absolute bottom-8 left-[39px] top-4 w-px bg-[#eee9e4]"/>
-            <FeedRow type="deal" time="Nov 01, 23 at 2:34pm UTC"><b>John Smith</b> moved deal from <b>Needs Analysis</b> to <b>Value Proposition.</b></FeedRow>
+            <FeedRow type="deal" time="Nov 01, 23 at 2:34pm UTC"><b>Bambang Wicaksono</b> moved deal from <b>Needs Analysis</b> to <b>Value Proposition.</b></FeedRow>
 
             <div className="relative flex gap-3 py-2">
               <ActivityIcon type="call"/>
               <div className="min-w-0 flex-1 rounded-[8px] border border-[#f28a5d] bg-[#fffaf7] p-3 shadow-[0_6px_20px_rgba(238,100,45,.08)]">
-                <div className="flex justify-between"><div><p className="text-[11px] font-semibold text-[#38342f]">Your meeting recording is ready!</p><p className="mt-1 text-[9px] text-[#817a73]"><b>John Smith</b> made a call to <b>Kathryn Ono.</b> <span className="text-[#ef642d]">View meeting</span></p></div><MoreHorizontal size={13} className="text-[#aaa39c]"/></div>
+                <div className="flex justify-between"><div><p className="text-[11px] font-semibold text-[#38342f]">Your meeting recording is ready!</p><p className="mt-1 text-[9px] text-[#817a73]"><b>Bambang Wicaksono</b> made a call to <b>Sri Wahyuni.</b> <span className="text-[#ef642d]">View meeting</span></p></div><MoreHorizontal size={13} className="text-[#aaa39c]"/></div>
                 <p className="mt-1 text-[8px] text-[#aaa49d]">Oct 21, 23 at 5:11pm UTC</p>
                 <div className="mt-3 flex items-center gap-2 rounded-[6px] border border-[#eee7e1] bg-white px-2 py-2">
                   <span className="grid size-7 place-items-center rounded-full bg-[#ef672f] text-white"><Play size={10} fill="white"/></span>
@@ -155,9 +155,9 @@ export function CaleidoCrmDashboard() {
               </div>
             </div>
 
-            <FeedRow type="meeting" time="Oct 17, 23 at 1:53pm UTC"><b>John Smith</b> scheduled a meeting with <b>Kathryn Ono.</b></FeedRow>
-            <FeedRow type="email" time="Oct 08, 23 at 2:01pm UTC"><b>John Smith</b> sent an email to <b>Lora Palmer.</b></FeedRow>
-            <FeedRow type="deal" time="Oct 04, 23 at 2:34pm UTC"><b>John Smith</b> moved deal from <b>Needs Analysis</b> to <b>Value Proposition.</b></FeedRow>
+            <FeedRow type="meeting" time="Oct 17, 23 at 1:53pm UTC"><b>Bambang Wicaksono</b> scheduled a meeting with <b>Sri Wahyuni.</b></FeedRow>
+            <FeedRow type="email" time="Oct 08, 23 at 2:01pm UTC"><b>Bambang Wicaksono</b> sent an email to <b>Tika Pathmanathan.</b></FeedRow>
+            <FeedRow type="deal" time="Oct 04, 23 at 2:34pm UTC"><b>Bambang Wicaksono</b> moved deal from <b>Needs Analysis</b> to <b>Value Proposition.</b></FeedRow>
           </div>
         </main>
 
@@ -165,9 +165,9 @@ export function CaleidoCrmDashboard() {
         <aside className="relative overflow-y-auto border-l border-[#e6e2dc] bg-[#faf9f7] px-5 py-4 [&::-webkit-scrollbar]:hidden">
           <button className="flex items-center gap-2 text-[10px] font-semibold text-[#57524c]"><ArrowLeft size={12}/>Close Details</button>
           <div className="mt-5 text-center">
-            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=140&h=140&fit=crop&crop=face" alt="John Smith" className="mx-auto size-16 rounded-full object-cover ring-4 ring-white shadow-md"/>
+            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=140&h=140&fit=crop&crop=face" alt="Bambang Wicaksono" className="mx-auto size-16 rounded-full object-cover ring-4 ring-white shadow-md"/>
             <p className="mt-3 text-[9px] text-[#9a948d]">Sales Executive</p>
-            <div className="mt-1 text-[18px] font-semibold leading-tight tracking-[-.03em]">John Smith</div>
+            <div className="mt-1 text-[18px] font-semibold leading-tight tracking-[-.03em]">Bambang Wicaksono</div>
             <span className="mt-2 inline-flex items-center gap-1 rounded-full bg-[#eaf7ec] px-2.5 py-1 text-[8px] font-medium text-[#4b985a]"><span className="size-1.5 rounded-full bg-[#4caf64]"/>Available Today</span>
           </div>
 
@@ -177,7 +177,7 @@ export function CaleidoCrmDashboard() {
 
           <div className="mt-6 text-[12px] font-semibold leading-tight">Meeting details</div>
           <div className="mt-2">
-            <DetailRow label="Deal owner" value="Kathryn Ono"/>
+            <DetailRow label="Deal owner" value="Sri Wahyuni"/>
             <DetailRow label="Last activity" value="Nov 01 at 2:34pm UTC"/>
             <DetailRow label="Amount" value="13,000$"/>
             <DetailRow label="Close date" value="12/17/2023"/>
