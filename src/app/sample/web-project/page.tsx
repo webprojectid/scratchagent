@@ -15,7 +15,7 @@ function Logo() {
         <span className="absolute left-[7px] top-[2.5px] h-2.5 w-2 -skew-x-[28deg] rounded-sm bg-[#9AFF82]" />
         <span className="absolute left-[14px] top-[6px] h-2.5 w-2 -skew-x-[28deg] rounded-sm bg-[#4DDC62]" />
       </span>
-      Studio Lapis
+      Scratch Agent
     </Link>
   );
 }
