@@ -57,8 +57,8 @@ function IPhone17Frame({ children }: { children: React.ReactNode }) {
           <span className="size-[4px] rounded-full bg-[#443322]/80" />
         </div>
 
-        {/* Content scroll area */}
-        <div className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain">
+        {/* Content scroll area — scrollbar disembunyiin biar keliatan native mobile */}
+        <div className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           {children}
         </div>
 
