@@ -154,15 +154,16 @@ export default function WebProjectsPage() {
       <section className="w-full px-3 py-14 md:px-5 md:py-20">
 
         {/* Arrow pojok | teks berdampingan Safari | arrow pojok */}
-        <div className="flex w-full items-center gap-3">
+        <div className="flex w-full items-center gap-5 md:gap-7">
 
           {/* Arrow pojok kiri */}
-          <div className="shrink-0">
+          <div className="flex shrink-0 flex-col items-center gap-2">
             <ArrowBtn dir="left" onClick={() => go(-1)} disabled={index === 0} />
+            <span className={`font-mono text-[8px] uppercase tracking-[.18em] ${index === 0 ? "text-white/15" : "text-white/35"}`}>Prev</span>
           </div>
 
           {/* Teks kiri + Safari kanan, tetap berdampingan */}
-          <div className="grid min-w-0 flex-1 items-center gap-5 lg:grid-cols-[minmax(235px,300px)_minmax(0,1fr)]">
+          <div className="mx-auto grid min-w-0 w-full max-w-[1320px] flex-1 items-center gap-5 lg:grid-cols-[minmax(235px,300px)_minmax(0,1fr)]">
 
             {/* Meta + prompt */}
             <div className="min-w-0">
@@ -209,8 +210,9 @@ export default function WebProjectsPage() {
           </div>
 
           {/* Arrow pojok kanan */}
-          <div className="shrink-0">
+          <div className="flex shrink-0 flex-col items-center gap-2">
             <ArrowBtn dir="right" onClick={() => go(1)} disabled={index === DEMOS.length - 1} />
+            <span className={`font-mono text-[8px] uppercase tracking-[.18em] ${index === DEMOS.length - 1 ? "text-white/15" : "text-white/35"}`}>Next</span>
           </div>
 
         </div>
