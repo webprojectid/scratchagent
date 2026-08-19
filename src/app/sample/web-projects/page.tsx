@@ -152,40 +152,45 @@ export default function WebProjectsPage() {
       </header>
 
       <section className="w-full px-6 py-14 md:px-10 md:py-20">
-        <div className="sample-project-layout">
 
-          {/* ── Left: meta + copy prompt ── */}
-          <div className="lg:sticky lg:top-24">
+        {/* Full-width wrapper: arrow kiri | konten | arrow kanan */}
+        <div className="flex items-center gap-4">
+
+          {/* Arrow kiri — sticky di tepi */}
+          <div className="shrink-0">
+            <ArrowBtn dir="left" onClick={() => go(-1)} disabled={index === 0} />
+          </div>
+
+          {/* Konten tengah */}
+          <div className="flex min-w-0 flex-1 flex-col gap-6">
+
+            {/* Meta + copy prompt — di atas Safari frame */}
             <AnimatePresence mode="wait" custom={dir}>
               <motion.div
                 key={index}
                 custom={dir}
-                initial={{ opacity: 0, x: dir > 0 ? 24 : -24, filter: "blur(6px)" }}
-                animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
-                exit={{ opacity: 0, x: dir > 0 ? -24 : 24, filter: "blur(6px)" }}
-                transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
+                initial={{ opacity: 0, y: 10, filter: "blur(5px)" }}
+                animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                exit={{ opacity: 0, y: -10, filter: "blur(5px)" }}
+                transition={{ duration: 0.28, ease: [0.25, 0.46, 0.45, 0.94] }}
+                className="flex flex-wrap items-end justify-between gap-4"
               >
-                <p className="font-mono text-[10px] uppercase tracking-[.2em] text-[#9CA9B8]">
-                  web project {meta.num}
-                </p>
-                <div className="mt-2 text-[18px] font-medium leading-[1.25] tracking-[-.025em] text-[#F0F3F5]">
-                  {meta.title}
+                <div>
+                  <p className="font-mono text-[10px] uppercase tracking-[.2em] text-[#9CA9B8]">
+                    web project {meta.num}
+                  </p>
+                  <div className="mt-1 text-[15px] font-medium leading-[1.25] tracking-[-.025em] text-[#F0F3F5]">
+                    {meta.title}
+                  </div>
+                  <p className="mt-0.5 text-[11px] font-medium text-[#5C6A7A]">{meta.type}</p>
                 </div>
-                <p className="mt-1.5 text-[11px] font-medium text-[#5C6A7A]">{meta.type}</p>
-                <CopyPrompt prompt={prompt} />
+                <div className="flex items-center gap-4">
+                  <DotBar count={DEMOS.length} active={index} />
+                </div>
               </motion.div>
             </AnimatePresence>
 
-            {/* Arrows + dots */}
-            <div className="mt-8 flex items-center gap-4">
-              <ArrowBtn dir="left"  onClick={() => go(-1)} disabled={index === 0} />
-              <DotBar count={DEMOS.length} active={index} />
-              <ArrowBtn dir="right" onClick={() => go(1)}  disabled={index === DEMOS.length - 1} />
-            </div>
-          </div>
-
-          {/* ── Right: demo ── */}
-          <div className="mx-auto w-full max-w-[880px]">
+            {/* Safari frame demo */}
             <AnimatePresence mode="wait" custom={dir}>
               <motion.div
                 key={index + "-demo"}
@@ -198,6 +203,26 @@ export default function WebProjectsPage() {
                 {DEMOS[index]}
               </motion.div>
             </AnimatePresence>
+
+            {/* Copy prompt — di bawah frame */}
+            <AnimatePresence mode="wait" custom={dir}>
+              <motion.div
+                key={index + "-prompt"}
+                custom={dir}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.25, delay: 0.1 }}
+              >
+                <CopyPrompt prompt={prompt} />
+              </motion.div>
+            </AnimatePresence>
+
+          </div>
+
+          {/* Arrow kanan — sticky di tepi */}
+          <div className="shrink-0">
+            <ArrowBtn dir="right" onClick={() => go(1)} disabled={index === DEMOS.length - 1} />
           </div>
 
         </div>
