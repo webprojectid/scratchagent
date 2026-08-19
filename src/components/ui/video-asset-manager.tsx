@@ -12,51 +12,43 @@ import {
 const ASSETS = [
   {
     id: 1, duration: "0:14", res: "2K", comments: 0, approved: false,
-    bg: "from-slate-900 via-slate-800 to-slate-700",
-    scene: "night-spotlight",
-    label: "Scene 01 — Night Ext.",
+    bg: "linear-gradient(to bottom right, #0f172a, #1e293b, #334155)",
+    scene: "night-spotlight", label: "Scene 01 — Night Ext.",
   },
   {
     id: 2, duration: "0:32", res: "HD", comments: 0, approved: false,
-    bg: "from-amber-950 via-orange-900 to-amber-800",
-    scene: "interior-warm",
-    label: "Scene 04 — Int. Living Room",
+    bg: "linear-gradient(to bottom right, #431407, #7c2d12, #92400e)",
+    scene: "interior-warm", label: "Scene 04 — Int. Living Room",
   },
   {
     id: 3, duration: "0:21", res: "2K", comments: 0, approved: false,
-    bg: "from-slate-950 via-slate-900 to-indigo-950",
-    scene: "silhouette",
-    label: "Scene 07 — Backlit Silhouette",
+    bg: "linear-gradient(to bottom right, #020617, #0f172a, #1e1b4b)",
+    scene: "silhouette", label: "Scene 07 — Backlit Silhouette",
   },
   {
     id: 4, duration: "0:18", res: "", comments: 0, approved: false,
-    bg: "from-sky-950 via-blue-900 to-slate-800",
-    scene: "closeup-blue",
-    label: "Scene 09 — CU Face",
+    bg: "linear-gradient(to bottom right, #082f49, #1e3a5f, #1e293b)",
+    scene: "closeup-blue", label: "Scene 09 — CU Face",
   },
   {
     id: 5, duration: "0:09", res: "HD", comments: 0, approved: false,
-    bg: "from-orange-950 via-amber-900 to-yellow-900",
-    scene: "closeup-warm",
-    label: "Scene 12 — CU Portrait",
+    bg: "linear-gradient(to bottom right, #431407, #78350f, #713f12)",
+    scene: "closeup-warm", label: "Scene 12 — CU Portrait",
   },
   {
     id: 6, duration: "1:00", res: "2K", comments: 0, approved: true,
-    bg: "from-zinc-950 via-zinc-900 to-neutral-800",
-    scene: "dramatic-dark",
-    label: "Scene 14 — Dramatic CU",
+    bg: "linear-gradient(to bottom right, #09090b, #18181b, #262626)",
+    scene: "dramatic-dark", label: "Scene 14 — Dramatic CU",
   },
   {
     id: 7, duration: "0:47", res: "", comments: 0, approved: false,
-    bg: "from-cyan-950 via-slate-900 to-blue-950",
-    scene: "pool-lit",
-    label: "Scene 18 — Pool Sequence",
+    bg: "linear-gradient(to bottom right, #083344, #0f172a, #172554)",
+    scene: "pool-lit", label: "Scene 18 — Pool Sequence",
   },
   {
     id: 8, duration: "0:33", res: "HD", comments: 0, approved: false,
-    bg: "from-amber-900 via-yellow-900 to-orange-800",
-    scene: "golden-urban",
-    label: "Scene 21 — Golden Hour",
+    bg: "linear-gradient(to bottom right, #78350f, #713f12, #7c2d12)",
+    scene: "golden-urban", label: "Scene 21 — Golden Hour",
   },
 ];
 
@@ -77,7 +69,7 @@ const SIDEBAR = {
 
 function SceneIllustration({ scene, bg }: { scene: string; bg: string }) {
   return (
-    <div className={`relative h-full w-full bg-gradient-to-br ${bg} overflow-hidden`}>
+    <div className="relative h-full w-full overflow-hidden" style={{ background: bg }}>
       {/* Film grain overlay */}
       <div className="absolute inset-0 opacity-[0.06]"
         style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")" }} />
