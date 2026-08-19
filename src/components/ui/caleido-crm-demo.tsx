@@ -21,9 +21,9 @@ function Mark({ small = false }: { small?: boolean }) {
 
 function StatCard({ value, label }: { value: number; label: string }) {
   return (
-    <div className="relative min-h-[72px] rounded-[7px] border border-[#e8e4de] bg-white p-3 shadow-[0_2px_8px_rgba(39,34,27,.04)]">
+    <div className="relative min-h-[64px] rounded-[7px] border border-[#e8e4de] bg-white p-2.5 shadow-[0_2px_8px_rgba(39,34,27,.04)]">
       <Mark small />
-      <p className="mt-2 text-[19px] font-semibold leading-none text-[#272522]">{value}</p>
+      <p className="mt-1.5 text-[18px] font-semibold leading-none text-[#272522]">{value}</p>
       <p className="mt-1 text-[10px] text-[#8d8982]">{label}</p>
     </div>
   );
@@ -31,7 +31,7 @@ function StatCard({ value, label }: { value: number; label: string }) {
 
 function TaskProgress({ icon, title, done, total, width }: { icon: React.ReactNode; title: string; done: number; total: number; width: string }) {
   return (
-    <div className="py-3">
+    <div className="py-2.5">
       <div className="flex items-center gap-2.5">
         <span className="grid size-7 place-items-center rounded-full bg-[#fff1ea] text-[#e96029]">{icon}</span>
         <div className="min-w-0 flex-1">
@@ -108,16 +108,16 @@ export function CaleidoCrmDashboard() {
         {/* left */}
         <aside className="overflow-y-auto border-r border-[#e6e2dc] bg-[#faf9f6] px-5 py-5 [&::-webkit-scrollbar]:hidden">
           <p className="text-[8px] font-semibold uppercase tracking-[.16em] text-[#a09a93]">Welcome back,</p>
-          <h1 className="mt-1 text-[22px] font-semibold tracking-[-.04em] text-[#292623]">Dulce Culhane</h1>
+          <div className="mt-1 text-[22px] font-semibold leading-[1.1] tracking-[-.04em] text-[#292623]">Dulce Culhane</div>
           <p className="mt-2 max-w-[220px] text-[9px] leading-[1.55] text-[#9a948d]">Track the entire history associated with the client and project here.</p>
 
-          <div className="mt-5 grid grid-cols-2 gap-2">
+          <div className="mt-4 grid grid-cols-2 gap-2">
             <StatCard value={7} label="Appointment"/><StatCard value={2} label="Qualified"/>
             <StatCard value={18} label="Presentation"/><StatCard value={4} label="Proposal"/>
             <StatCard value={7} label="Closed Won"/><StatCard value={3} label="Closed Lost"/>
           </div>
 
-          <h2 className="mt-6 text-[13px] font-semibold tracking-[-.02em]">Tasks due today</h2>
+          <div className="mt-5 text-[13px] font-semibold leading-tight tracking-[-.02em]">Tasks due today</div>
           <div className="mt-2 divide-y divide-[#ebe7e2]">
             <TaskProgress icon={<Phone size={12}/>} title="Calls" done={5} total={10} width="50%"/>
             <TaskProgress icon={<ListChecks size={12}/>} title="To-do" done={12} total={42} width="29%"/>
@@ -167,7 +167,7 @@ export function CaleidoCrmDashboard() {
           <div className="mt-5 text-center">
             <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=140&h=140&fit=crop&crop=face" alt="John Smith" className="mx-auto size-16 rounded-full object-cover ring-4 ring-white shadow-md"/>
             <p className="mt-3 text-[9px] text-[#9a948d]">Sales Executive</p>
-            <h2 className="mt-1 text-[18px] font-semibold tracking-[-.03em]">John Smith</h2>
+            <div className="mt-1 text-[18px] font-semibold leading-tight tracking-[-.03em]">John Smith</div>
             <span className="mt-2 inline-flex items-center gap-1 rounded-full bg-[#eaf7ec] px-2.5 py-1 text-[8px] font-medium text-[#4b985a]"><span className="size-1.5 rounded-full bg-[#4caf64]"/>Available Today</span>
           </div>
 
@@ -175,7 +175,7 @@ export function CaleidoCrmDashboard() {
             <Action icon={<Video size={12}/>} label="Meeting"/><Action icon={<StickyNote size={12}/>} label="Note"/><Action icon={<Mail size={12}/>} label="Email"/><Action icon={<Phone size={12}/>} label="Call"/><Action icon={<CheckSquare size={12}/>} label="Task"/>
           </div>
 
-          <h3 className="mt-6 text-[12px] font-semibold">Meeting details</h3>
+          <div className="mt-6 text-[12px] font-semibold leading-tight">Meeting details</div>
           <div className="mt-2">
             <DetailRow label="Deal owner" value="Kathryn Ono"/>
             <DetailRow label="Last activity" value="Nov 01 at 2:34pm UTC"/>
@@ -193,5 +193,5 @@ export function CaleidoCrmDashboard() {
 }
 
 export function DemoOne() {
-  return <SafariFrame url="caleido.app/dashboard" ratio="desktop"><CaleidoCrmDashboard/></SafariFrame>;
+  return <SafariFrame url="caleido.app/dashboard" ratio="standard"><CaleidoCrmDashboard/></SafariFrame>;
 }

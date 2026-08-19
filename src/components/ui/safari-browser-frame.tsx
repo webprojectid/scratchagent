@@ -27,15 +27,16 @@ const DESKTOP_ZOOM = 0.75;
 
 export const SafariFrame = forwardRef<
   HTMLDivElement,
-  { children: ReactNode; className?: string; url?: string; ratio?: "desktop" }
+  { children: ReactNode; className?: string; url?: string; ratio?: "desktop" | "standard" }
 >(function SafariFrame({ children, className = "", url = "scratchagent.app/sample/web-project", ratio }, ref) {
   const viewportRef = useRef<HTMLDivElement>(null);
   useImperativeHandle(ref, () => viewportRef.current as HTMLDivElement);
 
   const [canvasSize, setCanvasSize] = useState<{ width: number; height: number } | null>(null);
+  const usesDesktopCanvas = ratio === "desktop" || ratio === "standard";
 
   useEffect(() => {
-    if (ratio !== "desktop") return;
+    if (!usesDesktopCanvas) return;
     const el = viewportRef.current;
     if (!el) return;
     const measure = () => {
@@ -48,7 +49,7 @@ export const SafariFrame = forwardRef<
     const observer = new ResizeObserver(measure);
     observer.observe(el);
     return () => observer.disconnect();
-  }, [ratio]);
+  }, [usesDesktopCanvas]);
 
   return (
     <div className={`overflow-hidden rounded-xl border border-white/10 bg-[#16161C] shadow-[0_40px_120px_-20px_rgba(0,0,0,0.8)] ${className}`}>
@@ -86,10 +87,14 @@ export const SafariFrame = forwardRef<
       <div
         ref={viewportRef}
         className={`relative overscroll-contain bg-[#0D0D18] ${
-          ratio === "desktop" ? "aspect-[16/9] w-full overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]" : "h-[72vh] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+          ratio === "standard"
+            ? "aspect-[4/3] w-full overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+            : ratio === "desktop"
+              ? "aspect-[16/9] w-full overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+              : "h-[72vh] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
         }`}
       >
-        {ratio === "desktop" ? (
+        {usesDesktopCanvas ? (
           <div
             style={
               canvasSize
