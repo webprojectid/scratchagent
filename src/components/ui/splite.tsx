@@ -1,12 +1,41 @@
 "use client";
 
 import { lazy, Suspense, useState } from "react";
+import type { Application } from "@splinetool/runtime";
 
 const Spline = lazy(() => import("@splinetool/react-spline"));
 
 interface SplineSceneProps {
   scene: string;
   className?: string;
+}
+
+// Watermark "Built with Spline" digambar runtime sebagai texture WebGL
+// di canvas lewat logoOverlayPass (scene free-plan), jadi TIDAK bisa
+// dihapus dengan CSS. Dimatikan lewat pipeline setelah scene selesai
+// load (react-spline memanggil onLoad setelah `await app.load(scene)`,
+// yaitu setelah watermark di-set runtime).
+type SplineAppInternals = {
+  _renderer?: {
+    pipeline?: {
+      setWatermark?: (texture: null) => void;
+    };
+  };
+};
+
+function handleSplineLoad(app: Application) {
+  const pipeline = (app as unknown as SplineAppInternals)._renderer?.pipeline;
+  pipeline?.setWatermark?.(null);
+  // Fallback: scene free-plan bisa men-set watermark secara async setelah
+  // onLoad; ulang disable beberapa kali lalu berhenti.
+  if (typeof window !== "undefined") {
+    (window as unknown as { __splineWatermark?: string }).__splineWatermark =
+      pipeline ? "disabled" : "pipeline-not-found";
+    const timers = [250, 1000, 2500].map((ms) =>
+      window.setTimeout(() => pipeline?.setWatermark?.(null), ms)
+    );
+    window.setTimeout(() => timers.forEach(clearTimeout), 3000);
+  }
 }
 
 export function SplineFallback() {
@@ -34,7 +63,7 @@ export function SplineScene({ scene, className }: SplineSceneProps) {
         className={`spline-host ${className} overflow-visible bg-transparent [&_canvas]:!h-full [&_canvas]:!min-h-[inherit] [&_canvas]:!w-full`}
         onErrorCapture={() => setFailed(true)}
       >
-        <Spline scene={scene} className="size-full !min-h-[inherit] bg-transparent [&_canvas]:!bg-transparent" />
+        <Spline scene={scene} onLoad={handleSplineLoad} className="size-full !min-h-[inherit] bg-transparent [&_canvas]:!bg-transparent" />
       </div>
     </Suspense>
   );
