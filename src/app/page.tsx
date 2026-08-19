@@ -171,12 +171,12 @@ export default function Home() {
             <div className="text-center"><p className="text-[15px] font-semibold text-[#E8F0E8]">Flappy Bird</p><p className="mt-1 font-mono text-[10px] tracking-[.18em] text-[#8C97A5]">ANDROID</p></div>
           </div>
           <div className="flex flex-col items-center gap-4">
-            <div className="h-[480px] w-full max-w-[240px]"><PhoneFrame variant="ios"><IosFitnessPreview /></PhoneFrame></div>
-            <div className="text-center"><p className="text-[15px] font-semibold text-[#E8F0E8]">Habit Tracker</p><p className="mt-1 font-mono text-[10px] tracking-[.18em] text-[#8C97A5]">IOS</p></div>
-          </div>
-          <div className="flex flex-col items-center gap-4">
             <div className="h-[480px] w-full max-w-[240px]"><PhoneFrame variant="android"><KriptoPreview /></PhoneFrame></div>
             <div className="text-center"><p className="text-[15px] font-semibold text-[#E8F0E8]">Kripto Wallet</p><p className="mt-1 font-mono text-[10px] tracking-[.18em] text-[#8C97A5]">ANDROID</p></div>
+          </div>
+          <div className="flex flex-col items-center gap-4">
+            <div className="h-[480px] w-full max-w-[240px]"><PhoneFrame variant="ios"><IosFitnessPreview /></PhoneFrame></div>
+            <div className="text-center"><p className="text-[15px] font-semibold text-[#E8F0E8]">Habit Tracker</p><p className="mt-1 font-mono text-[10px] tracking-[.18em] text-[#8C97A5]">IOS</p></div>
           </div>
           <div className="flex flex-col items-center gap-4">
             <div className="h-[480px] w-full max-w-[240px] aspect-[9/19.5]"><IPhone17ShopDemo /></div>
