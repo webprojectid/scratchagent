@@ -31,7 +31,7 @@ export function SplineScene({ scene, className }: SplineSceneProps) {
   return (
     <Suspense fallback={<SplineFallback />}>
       <div
-        className={`${className} overflow-visible bg-transparent [&_canvas]:!h-full [&_canvas]:!min-h-[inherit] [&_canvas]:!w-full`}
+        className={`spline-host ${className} overflow-visible bg-transparent [&_canvas]:!h-full [&_canvas]:!min-h-[inherit] [&_canvas]:!w-full`}
         onErrorCapture={() => setFailed(true)}
       >
         <Spline scene={scene} className="size-full !min-h-[inherit] bg-transparent [&_canvas]:!bg-transparent" />
