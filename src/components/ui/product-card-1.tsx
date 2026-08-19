@@ -30,6 +30,7 @@ export interface ProductCardProps {
   freeShipping?: boolean;
   autoPlay?: boolean;
   autoPlayInterval?: number;
+  currency?: string;
 }
 
 export function ProductCard({
@@ -47,6 +48,7 @@ export function ProductCard({
   freeShipping = true,
   autoPlay = false,
   autoPlayInterval = 2200,
+  currency = "$",
 }: ProductCardProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [selectedColor, setSelectedColor] = useState(colors[0]);
@@ -73,6 +75,12 @@ export function ProductCard({
     e.stopPropagation();
     setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
   };
+
+  // Format harga: Rupiah pakai pemisah titik tanpa desimal, selainnya pakai toFixed(2)
+  const formatPrice = (val: number) =>
+    currency.trim() === "Rp"
+      ? val.toLocaleString("id-ID")
+      : val.toFixed(2);
 
   const handleAddToCart = () => {
     if (isAddedToCart) return;
@@ -192,10 +200,10 @@ export function ProductCard({
 
           {/* Price */}
           <div className="flex items-baseline gap-2">
-            <span className="text-lg font-semibold">${price.toFixed(2)}</span>
+            <span className="text-lg font-semibold">{currency}{formatPrice(price)}</span>
             {originalPrice > price && (
               <span className="text-sm text-muted-foreground line-through">
-                ${originalPrice.toFixed(2)}
+                {currency}{formatPrice(originalPrice)}
               </span>
             )}
           </div>
