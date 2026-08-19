@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { HeaderNav } from "@/components/header-nav";
-import { HeroSectionBasic } from "@/components/ui/hero-spline-basic-demo";
+import { VideoAssetManager } from "@/components/ui/video-asset-manager";
 import { useLang } from "@/lib/lang";
 
 function Logo() {
@@ -23,7 +23,6 @@ export default function SampleWebProjectPage() {
 
   return (
     <main className="min-h-screen bg-[#0A0A0A] text-[#E8EDEC] selection:bg-[#74FA6A]/30 selection:text-black">
-      {/* Header konsisten dengan /solutions, /pricing, /docs */}
       <header className="sticky top-0 z-40 border-b border-white/[.06] bg-[rgba(10,10,10,0.85)] backdrop-blur-[12px]">
         <div className="mx-auto flex h-[54px] max-w-[1100px] items-center justify-between px-5">
           <Logo />
@@ -45,9 +44,14 @@ export default function SampleWebProjectPage() {
             </p>
           </div>
 
-          {/* Sample di samping copy, ratio layar desktop 16:9 tetap, ukuran dikecilkan lewat max-width */}
+          {/* Video Asset Manager — menggantikan Spline hero */}
           <div className="mx-auto w-full max-w-[880px]">
-            <HeroSectionBasic ratio="desktop" />
+            {/* Wrapper ratio 16:9 supaya proporsional di dalam SafariBrowserFrame */}
+            <div className="relative w-full overflow-hidden rounded-md" style={{ aspectRatio: "16/9" }}>
+              <div className="absolute inset-0">
+                <VideoAssetManager />
+              </div>
+            </div>
           </div>
         </div>
       </section>
