@@ -15,8 +15,8 @@ import { ChevronLeft, ChevronRight, Lock, PanelLeft, Plus, Share, Shield } from 
 
 export const SafariFrame = forwardRef<
   HTMLDivElement,
-  { children: ReactNode; className?: string; url?: string }
->(function SafariFrame({ children, className = "", url = "scratchagent.app/sample/web-project" }, ref) {
+  { children: ReactNode; className?: string; url?: string; ratio?: "desktop" }
+>(function SafariFrame({ children, className = "", url = "scratchagent.app/sample/web-project", ratio }, ref) {
     return (
       <div className={`overflow-hidden rounded-xl border border-white/10 bg-[#16161C] shadow-[0_40px_120px_-20px_rgba(0,0,0,0.8)] ${className}`}>
         {/* Toolbar Safari, dark mode */}
@@ -48,8 +48,14 @@ export const SafariFrame = forwardRef<
           </div>
         </div>
 
-        {/* Viewport: konten sample web project berjalan di sini */}
-        <div ref={ref} className="relative h-[72vh] overflow-y-auto overscroll-contain bg-[#0D0D18]">
+        {/* Viewport: konten sample web project berjalan di sini.
+            ratio="desktop" => tinggi layar mengikuti aspect 16:9 (rasio monitor desktop). */}
+        <div
+          ref={ref}
+          className={`relative overflow-y-auto overscroll-contain bg-[#0D0D18] ${
+            ratio === "desktop" ? "aspect-[16/9] w-full" : "h-[72vh]"
+          }`}
+        >
           {children}
         </div>
 

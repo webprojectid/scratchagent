@@ -9,11 +9,11 @@ import { useRef } from "react";
 import { SafariFrame } from "@/components/ui/safari-browser-frame";
 import { HeroSection } from "@/components/ui/galaxy-interactive-hero-section";
 
-export function HeroSectionBasic() {
+export function HeroSectionBasic({ ratio }: { ratio?: "desktop" }) {
   const viewportRef = useRef<HTMLDivElement>(null);
 
   return (
-    <SafariFrame ref={viewportRef} className="w-full">
+    <SafariFrame ref={viewportRef} className="w-full" url="scratchagent.app/sample/web-project" ratio={ratio}>
       <HeroSection scrollRef={viewportRef} height="fill" />
     </SafariFrame>
   );
