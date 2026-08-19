@@ -106,18 +106,18 @@ export function CaleidoCrmDashboard() {
 
       <div className="grid min-h-0 flex-1 grid-cols-[255px_minmax(410px,1fr)_285px]">
         {/* left */}
-        <aside className="overflow-y-auto border-r border-[#e6e2dc] bg-[#faf9f6] px-5 py-5 [&::-webkit-scrollbar]:hidden">
+        <aside className="overflow-y-auto border-r border-[#e6e2dc] bg-[#faf9f6] px-4 py-3 [&::-webkit-scrollbar]:hidden">
           <p className="text-[8px] font-semibold uppercase tracking-[.16em] text-[#a09a93]">Welcome back,</p>
           <div className="mt-1 text-[22px] font-semibold leading-[1.1] tracking-[-.04em] text-[#292623]">Dulce Culhane</div>
           <p className="mt-2 max-w-[220px] text-[9px] leading-[1.55] text-[#9a948d]">Track the entire history associated with the client and project here.</p>
 
-          <div className="mt-4 grid grid-cols-2 gap-2">
+          <div className="mt-3 grid grid-cols-2 gap-1.5">
             <StatCard value={7} label="Appointment"/><StatCard value={2} label="Qualified"/>
             <StatCard value={18} label="Presentation"/><StatCard value={4} label="Proposal"/>
             <StatCard value={7} label="Closed Won"/><StatCard value={3} label="Closed Lost"/>
           </div>
 
-          <div className="mt-5 text-[13px] font-semibold leading-tight tracking-[-.02em]">Tasks due today</div>
+          <div className="mt-3 text-[13px] font-semibold leading-tight tracking-[-.02em]">Tasks due today</div>
           <div className="mt-2 divide-y divide-[#ebe7e2]">
             <TaskProgress icon={<Phone size={12}/>} title="Calls" done={5} total={10} width="50%"/>
             <TaskProgress icon={<ListChecks size={12}/>} title="To-do" done={12} total={42} width="29%"/>
@@ -193,5 +193,5 @@ export function CaleidoCrmDashboard() {
 }
 
 export function DemoOne() {
-  return <SafariFrame url="caleido.app/dashboard" ratio="standard"><CaleidoCrmDashboard/></SafariFrame>;
+  return <SafariFrame url="caleido.app/dashboard" ratio="desktop"><CaleidoCrmDashboard/></SafariFrame>;
 }
