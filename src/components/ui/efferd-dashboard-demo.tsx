@@ -7,7 +7,7 @@ import { ScratchDashboard2 } from "@/components/ui/efferd-dashboard-2";
 
 const DemoEfferd = () => {
   return (
-    <SafariFrame url="efferd.app/dashboard" ratio="desktop">
+    <SafariFrame url="scratchapp.io/analytics" ratio="desktop">
       <ScratchDashboard2 />
     </SafariFrame>
   );
