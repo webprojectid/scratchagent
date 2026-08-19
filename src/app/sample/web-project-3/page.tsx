@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { HeaderNav } from "@/components/header-nav";
-import { DemoSaas } from "@/components/ui/saas-template-demo";
+import { DemoSaas } from "@/components/ui/auto-finance-demo";
 import { useLang } from "@/lib/lang";
 
 function Logo() {
@@ -36,12 +36,12 @@ export default function SampleWebProjectThreePage() {
           <div className="lg:sticky lg:top-24">
             <p className="font-mono text-[10px] uppercase tracking-[.2em] text-[#9CA9B8]">web project 03</p>
             <h1 className="mt-4 max-w-[22ch] text-balance text-[clamp(2rem,3.6vw,3.1rem)] font-medium leading-[1.02] tracking-[-.05em] text-[#F0F3F5]">
-              {lang === "en" ? "A landing kit, ready to ship." : "Landing kit, siap dikirim."}
+              {lang === "en" ? "Car financing, ready to drive." : "Pembiayaan mobil, siap melaju."}
             </h1>
             <p className="mt-4 max-w-[42ch] text-sm leading-6 text-[#8C97A5]">
               {lang === "en"
-                ? "A SaaS landing template generated from a short brief, running below as if you opened it directly in the browser."
-                : "Template landing SaaS hasil generasi dari brief singkat, berjalan di bawah seolah kamu membukanya langsung di browser."}
+                ? "A complete vehicle purchase and financing interface, generated from a short brief and running below as if opened directly in the browser."
+                : "Antarmuka pembelian dan pembiayaan kendaraan lengkap, dihasilkan dari brief singkat dan berjalan di bawah seolah dibuka langsung di browser."}
             </p>
           </div>
 
