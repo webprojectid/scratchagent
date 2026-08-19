@@ -49,9 +49,9 @@ export default function SampleWebProjectTwoPage() {
         <div className="sample-project-layout">
           <div className="lg:sticky lg:top-24">
             <p className="font-mono text-[10px] uppercase tracking-[.2em] text-[#9CA9B8]">web project 02</p>
-            <h1 className="mt-4 max-w-[22ch] text-balance text-[clamp(1.35rem,2vw,1.8rem)] font-medium leading-[1.02] tracking-[-.05em] text-[#F0F3F5]">
+            <div className="mt-4 max-w-[28ch] text-balance text-[18px] font-medium leading-[1.25] tracking-[-.025em] text-[#F0F3F5]">
               {lang === "en" ? "CRM dashboard for sales teams." : "Dashboard CRM untuk tim penjualan."}
-            </h1>
+            </div>
 
             <p className="mt-4 max-w-[42ch] text-sm leading-6 text-[#8C97A5]">
               {lang === "en"
