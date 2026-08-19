@@ -376,21 +376,47 @@ function SolutionCard({ label, title, copy, points }: { label: string; title: st
 function PhoneFrame({ variant, children }: { variant: "android" | "ios"; children: React.ReactNode }) {
   return (
     <div className="flex h-full w-full items-center justify-center">
-      <div className={`relative aspect-[9/19] h-full overflow-hidden bg-black ${
-        variant === "ios"
-          ? "rounded-[36px] shadow-[0_20px_60px_rgba(0,0,0,.7),inset_0_0_0_1px_rgba(255,255,255,.08)]"
-          : "rounded-[24px] shadow-[0_14px_34px_rgba(0,0,0,.5),inset_0_0_0_1px_rgba(255,255,255,.04)]"
-      }`} style={{ border: `2.5px solid #2C2C30` }}>
-        {variant === "ios" ? (
-          <span className="absolute left-1/2 top-2 z-20 h-[18px] w-[88px] -translate-x-1/2 rounded-full bg-black ring-1 ring-white/[.06]" />
-        ) : (
+      {variant === "ios" ? (
+        /* iOS — identik dengan iPhone 17 frame: side buttons, home indicator, top sheen */
+        <div className="relative flex h-full flex-col overflow-visible" style={{ width: "calc(100% - 4px)" }}>
+          {/* Action button kiri */}
+          <div className="absolute -left-[4px] top-[14%] h-[32px] w-[3px] rounded-l-full bg-[#2C2C30]" />
+          {/* Volume buttons kiri */}
+          <div className="absolute -left-[4px] top-[24%] h-[44px] w-[3px] rounded-l-full bg-[#2C2C30]" />
+          <div className="absolute -left-[4px] top-[33%] h-[44px] w-[3px] rounded-l-full bg-[#2C2C30]" />
+          {/* Power button kanan */}
+          <div className="absolute -right-[4px] top-[26%] h-[64px] w-[3px] rounded-r-full bg-[#2C2C30]" />
+
+          <div
+            className="relative flex h-full w-full flex-col overflow-hidden"
+            style={{
+              borderRadius: "36px",
+              border: "2.5px solid #2C2C30",
+              background: "#000",
+              boxShadow: "0 20px 60px rgba(0,0,0,.7), inset 0 0 0 1px rgba(255,255,255,.08)",
+            }}
+          >
+            {/* Top highlight sheen */}
+            <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-[2px] rounded-t-[36px] bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+            {/* Dynamic Island */}
+            <span className="absolute left-1/2 top-2 z-20 h-[18px] w-[88px] -translate-x-1/2 rounded-full bg-black ring-1 ring-white/[.06]" />
+            {/* Content */}
+            <div className="relative min-h-0 flex-1 overflow-hidden">
+              {children}
+            </div>
+            {/* Home indicator */}
+            <div className="flex shrink-0 justify-center py-2">
+              <div className="h-[4px] w-[100px] rounded-full bg-white/30" />
+            </div>
+          </div>
+        </div>
+      ) : (
+        /* Android — original simpel */
+        <div className="relative aspect-[9/19] h-full overflow-hidden rounded-[24px] bg-black shadow-[0_14px_34px_rgba(0,0,0,.5),inset_0_0_0_1px_rgba(255,255,255,.04)]" style={{ border: "2.5px solid #2C2C30" }}>
           <span className="absolute left-1/2 top-1.5 z-20 size-[8px] -translate-x-1/2 rounded-full bg-black ring-1 ring-white/15" />
-        )}
-        {children}
-        {variant === "ios" && (
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-[2px] rounded-t-[36px] bg-gradient-to-r from-transparent via-white/15 to-transparent" />
-        )}
-      </div>
+          {children}
+        </div>
+      )}
     </div>
   );
 }
