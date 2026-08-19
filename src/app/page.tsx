@@ -882,16 +882,16 @@ const KRIPTO = {
 };
 
 // Ikon ETH kecil (gradient biru-benar, huruf Xi sebagai glyph).
-function EthCoin({ size = 14, fontSize = 8 }: { size?: number; fontSize?: number }) {
+function EthCoin({ size = 18, fontSize = 10 }: { size?: number; fontSize?: number }) {
   return (
-    <span className="grid shrink-0 place-items-center rounded-full font-bold text-white" style={{ width: size, height: size, fontSize, background: `linear-gradient(135deg, ${KRIPTO.eth}, ${KRIPTO.ethDeep})` }}>╬₧</span>
+    <span className="grid shrink-0 place-items-center rounded-full font-bold text-white" style={{ width: size, height: size, fontSize, background: `linear-gradient(135deg, ${KRIPTO.eth}, ${KRIPTO.ethDeep})` }}>Ξ</span>
   );
 }
 
 // Chart harga: garis hijau ke-draw + fill gradient fade-in + dot pulse.
 function KriptoChart({ delay = 0.3 }: { delay?: number }) {
   return (
-    <div className="relative mt-1 h-[52px] w-full">
+    <div className="relative mt-1 h-[62px] w-full">
       <svg viewBox="0 0 360 120" preserveAspectRatio="none" className="size-full">
         <defs>
           <linearGradient id="kriptoChartGrad" x1="0" y1="0" x2="0" y2="1">
@@ -911,43 +911,43 @@ function KriptoDashboard() {
   return (
     <div className="flex h-full flex-col bg-white px-3">
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: [0.2, 0.8, 0.2, 1] }} className="flex items-center justify-between pt-1.5">
-        <ChevronLeft size={12} className="text-[#111]" />
-        <div className="flex items-center gap-1"><EthCoin size={15} fontSize={8} /><span className="text-[8px] font-semibold text-[#111]">Ethereum</span></div>
-        <div className="flex items-center gap-1.5"><Star size={9} className="text-[#111]" /><MoreHorizontal size={10} className="text-[#111]" /></div>
+        <ChevronLeft size={15} className="text-[#111]" />
+        <div className="flex items-center gap-1"><EthCoin size={18} fontSize={10} /><span className="text-[10px] font-semibold text-[#111]">Ethereum</span></div>
+        <div className="flex items-center gap-1.5"><Star size={12} className="text-[#111]" /><MoreHorizontal size={13} className="text-[#111]" /></div>
       </motion.div>
 
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.05, ease: [0.2, 0.8, 0.2, 1] }} className="pt-1">
-        <p className="text-[14px] font-extrabold tracking-tight text-[#111]">Rp 41.285.600</p>
-        <div className="flex items-center gap-1.5"><span className="text-[5.5px] text-[#888]">pada 21 Jan, 11:42</span><span className="text-[5.5px] font-semibold text-[#E53935]">Γû╝ 3,04%</span></div>
+        <p className="text-[17px] font-extrabold tracking-tight text-[#111]">Rp 41.285.600</p>
+        <div className="flex items-center gap-1.5"><span className="text-[7px] text-[#888]">pada 21 Jan, 11:42</span><span className="text-[7px] font-semibold text-[#E53935]">▼ 3,04%</span></div>
       </motion.div>
 
       <KriptoChart delay={0.3} />
 
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4, delay: 0.4 }} className="flex justify-around pt-1">
         {["1J", "1H", "1M", "1B", "1T"].map((t) => (
-          <span key={t} className={`rounded-full px-1.5 py-[2px] text-[5.5px] font-medium ${t === "1M" ? "bg-[#4CAF50] font-semibold text-white" : "text-[#999]"}`}>{t}</span>
+          <span key={t} className={`rounded-full px-2 py-[2px] text-[7px] font-medium ${t === "1M" ? "bg-[#4CAF50] font-semibold text-white" : "text-[#999]"}`}>{t}</span>
         ))}
       </motion.div>
 
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.45, ease: [0.2, 0.8, 0.2, 1] }} className="flex gap-1.5 pt-1.5">
         <div className="flex-1 rounded-lg bg-[#F5F5F5] px-2 py-1.5">
-          <p className="text-[5px] font-medium text-[#999]">Saldo</p>
-          <div className="mt-0.5 flex items-center gap-1"><EthCoin size={11} fontSize={6} /><span className="text-[6.5px] font-bold text-[#111]">0,006714</span></div>
+          <p className="text-[7px] font-medium text-[#999]">Saldo</p>
+          <div className="mt-0.5 flex items-center gap-1"><EthCoin size={13} fontSize={7} /><span className="text-[8px] font-bold text-[#111]">0,006714</span></div>
         </div>
         <div className="flex-1 rounded-lg bg-[#F5F5F5] px-2 py-1.5">
-          <p className="text-[5px] font-medium text-[#999]">Nilai</p>
-          <span className="mt-0.5 block text-[6.5px] font-bold text-[#111]">Rp 277.800</span>
+          <p className="text-[7px] font-medium text-[#999]">Nilai</p>
+          <span className="mt-0.5 block text-[8px] font-bold text-[#111]">Rp 277.800</span>
         </div>
       </motion.div>
 
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.5, ease: [0.2, 0.8, 0.2, 1] }} className="pt-1.5">
-        <p className="text-[7px] font-bold text-[#111]">Deskripsi</p>
-        <p className="mt-0.5 text-[5.5px] leading-snug text-[#888]">Ethereum adalah platform global untuk aplikasi terdesentralisasi, bertujuan menghilangkan kebutuhan akan otoritas pusat. <span className="font-medium text-[#4CAF50]">Baca Selengkapnya</span></p>
+        <p className="text-[9px] font-bold text-[#111]">Deskripsi</p>
+        <p className="mt-0.5 text-[7px] leading-snug text-[#888]">Ethereum adalah platform global untuk aplikasi terdesentralisasi, bertujuan menghilangkan kebutuhan akan otoritas pusat. <span className="font-medium text-[#4CAF50]">Baca Selengkapnya</span></p>
       </motion.div>
 
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.55, ease: [0.2, 0.8, 0.2, 1] }} className="mt-auto flex gap-1.5 pb-2 pt-2">
-        <span className="flex-1 rounded-full bg-[#111] py-1.5 text-center text-[7px] font-semibold text-white">Tukar</span>
-        <span className="flex-1 rounded-full bg-[#4CAF50] py-1.5 text-center text-[7px] font-semibold text-white">Kirim</span>
+        <span className="flex-1 rounded-full bg-[#111] py-1.5 text-center text-[9px] font-semibold text-white">Tukar</span>
+        <span className="flex-1 rounded-full bg-[#4CAF50] py-1.5 text-center text-[9px] font-semibold text-white">Kirim</span>
       </motion.div>
     </div>
   );
@@ -956,8 +956,8 @@ function KriptoDashboard() {
 function KriptoContact({ icon, name, sub, bg, delay = 0 }: { icon: React.ReactNode; name: string; sub: string; bg: string; delay?: number }) {
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay, ease: [0.2, 0.8, 0.2, 1] }} className="mt-1 flex items-center gap-1.5 rounded-lg bg-[#F5F5F5] px-2 py-1.5">
-      <span className="grid size-6 shrink-0 place-items-center rounded-md" style={{ background: bg }}>{icon}</span>
-      <div className="min-w-0 flex-1"><p className="truncate text-[6.5px] font-semibold text-[#111]">{name}</p><p className="text-[5px] text-[#999]">{sub}</p></div>
+      <span className="grid size-7 shrink-0 place-items-center rounded-md" style={{ background: bg }}>{icon}</span>
+      <div className="min-w-0 flex-1"><p className="truncate text-[8.5px] font-semibold text-[#111]">{name}</p><p className="text-[7px] text-[#999]">{sub}</p></div>
     </motion.div>
   );
 }
@@ -966,24 +966,24 @@ function KriptoSendSelect() {
   return (
     <div className="flex h-full flex-col bg-white px-3">
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="flex items-center justify-between border-b border-[#F0F0F0] pb-1.5 pt-1.5">
-        <p className="text-[10px] font-bold text-[#111]">Kirim</p>
-        <X size={10} className="text-[#555]" />
+        <p className="text-[12px] font-bold text-[#111]">Kirim</p>
+        <X size={13} className="text-[#555]" />
       </motion.div>
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.05 }} className="mt-1.5 flex items-center rounded-lg bg-[#F5F5F5] px-2 py-1.5">
-        <span className="text-[6px] font-medium text-[#AAA]">Ke</span>
-        <span className="ml-1 flex-1 text-[6px] text-[#BBB]">ENS atau Alamat</span>
-        <span className="rounded-md bg-[#111] px-1.5 py-[2px] text-[5.5px] font-semibold text-white">Tempel</span>
+        <span className="text-[8px] font-medium text-[#AAA]">Ke</span>
+        <span className="ml-1 flex-1 text-[8px] text-[#BBB]">ENS atau Alamat</span>
+        <span className="rounded-md bg-[#111] px-1.5 py-[2px] text-[7px] font-semibold text-white">Tempel</span>
       </motion.div>
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }} className="mt-1.5 flex items-center gap-1.5 rounded-lg bg-[#F5F5F5] px-2 py-1.5">
-        <QrCode size={12} className="text-[#555]" />
-        <div><p className="text-[6.5px] font-semibold text-[#111]">Pindai Kode QR</p><p className="text-[5px] text-[#999]">Ketuk untuk memindai alamat</p></div>
+        <QrCode size={14} className="text-[#555]" />
+        <div><p className="text-[8.5px] font-semibold text-[#111]">Pindai Kode QR</p><p className="text-[7px] text-[#999]">Ketuk untuk memindai alamat</p></div>
       </motion.div>
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3, delay: 0.15 }} className="flex items-center gap-1 pt-1.5"><Clock size={7} className="text-[#888]" /><span className="text-[6px] font-semibold text-[#888]">Terbaru</span></motion.div>
-      <KriptoContact icon={<Star size={11} className="text-[#C9A227]" />} name="Stash" sub="1 Transaksi Sebelumnya" bg="#E8E8E8" delay={0.2} />
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3, delay: 0.25 }} className="flex items-center gap-1 pt-1.5"><Sparkles size={7} className="text-[#888]" /><span className="text-[6px] font-semibold text-[#888]">Disarankan</span></motion.div>
-      <KriptoContact icon={<CreditCard size={11} className="text-[#627EEA]" />} name="0xb249....9768" sub="1 Transaksi Sebelumnya" bg="#E8EEFF" delay={0.3} />
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3, delay: 0.35 }} className="flex items-center gap-1 pt-1.5"><User size={7} className="text-[#888]" /><span className="text-[6px] font-semibold text-[#888]">Buku Alamat</span></motion.div>
-      <KriptoContact icon={<CreditCard size={11} className="text-[#888]" />} name="vitalik.eth" sub="Tidak Ada Transaksi Sebelumnya" bg="#F0F0F0" delay={0.4} />
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3, delay: 0.15 }} className="flex items-center gap-1 pt-1.5"><Clock size={9} className="text-[#888]" /><span className="text-[8px] font-semibold text-[#888]">Terbaru</span></motion.div>
+      <KriptoContact icon={<Star size={13} className="text-[#C9A227]" />} name="Stash" sub="1 Transaksi Sebelumnya" bg="#E8E8E8" delay={0.2} />
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3, delay: 0.25 }} className="flex items-center gap-1 pt-1.5"><Sparkles size={9} className="text-[#888]" /><span className="text-[8px] font-semibold text-[#888]">Disarankan</span></motion.div>
+      <KriptoContact icon={<CreditCard size={13} className="text-[#627EEA]" />} name="0xb249....9768" sub="1 Transaksi Sebelumnya" bg="#E8EEFF" delay={0.3} />
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3, delay: 0.35 }} className="flex items-center gap-1 pt-1.5"><User size={9} className="text-[#888]" /><span className="text-[8px] font-semibold text-[#888]">Buku Alamat</span></motion.div>
+      <KriptoContact icon={<CreditCard size={13} className="text-[#888]" />} name="vitalik.eth" sub="Tidak Ada Transaksi Sebelumnya" bg="#F0F0F0" delay={0.4} />
     </div>
   );
 }
@@ -992,29 +992,29 @@ function KriptoSendAmount() {
   return (
     <div className="flex h-full flex-col bg-white px-3">
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="flex items-center justify-between border-b border-[#F0F0F0] pb-1.5 pt-1.5">
-        <p className="text-[10px] font-bold text-[#111]">Kirim</p>
-        <X size={10} className="text-[#555]" />
+        <p className="text-[12px] font-bold text-[#111]">Kirim</p>
+        <X size={13} className="text-[#555]" />
       </motion.div>
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.05 }} className="mt-1.5 flex items-center rounded-lg bg-[#F5F5F5] px-2 py-1.5">
-        <span className="text-[6px] font-medium text-[#AAA]">Ke</span>
-        <span className="ml-1 text-[6px] font-medium text-[#111]">0xb249....9768</span>
+        <span className="text-[8px] font-medium text-[#AAA]">Ke</span>
+        <span className="ml-1 text-[8px] font-medium text-[#111]">0xb249....9768</span>
       </motion.div>
       <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.45, delay: 0.1 }} className="pt-2 text-center">
-        <p className="text-[16px] font-extrabold tracking-tight text-[#111]">Rp 41.285.600</p>
-        <div className="mt-0.5 flex items-center justify-center gap-1"><EthCoin size={12} fontSize={7} /><span className="text-[6px] font-medium text-[#888]">0,00001902</span><ArrowUpDown size={7} className="text-[#555]" /></div>
+        <p className="text-[18px] font-extrabold tracking-tight text-[#111]">Rp 41.285.600</p>
+        <div className="mt-0.5 flex items-center justify-center gap-1"><EthCoin size={14} fontSize={8} /><span className="text-[8px] font-medium text-[#888]">0,00001902</span><ArrowUpDown size={9} className="text-[#555]" /></div>
       </motion.div>
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.15 }} className="mt-1.5 flex items-center gap-1.5 rounded-lg bg-[#F5F5F5] px-2 py-1.5">
-        <EthCoin size={20} fontSize={11} />
-        <div className="flex-1"><p className="text-[6.5px] font-semibold text-[#111]">Ethereum</p><p className="text-[5px] text-[#999]">0,006714</p></div>
-        <span className="rounded-md border border-[#DDD] px-1.5 py-[2px] text-[5.5px] font-semibold text-[#555]">Maks</span>
+        <EthCoin size={24} fontSize={13} />
+        <div className="flex-1"><p className="text-[8.5px] font-semibold text-[#111]">Ethereum</p><p className="text-[7px] text-[#999]">0,006714</p></div>
+        <span className="rounded-md border border-[#DDD] px-1.5 py-[2px] text-[7px] font-semibold text-[#555]">Maks</span>
       </motion.div>
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.2 }} className="grid grid-cols-3 gap-1 pt-1.5">
         {["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0"].map((k) => (
-          <span key={k} className={`rounded-md py-1 text-center text-[8px] font-semibold ${k === "." ? "bg-[#F0F0F0] text-[#555]" : "bg-[#F5F5F5] text-[#111]"}`}>{k}</span>
+          <span key={k} className={`rounded-md py-1 text-center text-[10px] font-semibold ${k === "." ? "bg-[#F0F0F0] text-[#555]" : "bg-[#F5F5F5] text-[#111]"}`}>{k}</span>
         ))}
-        <span className="grid place-items-center rounded-md bg-[#F0F0F0] py-1"><Delete size={9} className="text-[#555]" /></span>
+        <span className="grid place-items-center rounded-md bg-[#F0F0F0] py-1"><Delete size={11} className="text-[#555]" /></span>
       </motion.div>
-      <motion.span initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.25 }} className="mt-1.5 rounded-full bg-[#4CAF50] py-1.5 text-center text-[7px] font-bold text-white">Lanjutkan</motion.span>
+      <motion.span initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.25 }} className="mt-1.5 rounded-full bg-[#4CAF50] py-1.5 text-center text-[9px] font-bold text-white">Lanjutkan</motion.span>
     </div>
   );
 }
