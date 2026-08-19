@@ -190,8 +190,8 @@ export default function WebProjectsPage() {
               </AnimatePresence>
             </div>
 
-            {/* Safari frame */}
-            <div className="min-w-0">
+            {/* Safari frame — 15% lebih kecil */}
+            <div className="min-w-0 w-[85%] justify-self-center">
               <AnimatePresence mode="wait" custom={dir}>
                 <motion.div
                   key={index + "-demo"}
