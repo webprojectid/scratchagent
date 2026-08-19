@@ -200,9 +200,9 @@ export function ProductCard({
 
           {/* Price */}
           <div className="flex items-baseline gap-2">
-            <span className="text-lg font-semibold">{currency}{formatPrice(price)}</span>
+            <span className="text-sm font-semibold leading-tight">{currency}{formatPrice(price)}</span>
             {originalPrice > price && (
-              <span className="text-sm text-muted-foreground line-through">
+              <span className="text-xs text-muted-foreground line-through">
                 {currency}{formatPrice(originalPrice)}
               </span>
             )}
