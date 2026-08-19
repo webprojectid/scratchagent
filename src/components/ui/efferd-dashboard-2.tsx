@@ -1,11 +1,11 @@
 import { AppShell } from "@/components/app-shell";
 import { Dashboard } from "@/components/dashboard";
 
-export function EfferdDashboard2() {
+export function ScratchDashboard2() {
   return (
     <AppShell>
       <Dashboard />
     </AppShell>
   );
 }
-export default EfferdDashboard2;
+export default ScratchDashboard2;
