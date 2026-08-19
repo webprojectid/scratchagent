@@ -12,7 +12,7 @@ import { SafariFrame } from "@/components/ui/safari-browser-frame";
 import { VideoAssetManager } from "@/components/ui/video-asset-manager";
 import { CaleidoCrmDashboard } from "@/components/ui/caleido-crm-demo";
 import { AutoFinanceDashboard } from "@/components/ui/auto-finance-demo";
-import { EfferdDashboard2 } from "@/components/ui/efferd-dashboard-2";
+import { ScratchDashboard2 } from "@/components/ui/efferd-dashboard-2"
 import { CopyPrompt } from "@/components/ui/copy-prompt";
 
 // ─── Data ────────────────────────────────────────────────────────────────────
@@ -51,7 +51,7 @@ const DEMOS = [
   <SafariFrame key="1" url="studio.lapis.app/video-assets"            ratio="desktop"><VideoAssetManager /></SafariFrame>,
   <SafariFrame key="2" url="studio.lapis.app/crm"  ratio="desktop"><CaleidoCrmDashboard /></SafariFrame>,
   <SafariFrame key="3" url="studio.lapis.app/auto-finance"    ratio="desktop"><AutoFinanceDashboard /></SafariFrame>,
-  <SafariFrame key="4" url="studio.lapis.app/analytics"   ratio="desktop"><EfferdDashboard2 /></SafariFrame>,
+  <SafariFrame key="4" url="studio.lapis.app/analytics"   ratio="desktop"><ScratchDashboard2 /></SafariFrame>,
 ];
 
 // ─── Arrow Button ─────────────────────────────────────────────────────────────
