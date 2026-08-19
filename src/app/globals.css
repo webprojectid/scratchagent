@@ -5,6 +5,17 @@
    mengandalkan varian dark: (dark:bg-transparent, dark:border-border/80, dll). */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Badge "Built with Spline" di-inject runtime Spline saat scene load
+   (scene free-plan). Markup badge bisa berubah antar versi runtime,
+   jadi selain selector spesifik, semua anchor di dalam container Spline
+   (.spline-host) di-hide — kanvas 3D tidak punya link legit. */
+.spline-host a,
+a[href*="spline.design"],
+[class*="spline-badge"],
+[id*="spline-badge"] {
+  display: none !important;
+}
+
 /* === shadcn/ui theme — identitas brand: dark + hijau #74FA6A === */
 :root {
   --radius: 0.625rem;

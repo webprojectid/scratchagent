@@ -300,9 +300,10 @@ export const HeroSection = ({ scrollRef, height = "screen" }: HeroSectionProps) 
         </div>
       </div>
 
-      {/* Blok screenshot naik sedikit supaya overlap gradien bawah hero,
-          tapi -10vh terlalu agresif sampai menutupi tombol CTA; -2vh cukup. */}
-      <div className="relative z-10 bg-black" style={{ marginTop: "-2vh" }}>
+      {/* Blok screenshot naik sedikit supaya overlap gradien bawah hero.
+          -10vh terlalu agresif sampai menutupi tombol CTA; 0 = posisi natural,
+          tombol bebas dengan gap lega. */}
+      <div className="relative z-10 bg-black" style={{ marginTop: 0 }}>
         <ScreenshotSection screenshotRef={screenshotRef} />
         <div className="container mx-auto px-4 py-16 text-white">
           <h2 className="mb-8 text-center text-4xl font-bold">Other Content Below</h2>
