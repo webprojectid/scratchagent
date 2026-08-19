@@ -48,10 +48,10 @@ const META = {
 };
 
 const DEMOS = [
-  <SafariFrame key="1" url="frameio.app"            ratio="desktop"><VideoAssetManager /></SafariFrame>,
-  <SafariFrame key="2" url="caleido.app/dashboard"  ratio="desktop"><CaleidoCrmDashboard /></SafariFrame>,
-  <SafariFrame key="3" url="autoapp.io/vehicles"    ratio="desktop"><AutoFinanceDashboard /></SafariFrame>,
-  <SafariFrame key="4" url="efferd.app/dashboard"   ratio="desktop"><EfferdDashboard2 /></SafariFrame>,
+  <SafariFrame key="1" url="studio.lapis.app/video-assets"            ratio="desktop"><VideoAssetManager /></SafariFrame>,
+  <SafariFrame key="2" url="studio.lapis.app/crm"  ratio="desktop"><CaleidoCrmDashboard /></SafariFrame>,
+  <SafariFrame key="3" url="studio.lapis.app/auto-finance"    ratio="desktop"><AutoFinanceDashboard /></SafariFrame>,
+  <SafariFrame key="4" url="studio.lapis.app/analytics"   ratio="desktop"><EfferdDashboard2 /></SafariFrame>,
 ];
 
 // ─── Arrow Button ─────────────────────────────────────────────────────────────
@@ -122,7 +122,7 @@ function Logo() {
         <span className="absolute left-[7px] top-[2.5px] h-2.5 w-2 -skew-x-[28deg] rounded-sm bg-[#9AFF82]" />
         <span className="absolute left-[14px] top-[6px] h-2.5 w-2 -skew-x-[28deg] rounded-sm bg-[#4DDC62]" />
       </span>
-      Scratch Agent
+      Studio Lapis
     </Link>
   );
 }

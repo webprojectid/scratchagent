@@ -10,14 +10,14 @@ import {
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
 const ASSETS = [
-  { id: 1, file: "DRP_00041_2020FL_V1_0001.mov", creator: "Alistair Martin", date: "Oct 14th, 2024", duration: "0:14", tag: "Rise",     tagColor: "gray",   scene: "neon-night"        },
-  { id: 2, file: "DRP_0008_PREVFX_V1_0002.mov",  creator: "Alistair Martin", date: "Oct 14th, 2024", duration: "0:32", tag: "Conflict", tagColor: "yellow", scene: "explosion"         },
-  { id: 3, file: "DRP_0008_DTHRIVE_V1_0003.mov", creator: "Alistair Martin", date: "Oct 18th, 2024", duration: "0:21", tag: "Rise",     tagColor: "gray",   scene: "two-silhouette"    },
-  { id: 4, file: "DRP_0008_DTHRIVE_V1_0004.mov", creator: "Alistair Martin", date: "Oct 18th, 2024", duration: "0:18", tag: "Saved",    tagColor: "gray",   scene: "single-silhouette" },
-  { id: 5, file: "DRP_0008_2020FL_V1_0005.mov",  creator: "Alistair Martin", date: "Oct 14th, 2024", duration: "0:09", tag: "Rise",     tagColor: "gray",   scene: "dramatic-face"     },
-  { id: 6, file: "DRP_0008_2020FL_V1_0006.mov",  creator: "Alistair Martin", date: "Oct 14th, 2024", duration: "1:00", tag: "Conflict", tagColor: "yellow", scene: "warm-woman"        },
-  { id: 7, file: "DRP_0008_2020FL_V1_0007.mov",  creator: "Alistair Martin", date: "Oct 18th, 2024", duration: "0:47", tag: "Rise",     tagColor: "gray",   scene: "bathtub-blue"      },
-  { id: 8, file: "DRP_0008_2020FL_V1_0008.mov",  creator: "Alistair Martin", date: "Oct 18th, 2024", duration: "0:33", tag: "Conflict", tagColor: "yellow", scene: "warm-indoor"       },
+  { id: 1, file: "DRP_00041_2020FL_V1_0001.mov", creator: "Budi Santoso", date: "14 Okt 2024", duration: "0:14", tag: "Rise",     tagColor: "gray",   scene: "neon-night"        },
+  { id: 2, file: "DRP_0008_PREVFX_V1_0002.mov",  creator: "Siti Rahma",  date: "14 Okt 2024", duration: "0:32", tag: "Conflict", tagColor: "yellow", scene: "explosion"         },
+  { id: 3, file: "DRP_0008_DTHRIVE_V1_0003.mov", creator: "Agus Prasetyo", date: "18 Okt 2024", duration: "0:21", tag: "Rise",     tagColor: "gray",   scene: "two-silhouette"    },
+  { id: 4, file: "DRP_0008_DTHRIVE_V1_0004.mov", creator: "Dewi Lestari", date: "18 Okt 2024", duration: "0:18", tag: "Saved",    tagColor: "gray",   scene: "single-silhouette" },
+  { id: 5, file: "DRP_0008_2020FL_V1_0005.mov",  creator: "Eko Pratama",  date: "14 Okt 2024", duration: "0:09", tag: "Rise",     tagColor: "gray",   scene: "dramatic-face"     },
+  { id: 6, file: "DRP_0008_2020FL_V1_0006.mov",  creator: "Fitri Handayani", date: "14 Okt 2024", duration: "1:00", tag: "Conflict", tagColor: "yellow", scene: "warm-woman"        },
+  { id: 7, file: "DRP_0008_2020FL_V1_0007.mov",  creator: "Gilang Ramadhan", date: "18 Okt 2024", duration: "0:47", tag: "Rise",     tagColor: "gray",   scene: "bathtub-blue"      },
+  { id: 8, file: "DRP_0008_2020FL_V1_0008.mov",  creator: "Hana Permatasari", date: "18 Okt 2024", duration: "0:33", tag: "Conflict", tagColor: "yellow", scene: "warm-indoor"       },
 ];
 
 // ─── Thumbnail — Unsplash cinematic photos ────────────────────────────────────

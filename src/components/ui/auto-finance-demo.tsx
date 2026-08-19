@@ -135,7 +135,7 @@ export function AutoFinanceDashboard() {
             <div className="flex shrink-0 flex-col items-end gap-1.5">
               <div>
                 <p className="text-[9px] text-[#6b7280]">Your payment</p>
-                <p className="text-[18px] font-bold text-[#111827]">$517.88 <span className="text-[10px] font-normal text-[#6b7280]">/Mo.</span></p>
+                <p className="text-[18px] font-bold text-[#111827]">Rp 7.695.000 <span className="text-[10px] font-normal text-[#6b7280]">/bulan.</span></p>
               </div>
               <button className="rounded bg-[#1a56db] px-4 py-1.5 text-[11px] font-semibold text-white hover:bg-[#1648c0]">Select</button>
             </div>
@@ -205,15 +205,15 @@ export function AutoFinanceDashboard() {
             {/* Financing */}
             <div className="rounded-lg bg-white px-4 py-3 shadow-sm">
               <p className="mb-2 text-[11px] font-bold text-[#111827]">Financing</p>
-              <FinRow label="Sales Price*" value="$31,295.00" />
-              <FinRow label="Total Fees & Taxes" value="$2,513.00" />
+              <FinRow label="Sales Price*" value="Rp 468.500.000" />
+              <FinRow label="Total Fees & Taxes" value="Rp 37.500.000" />
               <FinRow label="Warranty" value="ask dealer" />
               <FinRow label="GAP" value="ask dealer" />
               <FinRow label="Cash Price" value="$33,808.00" bold />
-              <FinRow label="Net Trade" value="$500.00" />
-              <FinRow label="Rebate" value="$0.00" />
-              <FinRow label="Down Payment" value="$5,000.00" />
-              <FinRow label="Loan Balance" value="$28,308.00" bold />
+              <FinRow label="Net Trade" value="Rp 7.500.000" />
+              <FinRow label="Rebate" value="Rp 0" />
+              <FinRow label="Down Payment" value="Rp 75.000.000" />
+              <FinRow label="Loan Balance" value="Rp 423.500.000" bold />
               <FinRow label="Term" value="72" />
               <FinRow label="APR" value="23.700%" />
               <p className="mt-2 text-[7.5px] leading-[1.5] text-[#9ca3af]">
@@ -226,14 +226,14 @@ export function AutoFinanceDashboard() {
             <div className="rounded-lg bg-white px-4 py-3 shadow-sm">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <p className="text-[11px] font-bold text-[#111827]">Sterling McCall Honda</p>
-                  <p className="mt-1 text-[9px] text-[#6b7280]">18818 Highway 59 N Houston, TX 77396</p>
+                  <p className="text-[11px] font-bold text-[#111827]">Honda Puri Harapan</p>
+                  <p className="mt-1 text-[9px] text-[#6b7280]">Jl. Raya Bogor KM 25, Jakarta Timur</p>
                   <div className="mt-1.5 flex flex-col gap-0.5">
                     <a href="#" className="flex items-center gap-1 text-[9px] text-[#1a56db] hover:underline">
-                      <Phone size={9} />(832) 991-7728
+                      <Phone size={9} />(021) 8765-4321
                     </a>
                     <a href="#" className="flex items-center gap-1 text-[9px] text-[#1a56db] hover:underline">
-                      <Mail size={9} />sales@sterlingmccallhonda.com
+                      <Mail size={9} />sales@puriharapan.co.id
                     </a>
                   </div>
                 </div>
