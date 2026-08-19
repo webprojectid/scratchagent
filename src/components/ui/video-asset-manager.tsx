@@ -119,7 +119,7 @@ export function VideoAssetManager() {
   const [view, setView] = useState<"grid" | "list">("grid");
 
   return (
-    <div className="flex h-full w-full overflow-hidden bg-[#0d1117] font-sans text-white select-none" style={{ fontSize: 12 }}>
+    <div className="flex h-full w-full overflow-hidden bg-[#0d1117] font-sans text-white select-none" style={{ fontSize: 14 }}>
 
       {/* ── Sidebar ── */}
       <div className="flex w-[155px] shrink-0 flex-col border-r border-white/[.07] bg-[#090d13] overflow-y-auto [&::-webkit-scrollbar]:hidden">
