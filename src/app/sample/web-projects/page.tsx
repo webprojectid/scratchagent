@@ -56,32 +56,40 @@ const DEMOS = [
 
 // ─── Arrow Button ─────────────────────────────────────────────────────────────
 
-function ArrowBtn({ dir, onClick, disabled }: { dir: "left" | "right"; onClick: () => void; disabled?: boolean }) {
+function ArrowBtn({ dir, onClick }: { dir: "left" | "right"; onClick: () => void }) {
   return (
     <motion.button
       onClick={onClick}
-      disabled={disabled}
       aria-label={dir === "left" ? "Previous" : "Next"}
-      className="group relative flex h-12 w-12 items-center justify-center"
-      whileHover={disabled ? {} : { scale: 1.1 }}
-      whileTap={disabled ? {} : { scale: 0.92 }}
-      transition={{ type: "spring", stiffness: 400, damping: 25 }}
+      className="group relative flex h-14 w-14 items-center justify-center overflow-hidden rounded-full"
+      whileHover={{ scale: 1.1 }}
+      whileTap={{
+        scale: 0.84,
+        x: dir === "left" ? -5 : 5,
+        boxShadow: "0 0 38px rgba(116,250,106,.32)",
+      }}
+      transition={{ type: "spring", stiffness: 520, damping: 20 }}
     >
+      {/* Ring tebal + glow */}
+      <span className="absolute inset-0 rounded-full border-2 border-white/25 bg-white/[.08] shadow-[0_0_20px_rgba(255,255,255,.05)] transition-all duration-200 group-hover:border-[#74FA6A]/70 group-hover:bg-[#74FA6A]/[.10] group-hover:shadow-[0_0_28px_rgba(116,250,106,.18)]" />
+
+      {/* Flash sweep saat ditekan */}
       <motion.span
-        className="absolute inset-0 rounded-full"
-        initial={{ opacity: 0, scale: 0.8 }}
-        whileHover={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.18 }}
-        style={{ boxShadow: "0 0 0 1px rgba(255,255,255,.14), 0 0 28px rgba(255,255,255,.06)" }}
+        className="absolute inset-0 rounded-full bg-[#74FA6A]/25"
+        initial={{ opacity: 0, scale: 0.35 }}
+        whileTap={{ opacity: [0, 0.8, 0], scale: [0.35, 1.25, 1.5] }}
+        transition={{ duration: 0.32 }}
       />
-      <span className={`absolute inset-0 rounded-full border transition-colors duration-200 ${
-        disabled ? "border-white/[.05] bg-white/[.02]" : "border-white/[.10] bg-white/[.05] group-hover:border-white/[.20] group-hover:bg-white/[.10]"
-      }`} />
-      <span className={`relative transition-all duration-200 ${disabled ? "text-white/15" : "text-white/50 group-hover:text-white"}`}>
+
+      {/* Icon lebih tebal */}
+      <motion.span
+        className="relative text-white/90 group-hover:text-[#74FA6A]"
+        whileTap={{ x: dir === "left" ? -4 : 4 }}
+      >
         {dir === "left"
-          ? <ChevronLeft  size={20} strokeWidth={1.6} />
-          : <ChevronRight size={20} strokeWidth={1.6} />}
-      </span>
+          ? <ChevronLeft size={27} strokeWidth={2.8} />
+          : <ChevronRight size={27} strokeWidth={2.8} />}
+      </motion.span>
     </motion.button>
   );
 }
@@ -128,8 +136,8 @@ export default function WebProjectsPage() {
   const prompt = (PROMPTS[lang] ?? PROMPTS.en)[index];
 
   const go = useCallback((d: number) => {
-    const next = index + d;
-    if (next < 0 || next >= DEMOS.length) return;
+    // Infinite loop: 1 ← 4 dan 4 → 1
+    const next = (index + d + DEMOS.length) % DEMOS.length;
     setPage([next, d]);
   }, [index]);
 
@@ -158,8 +166,8 @@ export default function WebProjectsPage() {
 
           {/* Arrow pojok kiri */}
           <div className="flex shrink-0 flex-col items-center gap-2">
-            <ArrowBtn dir="left" onClick={() => go(-1)} disabled={index === 0} />
-            <span className={`font-mono text-[8px] uppercase tracking-[.18em] ${index === 0 ? "text-white/15" : "text-white/35"}`}>Prev</span>
+            <ArrowBtn dir="left" onClick={() => go(-1)} />
+            <span className="font-mono text-[8px] uppercase tracking-[.18em] text-white/35">Prev</span>
           </div>
 
           {/* Teks kiri + Safari kanan, tetap berdampingan */}
@@ -211,8 +219,8 @@ export default function WebProjectsPage() {
 
           {/* Arrow pojok kanan */}
           <div className="flex shrink-0 flex-col items-center gap-2">
-            <ArrowBtn dir="right" onClick={() => go(1)} disabled={index === DEMOS.length - 1} />
-            <span className={`font-mono text-[8px] uppercase tracking-[.18em] ${index === DEMOS.length - 1 ? "text-white/15" : "text-white/35"}`}>Next</span>
+            <ArrowBtn dir="right" onClick={() => go(1)} />
+            <span className="font-mono text-[8px] uppercase tracking-[.18em] text-white/35">Next</span>
           </div>
 
         </div>
