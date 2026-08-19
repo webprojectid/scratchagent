@@ -89,7 +89,7 @@ function Accordion({ title, open, onToggle, children }: { title: string; open: b
 
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
 
-function AutoFinanceDashboard() {
+export function AutoFinanceDashboard() {
   const [activeImg, setActiveImg] = useState(0);
   const [overviewOpen, setOverviewOpen] = useState(true);
   const [featuresOpen, setFeaturesOpen] = useState(false);
