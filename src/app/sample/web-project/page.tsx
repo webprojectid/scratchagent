@@ -24,18 +24,9 @@ const PROMPT_EN = `Build a dark-themed video asset management dashboard for a fi
 
 const PROMPT_ID = `Buat dashboard manajemen aset video bertema gelap untuk tim produksi film. Sertakan sidebar kiri dengan koleksi aset (Key Scenes, Episodes, Locations) dan folder bertingkat. Area utama menampilkan grid 2×4 thumbnail video lengkap dengan nama file, uploader, tanggal, badge durasi, dan tag status. Tambahkan top bar breadcrumb dengan pencarian, avatar pengguna, dan ikon notifikasi. Controls bar dengan sort, toggle tampilan (grid/list), dan filter tab. Skema warna navy gelap (#0d1117). Stack: React, Tailwind CSS, TypeScript.`;
 
-const FEATURES_EN = [
-  "Video Asset Management", "Film & Post-Production", "Grid + List View Toggle",
-  "Asset Tagging & Status", "Sidebar Collections", "Search & Filter",
-];
-const FEATURES_ID = [
-  "Manajemen Aset Video", "Film & Pasca Produksi", "Tampilan Grid + List",
-  "Tag Aset & Status", "Koleksi Sidebar", "Pencarian & Filter",
-];
 
 export default function SampleWebProjectPage() {
   const lang = useLang();
-  const features = lang === "en" ? FEATURES_EN : FEATURES_ID;
 
   return (
     <main className="min-h-screen bg-[#0A0A0A] text-[#E8EDEC] selection:bg-[#74FA6A]/30 selection:text-black">
@@ -59,13 +50,6 @@ export default function SampleWebProjectPage() {
                 ? "A production-grade video asset management platform. Built for film crews and post-production teams to organize, review, and tag dailies, key scenes, and episode footage — all in one dark-mode workspace."
                 : "Platform manajemen aset video skala produksi. Dirancang untuk kru film dan tim pasca produksi agar dapat mengorganisir, mereview, dan menandai rekaman harian, adegan kunci, dan footage episode — semuanya dalam satu workspace dark-mode."}
             </p>
-
-            {/* Feature tags */}
-            <div className="mt-6 flex flex-wrap gap-2">
-              {features.map(f => (
-                <span key={f} className="rounded-full border border-white/[.08] bg-white/[.04] px-3 py-1 text-[10px] text-[#7A8899]">{f}</span>
-              ))}
-            </div>
 
             <CopyPrompt prompt={lang === "en" ? PROMPT_EN : PROMPT_ID} />
           </div>

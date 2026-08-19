@@ -23,18 +23,9 @@ const PROMPT_EN = `Build a light-mode CRM sales dashboard called "Caleido". Layo
 
 const PROMPT_ID = `Buat dashboard CRM sales bertema terang bernama "Caleido". Layout: sidebar kiri dengan salam sambutan, grid 2×3 kartu statistik (Appointment, Qualified, Presentation, Proposal, Closed Won, Closed Lost), dan progress bar tugas (Calls, To-do, Emails). Panel tengah: banner gradien oranye, tab activity feed, dan timeline vertikal event CRM — perpindahan deal, rekaman meeting dengan audio waveform, meeting terjadwal, dan email. Panel kanan: tampilan detail kontak dengan foto profil, badge jabatan, tombol aksi, dan baris metadata deal. Warna aksen oranye (#ef672f). Stack: React, Tailwind CSS, TypeScript.`;
 
-const FEATURES_EN = [
-  "CRM & Sales Management", "Activity Feed & Timeline", "Deal Pipeline Tracking",
-  "Task Progress Bars", "Contact Detail Panel", "Meeting Recording Player",
-];
-const FEATURES_ID = [
-  "CRM & Manajemen Penjualan", "Activity Feed & Timeline", "Pelacakan Pipeline Deal",
-  "Progress Bar Tugas", "Panel Detail Kontak", "Pemutar Rekaman Meeting",
-];
 
 export default function SampleWebProjectTwoPage() {
   const lang = useLang();
-  const features = lang === "en" ? FEATURES_EN : FEATURES_ID;
 
   return (
     <main className="min-h-screen bg-[#0A0A0A] text-[#E8EDEC] selection:bg-[#74FA6A]/30 selection:text-black">
@@ -58,12 +49,6 @@ export default function SampleWebProjectTwoPage() {
                 ? "A full-featured sales CRM platform. Manages pipelines, tracks activity history per contact, logs calls and meetings with recordings, monitors daily task completion, and surfaces deal insights — all in a clean three-column workspace."
                 : "Platform CRM penjualan berfitur lengkap. Mengelola pipeline, melacak riwayat aktivitas per kontak, mencatat panggilan dan meeting dengan rekaman, memantau penyelesaian tugas harian, dan menampilkan insight deal — semuanya dalam workspace tiga kolom yang bersih."}
             </p>
-
-            <div className="mt-6 flex flex-wrap gap-2">
-              {features.map(f => (
-                <span key={f} className="rounded-full border border-white/[.08] bg-white/[.04] px-3 py-1 text-[10px] text-[#7A8899]">{f}</span>
-              ))}
-            </div>
 
             <CopyPrompt prompt={lang === "en" ? PROMPT_EN : PROMPT_ID} />
           </div>

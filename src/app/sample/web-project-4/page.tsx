@@ -23,18 +23,9 @@ const PROMPT_EN = `Build a dark-mode analytics dashboard for a SaaS business. Le
 
 const PROMPT_ID = `Buat dashboard analitik dark-mode untuk bisnis SaaS. Sidebar kiri dengan logo, ikon navigasi (Dashboard, Analytics, Reports, Users, Settings), dan profil pengguna di bawah. Area utama: baris statistik atas dengan 4 kartu KPI (Revenue, Active Users, Conversion Rate, Churn Rate) masing-masing dengan indikator tren dan sparkline. Di bawah: grafik garis revenue 12 bulan dengan area fill, dan grafik batang untuk pengguna aktif mingguan. Panel kanan: daftar transaksi terbaru dengan avatar, nama, jumlah, dan badge status, plus rincian top channel dengan progress bar. Skema warna gelap (#0f1117) dengan aksen ungu (#7c3aed). Stack: React, Tailwind CSS, TypeScript, Recharts atau SVG inline untuk grafik.`;
 
-const FEATURES_EN = [
-  "SaaS Analytics Dashboard", "KPI Cards with Trends", "Revenue Line Chart",
-  "Weekly Active Users Chart", "Transaction Feed", "Top Channels Breakdown",
-];
-const FEATURES_ID = [
-  "Dashboard Analitik SaaS", "Kartu KPI dengan Tren", "Grafik Garis Revenue",
-  "Grafik Pengguna Aktif Mingguan", "Feed Transaksi", "Rincian Top Channel",
-];
 
 export default function SampleWebProjectFourPage() {
   const lang = useLang();
-  const features = lang === "en" ? FEATURES_EN : FEATURES_ID;
 
   return (
     <main className="min-h-screen bg-[#0A0A0A] text-[#E8EDEC] selection:bg-[#74FA6A]/30 selection:text-black">
@@ -58,12 +49,6 @@ export default function SampleWebProjectFourPage() {
                 ? "A data-rich analytics dashboard for SaaS companies. Surfaces revenue trends, user growth, and conversion metrics at a glance — with KPI cards, multi-period charts, a live transaction feed, and channel attribution — all in a compact dark workspace."
                 : "Dashboard analitik kaya data untuk perusahaan SaaS. Menampilkan tren revenue, pertumbuhan pengguna, dan metrik konversi sekaligus — dengan kartu KPI, grafik multi-periode, feed transaksi langsung, dan atribusi channel — semuanya dalam workspace gelap yang ringkas."}
             </p>
-
-            <div className="mt-6 flex flex-wrap gap-2">
-              {features.map(f => (
-                <span key={f} className="rounded-full border border-white/[.08] bg-white/[.04] px-3 py-1 text-[10px] text-[#7A8899]">{f}</span>
-              ))}
-            </div>
 
             <CopyPrompt prompt={lang === "en" ? PROMPT_EN : PROMPT_ID} />
           </div>

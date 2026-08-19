@@ -23,18 +23,9 @@ const PROMPT_EN = `Build a vehicle purchase and financing web app on a dark navy
 
 const PROMPT_ID = `Buat aplikasi web pembelian dan pembiayaan kendaraan dengan latar gradien navy gelap. Navbar atas dengan logo, tautan Vehicles / Application / Profile, dan Help / Logout. Konten utama dalam kartu putih: header kendaraan menampilkan tahun/merek/model, ikon hati, spesifikasi utama (mileage, transmisi, MPG, bahan bakar) dalam kolom, harga cicilan bulanan, dan tombol Select. Di bawah: kolom kiri dengan galeri gambar interaktif (foto utama + 4 thumbnail + tombol prev/next) dan section accordion (Vehicle Overview dengan daftar spek lengkap, Features, Safety). Kolom kanan dengan tabel rincian Pembiayaan dan kartu Informasi Dealer. Stack: React, Tailwind CSS, TypeScript.`;
 
-const FEATURES_EN = [
-  "Auto Finance Platform", "Vehicle Purchase Flow", "Interactive Image Gallery",
-  "Financing Breakdown Table", "Spec Accordion Sections", "Dealer Contact Card",
-];
-const FEATURES_ID = [
-  "Platform Pembiayaan Otomotif", "Alur Pembelian Kendaraan", "Galeri Gambar Interaktif",
-  "Tabel Rincian Pembiayaan", "Accordion Spesifikasi", "Kartu Kontak Dealer",
-];
 
 export default function SampleWebProjectThreePage() {
   const lang = useLang();
-  const features = lang === "en" ? FEATURES_EN : FEATURES_ID;
 
   return (
     <main className="min-h-screen bg-[#0A0A0A] text-[#E8EDEC] selection:bg-[#74FA6A]/30 selection:text-black">
@@ -58,12 +49,6 @@ export default function SampleWebProjectThreePage() {
                 ? "A full vehicle purchase and financing interface for auto dealerships. Buyers can browse vehicle specs, flip through photo galleries, review a complete financing breakdown with APR and loan terms, and contact the dealer — all in a single guided flow."
                 : "Antarmuka pembelian dan pembiayaan kendaraan lengkap untuk dealer otomotif. Pembeli dapat menjelajahi spesifikasi kendaraan, melihat galeri foto, meninjau rincian pembiayaan lengkap dengan APR dan tenor, serta menghubungi dealer — semua dalam satu alur yang terarah."}
             </p>
-
-            <div className="mt-6 flex flex-wrap gap-2">
-              {features.map(f => (
-                <span key={f} className="rounded-full border border-white/[.08] bg-white/[.04] px-3 py-1 text-[10px] text-[#7A8899]">{f}</span>
-              ))}
-            </div>
 
             <CopyPrompt prompt={lang === "en" ? PROMPT_EN : PROMPT_ID} />
           </div>
