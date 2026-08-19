@@ -151,31 +151,30 @@ export default function WebProjectsPage() {
         </div>
       </header>
 
-      <section className="w-full px-6 py-14 md:px-10 md:py-20">
+      <section className="w-full px-3 py-14 md:px-5 md:py-20">
 
-        {/* Full-width wrapper: arrow kiri | konten | arrow kanan */}
-        <div className="flex items-center gap-4">
+        {/* Arrow pojok | teks berdampingan Safari | arrow pojok */}
+        <div className="flex w-full items-center gap-3">
 
-          {/* Arrow kiri — sticky di tepi */}
+          {/* Arrow pojok kiri */}
           <div className="shrink-0">
             <ArrowBtn dir="left" onClick={() => go(-1)} disabled={index === 0} />
           </div>
 
-          {/* Konten tengah */}
-          <div className="flex min-w-0 flex-1 flex-col gap-6">
+          {/* Teks kiri + Safari kanan, tetap berdampingan */}
+          <div className="grid min-w-0 flex-1 items-center gap-5 lg:grid-cols-[minmax(235px,300px)_minmax(0,1fr)]">
 
-            {/* Meta + copy prompt — di atas Safari frame */}
-            <AnimatePresence mode="wait" custom={dir}>
-              <motion.div
-                key={index}
-                custom={dir}
-                initial={{ opacity: 0, y: 10, filter: "blur(5px)" }}
-                animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-                exit={{ opacity: 0, y: -10, filter: "blur(5px)" }}
-                transition={{ duration: 0.28, ease: [0.25, 0.46, 0.45, 0.94] }}
-                className="flex flex-wrap items-end justify-between gap-4"
-              >
-                <div>
+            {/* Meta + prompt */}
+            <div className="min-w-0">
+              <AnimatePresence mode="wait" custom={dir}>
+                <motion.div
+                  key={index}
+                  custom={dir}
+                  initial={{ opacity: 0, x: dir > 0 ? 18 : -18, filter: "blur(5px)" }}
+                  animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
+                  exit={{ opacity: 0, x: dir > 0 ? -18 : 18, filter: "blur(5px)" }}
+                  transition={{ duration: 0.28, ease: [0.25, 0.46, 0.45, 0.94] }}
+                >
                   <p className="font-mono text-[10px] uppercase tracking-[.2em] text-[#9CA9B8]">
                     web project {meta.num}
                   </p>
@@ -183,44 +182,33 @@ export default function WebProjectsPage() {
                     {meta.title}
                   </div>
                   <p className="mt-0.5 text-[11px] font-medium text-[#5C6A7A]">{meta.type}</p>
-                </div>
-                <div className="flex items-center gap-4">
-                  <DotBar count={DEMOS.length} active={index} />
-                </div>
-              </motion.div>
-            </AnimatePresence>
+                  <div className="mt-4">
+                    <DotBar count={DEMOS.length} active={index} />
+                  </div>
+                  <CopyPrompt prompt={prompt} />
+                </motion.div>
+              </AnimatePresence>
+            </div>
 
-            {/* Safari frame demo */}
-            <AnimatePresence mode="wait" custom={dir}>
-              <motion.div
-                key={index + "-demo"}
-                custom={dir}
-                initial={{ opacity: 0, x: dir > 0 ? 48 : -48, filter: "blur(10px)" }}
-                animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
-                exit={{ opacity: 0, x: dir > 0 ? -48 : 48, filter: "blur(10px)" }}
-                transition={{ duration: 0.38, ease: [0.25, 0.46, 0.45, 0.94] }}
-              >
-                {DEMOS[index]}
-              </motion.div>
-            </AnimatePresence>
-
-            {/* Copy prompt — di bawah frame */}
-            <AnimatePresence mode="wait" custom={dir}>
-              <motion.div
-                key={index + "-prompt"}
-                custom={dir}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.25, delay: 0.1 }}
-              >
-                <CopyPrompt prompt={prompt} />
-              </motion.div>
-            </AnimatePresence>
+            {/* Safari frame */}
+            <div className="min-w-0">
+              <AnimatePresence mode="wait" custom={dir}>
+                <motion.div
+                  key={index + "-demo"}
+                  custom={dir}
+                  initial={{ opacity: 0, x: dir > 0 ? 48 : -48, filter: "blur(10px)" }}
+                  animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
+                  exit={{ opacity: 0, x: dir > 0 ? -48 : 48, filter: "blur(10px)" }}
+                  transition={{ duration: 0.38, ease: [0.25, 0.46, 0.45, 0.94] }}
+                >
+                  {DEMOS[index]}
+                </motion.div>
+              </AnimatePresence>
+            </div>
 
           </div>
 
-          {/* Arrow kanan — sticky di tepi */}
+          {/* Arrow pojok kanan */}
           <div className="shrink-0">
             <ArrowBtn dir="right" onClick={() => go(1)} disabled={index === DEMOS.length - 1} />
           </div>
