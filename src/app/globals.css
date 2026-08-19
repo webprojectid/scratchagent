@@ -5,6 +5,20 @@
    mengandalkan varian dark: (dark:bg-transparent, dark:border-border/80, dll). */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Layout halaman sample: copy di kiri, preview di kanan pada desktop. */
+.sample-project-layout {
+  display: grid;
+  gap: 2rem;
+}
+
+@media (min-width: 64rem) {
+  .sample-project-layout {
+    grid-template-columns: 340px minmax(0, 1fr);
+    align-items: start;
+    gap: 2.5rem;
+  }
+}
+
 /* Badge "Built with Spline" di-inject runtime Spline saat scene load
    (scene free-plan). Markup badge bisa berubah antar versi runtime,
    jadi selain selector spesifik, semua anchor di dalam container Spline

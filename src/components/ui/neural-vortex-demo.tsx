@@ -13,7 +13,7 @@ const DemoOne = () => {
   const frameRef = useRef<HTMLDivElement | null>(null);
 
   return (
-    <SafariFrame ref={frameRef} url="immersiavr.app">
+    <SafariFrame ref={frameRef} url="immersiavr.app" ratio="desktop">
       <InteractiveNeuralVortex fill scrollRef={frameRef} />
     </SafariFrame>
   );

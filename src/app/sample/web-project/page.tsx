@@ -31,25 +31,25 @@ export default function SampleWebProjectPage() {
         </div>
       </header>
 
-      <section className="mx-auto max-w-[1100px] px-5 pt-14 md:pt-20">
-        <div className="flex flex-wrap items-end justify-between gap-6">
-          <div>
+      <section className="w-full px-6 py-14 md:px-10 md:py-20">
+        <div className="sample-project-layout">
+          <div className="lg:sticky lg:top-24">
             <p className="font-mono text-[10px] uppercase tracking-[.2em] text-[#9CA9B8]">web project</p>
             <h1 className="mt-4 max-w-[22ch] text-balance text-[clamp(2rem,3.6vw,3.1rem)] font-medium leading-[1.02] tracking-[-.05em] text-[#F0F3F5]">
               {lang === "en" ? "One brief, one full website." : "Satu brief, satu website utuh."}
             </h1>
+            <p className="mt-4 max-w-[42ch] text-sm leading-6 text-[#8C97A5]">
+              {lang === "en"
+                ? "A website generated from a short brief, running below as if you opened it directly in the browser."
+                : "Website hasil generasi dari brief singkat, berjalan di bawah seolah kamu membukanya langsung di browser."}
+            </p>
           </div>
-          <p className="max-w-[42ch] text-sm leading-6 text-[#8C97A5]">
-            {lang === "en"
-              ? "A website generated from a short brief, running below as if you opened it directly in the browser."
-              : "Website hasil generasi dari brief singkat, berjalan di bawah seolah kamu membukanya langsung di browser."}
-          </p>
-        </div>
-      </section>
 
-      {/* Sample di bawah header: lebih sempit dari full-width, ratio layar desktop 16:9 */}
-      <section className="mx-auto max-w-[1280px] px-5 pb-16 pt-10">
-        <HeroSectionBasic ratio="desktop" />
+          {/* Sample di samping copy, ratio layar desktop 16:9 tetap, ukuran dikecilkan lewat max-width */}
+          <div className="mx-auto w-full max-w-[880px]">
+            <HeroSectionBasic ratio="desktop" />
+          </div>
+        </div>
       </section>
     </main>
   );
