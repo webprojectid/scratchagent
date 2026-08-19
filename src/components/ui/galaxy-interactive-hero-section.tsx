@@ -16,8 +16,11 @@ import { useEffect, useRef, useState, type RefObject } from "react";
 import { SplineScene } from "@/components/ui/splite";
 
 const SPLINE_SCENE = "https://prod.spline.design/us3ALejTXl6usHZ7/scene.splinecode";
+// Resolusi diturunkan dari 3840x2160 → 1440x810:
+// Gambar ditampilkan pada ~760px dalam frame 0.75x-zoomed; 1440px sudah 2x resolusi
+// layar retina (cukup tajam), 3840px = 5x layar = buang bandwidth dan decode memory.
 const SCREENSHOT_SRC =
-  "https://cdn.sanity.io/images/s6lu43cv/production-v4/13b6177b537aee0fc311a867ea938f16416e8670-3840x2160.jpg?w=3840&h=2160&q=80&auto=format&fm=jpg";
+  "https://cdn.sanity.io/images/s6lu43cv/production-v4/13b6177b537aee0fc311a867ea938f16416e8670-3840x2160.jpg?w=1440&h=810&q=75&auto=format&fm=webp";
 
 type HeroSectionProps = {
   /** Container yang scroll-nya menggerakkan parallax. Default: window. */
