@@ -118,8 +118,8 @@ export function IPhone17ShopDemo() {
       <div className="w-full [&>*]:max-w-none [&>*]:rounded-none [&>*]:border-x-0 [&>*]:shadow-none">
         <ProductCard
           name="Nike Air Force 1"
-          price={129.99}
-          originalPrice={169.99}
+          price={2099000}
+          originalPrice={2699000}
           rating={4.7}
           reviewCount={325}
           discount={25}
@@ -128,6 +128,7 @@ export function IPhone17ShopDemo() {
           isBestSeller
           autoPlay
           autoPlayInterval={2200}
+          currency="Rp "
           colors={["#1e293b", "#f43f5e", "#0ea5e9", "#10b981"]}
           sizes={["38", "39", "40", "41", "42", "43"]}
           images={[
