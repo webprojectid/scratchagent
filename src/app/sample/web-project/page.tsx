@@ -47,9 +47,9 @@ export default function SampleWebProjectPage() {
         </div>
       </section>
 
-      {/* Sample full-width di bawah header: edge ke edge, tidak di-stretch */}
-      <section className="px-3 pb-16 pt-10 sm:px-5">
-        <HeroSectionBasic />
+      {/* Sample di bawah header: lebih sempit dari full-width, ratio layar desktop 16:9 */}
+      <section className="mx-auto max-w-[1280px] px-5 pb-16 pt-10">
+        <HeroSectionBasic ratio="desktop" />
       </section>
     </main>
   );
