@@ -1,0 +1,40 @@
+Kamu akan mengerjakan task dari Scratch Agent lewat CLI scratch-agent (package npm: @notdeadlysins/scratch-agent).
+Prasyarat: Node.js + Python 3.x.
+
+LANGKAH 0: Install Skill Scratch Agent v2.4 (sekali saja):
+ Cek apakah sudah terpasang: uipro --version
+ Jika SUDAH: lanjut.
+ Jika BELUM: install sekali lalu lanjut (TIDAK perlu restart):
+  npm install -g ui-ux-pro-max-cli
+  uipro init --ai opencode --global
+
+LANGKAH 1: Install CLI, login & init (sekali saja):
+ npm install -g @notdeadlysins/scratch-agent
+ scratch-agent login --token rv_e8eefa7ba7ee6f2c8b85c076999f601fc26f549d0c8a1281
+ scratch-agent init --agent opencode
+
+LANGKAH 2: Baca PRD (sekali):
+ scratch-agent plan get 22048e0f-b541-48c3-aabc-4ebff622308b
+
+LANGKAH 3: LOOP kerjakan SATU task per siklus:
+ scratch-agent task next --plan 22048e0f-b541-48c3-aabc-4ebff622308b --json
+ scratch-agent task start <ref>
+ # ...kerjakan task ini (eksplor kode dulu, ikuti pola project)...
+ scratch-agent task complete <ref>
+ # Jika ke-block: scratch-agent task fail <ref> "alasan singkat"
+ # Ulangi sampai done=true
+
+ATURAN:
+- Jika task next menyertakan last_fail_reason: BACA dulu, ganti pendekatan.
+- Jika respons blocked=true: berhenti, lapor daftar task gagal, tunggu perintah.
+- Jika respons checkpoint=true: JANGAN mulai task. Berhenti, lapor, tunggu "lanjut".
+- Jangan borong task; percayakan urutan ke server.
+- Saat mengerjakan task frontend/UI: CEK apakah Skill Scratch Agent aktif
+  otomatis. Jika AKTIF: terapkan rekomendasinya (warna, tipografi, layout,
+  best practice) supaya hasil profesional. Jika TIDAK aktif: beri tau user
+  "Skill Scratch Agent belum aktif (mungkin perlu sesi baru agar ter-load)",
+  lalu tetap lanjutkan dengan best practice UI umum.
+
+LANGKAH 4: Setelah done=true:
+ Jalankan aplikasi sekali lagi, verifikasi semua alur utama melawan "selesai bila"
+ tiap fitur. Lampirkan checklist di laporan akhir. Jika ada rusak, lapor jujur.

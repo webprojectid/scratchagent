@@ -1,0 +1,55 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1786083031501,
+      "tag": "0000_harsh_morlun",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1786533137168,
+      "tag": "0001_bent_blacklash",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1786926413929,
+      "tag": "0002_condemned_purifiers",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1787012813929,
+      "tag": "0003_pro_accounts",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1787099213929,
+      "tag": "0004_subscription_expiry",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1787185613929,
+      "tag": "0005_security_events",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1787185614929,
+      "tag": "0006_blocked_ips",
+      "breakpoints": true
+    }
+  ]
+}
