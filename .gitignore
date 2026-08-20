@@ -51,3 +51,4 @@ migrate-*.js
 setup-*.js
 *.local.js
 scripts-e2e/.token*
+nul
