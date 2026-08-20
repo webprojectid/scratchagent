@@ -96,7 +96,7 @@ export default function NewPlan() {
             <div className="flex flex-col justify-start py-8 lg:py-0 overflow-hidden">
               <p className="eyebrow mb-6 text-xs font-medium tracking-wide uppercase text-slate-500">Misi baru {quota !== null && `· ${quota} generate tersisa`}</p>
               
-              <h1 className="mb-6 max-w-[9ch] text-[clamp(2rem,4vw,2.5rem)] font-semibold leading-[1.1] tracking-tight text-white">Apa yang harus dibangun?</h1>
+              <h1 className="mb-6 max-w-[9ch] font-semibold leading-[1.1] tracking-tight text-white" style={{ fontSize: 'clamp(2rem, 4vw, 2.5rem)' }}>Apa yang harus dibangun?</h1>
               
               <p className="mb-8 max-w-[45ch] text-sm leading-relaxed text-slate-400">Tulis ide mentah. Scratch Agent menyusun asumsi, fitur, dan task graph secara otomatis.</p>
               
