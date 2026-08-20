@@ -6,7 +6,8 @@ import { motion, useMotionValue, useTransform } from "motion/react";
 import { Shell } from "@/components/brand";
 import { SplineSceneBasic } from "@/components/ui/demo";
 import Link from "next/link";
-import { User } from "lucide-react";
+import { User, Loader2 } from "lucide-react";
+import { getCurrentUser, supabaseConfigured } from "@/lib/current-user";
 
 export default function NewPlan() {
   const router = useRouter();
@@ -14,12 +15,34 @@ export default function NewPlan() {
   const [quota, setQuota] = useState<number | null>(null);
   const [mounted, setMounted] = useState(false);
   const [authed, setAuthed] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const user = localStorage.getItem("scratch_user");
-    if (!user) { router.push("/login"); return; }
-    setAuthed(true);
+    const checkAuth = async () => {
+      if (supabaseConfigured()) {
+        const user = await getCurrentUser();
+        if (!user) {
+          router.push("/login");
+          return;
+        }
+      } else {
+        const user = localStorage.getItem("scratch_user");
+        if (!user) {
+          router.push("/login");
+          return;
+        }
+      }
+      setAuthed(true);
+      setLoading(false);
+    };
+    checkAuth();
   }, [router]);
+
+  // FIXED: No scrolling allowed - full viewport fixed
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = ""; };
+  }, []);
 
   const sectionRef = useRef<HTMLElement>(null);
   const mx = useMotionValue(0.5);
@@ -51,9 +74,15 @@ export default function NewPlan() {
 
   return (
     <Shell back="/" sidebar={false}>
-      {!authed ? null : (
-      <section ref={sectionRef} className="relative isolate flex min-h-[100dvh] items-center justify-center mx-auto max-w-[1480px] px-5 py-10 md:px-10 md:py-12 lg:py-16">
-        <div className="relative w-full overflow-hidden rounded-[24px] border border-white/10 bg-[#101417] p-8 shadow-[0_28px_90px_#000A,inset_0_1px_0_#FFFFFF12] md:p-12">
+      {loading || !authed ? (
+        // Loading state untuk mencegah blank/black screen
+        <div className="flex h-screen items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-[#74FA6A]" />
+          <p className="ml-3 text-slate-400 text-sm">Memuat…</p>
+        </div>
+      ) : (
+      <section ref={sectionRef} className="relative isolate flex h-screen min-h-[100dvh] items-center justify-center bg-[#0F1113] overflow-hidden">
+        <div className="relative w-full max-w-[1054px] aspect-[5/4] mx-auto px-4 pt-[13px] pb-[13px] md:px-6 md:pt-[18px] md:pb-[18px] lg:pt-[18px] lg:pb-[18px] overflow-hidden rounded-[24px] border border-white/10 bg-[#101417] shadow-[0_28px_90px_#000A,inset_0_1px_0_#FFFFFF12]">
           <div className="absolute right-4 top-4 z-20">
             <Link href="/profile" className="flex items-center gap-1.5 rounded-lg border border-white/10 px-2.5 py-1.5 text-[10px] text-slate-400 transition hover:border-[#74FA6A]/40 hover:text-[#74FA6A]">
               <User size={11} /> Profile
@@ -62,13 +91,17 @@ export default function NewPlan() {
 
           <motion.div className="pointer-events-none absolute z-[0] size-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-30" style={{ left: xPct, top: yPct, background: "radial-gradient(circle at center, rgba(255,255,255,.2) 0%, transparent 60%)" }} />
 
-          <div className="relative z-10 grid items-center gap-8 lg:grid-cols-[.9fr_1.1fr] lg:gap-10">
-            <div>
-              <p className="eyebrow">Misi baru {quota !== null && `· ${quota} generate tersisa`}</p>
-              <h1 className="mt-5 max-w-[10ch] text-[clamp(2.8rem,5.2vw,5rem)] font-semibold leading-[.92] tracking-[-.065em] text-white">Apa yang harus dibangun?</h1>
-              <p className="mt-4 max-w-[42ch] text-[14px] leading-6 text-[#9AA5B3]">Tulis ide mentah. Scratch Agent menyusun asumsi, fitur, dan task graph.</p>
+          <div className="relative z-10 grid h-full items-center gap-12 lg:grid-cols-[1fr_308px]">
+            {/* Form Section - Better vertical spacing */}
+            <div className="flex flex-col justify-start py-8 lg:py-0 overflow-hidden">
+              <p className="eyebrow mb-6 text-xs font-medium tracking-wide uppercase text-slate-500">Misi baru {quota !== null && `· ${quota} generate tersisa`}</p>
+              
+              <h1 className="mb-6 max-w-[9ch] text-[clamp(2rem,4vw,2.5rem)] font-semibold leading-[1.1] tracking-tight text-white">Apa yang harus dibangun?</h1>
+              
+              <p className="mb-8 max-w-[45ch] text-sm leading-relaxed text-slate-400">Tulis ide mentah. Scratch Agent menyusun asumsi, fitur, dan task graph secara otomatis.</p>
+              
               <form
-                className="mt-7"
+                className="mt-auto"
                 onSubmit={(e) => {
                   e.preventDefault();
                   sessionStorage.setItem("rv_brief", brief);
@@ -80,21 +113,19 @@ export default function NewPlan() {
                   autoFocus
                   value={brief}
                   onChange={(e) => setBrief(e.target.value)}
-                  className="field min-h-[168px] resize-none rounded-[14px] border border-white/12 bg-[#0D1011]/86 text-[16px] leading-6 shadow-[0_0_0_1px_#74FA6A14,0_8px_30px_#0008] backdrop-blur-[2px] focus:border-[#74FA6A]"
+                  className="field mb-4 w-full max-w-[420px] min-h-[96px] resize-none rounded-xl border border-white/12 bg-[#0D1011]/86 p-4 text-base leading-relaxed shadow-lg backdrop-blur-md transition-all focus:border-emerald-400 focus:shadow-[0_0_0_2px_rgba(124,250,106,0.2)] placeholder:text-slate-600"
                   placeholder="Contoh: Buat aplikasi booking studio musik..."
                 />
-                <div className="mt-4 flex justify-end">
-                  <button className="btn px-7">Lanjut →</button>
-                </div>
+                <button className="btn group flex items-center gap-2 px-6 py-3 text-base font-medium">
+                  Lanjut 
+                  <span className="transition-transform group-hover:translate-x-1">→</span>
+                </button>
               </form>
             </div>
 
-            <div className="relative flex h-[420px] w-full items-end justify-end overflow-visible md:h-[560px] lg:h-[620px]">
-              <div className="absolute inset-x-0 bottom-0 flex justify-end overflow-visible">
-                <div className="origin-bottom-right translate-x-[8%] translate-y-[9%] scale-[0.98] md:translate-x-[10%] md:translate-y-[11%] md:scale-[1.02] lg:translate-x-[12%] lg:translate-y-[12%] lg:scale-[1.06]">
-                  {mounted && <SplineSceneBasic />}
-                </div>
-              </div>
+            {/* Robot 3D Spline - Full height centered */}
+            <div className="relative flex items-center justify-center overflow-visible p-2">
+              <SplineSceneBasic />
             </div>
           </div>
         </div>
