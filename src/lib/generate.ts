@@ -9,6 +9,7 @@ import {
 import { isExhaustedError, parseModelList, resolveLlmConfig } from "./llm-config";
 import { structureLimits, taskRangePerFeature, trimToMax, type Tier } from "./plan-limits";
 import type { PlanIdea } from "./types";
+import { parseLLMResponse } from "./sse-parser"; // NEW: Dual-mode SSE/JSON parser
 
 const prioritySchema = z.preprocess(
   (val) => typeof val === "string" ? val.toLowerCase().trim() : val,
@@ -173,6 +174,13 @@ interface LlmUsage { tokensIn: number; tokensOut: number; }
 // jadi kita tidak bolak-balik nabrak model yang sudah pasti exhausted.
 let modelCursor = 0;
 
+/** Helper untuk cek quota exhaustion dari HTTP status + response body */
+const isQuotaExhausted = (status: number, body: string): boolean => {
+  return status === 429 || 
+         status === 402 || 
+         /exhaust|quota|insufficient balance|too many requests|rate.?limit/i.test(body);
+};
+
 /** Satu request ke satu model dengan retry internal (maks 3x). */
 async function attemptModel<T>(
   schema: z.ZodType<T>,
@@ -212,40 +220,62 @@ async function attemptModel<T>(
       clearTimeout(timeout);
       const elapsed = Date.now() - start;
       console.log(`[LLM] response ${res.status} in ${elapsed}ms`);
+      
       if (!res.ok) {
         const text = await res.text();
         console.error(`[LLM] error body: ${text.slice(0, 500)}`);
-        // Pesan error menyertakan status HTTP supaya isExhaustedError (429/402)
-        // bisa mengenali quota habis dan langsung failover tanpa retry di sini.
+        
+        // FIX v2: Early exit for quota errors - no retry!
+        if (isQuotaExhausted(res.status, text)) {
+          const err = new Error(`Quota habis untuk model ${model} (${res.status})`);
+          throw err;
+        }
+        
         throw new Error(`LLM gagal: ${res.status} ${text.slice(0, 200)}`);
       }
-      const responseBody = await res.json();
-      const messageContent = responseBody.choices?.[0]?.message;
-      if (usage && responseBody.usage) {
-        usage.tokensIn += responseBody.usage.prompt_tokens ?? 0;
-        usage.tokensOut += responseBody.usage.completion_tokens ?? 0;
-      }
+      
+      // NEW: Use dual-mode parser (SSE + JSON fallback)
       try {
+        const parsed = await parseLLMResponse(res, {
+          logDebug: false, // Set true untuk debug
+          onToken: (chunk) => { /* Optional streaming progress */ },
+        });
+        
+        const messageContent = { content: parsed.content };
+        if (usage && parsed.usage) {
+          usage.tokensIn += parsed.usage.prompt_tokens ?? 0;
+          usage.tokensOut += parsed.usage.completion_tokens ?? 0;
+        }
+        
+        // Parse and validate JSON from content
         const raw = JSON.parse(extractJson(messageContent?.content ?? ""));
         return schema.parse(normalize(raw));
+        
       } catch (error) {
         lastError = error;
-        console.error("[LLM] parsing/validasi gagal. Message:", JSON.stringify(messageContent, null, 2)?.slice(0, 2000));
-        if (error instanceof z.ZodError) {
-          console.error("[LLM] schema validation:", error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; "));
-        }
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        console.error(`[LLM] response parsing failed: ${errorMsg}`);
+        
         if (attempt === 2) throw error;
+        
+        // Log which mode was detected (helps debugging)
+        const isSSE = errorMsg.includes("streaming") || errorMsg.includes("stream");
+        console.warn(`[LLM] Mode ${isSSE ? "SSE" : "JSON"} failed, will retry...`);
+        
       }
     } catch (error) {
       clearTimeout(timeout);
       lastError = error;
-      // Error quota tidak retry di model yang sama; biarkan failover yang handle.
+      // Error quota langsung throw, tidak retry
+      if (error instanceof Error && /quota|habis|insufficient balance/i.test(error.message)) {
+        throw error;
+      }
       if (isExhaustedError(error)) throw error;
       if (attempt === 2) throw error;
       if (error instanceof Error && error.name === "AbortError") {
         console.warn(`[LLM] timeout pada attempt ${attempt + 1} setelah ${Date.now() - start}ms, retry...`);
       } else if (error instanceof Error) {
-        console.warn(`[LLM] attempt ${attempt + 1} error: ${error.message}`);
+        console.warn(`[LLM] attempt ${attempt + 1} error: ${error.message}, retry...`);
       }
     }
   }
@@ -378,6 +408,14 @@ export interface ClarifyQuestion {
  */
 const STYLE_RULE = `ATURAN GAYA PENULISAN: tulis semua teks TANPA tanda hubung panjang (em dash "—" atau en dash "–"). Gunakan koma, titik, atau titik dua sebagai pengganti. Tulis seperti profesional manusia di bidangnya: konkret, spesifik, tanpa kalimat generik.`;
 
+// FIX v2: Enforce tier limits BEFORE calling LLM to avoid wasted tokens
+function getEnforcedBrief(brief: string, tier: Tier | string | null | undefined): string {
+  const maxFeatures = structureLimits(tier)[0]; // Get hard limit for features
+  const truncatedText = brief.length > 2000 ? brief.slice(0, 2000) + `\n\nCATATAN: Fokus pada ${maxFeatures} fitur utama saja, jangan terlalu banyak detail.` : brief;
+  
+  return `${truncatedText}\n\nPRIORITY CONSTRAINT: Buat maksimal ${maxFeatures} fitur untuk product ini (hard limit). Jangan melebihi batas ini.`;
+}
+
 /** Jawaban klarifikasi user yang sudah diratakan jadi string, siap masuk prompt. */
 export interface ContextAnswer {
   question: string;
@@ -400,16 +438,19 @@ export async function generatePlanStructure(
     ? `\nJawaban klarifikasi dari user (perlakukan sebagai FAKTA yang sudah dikonfirmasi, jangan membuat asumsi yang bertentangan dengan ini):\n${contextAnswers.map((a) => `- ${a.question} → ${a.answer}`).join("\n")}\n`
     : "";
 
+  // FIX v2: Enforce limits BEFORE calling LLM
+  const enforcedBrief = getEnforcedBrief(brief, tier);
+
   const one = await callLlm(
     stage1Schema,
-    `${`Brief: ${brief}\n${stackHint}${answersBlock}`}\n\nKamu adalah product manager senior. Buat PRD awal yang mendalam:\n${STYLE_RULE}\n1. Judul produk yang jelas.\n2. Asumsi wajar (min 5): bisnis, teknis, perilaku pengguna. Jika ada jawaban klarifikasi dari user, gunakan itu dan JANGAN jadikan hal yang sudah dijawab sebagai asumsi.\n3. Stack teknologi yang cocok.\n4. Daftar fitur: buat ${limits.features[0]} sampai ${limits.features[1]} fitur (bidik angka atas bila brief kompleks). Setiap fitur WAJIB punya priority high/medium/low. CAKUPAN WAJIB: setiap subsistem, komponen, atau fungsi yang disebut di brief harus tercover; bila subsistem melebihi jumlah maksimum, gabungkan subsistem yang serumpun ke satu fitur dan jelaskan penggabungannya di field description. JANGAN menghapus, melewati, atau mengabaikan subsistem apa pun.\n5. Untuk tiap fitur: deskripsi 1-2 kalimat, tujuan bisnis yang terukur, dan 3-5 kriteria "selesai bila" yang spesifik dan bisa diuji.\n\nWAJIB gunakan field PERSIS: title, assumptions, stack, features (title, icon, description, tujuan, selesai_bila, priority). Format: {"title":"...","assumptions":[],"stack":[],"features":[{"title":"...","icon":"...","description":"...","tujuan":"...","selesai_bila":[],"priority":"high"}]}}`,
+    `${enforcedBrief}\n${stackHint}${answersBlock}\n\nKamu adalah product manager senior. Buat PRD awal yang mendalam:\n${STYLE_RULE}\n1. Judul produk yang jelas.\n2. Asumsi wajar (min 5): bisnis, teknis, perilaku pengguna. Jika ada jawaban klarifikasi dari user, gunakan itu dan JANGAN jadikan hal yang sudah dijawab sebagai asumsi.\n3. Stack teknologi yang cocok.\n4. Daftar fitur: buat maksimal ${limits.features[1]} fitur. CAKUPAN WAJIB: setiap subsistem, komponen, atau fungsi yang disebut di brief harus tercover; bila subsistem melebihi jumlah maksimum, gabungkan subsistem yang serumpun ke satu fitur dan jelaskan penggabungannya di field description. JANGAN menghapus, melewati, atau mengabaikan subsistem apa pun.\n5. Untuk tiap fitur: deskripsi 1-2 kalimat, tujuan bisnis yang terukur, dan 3-5 kriteria "selesai bila" yang spesifik dan bisa diuji.\n\nWAJIB gunakan field PERSIS: title, assumptions, stack, features (title, icon, description, tujuan, selesai_bila, priority). Format: {"title":"...","assumptions":[],"stack":[],"features":[{"title":"...","icon":"...","description":"...","tujuan":"...","selesai_bila":[],"priority":"high"}]}}`,
     usage,
   );
 
-  // Enforce keras batas fase: potong fitur berlebih dari LLM ke maksimum tier.
-  const stage1Features = trimToMax(one.features, limits.features[1]);
-  if (stage1Features.length < one.features.length) {
-    structureWarnings.push(`Jumlah fase dibatasi ${limits.features[1]} sesuai paket ${tier === "pro" ? "Pro" : "Free"}`);
+  // Hard cutoff AFTER validation but still warn
+  const stage1Features = one.features.slice(0, limits.features[1]);
+  if (one.features.length > limits.features[1]) {
+    structureWarnings.push(`Prompt melebihi batas (${one.features.length} fitur). Dipotong jadi ${limits.features[1]} sesuai paket ${tier === "pro" ? "Pro" : "Free"}.`);
   }
   const featureTitles = stage1Features.map((f) => f.title);
 
@@ -636,6 +677,8 @@ Format: {"title":"...","icon":"💡","description":"...","tujuan":"...","selesai
  * (terparah saat sub_feature kosong: b.includes("") selalu true).
  * Task dengan sub_feature kosong / tak dikenal masuk sub-fitur pertama.
  * Return map index sub-fitur -> index task (urutan assignment).
+ * 
+ * FIX v2: Use word boundary matching to avoid false substring matches
  */
 export function assignTasksToSubFeatures(
   tasks: { sub_feature?: string | null }[],
@@ -643,29 +686,65 @@ export function assignTasksToSubFeatures(
 ): Map<number, number[]> {
   const result = new Map<number, number[]>();
   const used = new Set<number>();
+  
+  // Normalize strings for comparison
   const norm = (s: string | null | undefined) => (s ?? "").toLowerCase().trim();
+  
+  // FIX v2: Word boundary matching instead of naive substring
   const match = (sub: string, title: string, exact: boolean): boolean => {
     if (!sub || !title) return false;
-    return exact ? sub === title : sub.includes(title) || title.includes(sub);
+    const s = norm(sub);
+    const t = norm(title);
+    
+    if (exact) return s === t;
+    
+    // Use word boundaries to avoid partial matches
+    // This prevents "Search" matching inside "SearchFilteringUI"
+    const escapeRegex = (str: string) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const subRegex = new RegExp(`\\b${escapeRegex(s)}\\b`, 'i');
+    const titleRegex = new RegExp(`\\b${escapeRegex(t)}\\b`, 'i');
+    
+    return subRegex.test(t) || titleRegex.test(s);
   };
+  
   for (let pass = 0; pass < 2; pass++) {
     const exact = pass === 0;
     for (let si = 0; si < subFeatureTitles.length; si++) {
       const title = norm(subFeatureTitles[si]);
+      
+      // Skip empty sub-feature titles
+      if (!title) continue;
+      
       for (let ti = 0; ti < tasks.length; ti++) {
         if (used.has(ti)) continue;
-        if (!match(norm(tasks[ti].sub_feature), title, exact)) continue;
+        
+        const taskSub = norm(tasks[ti].sub_feature);
+        
+        // Skip tasks with empty sub_feature
+        if (!taskSub) continue;
+        
+        if (!match(taskSub, title, exact)) continue;
+        
         used.add(ti);
         if (!result.has(si)) result.set(si, []);
         result.get(si)!.push(ti);
       }
     }
   }
+  
+  // Handle remaining unassigned tasks (including those with empty sub_feature)
   const leftover = tasks.map((_, i) => i).filter((i) => !used.has(i));
   if (leftover.length && subFeatureTitles.length > 0) {
-    if (!result.has(0)) result.set(0, []);
-    result.get(0)!.push(...leftover);
+    // Find first non-empty sub-feature, otherwise use first one
+    const targetSubIndex = subFeatureTitles.some(tf => norm(tf)) ? 0 : -1;
+    if (targetSubIndex >= 0) {
+      if (!result.has(targetSubIndex)) result.set(targetSubIndex, []);
+      result.get(targetSubIndex)!.push(...leftover);
+    } else {
+      console.warn("[assignTasksToSubFeatures] No valid sub-features found, skipping leftover tasks");
+    }
   }
+  
   return result;
 }
 
@@ -674,31 +753,63 @@ export function assignTasksToSubFeatures(
  * dan edge yang membentuk siklus. Return map ref -> deps final (urutan stabil).
  * Algoritma: bangun graph secara incremental; tiap edge baru dicek apakah
  * membuat jalur balik (siklus); kalau ya, edge itu dibuang.
+ * 
+ * FIX v2: Global cycle detection across all features, not just within single node context
  */
 export function sanitizeDeps(nodes: { ref: string; deps: string[] }[]): Map<string, string[]> {
   const validRefs = new Set(nodes.map((n) => n.ref));
   const graph = new Map<string, string[]>();
   for (const n of nodes) graph.set(n.ref, []);
 
-  const reaches = (from: string, target: string, seen: Set<string>): boolean => {
-    if (from === target) return true;
-    if (seen.has(from)) return false;
-    seen.add(from);
-    for (const d of graph.get(from) ?? []) {
-      if (reaches(d, target, seen)) return true;
-    }
-    return false;
+  // FIX v2: Use DFS with proper visited tracking for entire graph traversal
+  const createsCycle = (addEdge: [string, string], currentGraph: Map<string, string[]>): boolean => {
+    const [from, to] = addEdge;
+    
+    // Check if adding this edge would create a cycle
+    // A cycle exists if 'to' can reach 'from' via existing edges
+    const canReachTarget = (start: string, target: string): boolean => {
+      if (start === target) return true;
+      
+      const visited = new Set<string>();
+      const stack = [start];
+      
+      while (stack.length > 0) {
+        const current = stack.pop()!;
+        if (current === target) return true;
+        if (visited.has(current)) continue;
+        
+        visited.add(current);
+        
+        for (const dep of currentGraph.get(current) ?? []) {
+          if (dep === target) return true;
+          if (!visited.has(dep)) {
+            stack.push(dep);
+          }
+        }
+      }
+      return false;
+    };
+    
+    return canReachTarget(to, from);
   };
 
   for (const n of nodes) {
-    const seenDeps = new Set<string>();
+    const addedDeps = new Set<string>();
     for (const dep of n.deps) {
-      if (!validRefs.has(dep) || dep === n.ref || seenDeps.has(dep)) continue;
-      seenDeps.add(dep);
-      // Edge n.ref -> dep bikin siklus kalau dep (transitif) mencapai n.ref.
-      if (reaches(dep, n.ref, new Set())) continue;
+      // Skip invalid references, self-deps, and duplicates
+      if (!validRefs.has(dep) || dep === n.ref || addedDeps.has(dep)) continue;
+      
+      addedDeps.add(dep);
+      
+      // FIX v2: Don't create edges that would form cycles
+      if (createsCycle([n.ref, dep], graph)) {
+        console.warn(`[sanitizeDeps] Skipping cyclic edge: ${n.ref} -> ${dep}`);
+        continue;
+      }
+      
       graph.get(n.ref)!.push(dep);
     }
   }
+  
   return graph;
 }
