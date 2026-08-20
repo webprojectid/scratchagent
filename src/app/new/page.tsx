@@ -82,7 +82,7 @@ export default function NewPlan() {
         </div>
       ) : (
       <section ref={sectionRef} className="relative isolate flex h-screen min-h-[100dvh] items-center justify-center bg-[#0F1113] overflow-hidden">
-        <div className="relative w-full max-w-[1054px] aspect-[5/4] mx-auto px-4 pt-[13px] pb-[13px] md:px-6 md:pt-[18px] md:pb-[18px] lg:pt-[18px] lg:pb-[18px] overflow-hidden rounded-[24px] border border-white/10 bg-[#101417] shadow-[0_28px_90px_#000A,inset_0_1px_0_#FFFFFF12]">
+        <div className="relative w-full max-w-[1054px] aspect-[5/4] mx-auto px-4 pt-[12px] pb-[12px] md:px-6 md:pt-[14px] md:pb-[14px] lg:pt-[14px] lg:pb-[14px] overflow-hidden rounded-[24px] border border-white/10 bg-[#101417] shadow-[0_28px_90px_#000A,inset_0_1px_0_#FFFFFF12]">
           <div className="absolute right-4 top-4 z-20">
             <Link href="/profile" className="flex items-center gap-1.5 rounded-lg border border-white/10 px-2.5 py-1.5 text-[10px] text-slate-400 transition hover:border-[#74FA6A]/40 hover:text-[#74FA6A]">
               <User size={11} /> Profile
@@ -93,12 +93,12 @@ export default function NewPlan() {
 
           <div className="relative z-10 grid h-full items-center gap-12 lg:grid-cols-[1fr_308px]">
             {/* Form Section - Better vertical spacing */}
-            <div className="flex flex-col justify-start py-8 lg:py-0 overflow-hidden">
-              <p className="eyebrow mb-6 text-xs font-medium tracking-wide uppercase text-slate-500">Misi baru {quota !== null && `· ${quota} generate tersisa`}</p>
+            <div className="flex flex-col justify-center py-6 lg:py-0 overflow-hidden">
+              <p className="eyebrow mb-4 text-xs font-medium tracking-wide uppercase text-slate-500">Misi baru {quota !== null && `· ${quota} generate tersisa`}</p>
               
-              <h1 className="mb-6 max-w-[9ch] font-semibold leading-[1.1] tracking-tight text-white" style={{ fontSize: 'clamp(2rem, 4vw, 2.5rem)' }}>Apa yang harus dibangun?</h1>
+              <h1 className="mb-4 max-w-[9ch] font-semibold leading-[1.1] tracking-tight text-white" style={{ fontSize: 'clamp(2rem, 4vw, 2.5rem)' }}>Apa yang harus dibangun?</h1>
               
-              <p className="mb-8 max-w-[45ch] text-sm leading-relaxed text-slate-400">Tulis ide mentah. Scratch Agent menyusun asumsi, fitur, dan task graph secara otomatis.</p>
+              <p className="mb-6 max-w-[45ch] text-sm leading-relaxed text-slate-400">Tulis ide mentah. Scratch Agent menyusun asumsi, fitur, dan task graph secara otomatis.</p>
               
               <form
                 className="mt-auto"
@@ -113,10 +113,10 @@ export default function NewPlan() {
                   autoFocus
                   value={brief}
                   onChange={(e) => setBrief(e.target.value)}
-                  className="field mb-4 w-full max-w-[420px] min-h-[96px] resize-none rounded-xl border border-white/12 bg-[#0D1011]/86 p-4 text-base leading-relaxed shadow-lg backdrop-blur-md transition-all focus:border-emerald-400 focus:shadow-[0_0_0_2px_rgba(124,250,106,0.2)] placeholder:text-slate-600"
+                  className="field mb-3 w-full max-w-[420px] min-h-[80px] resize-none rounded-xl border border-white/12 bg-[#0D1011]/86 p-3 text-base leading-relaxed shadow-lg backdrop-blur-md transition-all focus:border-emerald-400 focus:shadow-[0_0_0_2px_rgba(124,250,106,0.2)] placeholder:text-slate-600"
                   placeholder="Contoh: Buat aplikasi booking studio musik..."
                 />
-                <button className="btn group flex items-center gap-2 px-6 py-3 text-base font-medium">
+                <button className="btn group flex items-center gap-2 px-5 py-2.5 text-base font-medium">
                   Lanjut 
                   <span className="transition-transform group-hover:translate-x-1">→</span>
                 </button>
