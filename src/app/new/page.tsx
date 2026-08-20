@@ -7,7 +7,6 @@ import { Shell } from "@/components/brand";
 import { SplineSceneBasic } from "@/components/ui/demo";
 import Link from "next/link";
 import { User } from "lucide-react";
-import { getCurrentUser } from "@/lib/current-user";
 
 export default function NewPlan() {
   const router = useRouter();
@@ -17,18 +16,9 @@ export default function NewPlan() {
   const [authed, setAuthed] = useState(false);
 
   useEffect(() => {
-    let active = true;
-    getCurrentUser().then((u) => {
-      if (!active) return;
-      if (!u) {
-        router.push("/login");
-        return;
-      }
-      setAuthed(true);
-    });
-    return () => {
-      active = false;
-    };
+    const user = localStorage.getItem("scratch_user");
+    if (!user) { router.push("/login"); return; }
+    setAuthed(true);
   }, [router]);
 
   const sectionRef = useRef<HTMLElement>(null);
@@ -38,12 +28,8 @@ export default function NewPlan() {
   const yPct = useTransform(my, (v) => `${v * 100}%`);
 
   useEffect(() => {
-    getCurrentUser().then((u) => {
-      fetch(`/api/generate?userId=${encodeURIComponent(u?.email ?? "shared")}`)
-        .then((r) => r.json())
-        .then((d) => setQuota(d.remaining ?? null))
-        .catch(() => {});
-    });
+    const user = JSON.parse(localStorage.getItem("scratch_user") || '{}');
+    fetch(`/api/generate?userId=${encodeURIComponent(user.email || "shared")}`).then((r) => r.json()).then((d) => setQuota(d.remaining ?? null)).catch(() => {});
     requestAnimationFrame(() => setMounted(true));
   }, []);
 
@@ -78,7 +64,7 @@ export default function NewPlan() {
 
           <div className="relative z-10 grid items-center gap-8 lg:grid-cols-[.9fr_1.1fr] lg:gap-10">
             <div>
-              <p className="eyebrow">Misi baru {quota !== null && `· ${quota} dari 3 generate tersisa dalam 24 jam`}</p>
+              <p className="eyebrow">Misi baru {quota !== null && `· ${quota} generate tersisa`}</p>
               <h1 className="mt-5 max-w-[10ch] text-[clamp(2.8rem,5.2vw,5rem)] font-semibold leading-[.92] tracking-[-.065em] text-white">Apa yang harus dibangun?</h1>
               <p className="mt-4 max-w-[42ch] text-[14px] leading-6 text-[#9AA5B3]">Tulis ide mentah. Scratch Agent menyusun asumsi, fitur, dan task graph.</p>
               <form
