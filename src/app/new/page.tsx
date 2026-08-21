@@ -4,8 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Shell } from "@/components/brand";
 import { SplineSceneBasic } from "@/components/ui/demo";
-import Link from "next/link";
-import { User, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { getCurrentUser, supabaseConfigured } from "@/lib/current-user";
 
 export default function NewPlan() {
@@ -21,12 +20,10 @@ export default function NewPlan() {
 
   useEffect(() => {
     const checkAuth = async () => {
-      if (supabaseConfigured()) {
-        const user = await getCurrentUser();
-        if (!user) { router.push("/login"); return; }
-      } else {
-        const user = localStorage.getItem("scratch_user");
-        if (!user) { router.push("/login"); return; }
+      const user = await getCurrentUser();
+      if (!user) {
+        router.push("/login");
+        return;
       }
       setAuthed(true);
       setLoading(false);
@@ -59,11 +56,8 @@ export default function NewPlan() {
     const el = sectionRef.current;
     if (!el) return;
 
-    const cardEl = el.querySelector("[data-glow-card]") as HTMLElement | null;
-
     const onMove = (e: MouseEvent) => {
-      const target = cardEl || el;
-      const rect = target.getBoundingClientRect();
+      const rect = el.getBoundingClientRect();
       const xPercent = ((e.clientX - rect.left) / rect.width) * 100;
       const yPercent = ((e.clientY - rect.top) / rect.height) * 100;
       setMousePos({
@@ -98,17 +92,8 @@ export default function NewPlan() {
           className="relative isolate flex h-screen min-h-[100dvh] items-center justify-center bg-[#0F1113] overflow-hidden"
         >
           {/* Card */}
-          <div data-glow-card className="relative w-full max-w-[1200px] h-[700px] mx-auto px-4 md:px-6 overflow-hidden rounded-[24px] border border-white/10 bg-[#101417] shadow-[0_28px_90px_#000A,inset_0_1px_0_#FFFFFF12]">
-            {/* Profile link */}
-            <div className="absolute right-4 top-4 z-20">
-              <Link
-                href="/profile"
-                className="flex items-center gap-1.5 rounded-lg border border-white/10 px-2.5 py-1.5 text-[10px] text-slate-400 transition hover:border-[#74FA6A]/40 hover:text-[#74FA6A]"
-              >
-                <User size={11} /> Profile
-              </Link>
-            </div>
-
+          <div className="relative w-full max-w-[1200px] h-[600px] mx-auto px-4 md:px-6 overflow-hidden rounded-[24px] border border-white/10 bg-white/[0.03] backdrop-blur-xl shadow-[0_28px_90px_#000A,inset_0_1px_0_rgba(255,255,255,0.12),inset_0_0_0_1px_rgba(255,255,255,0.05)] ring-1 ring-white/[0.08]">
+            
             {/* Cursor glow - radial gradient silver-white following mouse */}
             <div
               className="pointer-events-none absolute inset-0 z-[1]"

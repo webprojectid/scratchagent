@@ -269,7 +269,10 @@ export function PlanMap({ plan, liveTasks, isPro, onRemoveStructure }: { plan: P
       const y = top + featureIndex * rowGap;
       const tasks = feature.subFeatures.flatMap((subFeature) => subFeature.tasks);
       const done = tasks.filter((task) => task.status === "done").length;
-      const isSubDone = (subFeature: Feature["subFeatures"][number]) => subFeature.tasks.length > 0 && subFeature.tasks.every((task) => task.status === "done");
+      const isSubDone = (subFeature: Feature["subFeatures"][number]) =>
+        subFeature.tasks.length > 0
+          ? subFeature.tasks.every((task) => task.status === "done")
+          : feature.status === "selesai";
       const isSubActive = (subFeature: Feature["subFeatures"][number]) => subFeature.tasks.some((task) => task.status === "in_progress");
       const subsDone = feature.subFeatures.filter(isSubDone).length;
       const phase = featureIndex + 1;

@@ -15,6 +15,17 @@ export function supabaseConfigured(): boolean {
   return !!url && !!anonKey && url.startsWith("https://") && !anonKey.startsWith("ISI_");
 }
 
+function isAdmin(email: string | null | undefined): boolean {
+  if (!email) return false;
+  const lower = email.toLowerCase();
+  if (lower.startsWith("admin@") || lower === "admin") return true;
+  const list = ["teguhends@gmail.com"];
+  return list.includes(lower);
+}
+
+import { formatDisplayName } from "@/lib/user-utils";
+export { formatDisplayName };
+
 function readLegacyUser(): CurrentUser | null {
   try {
     const raw = localStorage.getItem("scratch_user");
@@ -23,9 +34,9 @@ function readLegacyUser(): CurrentUser | null {
     if (u?.email) {
       return {
         email: u.email,
-        name: u.name || String(u.email).split("@")[0],
+        name: formatDisplayName(u.email, u.name),
         provider: u.provider,
-        role: u.role,
+        role: u.role || (isAdmin(u.email) ? "admin" : "user"),
       };
     }
   } catch {
@@ -45,10 +56,12 @@ async function resolveUser(): Promise<CurrentUser | null> {
       const su = data.user;
       if (su?.email) {
         const meta = (su.user_metadata ?? {}) as Record<string, unknown>;
+        const rawName = (meta.full_name as string) || (meta.name as string);
         return {
           email: su.email,
-          name: (meta.full_name as string) || (meta.name as string) || su.email.split("@")[0],
+          name: formatDisplayName(su.email, rawName),
           provider: ((su.app_metadata?.provider as string) ?? "oauth"),
+          role: (meta.role as string) || (isAdmin(su.email) ? "admin" : "user"),
         };
       }
     } catch {
@@ -75,20 +88,53 @@ export function refreshCurrentUser(): void {
   cached = null;
 }
 
-/** Hook React: return user + loading. */
+/** Hook React: return user + loading (auto-sync dengan Supabase dan Storage). */
 export function useCurrentUser(): { user: CurrentUser | null; loading: boolean } {
   const [user, setUser] = useState<CurrentUser | null>(null);
   const [loading, setLoading] = useState(true);
+
   useEffect(() => {
     let active = true;
+
+    const syncUser = () => {
+      refreshCurrentUser();
+      getCurrentUser().then((u) => {
+        if (!active) return;
+        setUser(u);
+        setLoading(false);
+      });
+    };
+
+    // Initial load
     getCurrentUser().then((u) => {
       if (!active) return;
       setUser(u);
       setLoading(false);
     });
+
+    // Supabase auth subscription
+    let authSubscription: { unsubscribe: () => void } | null = null;
+    if (supabaseConfigured()) {
+      try {
+        const supabase = createClient();
+        const { data } = supabase.auth.onAuthStateChange(() => {
+          syncUser();
+        });
+        authSubscription = data.subscription;
+      } catch {}
+    }
+
+    // Storage & focus listeners for multi-tab sync
+    window.addEventListener("storage", syncUser);
+    window.addEventListener("focus", syncUser);
+
     return () => {
       active = false;
+      authSubscription?.unsubscribe();
+      window.removeEventListener("storage", syncUser);
+      window.removeEventListener("focus", syncUser);
     };
   }, []);
+
   return { user, loading };
 }
