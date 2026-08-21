@@ -11,15 +11,15 @@ import {
 import { assignTasksToSubFeatures } from "../src/lib/generate";
 
 describe("plan-limits: batas struktur PRD per tier", () => {
-  test("Free: fase 4-8, sub-fitur 3-5, total task 14-20", () => {
+  test("Free: fase 4-8, sub-fitur 3-5, task per fitur 8-12", () => {
     assert.deepEqual(STRUCTURE_LIMITS.free.features, [4, 8]);
     assert.deepEqual(STRUCTURE_LIMITS.free.subFeatures, [3, 5]);
-    assert.deepEqual(STRUCTURE_LIMITS.free.tasks, [14, 20]);
+    assert.deepEqual(STRUCTURE_LIMITS.free.tasks, [8, 12]);
   });
 
-  test("Pro: fase 10-15, sub-fitur 8-12, total task 15-25", () => {
+  test("Pro: fase 10-15, sub-fitur 12-20, task per fitur 15-25", () => {
     assert.deepEqual(STRUCTURE_LIMITS.pro.features, [10, 15]);
-    assert.deepEqual(STRUCTURE_LIMITS.pro.subFeatures, [8, 12]);
+    assert.deepEqual(STRUCTURE_LIMITS.pro.subFeatures, [12, 20]);
     assert.deepEqual(STRUCTURE_LIMITS.pro.tasks, [15, 25]);
   });
 
@@ -30,27 +30,24 @@ describe("plan-limits: batas struktur PRD per tier", () => {
     assert.strictEqual(structureLimits("pro"), STRUCTURE_LIMITS.pro);
   });
 
-  test("budget task per fitur tidak pernah bikin total melewati batas atas", () => {
+  test("budget task per fitur sesuai batas tier", () => {
     for (const tier of ["free", "pro"] as const) {
       const limits = STRUCTURE_LIMITS[tier];
       for (let featureCount = limits.features[0]; featureCount <= limits.features[1]; featureCount++) {
         const budget = taskBudgetPerFeature(tier, featureCount);
-        assert.ok(budget >= 1, `${tier} ${featureCount} fitur: budget minimal 1`);
-        const totalMax = featureCount * budget + QA_INJECTED_TASKS;
-        assert.ok(
-          totalMax <= limits.tasks[1],
-          `${tier} ${featureCount} fitur: total ${totalMax} melewati batas ${limits.tasks[1]}`,
-        );
+        assert.strictEqual(budget, limits.tasks[1], `${tier} budget task per fitur harus ${limits.tasks[1]}`);
       }
     }
   });
 
-  test("rentang task per fitur konsisten dengan budget", () => {
-    const [lo, hi] = taskRangePerFeature("free", 6);
-    assert.ok(lo >= 1 && lo <= hi);
+  test("rentang task per fitur konsisten dengan budget dan sub-fitur", () => {
+    const [lo, hi] = taskRangePerFeature("free", 6, 4);
+    assert.ok(lo >= 4 && lo <= hi);
     assert.strictEqual(hi, taskBudgetPerFeature("free", 6));
-    // Kasus ekstrem Pro: 15 fase + batas 25 task => 1 task per fitur.
-    assert.deepEqual(taskRangePerFeature("pro", 15), [1, 1]);
+
+    const [proLo, proHi] = taskRangePerFeature("pro", 12, 8);
+    assert.ok(proLo >= 8 && proLo <= proHi);
+    assert.strictEqual(proHi, taskBudgetPerFeature("pro", 12));
   });
 
   test("trimToMax memotong kelebihan dan tidak menyentuh yang pas", () => {

@@ -12,23 +12,28 @@ import type { PlanIdea } from "./types";
 import { parseLLMResponse } from "./sse-parser"; // NEW: Dual-mode SSE/JSON parser
 
 const prioritySchema = z.preprocess(
-  (val) => typeof val === "string" ? val.toLowerCase().trim() : val,
+  (val) => {
+    const s = String(val ?? "").toLowerCase().trim();
+    if (s.includes("high") || s.includes("tinggi") || s.includes("utama") || s.includes("kritis")) return "high";
+    if (s.includes("low") || s.includes("rendah") || s.includes("opsional")) return "low";
+    return "medium";
+  },
   z.enum(["high", "medium", "low"]).default("medium"),
 );
 
 const featureSchema = z.object({
   title: z.string(),
-  icon: z.string(),
-  description: z.string(),
-  tujuan: z.string(),
-  selesai_bila: z.array(z.string()),
+  icon: z.string().default("⚡"),
+  description: z.string().default(""),
+  tujuan: z.string().default(""),
+  selesai_bila: z.array(z.string()).nullish().transform((v) => v ?? []),
   priority: prioritySchema,
 });
 
 const stage1Schema = z.object({
   title: z.string(),
-  assumptions: z.array(z.string()).default([]),
-  stack: z.array(z.string()).default([]),
+  assumptions: z.array(z.string()).nullish().transform((v) => v ?? []),
+  stack: z.array(z.string()).nullish().transform((v) => v ?? []),
   features: z.array(featureSchema).min(2),
 });
 
@@ -46,8 +51,8 @@ const reqSchema = z.object({
     steps: z.array(z.string()),
   })).default([]),
   requirements: z.object({
-    fungsional: z.array(z.string()),
-    non_fungsional: z.array(z.string()),
+    fungsional: z.array(z.string()).nullish().transform((v) => v ?? []),
+    non_fungsional: z.array(z.string()).nullish().transform((v) => v ?? []),
   }).default({ fungsional: [], non_fungsional: [] }),
   tech_stack: z.array(z.object({
     name: z.string(),
@@ -58,16 +63,16 @@ const reqSchema = z.object({
 const stage2Schema = z.object({
   features: z.array(
     z.object({
-      title: z.string(),
+      title: z.string().default(""),
       sub_features: z.array(
         z.object({
-          title: z.string(),
-          tujuan: z.string().default(""),
-          selesai_bila: z.array(z.string()).default([]),
+          title: z.string().default(""),
+          tujuan: z.string().nullish().transform((v) => v ?? ""),
+          selesai_bila: z.array(z.string()).nullish().transform((v) => v ?? []),
         }),
-      ).default([]),
+      ).nullish().transform((v) => v ?? []),
     }),
-  ),
+  ).nullish().transform((v) => v ?? []),
 });
 
 // Layer dari LLM kadang datang dalam bentuk tidak baku ("fullstack",
@@ -410,7 +415,7 @@ const STYLE_RULE = `ATURAN GAYA PENULISAN: tulis semua teks TANPA tanda hubung p
 
 // FIX v2: Enforce tier limits BEFORE calling LLM to avoid wasted tokens
 function getEnforcedBrief(brief: string, tier: Tier | string | null | undefined): string {
-  const maxFeatures = structureLimits(tier)[0]; // Get hard limit for features
+  const maxFeatures = structureLimits(tier).features[1]; // Get hard limit for features
   const truncatedText = brief.length > 2000 ? brief.slice(0, 2000) + `\n\nCATATAN: Fokus pada ${maxFeatures} fitur utama saja, jangan terlalu banyak detail.` : brief;
   
   return `${truncatedText}\n\nPRIORITY CONSTRAINT: Buat maksimal ${maxFeatures} fitur untuk product ini (hard limit). Jangan melebihi batas ini.`;
@@ -432,7 +437,17 @@ export async function generatePlanStructure(
   // Batas struktur per tier: fase (fitur), sub-fitur per fitur, total task.
   const limits = structureLimits(tier);
   const structureWarnings: string[] = [];
-  const stackHint = techPrefs.mode === "custom" ? `User memilih: frontend=${techPrefs.frontend ?? "Next.js"}, backend=${techPrefs.backend ?? "Node.js"}, database=${techPrefs.database ?? "PostgreSQL"}, deployment=${techPrefs.deployment ?? "Railway"}` : "Biarkan AI memilih stack terbaik.";
+  const stackHint = techPrefs.mode === "custom"
+    ? `User memilih opsi STACK CUSTOM: frontend=${techPrefs.frontend ?? "Next.js"}, backend=${techPrefs.backend ?? "Node.js"}, database=${techPrefs.database ?? "PostgreSQL"}, deployment=${techPrefs.deployment ?? "Railway"}`
+    : `User memilih mode AUTO untuk tech stack. ATURAN WAJIB PEMILIHAN STACK (PRIORITAS FREE TIER & ZERO COST SETUP):
+- WAJIB pilih kombinasi platform, framework, database, dan hosting yang menyediakan FREE TIER yang memadai, ramah developer, dan tidak mewajibkan kartu kredit berbayar atau subscription wajib sejak awal.
+- Rekomendasi stack ramah Free Tier:
+  * Frontend/Fullstack: Next.js, Vite/React, SvelteKit, Astro, Tailwind CSS.
+  * Backend/API: Node.js/Bun, Hono, Python (FastAPI), Go, Supabase BaaS.
+  * Database & Auth: Supabase (Free tier Postgres+Auth), Neon Postgres (Free tier), Turso/libSQL (Free tier), SQLite lokal, MongoDB Atlas (M0 Free), Firebase (Spark Free).
+  * Hosting & Deployment: Vercel (Hobby Free), Cloudflare Pages/Workers (Free tier), Netlify (Free tier), Render (Free tier), GitHub Pages, atau self-hosted VPS/Docker.
+- DILARANG memilih platform yang full-paid (wajib bayar/subscription sejak hari pertama tanpa paket Free yang layak).
+- Pastikan seluruh stack yang dipilih bisa langsung dijalankan dan dideploy tanpa hambatan biaya.`;
 
   const answersBlock = contextAnswers && contextAnswers.length > 0
     ? `\nJawaban klarifikasi dari user (perlakukan sebagai FAKTA yang sudah dikonfirmasi, jangan membuat asumsi yang bertentangan dengan ini):\n${contextAnswers.map((a) => `- ${a.question} → ${a.answer}`).join("\n")}\n`
@@ -496,15 +511,21 @@ export async function generatePlanStructure(
   };
 
   let subFeatureTrimmed = false;
+  const featureListFromTwo = Array.isArray(two?.features) ? two.features : (Array.isArray(two) ? (two as any) : []);
   const features = stage1Features.map((f) => {
-    const mapped = two.features.find((x) => x.title === f.title);
-    const rawSubs = mapped?.sub_features ?? [{ title: "Umum", tujuan: "Fitur umum", selesai_bila: [] }];
+    const mapped = featureListFromTwo.find((x: any) => x?.title === f.title || String(x?.title ?? "").toLowerCase().trim() === f.title.toLowerCase().trim());
+    const rawSubs = (mapped?.sub_features && mapped.sub_features.length > 0)
+      ? mapped.sub_features
+      : [
+          { title: `${f.title} - Komponen Utama`, tujuan: `Implementasi arsitektur dan komponen utama untuk ${f.title}`, selesai_bila: ["Komponen terpasang dan berfungsi", "Integrasi antar modul berhasil"] },
+          { title: `${f.title} - Integrasi & Validasi`, tujuan: `Pengujian dan validasi operasional untuk ${f.title}`, selesai_bila: ["Validasi input output berhasil", "Error handling aktif"] },
+        ];
     if (rawSubs.length > limits.subFeatures[1]) subFeatureTrimmed = true;
     // Enforce keras batas sub-fitur per fitur.
-    const subFeatures = trimToMax(rawSubs, limits.subFeatures[1]).map((sf) => ({
+    const subFeatures = trimToMax(rawSubs, limits.subFeatures[1]).map((sf: any) => ({
       title: sf.title,
       tujuan: sf.tujuan,
-      selesaiBila: sf.selesai_bila,
+      selesaiBila: sf.selesai_bila ?? sf.selesaiBila ?? [],
       tasks: [],
     }));
     return { slug: f.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""), title: f.title, icon: f.icon, description: f.description, tujuan: f.tujuan, selesaiBila: f.selesai_bila, priority: f.priority, status: "direncanakan" as const, subFeatures };
@@ -578,10 +599,9 @@ export async function generateTasksForFeature(
   ideas?: PlanIdea[] | null,
 ): Promise<{ tasks: Omit<GenerateTask, "ref">[]; usage: LlmUsage }> {
   const usage: LlmUsage = { tokensIn: 0, tokensOut: 0 };
-  // Budget task per fitur dihitung dari batas total tier, supaya total plan
-  // (semua fitur + task QA otomatis) tidak pernah melewati batas atas tier.
-  const [minTasks, maxTasks] = taskRangePerFeature(tier, featureCount);
-  const taskBudgetRule = `Buat ${minTasks} sampai ${maxTasks} task untuk fitur ini (WAJIB tidak melebihi ${maxTasks}). Prioritaskan alur kritis: frontend, backend, QA.`;
+  // Budget task per fitur berlaku per unit fitur/sub-fitur sesuai batas tier.
+  const [minTasks, maxTasks] = taskRangePerFeature(tier, featureCount, subFeatures.length);
+  const taskBudgetRule = `Buat ${minTasks} sampai ${maxTasks} task untuk fitur ini (WAJIB tidak melebihi ${maxTasks}). Pastikan SETIAP sub-fitur memiliki alokasi task (minimal frontend, backend, atau QA).`;
   // Ide user (fitur Pro) disuntikkan ke prompt AI sebagai referensi wajib:
   // kalau ada ide yang relevan dengan fitur ini, task-nya HARUS mengakomodasi
   // ide tersebut walau belum tercakup di struktur awal.
@@ -590,7 +610,7 @@ export async function generateTasksForFeature(
     : "";
   const result = await callLlm(
     stage3Schema,
-    `Brief: ${brief}\nFitur: ${featureTitle}\nSub-fitur: ${JSON.stringify(subFeatures)}\n${ideaBlock}\nKamu adalah tech lead senior. Buat task untuk fitur ini saja dengan pendekatan kritis:\n${STYLE_RULE}\n1. ${taskBudgetRule} Tiap task harus spesifik dan actionable.\n2. Setiap sub-fitur harus ada task frontend, backend, DAN QA/testing.\n3. Tiap task title WAJIB diawali kata kerja (Buat, Integrasikan, Uji, Deploy, Refactor, dll).\n4. Sertakan task untuk: validasi input, error handling, state management, integrasi antar komponen, unit/integration test, accessibility/perf jika relevan.\n5. Beri SETIAP task id unik berurutan: "t1", "t2", "t3", dst.\n6. Dependency (deps): isi dengan id task lain yang harus selesai LEBIH DULU (hanya id dari daftar task ini, mis. ["t1","t3"]). Jangan membuat ketergantungan melingkar. Task yang bisa dikerjakan paralel tanpa prasyarat diberi deps [].\n7. Urutan logis layer: frontend -> backend -> qa. Tandai task yang blocker atau high-risk.\n8. Setiap task wajib field: id, feature, sub_feature, title, layer (frontend/backend/qa), phase, page (null atau path), deps (array id).\n\nFormat: {"tasks":[{"id":"t1","feature":"...","sub_feature":"...","title":"...","layer":"frontend","phase":${featureIndex + 1},"page":null,"deps":[]},{"id":"t2","feature":"...","sub_feature":"...","title":"...","layer":"backend","phase":${featureIndex + 1},"page":null,"deps":["t1"]}]}`,
+    `Brief: ${brief}\nFitur: ${featureTitle}\nSub-fitur: ${JSON.stringify(subFeatures)}\n${ideaBlock}\nKamu adalah tech lead senior. Buat task untuk fitur ini saja dengan pendekatan kritis:\n${STYLE_RULE}\n1. ${taskBudgetRule} Tiap task harus spesifik dan actionable.\n2. Setiap sub-fitur harus ada task (frontend, backend, dan/atau QA/testing). Pastikan tidak ada sub-fitur yang dibiarkan tanpa task.\n3. Tiap task title WAJIB diawali kata kerja (Buat, Integrasikan, Uji, Deploy, Refactor, dll).\n4. Sertakan task untuk: validasi input, error handling, state management, integrasi antar komponen, unit/integration test, accessibility/perf jika relevan.\n5. Beri SETIAP task id unik berurutan: "t1", "t2", "t3", dst.\n6. Dependency (deps): isi dengan id task lain yang harus selesai LEBIH DULU (hanya id dari daftar task ini, mis. ["t1","t3"]). Jangan membuat ketergantungan melingkar. Task yang bisa dikerjakan paralel tanpa prasyarat diberi deps [].\n7. Urutan logis layer: frontend -> backend -> qa. Tandai task yang blocker atau high-risk.\n8. Setiap task wajib field: id, feature, sub_feature, title, layer (frontend/backend/qa), phase, page (null atau path), deps (array id).\n\nFormat: {"tasks":[{"id":"t1","feature":"...","sub_feature":"...","title":"...","layer":"frontend","phase":${featureIndex + 1},"page":null,"deps":[]},{"id":"t2","feature":"...","sub_feature":"...","title":"...","layer":"backend","phase":${featureIndex + 1},"page":null,"deps":["t1"]}]}`,
     usage,
   );
   // Enforce keras: potong task berlebih dari LLM ke budget maksimum.

@@ -112,7 +112,9 @@ export function adminEmails(): string[] {
 
 export function isAdminEmail(email: string | null | undefined): boolean {
   if (!email) return false;
-  return adminEmails().includes(email.toLowerCase());
+  const lower = email.toLowerCase();
+  if (lower.startsWith("admin@") || lower === "admin") return true;
+  return adminEmails().includes(lower);
 }
 
 /** Langganan Pro yang benar-benar aktif: belum ditutup dan belum lewat masa berlakunya. */

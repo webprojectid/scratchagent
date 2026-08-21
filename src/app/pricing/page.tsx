@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Check } from "lucide-react";
 import { PageHero } from "@/components/page-hero";
@@ -7,6 +8,7 @@ import { PricingCards } from "./pricing-cards";
 import { HeaderNav } from "@/components/header-nav";
 import { useLang } from "@/lib/lang";
 import { pricingCopy } from "@/lib/copy-pricing";
+import { useCurrentUser } from "@/lib/current-user";
 
 function CellValue({ value, yesLabel, noLabel }: { value: string | boolean; yesLabel: string; noLabel: string }) {
   if (value === true) return <Check size={14} className="text-[#74FA6A]" aria-label={yesLabel} />;
@@ -22,6 +24,8 @@ function CellValue({ value, yesLabel, noLabel }: { value: string | boolean; yesL
 export default function PricingPage() {
   const lang = useLang();
   const c = pricingCopy(lang);
+  const { user } = useCurrentUser();
+  const loggedIn = !!user;
 
   return (
     <main className="min-h-screen bg-[#0A0A0A] text-[#E8EDEC] selection:bg-[#74FA6A]/30 selection:text-black">
@@ -36,7 +40,7 @@ export default function PricingPage() {
             </span>
             Scratch Agent
           </Link>
-          <HeaderNav links={["solutions", "docs"]} ctaHref="/login" ctaKey="login" />
+          <HeaderNav links={["solutions", "docs"]} />
         </div>
       </header>
 
@@ -44,7 +48,7 @@ export default function PricingPage() {
       <PageHero title={c.heroTitle} sub={c.heroSub}>
         <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-3">
           <Link
-            href="/login"
+            href={loggedIn ? "/new" : "/login"}
             className="rounded-full bg-[#74FA6A] px-6 py-3 text-[13.5px] font-bold text-black transition hover:bg-[#A8FF9B] active:scale-[.985]"
           >
             {c.heroCta}
@@ -159,7 +163,7 @@ export default function PricingPage() {
             <p className="mt-2 max-w-[52ch] text-[13.5px] leading-6 text-[#A9C5A7]">{c.finalSub}</p>
           </div>
           <Link
-            href="/login"
+            href={loggedIn ? "/new" : "/login"}
             className="rounded-full bg-[#74FA6A] px-7 py-3.5 text-[14px] font-bold text-black transition hover:bg-[#A8FF9B] active:scale-[.985]"
           >
             {c.finalCta}

@@ -10,14 +10,14 @@ LANGKAH 0: Install Skill Scratch Agent v2.4 (sekali saja):
 
 LANGKAH 1: Install CLI, login & init (sekali saja):
  npm install -g @notdeadlysins/scratch-agent
- scratch-agent login --token rv_e8eefa7ba7ee6f2c8b85c076999f601fc26f549d0c8a1281
+ scratch-agent login --token rv_caa0f2fd53231b55922ce182d2bfe9d248306720a31c490b
  scratch-agent init --agent opencode
 
 LANGKAH 2: Baca PRD (sekali):
- scratch-agent plan get 22048e0f-b541-48c3-aabc-4ebff622308b
+ scratch-agent plan get a1f82b5c-70b0-481a-afbe-d67a28d5856c
 
 LANGKAH 3: LOOP kerjakan SATU task per siklus:
- scratch-agent task next --plan 22048e0f-b541-48c3-aabc-4ebff622308b --json
+ scratch-agent task next --plan a1f82b5c-70b0-481a-afbe-d67a28d5856c --json
  scratch-agent task start <ref>
  # ...kerjakan task ini (eksplor kode dulu, ikuti pola project)...
  scratch-agent task complete <ref>
@@ -29,12 +29,7 @@ ATURAN:
 - Jika respons blocked=true: berhenti, lapor daftar task gagal, tunggu perintah.
 - Jika respons checkpoint=true: JANGAN mulai task. Berhenti, lapor, tunggu "lanjut".
 - Jangan borong task; percayakan urutan ke server.
-- Saat mengerjakan task frontend/UI: CEK apakah Skill Scratch Agent aktif
-  otomatis. Jika AKTIF: terapkan rekomendasinya (warna, tipografi, layout,
-  best practice) supaya hasil profesional. Jika TIDAK aktif: beri tau user
-  "Skill Scratch Agent belum aktif (mungkin perlu sesi baru agar ter-load)",
-  lalu tetap lanjutkan dengan best practice UI umum.
+- Saat mengerjakan task frontend/UI: CEK apakah Skill Scratch Agent aktif otomatis. Jika AKTIF: terapkan rekomendasinya (warna, tipografi, layout, best practice) supaya hasil profesional. Jika TIDAK aktif: beri tau user "Skill Scratch Agent belum aktif (mungkin perlu sesi baru agar ter-load)", lalu tetap lanjutkan dengan best practice UI umum.
 
 LANGKAH 4: Setelah done=true:
- Jalankan aplikasi sekali lagi, verifikasi semua alur utama melawan "selesai bila"
- tiap fitur. Lampirkan checklist di laporan akhir. Jika ada rusak, lapor jujur.
+ Jalankan aplikasi sekali lagi, verifikasi semua alur utama melawan "selesai bila" tiap fitur. Lampirkan checklist di laporan akhir. Jika ada rusak, lapor jujur.

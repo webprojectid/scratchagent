@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { CheckCircle2, Sparkles, Users, XCircleIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,6 +9,7 @@ import * as PricingCard from "@/components/ui/pricing-card";
 import { cn } from "@/lib/utils";
 import { useLang } from "@/lib/lang";
 import { pricingCopy } from "@/lib/copy-pricing";
+import { getCurrentUser } from "@/lib/current-user";
 
 type Billing = "monthly" | "quarterly";
 
@@ -23,6 +25,7 @@ function formatRb(value: number): string {
 }
 
 export function PricingCards() {
+  const router = useRouter();
   const lang = useLang();
   const c = pricingCopy(lang);
   const en = lang === "en";
@@ -31,6 +34,16 @@ export function PricingCards() {
   const proPrice = billing === "monthly" ? `Rp ${formatRb(PRO_MONTHLY_PRICE)}` : `Rp ${formatRb(QUARTER_PRICE)}`;
   const proPeriod = billing === "monthly" ? c.periodMonth : c.periodQuarter;
   const proStruck = billing === "quarterly" ? `Rp ${formatRb(QUARTER_FULL)}` : undefined;
+
+  /** Check auth and redirect to /new or /login */
+  const handleFreePlan = async () => {
+    const user = await getCurrentUser();
+    if (user) {
+      router.push("/new");
+    } else {
+      router.push("/login");
+    }
+  };
 
   /** Fitur Free yang "di-lock" dan baru terbuka di Pro — ditampilkan redup di kartu Free. */
   const freeLocked = en
@@ -105,7 +118,7 @@ export function PricingCards() {
               className="w-full rounded-full border-white/15 font-semibold text-white transition-colors hover:border-[#74FA6A]/50 hover:bg-white/[.06] hover:text-[#74FA6A] active:scale-[.985]"
               asChild
             >
-              <Link href="/login">{c.freeCta}</Link>
+              <Link href="/login" onClick={(e) => { e.preventDefault(); handleFreePlan(); }}>{c.freeCta}</Link>
             </Button>
           </PricingCard.Header>
           <PricingCard.Body>

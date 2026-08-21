@@ -1,28 +1,24 @@
 /**
- * Batas struktur PRD per tier. Dipaksakan dua lapis:
- * 1. Prompt LLM diberi rentang eksplisit (bimbingan utama).
- * 2. Enforce keras di kode: trim fitur/sub-fitur/task ke maksimum,
- *    budget task per fitur dihitung floor supaya total + task QA
- *    tidak pernah melebihi batas atas.
- *
- * Free: fase 4-8, sub-fitur 3-5 per fitur, total 14-20 task.
- * Pro : fase 10-15, sub-fitur 8-12 per fitur, total 15-25 task.
+ * Batas struktur PRD per tier.
+ * Perhitungan berlaku per unit (fitur/fase dan sub-fitur):
+ * - Free: 4-8 fase per plan, 3-5 sub-fitur per fase, 8-12 task per fitur.
+ * - Pro : 10-15 fase per plan, 12-20 sub-fitur per fase, 15-25 task per fitur.
  */
 
 export type Tier = "free" | "pro";
 
 export interface StructureLimits {
-  /** Jumlah fase (= jumlah fitur, tiap fitur jadi satu fase). */
+  /** Jumlah fase (= jumlah fitur, tiap fitur jadi satu fase) per plan. */
   features: [min: number, max: number];
-  /** Sub-fitur per fitur. */
+  /** Sub-fitur per fitur (fase). */
   subFeatures: [min: number, max: number];
-  /** Total task satu plan, termasuk task QA & Integrasi. */
+  /** Batas task per fitur (fase). */
   tasks: [min: number, max: number];
 }
 
 export const STRUCTURE_LIMITS: Record<Tier, StructureLimits> = {
-  free: { features: [4, 8], subFeatures: [3, 5], tasks: [14, 20] },
-  pro: { features: [10, 15], subFeatures: [8, 12], tasks: [15, 25] },
+  free: { features: [4, 8], subFeatures: [3, 5], tasks: [8, 12] },
+  pro: { features: [10, 15], subFeatures: [12, 20], tasks: [15, 25] },
 };
 
 /** Jumlah task yang disuntikkan otomatis sebagai sub-fitur "QA & Integrasi". */
@@ -36,23 +32,25 @@ export function structureLimits(tier: Tier | string | null | undefined): Structu
 }
 
 /**
- * Budget task maksimum per fitur supaya total plan (fitur x budget + task QA)
- * tidak pernah melewati batas atas tier. Floor disengaja: kombinasi fitur
- * banyak + batas task kecil (mis. Pro 15 fase, 25 task) hanya bisa dipenuhi
- * dengan 1-2 task per fitur, dan floor menjamin tidak pernah overshoot.
+ * Budget task maksimum per fitur.
+ * Batas task berlaku per fitur/sub-fitur (bukan dibagi rata untuk seluruh plan),
+ * sehingga setiap sub-fitur memiliki alokasi task yang cukup.
  */
-export function taskBudgetPerFeature(tier: Tier | string | null | undefined, featureCount: number): number {
+export function taskBudgetPerFeature(tier: Tier | string | null | undefined, _featureCount = 1): number {
   const limits = structureLimits(tier);
-  if (featureCount <= 0) return limits.tasks[1];
-  return Math.max(1, Math.floor((limits.tasks[1] - QA_INJECTED_TASKS) / featureCount));
+  return limits.tasks[1];
 }
 
 /** Rentang task per fitur untuk dipajang di prompt LLM. */
-export function taskRangePerFeature(tier: Tier | string | null | undefined, featureCount: number): [number, number] {
+export function taskRangePerFeature(
+  tier: Tier | string | null | undefined,
+  _featureCount = 1,
+  subFeatureCount = 3,
+): [number, number] {
   const limits = structureLimits(tier);
-  const maxPer = taskBudgetPerFeature(tier, featureCount);
-  const minPer = Math.max(1, Math.floor((limits.tasks[0] - QA_INJECTED_TASKS) / Math.max(1, featureCount)));
-  return [Math.min(minPer, maxPer), maxPer];
+  const maxPer = limits.tasks[1];
+  const minPer = Math.min(Math.max(subFeatureCount, limits.tasks[0]), maxPer);
+  return [minPer, maxPer];
 }
 
 /** Potong kelebihan ke maksimum tier (enforce keras hasil LLM). */

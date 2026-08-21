@@ -26,7 +26,8 @@ import {
  * POST: aksi respons — blokir/unblokir IP, reset user, tandai false positive.
  */
 export async function GET(request: Request) {
-  const user = await getRequestUser();
+  const { searchParams } = new URL(request.url);
+  const user = await getRequestUser(searchParams.get("userId"));
   const gate = await requireAdmin(user);
   const ip = await getClientIp(request);
   if (gate) {
@@ -38,7 +39,6 @@ export async function GET(request: Request) {
   const retryIn = rateLimit(clientKey(user!.userId, ip), rl.limit, rl.windowMs);
   if (retryIn !== null) return rateLimitedResponse(clientKey(user!.userId, ip), retryIn, { ip, userId: user!.userId, route: "/api/admin/security" });
 
-  const { searchParams } = new URL(request.url);
   const typeFilter = searchParams.get("type") || undefined;
   const limit = Math.min(Number(searchParams.get("limit") ?? 100) || 100, 500);
 

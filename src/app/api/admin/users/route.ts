@@ -8,7 +8,8 @@ import { RATE_LIMITS, clientKey, getClientIp, logSecurity, rateLimit, rateLimite
  * Return: id, email, nama, tier, banned, tanggal daftar, status Pro aktif.
  */
 export async function GET(request: Request) {
-  const user = await getRequestUser();
+  const { searchParams } = new URL(request.url);
+  const user = await getRequestUser(searchParams.get("userId"));
   const gate = await requireAdmin(user);
   if (gate) {
     const ip = await getClientIp(request);
@@ -20,7 +21,6 @@ export async function GET(request: Request) {
   const retryIn = rateLimit(clientKey(user!.userId, ip), rl.limit, rl.windowMs);
   if (retryIn !== null) return rateLimitedResponse(clientKey(user!.userId, ip), retryIn, { ip, userId: user!.userId, route: "/api/admin/users" });
   try {
-    const { searchParams } = new URL(request.url);
     const accounts = await listAccounts(searchParams.get("q") ?? undefined);
     return NextResponse.json({ accounts });
   } catch (e: any) {

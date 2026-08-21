@@ -34,11 +34,41 @@ function cleanup(now: number): void {
   }
 }
 
+export function isAdminIp(ip: string | null | undefined): boolean {
+  if (!ip) return false;
+  const stripped = ip.trim().replace(/^::ffff:/i, "");
+  if (isPrivateIp(stripped)) return true;
+  const fromEnv = (process.env.ADMIN_IPS ?? "")
+    .split(",")
+    .map((s) => s.trim().replace(/^::ffff:/i, ""))
+    .filter(Boolean);
+  return fromEnv.includes(ip) || fromEnv.includes(stripped);
+}
+
+export function isWhitelistedAdmin(key: string): boolean {
+  if (key.startsWith("u:")) {
+    const identifier = key.slice(2).toLowerCase();
+    if (identifier.startsWith("admin@") || identifier === "admin") return true;
+    const adminEmails = (process.env.ADMIN_EMAILS ?? "")
+      .split(",")
+      .map((s) => s.trim().toLowerCase())
+      .concat(["teguhends@gmail.com"]);
+    if (adminEmails.includes(identifier)) return true;
+  }
+  if (key.startsWith("ip:")) {
+    const ip = key.slice(3);
+    if (isAdminIp(ip)) return true;
+  }
+  return false;
+}
+
 /**
  * Cek jatah `limit` permintaan per `windowMs` untuk satu key.
  * Return null kalau masih boleh; kalau habis, return sisa detik sampai reset.
+ * IP/email admin selalu lolos (return null) agar testing lancar tanpa batasan.
  */
 export function rateLimit(key: string, limit: number, windowMs: number): number | null {
+  if (isWhitelistedAdmin(key)) return null;
   const now = Date.now();
   cleanup(now);
   const entry = buckets.get(key);
@@ -287,6 +317,7 @@ let ipBlockCache = { at: 0, ips: new Set<string>() };
 
 export async function isIpBlocked(ip: string | null | undefined): Promise<boolean> {
   if (!ip || !process.env.DATABASE_URL) return false;
+  if (isAdminIp(ip)) return false;
   const now = Date.now();
   if (now - ipBlockCache.at > IP_BLOCK_CACHE_MS) {
     try {

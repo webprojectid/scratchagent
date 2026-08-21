@@ -101,7 +101,7 @@ const detectStreamingMode = async (
         }
       });
       
-      response.body = restoredStream as any;
+      Object.defineProperty(response, 'body', { value: restoredStream, configurable: true, writable: true });
       
       if (options.logDebug) {
         console.log("[SSE Parser] Detected JSON mode:", text.substring(0, 50));

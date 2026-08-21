@@ -118,8 +118,9 @@ export default function Prefs() {
                 <div className="flex items-center gap-2.5">
                   <Sparkles className="text-[#74FA6A]" size={16} />
                   <span className="font-mono text-[12px] tracking-[.02em] text-white">auto</span>
+                  <span className="rounded-full border border-[#74FA6A]/40 bg-[#74FA6A]/10 px-2 py-0.5 font-mono text-[9px] font-bold text-[#74FA6A]">free-tier friendly</span>
                 </div>
-                <p className="mt-2.5 font-mono text-[11px] leading-5 text-[#8C97A5]">brief -{">"} domain detect -{">"} stack map dari registry 60+ opsi.</p>
+                <p className="mt-2.5 font-mono text-[11px] leading-5 text-[#8C97A5]">brief -{">"} domain detect -{">"} stack ramah Free Tier (tanpa wajib kartu kredit / subscription).</p>
               </button>
               <button onClick={() => setCustom(true)} className={`rounded-[12px] border p-5 text-left transition ${custom ? "border-[#74FA6A] bg-[#0F1317]" : "border-white/10 bg-[#0F1317]/50 hover:border-white/20"}`}>
                 <div className="flex items-center gap-2.5">
@@ -136,7 +137,7 @@ export default function Prefs() {
                   <p className="font-mono text-[10px] tracking-[.14em] text-white/30">AI STEPS</p>
                   <div className="mt-3 space-y-2.5 font-mono text-[11px] leading-5 text-[#8C97A5]">
                     <p><span className="text-white">1.</span> parse brief → domain, platform target, data model</p>
-                    <p><span className="text-white">2.</span> map → frontend/backend/db/deploy dari 60+ registry</p>
+                    <p><span className="text-white">2.</span> map → pilih platform dengan paket Free Tier yang memadai & hemat biaya</p>
                     <p><span className="text-white">3.</span> expand → asumsi, fitur, sub-fitur, edge cases</p>
                     <p><span className="text-white">4.</span> graph → phase, layer, deps acyclic, QA last</p>
                   </div>
