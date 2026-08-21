@@ -82,3 +82,43 @@
 [397s] NEXT F02-S03-T18 fase 2/18 backend [CHECKPOINT: lapisan/fase berganti] :: Buat layanan penyimpanan foto dengan validasi tipe file, ukuran file, dimensi gambar, dan nama file aman
 [409s] DONE F02-S03-T18 (25/505)
 CAP tercapai (25 task dikerjakan). Loop berhenti; sisa task tetap pending di server.
+=== LOOP AGENT plan 62ffec38-8311-4e92-a08b-86669ebb4959 (19 task, cap semua) ===
+[559s] NEXT F01-S01-T01 fase 1/6 frontend :: Buat Halaman Login Dengan Validasi Form Realtime Dan Penanganan Status Sesi Client
+[566s] DONE F01-S01-T01 (1/19)
+[567s] NEXT F01-S02-T03 fase 1/6 backend [CHECKPOINT: lapisan/fase berganti] :: Bangun Endpoint Autentikasi JWT Dan Middleware Verifikasi Role Kasir Pemilik
+[572s] DONE F01-S02-T03 (2/19)
+[573s] NEXT F01-S01-T02 fase 1/6 qa [CHECKPOINT: lapisan/fase berganti] :: Uji Integrasi Alur Login Verifikasi Token Dan Pembatasan Akses Peran Pengguna
+[578s] DONE F01-S01-T02 (3/19)
+[580s] NEXT F02-S01-T01 fase 2/6 frontend [CHECKPOINT: lapisan/fase berganti] :: Buat Halaman Form Manajemen Produk dengan State Management Validasi Client Side Dan Aksesibilitas
+[585s] DONE F02-S01-T01 (4/19)
+[586s] NEXT F02-S01-T02 fase 2/6 backend [CHECKPOINT: lapisan/fase berganti] :: Bangun API Endpoint CRUD Produk Kategori Relasi Bahan Dengan Validasi Server Dan Error Handling
+[591s] DONE F02-S01-T02 (5/19)
+[592s] NEXT F02-S01-T03 fase 2/6 qa [CHECKPOINT: lapisan/fase berganti] :: Lakukan Uji Integrasi Fitur Menu Sertakan Test Kasus Valid Invalid Dan Performa Aksesibilitas
+[597s] DONE F02-S01-T03 (6/19)
+[598s] NEXT F03-S01-T01 fase 3/6 frontend [CHECKPOINT: lapisan/fase berganti] :: Buat State Management dan Komponen UI untuk Menampilkan Daftar Menu Kategori Harga serta Update Keranjang Secara Langsung Mendukung Transaksi Selanjutnya
+[603s] DONE F03-S01-T01 (7/19)
+[604s] NEXT F03-S02-T02 fase 3/6 backend [CHECKPOINT: lapisan/fase berganti] :: Bangun API Endpoint Transaksi untuk Memproses Pembayaran Tunai QRIS serta Kurangi Stok Otomatis dari Database Menyertakan Validasi Error Handling
+[609s] DONE F03-S02-T02 (8/19)
+[610s] NEXT F03-S03-T03 fase 3/6 qa [CHECKPOINT: lapisan/fase berganti] :: Lakukan Uji Integrasi End To End Verifikasi Struk Cetak Digital Validasi Stok Terkurang Setelah Sukses Pembayaran Seluruh Alur
+[615s] DONE F03-S03-T03 (9/19)
+[617s] NEXT F04-S01-T01 fase 4/6 frontend [CHECKPOINT: lapisan/fase berganti] :: Build frontend dashboard displaying current stock levels and visual indicators for minimum thresholds
+[621s] DONE F04-S01-T01 (10/19)
+[623s] NEXT F04-S03-T03 fase 4/6 backend [CHECKPOINT: lapisan/fase berganti] :: Implement backend API handling automatic stock deductions and creating audit records for manual adjustments
+[628s] DONE F04-S03-T03 (11/19)
+[629s] NEXT F04-S02-T02 fase 4/6 qa [CHECKPOINT: lapisan/fase berganti] :: Validate stock transaction integrity and verify automated alerts trigger correctly near threshold boundaries
+[634s] DONE F04-S02-T02 (12/19)
+[635s] NEXT F05-S02-T03 fase 5/6 frontend [CHECKPOINT: lapisan/fase berganti] :: Bangun komponen frontend filter waktu dengan validasi input range dan state management untuk menyimpan kondisi filter
+[640s] DONE F05-S02-T03 (13/19)
+[641s] NEXT F05-S01-T01 fase 5/6 backend [CHECKPOINT: lapisan/fase berganti] :: Implementasi endpoint API backend untuk menghitung ringkasan pendapatan per jam serta fungsi export spreadsheet dengan error handling komprehensif
+[646s] DONE F05-S01-T01 (14/19)
+[647s] NEXT F05-S01-T02 fase 5/6 qa [CHECKPOINT: lapisan/fase berganti] :: Lakukan uji integrasi end-to-end untuk filter waktu, kalkulasi laporan otomatis, dan verifikasi kualitas file spreadsheet yang diekspor
+[652s] DONE F05-S01-T02 (15/19)
+[654s] NEXT F05-S99-T01 fase 6/6 qa [CHECKPOINT: lapisan/fase berganti] :: Jalankan aplikasi end-to-end
+[658s] DONE F05-S99-T01 (16/19)
+[660s] NEXT F05-S99-T02 fase 6/6 qa :: Uji setiap alur utama terhadap selesai bila
+[665s] DONE F05-S99-T02 (17/19)
+[666s] NEXT F05-S99-T03 fase 6/6 qa :: Perbaiki bug yang ditemukan
+[671s] DONE F05-S99-T03 (18/19)
+[672s] NEXT F05-S99-T04 fase 6/6 qa :: Bersihkan sisa stub dan console.log
+[677s] DONE F05-S99-T04 (19/19)
+done=true setelah 19 task. Selesai.

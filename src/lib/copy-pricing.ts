@@ -31,12 +31,12 @@ export function pricingCopy(lang: Lang) {
     comparison: [
       { label: en ? "Plan generates per 24 hours" : "Generate plan per 24 jam", free: "3", pro: en ? "Unlimited" : "Unlimited" },
       { label: en ? "PRD phases per plan" : "Fase PRD per plan", free: "4–8", pro: "10–15" },
-      { label: en ? "Sub-features per phase" : "Sub-fitur per fase", free: "3–5", pro: "8–12" },
-      { label: en ? "Tasks per plan" : "Task per plan", free: "14–20", pro: "15–25" },
+      { label: en ? "Sub-features per phase" : "Sub-fitur per fase", free: "3–5", pro: "12–20" },
+      { label: en ? "Tasks per phase" : "Task per fase", free: "8–12", pro: "15–25" },
       { label: "Premium AI model", free: true, pro: true },
       { label: en ? "Priority queue" : "Antrean prioritas", free: false, pro: true },
       { label: en ? "Edit and delete plan structure" : "Edit dan delete struktur plan", free: false, pro: true },
-      { label: en ? "Export PRD and tasks" : "Export PRD dan task", free: false, pro: true },
+      { label: en ? "Add ideas via chat" : "Tambah ide via kolom chat", free: false, pro: true },
       { label: en ? "Private plans in the cloud" : "Plan privat di cloud", free: en ? "Forever" : "Selamanya", pro: en ? "Forever" : "Selamanya" },
       { label: "Support", free: en ? "Community" : "Komunitas", pro: "Private" },
     ] as { label: string; free: string | boolean; pro: string | boolean }[],
@@ -112,13 +112,13 @@ export function pricingCopy(lang: Lang) {
       ? [
           { text: "Premium AI model" },
           { text: "3 plan generates per 24 hours" },
-          { text: "Quick and lightweight PRD research" },
+          { text: "4–8 phases, 3–5 sub-features, 8–12 tasks per phase" },
           { text: "Private plans in the cloud, forever" },
         ]
       : [
           { text: "Premium AI model" },
           { text: "3 generate plan per 24 jam" },
-          { text: "PRD riset cepat dan ringan" },
+          { text: "4–8 fase, 3–5 sub-fitur, 8–12 task per fase" },
           { text: "Plan privat di cloud, selamanya" },
         ],
     proTagline: en ? "Deep research and takes a long time" : "Riset mendalam dan butuh waktu lama",
@@ -127,15 +127,15 @@ export function pricingCopy(lang: Lang) {
       ? [
           { text: "Everything in the Free plan included" },
           { text: "Unlimited plan generates", highlight: true },
-          { text: "Deeper PRD research: 10–15 phases, 8–12 sub-features, 15–25 tasks", highlight: true },
-          { text: "Add ideas, or delete phases, sub-features, and tasks", highlight: true },
+          { text: "Deeper PRD research: 10–15 phases, 12–20 sub-features, 15–25 tasks per phase", highlight: true },
+          { text: "Add ideas via chat (up to 2), or delete structure", highlight: true },
           { text: "Projects stored forever", highlight: true },
         ]
       : [
           { text: "Semua fitur dalam Free sudah termasuk" },
           { text: "Unlimited generate plan", highlight: true },
-          { text: "PRD riset lebih dalam: 10–15 fase, 8–12 sub-fitur, 15–25 task", highlight: true },
-          { text: "Tambah ide, atau delete fase, sub-fitur, dan task", highlight: true },
+          { text: "PRD riset lebih dalam: 10–15 fase, 12–20 sub-fitur, 15–25 task per fase", highlight: true },
+          { text: "Tambah ide chat (maks 2), atau delete struktur", highlight: true },
           { text: "Project disimpan selamanya", highlight: true },
         ],
     periodForever: en ? "forever" : "selamanya",

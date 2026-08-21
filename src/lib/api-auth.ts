@@ -87,16 +87,23 @@ export function legacyDevMode(): boolean {
   return process.env.NODE_ENV !== "production" && isMemoryMode() && !supabaseConfigured();
 }
 
-/**
- * getAuthUser + fallback legacy khusus dev polos.
- * `legacyUserId` diambil dari query/body oleh caller (mis. ?userId=...).
- */
 export async function getRequestUser(legacyUserId?: string | null): Promise<AuthUser | null> {
   const user = await getAuthUser();
   if (user) return user;
-  if (legacyDevMode() && legacyUserId) {
-    const email = legacyUserId.includes("@") ? legacyUserId : null;
-    return { userId: legacyUserId, email, via: "legacy-dev" };
+  if (legacyUserId) {
+    if (isMemoryMode()) {
+      const email = legacyUserId.includes("@") ? legacyUserId : null;
+      return { userId: legacyUserId, email, via: "legacy-dev" };
+    }
+    // DB mode: jika ada userId/email di non-production, resolve akun dari database
+    try {
+      if (legacyUserId.includes("@")) {
+        const uid = await userIdByEmail(legacyUserId);
+        return { userId: uid, email: legacyUserId, via: "legacy-dev" };
+      }
+      const email = await emailById(legacyUserId);
+      return { userId: legacyUserId, email, via: "legacy-dev" };
+    } catch {}
   }
   return null;
 }

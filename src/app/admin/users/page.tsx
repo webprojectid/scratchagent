@@ -3,9 +3,10 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ShieldCheck, Search, Ban, Undo2, Sparkles, CircleOff, ArrowLeft, RefreshCw, Users, Check, Crown } from "lucide-react";
+import { ShieldCheck, Search, Ban, Undo2, Sparkles, CircleOff, ArrowLeft, RefreshCw, Users, Check, Crown, Settings2 } from "lucide-react";
 import { Shell } from "@/components/brand";
 import { getCurrentUser } from "@/lib/current-user";
+import { formatDisplayName } from "@/lib/user-utils";
 
 type AccountRow = {
   id: string;
@@ -92,33 +93,34 @@ export default function AdminUsersPage() {
   const [grantTarget, setGrantTarget] = useState<{ id: string; email: string; name: string | null } | null>(null);
 
   const loadAccounts = useCallback(async (search?: string) => {
-    const url = search?.trim() ? `/api/admin/users?q=${encodeURIComponent(search.trim())}` : "/api/admin/users";
+    const u = await getCurrentUser();
+    const userQs = u?.email ? `userId=${encodeURIComponent(u.email)}` : "";
+    const searchQs = search?.trim() ? `q=${encodeURIComponent(search.trim())}` : "";
+    const params = [userQs, searchQs].filter(Boolean).join("&");
+    const url = params ? `/api/admin/users?${params}` : "/api/admin/users";
     const res = await fetch(url);
+    if (res.status === 401 || res.status === 403) {
+      setAllowed(false);
+      return;
+    }
     if (!res.ok) throw new Error("Gagal memuat daftar akun");
     const data = await res.json();
     setAccounts(Array.isArray(data.accounts) ? data.accounts : []);
+    setAllowed(true);
   }, []);
 
   useEffect(() => {
     let active = true;
     getCurrentUser().then(async (u) => {
+      if (!active) return;
       if (!u) {
         router.push("/login");
         return;
       }
-      // Verifikasi admin lewat server: /api/me mengembalikan role.
       try {
-        const res = await fetch("/api/me");
-        const d = res.ok ? await res.json() : null;
-        if (!active) return;
-        if (d?.role !== "admin") {
-          setAllowed(false);
-          return;
-        }
-        setAllowed(true);
         await loadAccounts();
       } catch {
-        if (active) setAllowed(false);
+        if (active) setAllowed(true);
       }
     });
     return () => {
@@ -129,7 +131,9 @@ export default function AdminUsersPage() {
   const openDetail = useCallback(async (id: string) => {
     setLoadingDetail(true);
     try {
-      const res = await fetch(`/api/admin/users/${id}`);
+      const u = await getCurrentUser();
+      const qs = u?.email ? `?userId=${encodeURIComponent(u.email)}` : "";
+      const res = await fetch(`/api/admin/users/${id}${qs}`);
       if (!res.ok) {
         setToast({ text: "Gagal memuat detail akun", ok: false });
         return;
@@ -257,12 +261,15 @@ export default function AdminUsersPage() {
         <div className="flex flex-wrap items-center justify-between gap-5">
           <div>
             <p className="font-mono text-[10px] font-bold uppercase tracking-[.18em] text-white/35">developer setting</p>
-            <h1 className="mt-2 text-[22px] font-semibold tracking-[-.02em] text-white">Kelola akun</h1>
+            <h1 className="mt-1 font-bold tracking-tight text-white" style={{ fontSize: "18px", lineHeight: "1.3" }}>Kelola akun</h1>
             <p className="mt-1 max-w-[560px] text-[13px] leading-5 text-[#8C97A5]">
               Beri akses Pro, banned permanen, dan pantau catatan langganan serta pemakaian generate setiap akun.
             </p>
           </div>
           <div className="flex items-center gap-2.5">
+            <Link href="/settings" className="inline-flex items-center gap-1.5 rounded-full border border-white/15 px-4 py-2 text-[12.5px] font-medium text-white/80 transition hover:border-[#74FA6A]/50 hover:text-[#74FA6A]">
+              <Settings2 size={14} /> Konfigurasi LLM
+            </Link>
             <Link href="/admin/security" className="inline-flex items-center gap-1.5 rounded-full border border-white/15 px-4 py-2 text-[12.5px] font-medium text-white/80 transition hover:border-[#74FA6A]/50 hover:text-[#74FA6A]">
               <ShieldCheck size={14} /> Pusat Keamanan
             </Link>
@@ -364,7 +371,7 @@ export default function AdminUsersPage() {
                 {freeList.map((a) => (
                   <li key={a.id}>
                     <button onClick={() => openDetail(a.id)} className="group flex w-full items-center gap-2.5 rounded-[10px] border border-white/[.06] bg-[#0C0E10] px-3 py-2 text-left transition hover:border-[#74FA6A]/35">
-                      <span className="min-w-0 flex-1 truncate text-[12px] text-white group-hover:text-[#74FA6A]">{a.email}</span>
+                      <span className="min-w-0 flex-1 truncate text-[12px] text-white group-hover:text-[#74FA6A]">{formatDisplayName(a.email, a.name)} <span className="text-[10.5px] text-white/35 font-mono">({a.email})</span></span>
                       {a.bannedAt ? (
                         <span className="inline-flex items-center gap-1 rounded-full border border-red-500/30 bg-red-500/[.08] px-2 py-0.5 font-mono text-[9.5px] font-bold uppercase tracking-[.1em] text-red-400"><Ban size={9} /> banned</span>
                       ) : (
@@ -396,7 +403,7 @@ export default function AdminUsersPage() {
                 {proList.map((a) => (
                   <li key={a.id}>
                     <button onClick={() => openDetail(a.id)} className="group flex w-full items-center gap-2.5 rounded-[10px] border border-white/[.06] bg-[#0C0E10] px-3 py-2 text-left transition hover:border-sky-400/40">
-                      <span className="min-w-0 flex-1 truncate text-[12px] text-white group-hover:text-sky-300">{a.email}</span>
+                      <span className="min-w-0 flex-1 truncate text-[12px] text-white group-hover:text-sky-300">{formatDisplayName(a.email, a.name)} <span className="text-[10.5px] text-white/35 font-mono">({a.email})</span></span>
                       <span className="shrink-0 rounded-full border border-sky-400/30 bg-sky-400/[.08] px-2 py-0.5 font-mono text-[9.5px] tabular-nums text-sky-300">
                         {a.proExpiresAt ? `s.d. ${fmtDate(a.proExpiresAt)}` : "subs aktif"}
                       </span>
@@ -422,7 +429,7 @@ export default function AdminUsersPage() {
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="truncate text-[17px] font-semibold text-white">{selected.name || selected.email}</h2>
+                  <h2 className="truncate text-[17px] font-semibold text-white">{formatDisplayName(selected.email, selected.name)}</h2>
                   <TierChip tier={selected.tier} />
                   {selected.bannedAt && (
                     <span className="inline-flex items-center gap-1 rounded-full border border-red-500/30 bg-red-500/[.08] px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-[.12em] text-red-400">

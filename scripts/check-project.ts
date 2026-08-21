@@ -6,7 +6,7 @@ const run = async () => {
   });
   await client.connect();
   
-  const planId = '07919ec1-751d-4f46-9c22-ac9d8be26f59';
+  const planId = '9ade6972-7792-43d7-beac-2f4a53fda9fd';
   
   // Get plan
   const plan = await client.query('SELECT id, title, brief, status, created_at FROM plans WHERE id = $1', [planId]);
