@@ -5,14 +5,14 @@ export function homeCopy(lang: Lang) {
   const en = lang === "en";
   return {
     banner: en
-      ? "Scratch Agent is free forever. Need more? Upgrade to Pro"
-      : "Scratch Agent selamanya gratis. Jika membutuhkan lebih silahkan upgrade ke Pro",
+      ? "Scratch Agent is free forever. Need more? Go Pro"
+      : "Scratch Agent gratis selamanya. Butuh lebih? Upgrade ke Pro",
 
     heroA: en ? "A clear plan." : "Rencana yang jelas.",
     heroB: en ? "An agent that keeps moving." : "Agent yang terus bergerak.",
     heroSub: en
-      ? "Turn a brief into ordered tasks, ready-to-use context, and a next step your agent can act on right away."
-      : "Ubah brief menjadi task terurut, konteks siap pakai, dan langkah berikutnya yang bisa langsung dikerjakan agent.",
+      ? "Write a short brief. Get ordered tasks and ready-to-use context, so your agent can start on the next step right away."
+      : "Tulis brief singkat, dapat task terurut dan konteks siap pakai. Agent tinggal jalan.",
     heroStart: en ? "Start" : "Mulai",
     heroDemo: en ? "Watch the demo" : "Lihat demo",
 
@@ -24,7 +24,7 @@ export function homeCopy(lang: Lang) {
     mockProjectName: "FutsalGo",
     mockPhaseOrder: en ? ["Search", "Booking", "Payment"] : ["Pencarian", "Booking", "Pembayaran"],
     mockSubFeatureTitle: "SUB-FITUR",
-    mockSubFeatures: en ? ["Daily schedule", "Slot selection", "Realtime check"] : ["Jadwal harian", "Pemilihan slot", "Verifikasi realtime"],
+    mockSubFeatures: en ? ["Daily schedule", "Slot selection", "Real-time check"] : ["Jadwal harian", "Pemilihan slot", "Verifikasi realtime"],
     mockTaskTitle: "TASK",
     mockTasks: en ? ["Build schedule page", "Slot booking API", "Payment integration"] : ["Buat halaman jadwal", "API booking slot", "Integrasi payment"],
     mockAgentLabel: en ? "active agent" : "agent aktif",
@@ -44,7 +44,7 @@ export function homeCopy(lang: Lang) {
           { label: "LIVE PROGRESS", title: "Watch the agent move.", copy: "Five second polling. Telemetry stays visible." },
         ]
       : [
-          { label: "PRD ENGINE", title: "Brief \u2192 graph terurut.", copy: "Asumsi diperkaya. Feature, sub-feature, task, deps." },
+          { label: "PRD ENGINE", title: "Brief \u2192 graph terurut.", copy: "Asumsi diperkaya. Feature, sub-fitur, task, deps." },
           { label: "AGENT-NATIVE RUNTIME", title: "Built untuk eksekusi fokus.", copy: "Satu task aktif. Status, layer, checkpoint terbaca." },
           { label: "TASK GRAPH", title: "Ordering deterministik.", copy: "Frontend, backend, QA. Server menentukan urutan." },
           { label: "LIVE PROGRESS", title: "Lihat agent bergerak.", copy: "Polling lima detik. Telemetry tetap terlihat." },
@@ -64,8 +64,8 @@ export function homeCopy(lang: Lang) {
     solutionsEyebrow: "solutions",
     solutionsTitle: en ? "One flow, many ways of working." : "Satu alur, berbagai cara kerja.",
     solutionsSub: en
-      ? "From side projects to client briefs, Scratch Agent turns ideas into plans your agent can execute right away."
-      : "Dari side project sampai brief klien, Scratch Agent mengubah ide jadi rencana yang bisa langsung dieksekusi agent.",
+      ? "From side projects to client briefs, Scratch Agent turns ideas into plans your agent can run right away."
+      : "Dari side project sampai brief klien, Scratch Agent ubah ide jadi rencana yang bisa langsung dijalankan agent.",
     solutions: en
       ? [
           { label: "SOLO DEV", title: "Side projects never stall.", copy: "Write a short brief, get a complete plan. The agent works through the tasks one by one, you just review the results.", points: ["A 5 minute brief becomes an execution-ready plan", "Agent progress is visible live on the web", "Resume anytime without losing context"] },
@@ -74,7 +74,7 @@ export function homeCopy(lang: Lang) {
         ]
       : [
           { label: "SOLO DEV", title: "Side project gak mangkrak.", copy: "Tulis brief singkat, dapatkan rencana lengkap. Agent mengerjakan task satu per satu, kamu tinggal review hasilnya.", points: ["Brief 5 menit jadi plan siap eksekusi", "Progress agent kelihatan live di web", "Lanjut kapan saja tanpa kehilangan konteks"] },
-          { label: "FREELANCER / AGENCY", title: "Brief klien jadi PRD profesional.", copy: "Ubah brief klien menjadi PRD terstruktur dengan feature, kriteria selesai, dan scope yang jelas sebelum coding dimulai.", points: ["PRD + task graph siap dipresentasikan", "Scope terukur dari feature & sub-feature", "Eksekusi bisa diserahkan ke agent coding"] },
+          { label: "FREELANCER / AGENCY", title: "Brief klien jadi PRD profesional.", copy: "Ubah brief klien menjadi PRD terstruktur dengan feature, kriteria selesai, dan scope yang jelas sebelum coding dimulai.", points: ["PRD + task graph siap dipresentasikan", "Scope terukur dari feature & sub-fitur", "Eksekusi bisa diserahkan ke agent coding"] },
           { label: "AGENT OPERATOR", title: "Agent coding yang gak bingung.", copy: "Pakai OpenCode, Claude Code, atau Cursor? Beri mereka plan terurut dengan dependensi dan checkpoint, bukan tebakan.", points: ["Urutan task deterministik dari server", "Checkpoint untuk verifikasi manual", "Retry otomatis saat task gagal"] },
         ],
 
