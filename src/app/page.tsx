@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { animate, AnimatePresence, motion, useMotionValue, useSpring, useScroll } from "motion/react";
-import { ArrowUpDown, ArrowUpRight, Bike, ChevronLeft, Clock, CreditCard, Delete, Footprints, KeyRound, Lock, MoreHorizontal, Play, QrCode, Sparkles, Star, User, Users, Wind, X, Zap } from "lucide-react";
+import { ArrowUpDown, ArrowUpRight, Bike, BookOpen, ChevronLeft, Clock, CreditCard, Delete, Footprints, KeyRound, Lock, MoreHorizontal, PenLine, Play, QrCode, Rocket, Sparkles, Star, User, Users, Wind, X, Zap } from "lucide-react";
 import { memo, useEffect, useRef, useState } from "react";
 import DottedDemo from "@/components/ui/dotted-demo";
 import { IPhone17ShopDemo } from "@/components/ui/iphone17-shop-demo";
@@ -203,17 +203,77 @@ export default function Home() {
 
       <SupportedAiTools />
 
-      <section id="solutions" className="mx-auto max-w-[1360px] px-5 pb-24 md:px-10 md:pb-32">
+      {/* Sage panel lanjutan: permukaan #9EC5AB yang sama dengan Supported AI Tools.
+          Solutions section berada di permukaan sage yang sama, edge to edge. */}
+      <div className="relative w-full overflow-hidden bg-[#9EC5AB] px-6 pb-20 pt-16 md:px-12 md:pb-28 md:pt-20">
+      <section id="solutions" className="relative mx-auto max-w-[1360px]">
         <div className="flex flex-wrap items-end justify-between gap-6">
-          <div><Eyebrow>{hc.solutionsEyebrow}</Eyebrow><h2 className="mt-5 max-w-[22ch] text-balance text-[clamp(2.35rem,4.2vw,3.75rem)] font-medium leading-[.98] tracking-[-.055em] text-[#F0F3F5]">{hc.solutionsTitle}</h2></div>
-          <p className="max-w-[42ch] text-sm leading-6 text-[#8C97A5]">{hc.solutionsSub}</p>
+          <div><h2 className="max-w-[22ch] text-balance text-[clamp(2.35rem,4.2vw,3.75rem)] font-medium leading-[.98] tracking-[-.055em] text-[#0F1A12]">{hc.solutionsTitle}</h2></div>
+          {/* Stats row with dashed dividers, dark text on sage, lime numbers */}
+          <div className="flex items-stretch gap-8 md:gap-10">
+            <div className="flex flex-col justify-end bp-stat-v pl-8 md:pl-10">
+              <p className="text-[28px] font-semibold leading-none tracking-[-.03em] text-[#0F1A12] md:text-[32px]"><span className="text-[#1F7A3D]">3</span><span className="text-[#1F7A3D]">/24h</span></p>
+              <p className="mt-2 max-w-[18ch] font-mono text-[10.5px] leading-4 text-[#33473A]">{lang === "en" ? "Free plan generates per day" : "Generate paket Free per hari"}</p>
+            </div>
+            <div className="flex flex-col justify-end bp-stat-v pl-8 md:pl-10">
+              <p className="text-[28px] font-semibold leading-none tracking-[-.03em] text-[#0F1A12] md:text-[32px]"><span className="text-[#1F7A3D]">18</span></p>
+              <p className="mt-2 max-w-[18ch] font-mono text-[10.5px] leading-4 text-[#33473A]">{lang === "en" ? "AI tools supported via one API" : "Tool AI didukung lewat satu API"}</p>
+            </div>
+          </div>
         </div>
-        <div className="mt-12 grid gap-5 md:grid-cols-3">
-          {hc.solutions.map((sol) => (
-            <SolutionCard key={sol.label} label={sol.label} title={sol.title} copy={sol.copy} points={sol.points} />
-          ))}
+
+        {/* Blueprint container: animated marching dashes + plus markers centered
+            exactly on the 4 corners and 4 junction points (where dividers meet the
+            top/bottom border). Masks carve a 26px gap so dashes never touch the +.
+            Reason: engineering-drawing motif fits a dev tool. */}
+        <div className="bp-dark relative mt-12">
+          {/* Corner plus markers (outer 4) — centered on the corner point */}
+          <span aria-hidden="true" className="absolute -left-[7px] -top-[8px] z-10 font-mono text-[15px] leading-none text-[#0F1A12]/60 select-none">+</span>
+          <span aria-hidden="true" className="absolute -right-[7px] -top-[8px] z-10 font-mono text-[15px] leading-none text-[#0F1A12]/60 select-none">+</span>
+          <span aria-hidden="true" className="absolute -bottom-[8px] -left-[7px] z-10 font-mono text-[15px] leading-none text-[#0F1A12]/60 select-none">+</span>
+          <span aria-hidden="true" className="absolute -bottom-[8px] -right-[7px] z-10 font-mono text-[15px] leading-none text-[#0F1A12]/60 select-none">+</span>
+          {/* Junction plus markers: internal dividers meeting top/bottom border (4) */}
+          <span aria-hidden="true" className="absolute -top-[8px] left-1/3 z-10 hidden -translate-x-1/2 font-mono text-[15px] leading-none text-[#0F1A12]/60 select-none md:block">+</span>
+          <span aria-hidden="true" className="absolute -top-[8px] left-2/3 z-10 hidden -translate-x-1/2 font-mono text-[15px] leading-none text-[#0F1A12]/60 select-none md:block">+</span>
+          <span aria-hidden="true" className="absolute -bottom-[8px] left-1/3 z-10 hidden -translate-x-1/2 font-mono text-[15px] leading-none text-[#0F1A12]/60 select-none md:block">+</span>
+          <span aria-hidden="true" className="absolute -bottom-[8px] left-2/3 z-10 hidden -translate-x-1/2 font-mono text-[15px] leading-none text-[#0F1A12]/60 select-none md:block">+</span>
+
+          <div className="grid gap-0 md:grid-cols-3">
+            {hc.solutions.map((sol, i) => (
+              <motion.article
+                key={sol.label}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.2 }}
+                transition={{ duration: 0.5, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] }}
+                className={`relative flex flex-col p-7 md:p-9 ${i > 0 ? "blueprint-divider-v md:bg-left" : ""} ${i > 0 ? "border-t-[1.5px] border-t-dashed border-[#0F1A12]/30 md:border-t-0" : ""}`}
+              >
+                {/* Small outline icon, no background */}
+                <span className="text-[#0F1A12]/60" aria-hidden="true">
+                  {i === 0 && <Rocket size={20} strokeWidth={1.5} />}
+                  {i === 1 && <BookOpen size={20} strokeWidth={1.5} />}
+                  {i === 2 && <PenLine size={20} strokeWidth={1.5} />}
+                </span>
+                <p className="mt-5 font-mono text-[10px] font-bold uppercase tracking-[.18em] text-[#1F7A3D]">{sol.label}</p>
+                <h3 className="mt-3 text-[19px] font-medium tracking-[-.03em] text-[#0F1A12]">{sol.title}</h3>
+                <p className="mt-2 text-[13px] leading-[1.65] text-[#33473A]">{sol.copy}</p>
+                <ul className="bp-h-list mt-5 space-y-2.5 border-t-0 pt-5">
+                  {sol.points.map((point) => (
+                    <li key={point} className="flex items-start gap-2.5 text-[12px] leading-5 text-[#2E4237]">
+                      <span className="mt-[7px] size-1.5 shrink-0 rounded-full bg-[#1F7A3D]/80" />{point}
+                    </li>
+                  ))}
+                </ul>
+              </motion.article>
+            ))}
+          </div>
+          {/* Animated marching border: horizontal edges + vertical edges as separate
+              masked layers, drawn last so they wrap all columns */}
+          <div className="bp-h pointer-events-none absolute inset-0" aria-hidden="true" />
+          <div className="bp-v pointer-events-none absolute inset-0" aria-hidden="true" />
         </div>
       </section>
+      </div>
 
       <TestimonialsSection />
 
@@ -354,22 +414,7 @@ function FeatureCard({ label, title, copy, terminal }: { label: string; title: s
   );
 }
 
-function SolutionCard({ label, title, copy, points }: { label: string; title: string; copy: string; points: string[] }) {
-  return (
-    <motion.article initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .2 }} transition={{ duration: .65, ease: [0.16, 1, 0.3, 1] }} className="flex flex-col rounded-[16px] border border-white/15 bg-[#111413] p-6 transition-colors duration-300 hover:border-[#74FA6A]/45">
-      <p className="font-mono text-[10px] tracking-[.18em] text-[#74FA6A]">{label}</p>
-      <h3 className="mt-3 text-[20px] font-medium tracking-[-.04em] text-[#E8F0E8]">{title}</h3>
-      <p className="mt-2 text-[13px] leading-[1.6] text-[#8C97A5]">{copy}</p>
-      <ul className="mt-5 space-y-2.5 border-t border-white/10 pt-5">
-        {points.map((point) => (
-          <li key={point} className="flex items-start gap-2.5 text-[12px] leading-5 text-[#A9B4C0]">
-            <span className="mt-[7px] size-1.5 shrink-0 rounded-full bg-[#74FA6A]/70" />{point}
-          </li>
-        ))}
-      </ul>
-    </motion.article>
-  );
-}
+
 
 // ===== RESTORED: preview device (Flappy Bird, iOS Fitness, Kripto Wallet) =====
 function PhoneFrame({ variant, children }: { variant: "android" | "ios"; children: React.ReactNode }) {

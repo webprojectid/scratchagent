@@ -268,3 +268,145 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--accent); outline-of
   background: linear-gradient(135deg, rgba(157,232,141,0.25) 0%, rgba(116,250,106,0.14) 100%) !important;
   border-color: rgba(116,250,106,0.5) !important;
 }
+
+/* Blueprint marching dashes: animated border that "walks" like marching ants.
+   Reason: engineering-drawing motif for the Solutions section; motion is subtle
+   and respects prefers-reduced-motion.
+   Masks carve a 26px gap around every + marker (measured ~25px in the reference)
+   so the dashes never touch the symbols. Horizontal and vertical edges are
+   separate layers because each needs its own mask direction. */
+.bp-h {
+  background-image:
+    repeating-linear-gradient(90deg, rgba(255,255,255,0.28) 0 8px, transparent 8px 16px),
+    repeating-linear-gradient(90deg, rgba(255,255,255,0.28) 0 8px, transparent 8px 16px);
+  background-size: 100% 1px, 100% 1px;
+  background-position: 0 0, 0 100%;
+  background-repeat: no-repeat;
+  /* corner gaps only (mobile: single column, no junction markers) */
+  -webkit-mask-image: linear-gradient(90deg, transparent 0 26px, #000 26px calc(100% - 26px), transparent calc(100% - 26px));
+  mask-image: linear-gradient(90deg, transparent 0 26px, #000 26px calc(100% - 26px), transparent calc(100% - 26px));
+  animation: bp-march-h 0.9s linear infinite;
+}
+@media (min-width: 768px) {
+  .bp-h {
+    /* 4 gaps: both corners + both junction points where dividers meet the border */
+    -webkit-mask-image: linear-gradient(90deg,
+      transparent 0 26px,
+      #000 26px calc(33.333% - 26px),
+      transparent calc(33.333% - 26px) calc(33.333% + 26px),
+      #000 calc(33.333% + 26px) calc(66.667% - 26px),
+      transparent calc(66.667% - 26px) calc(66.667% + 26px),
+      #000 calc(66.667% + 26px) calc(100% - 26px),
+      transparent calc(100% - 26px));
+    mask-image: linear-gradient(90deg,
+      transparent 0 26px,
+      #000 26px calc(33.333% - 26px),
+      transparent calc(33.333% - 26px) calc(33.333% + 26px),
+      #000 calc(33.333% + 26px) calc(66.667% - 26px),
+      transparent calc(66.667% - 26px) calc(66.667% + 26px),
+      #000 calc(66.667% + 26px) calc(100% - 26px),
+      transparent calc(100% - 26px));
+  }
+}
+.bp-v {
+  background-image:
+    repeating-linear-gradient(0deg, rgba(255,255,255,0.28) 0 8px, transparent 8px 16px),
+    repeating-linear-gradient(0deg, rgba(255,255,255,0.28) 0 8px, transparent 8px 16px);
+  background-size: 1px 100%, 1px 100%;
+  background-position: 0 0, 100% 0;
+  background-repeat: no-repeat;
+  /* corner gaps only */
+  -webkit-mask-image: linear-gradient(180deg, transparent 0 26px, #000 26px calc(100% - 26px), transparent calc(100% - 26px));
+  mask-image: linear-gradient(180deg, transparent 0 26px, #000 26px calc(100% - 26px), transparent calc(100% - 26px));
+  animation: bp-march-v 0.9s linear infinite;
+}
+.blueprint-divider-v {
+  background-image: repeating-linear-gradient(0deg, rgba(255,255,255,0.28) 0 8px, transparent 8px 16px);
+  background-size: 1px 100%;
+  background-repeat: no-repeat;
+  background-position: 0 0;
+  /* dashes stop 26px short of the top/bottom border, mirroring the + gap */
+  clip-path: inset(26px 0);
+  animation: bp-march-v-single 0.9s linear infinite;
+}
+@keyframes bp-march-h {
+  from { background-position: 0 0, 0 100%; }
+  to   { background-position: 16px 0, 16px 100%; }
+}
+@keyframes bp-march-v {
+  from { background-position: 0 0, 100% 0; }
+  to   { background-position: 0 16px, 100% 16px; }
+}
+@keyframes bp-march-v-single {
+  from { background-position: 0 0; }
+  to   { background-position: 0 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bp-h, .bp-v, .blueprint-divider-v {
+    animation: none;
+  }
+}
+
+
+/* Divider atas list points dalam card blueprint: dash 8/8px 1px —
+   rhythm sama dengan border blueprint (Tailwind border-dashed = 4/4px, kekecilan).
+   Diposisikan via background di elemen ul dengan padding-top 20px. */
+.bp-h-list {
+  background-image: repeating-linear-gradient(90deg, rgba(255,255,255,0.28) 0 8px, transparent 8px 16px);
+  background-size: 100% 1px;
+  background-repeat: no-repeat;
+  background-position: 0 0;
+}
+
+/* Divider vertikal stats (3/24h & 18): dash 8/8px 1px — sama dengan garis
+   blueprint lainnya (Tailwind border-dashed = 4/4px, kekecilan). */
+.bp-stat-v {
+  background-image: repeating-linear-gradient(0deg, rgba(255,255,255,0.28) 0 8px, transparent 8px 16px);
+  background-size: 1px 100%;
+  background-repeat: no-repeat;
+  background-position: 0 0;
+  border-left: 0 !important;
+}
+
+/* Blueprint lines on the sage (#9EC5AB) surface: dark ink instead of white,
+   same 8/8px/1px rhythm and animations. Separate rules per class so the
+   horizontal/vertical gradient direction is never cross-applied. */
+.bp-dark .bp-h {
+  background-image:
+    repeating-linear-gradient(90deg, rgba(15,26,18,0.45) 0 8px, transparent 8px 16px),
+    repeating-linear-gradient(90deg, rgba(15,26,18,0.45) 0 8px, transparent 8px 16px);
+}
+.bp-dark .bp-h-list {
+  background-image: repeating-linear-gradient(90deg, rgba(15,26,18,0.45) 0 8px, transparent 8px 16px);
+}
+.bp-dark .bp-v {
+  background-image:
+    repeating-linear-gradient(0deg, rgba(15,26,18,0.45) 0 8px, transparent 8px 16px),
+    repeating-linear-gradient(0deg, rgba(15,26,18,0.45) 0 8px, transparent 8px 16px);
+}
+.bp-dark .blueprint-divider-v {
+  background-image: repeating-linear-gradient(0deg, rgba(15,26,18,0.45) 0 8px, transparent 8px 16px);
+}
+.bp-dark .bp-stat-v {
+  background-image: repeating-linear-gradient(0deg, rgba(15,26,18,0.45) 0 8px, transparent 8px 16px);
+}
+
+/* Stat dividers sit OUTSIDE the .bp-dark container (in the section header),
+   so they need their own dark-ink rule on sage. */
+#solutions .bp-stat-v {
+  background-image: repeating-linear-gradient(0deg, rgba(15,26,18,0.45) 0 8px, transparent 8px 16px);
+}
+
+/* Testimonials marquee: pure CSS translate animation — smooth slow linear
+   scroll, always moving (user rejected hover-pause). */
+.bp-marquee {
+  animation: bp-marquee 45s linear infinite;
+  will-change: transform;
+}
+@keyframes bp-marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-33.3333%); }
+}
+/* NOTE: no prefers-reduced-motion override here — the host machine has
+   Windows animation effects disabled, which reports reduce: true and
+   killed the marquee entirely. User explicitly wants it always scrolling. */
