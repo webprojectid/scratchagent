@@ -119,15 +119,20 @@ export async function savePlan(plan: Plan, userId: string): Promise<void> {
 
   for (const feature of (plan.features as any[])) {
     const fid = feature.id || crypto.randomUUID();
+    const slug = feature.slug || feature.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || `fase-${fid.slice(0, 8)}`;
+    const description = feature.description || feature.tujuan || feature.title || "";
+    const icon = feature.icon || "📦";
+    const tujuan = feature.tujuan || feature.description || feature.title || "";
+    const selesaiBila = Array.isArray(feature.selesaiBila) ? feature.selesaiBila : [];
     await db.insert(features).values({
       id: fid,
       planId: plan.id,
-      slug: feature.slug,
+      slug,
       title: feature.title,
-      icon: feature.icon,
-      description: feature.description,
-      tujuan: feature.tujuan,
-      selesaiBila: feature.selesaiBila,
+      icon,
+      description,
+      tujuan,
+      selesaiBila,
       priority: feature.priority ?? null,
       status: feature.status ?? "direncanakan",
       order: feature.order ?? 0,
@@ -151,11 +156,40 @@ export async function savePlan(plan: Plan, userId: string): Promise<void> {
         order: 0,
       } as any).onConflictDoNothing();
 
-      for (const task of (subFeature.tasks as any[])) {
+      const subTasks = Array.isArray(subFeature.tasks)
+        ? subFeature.tasks
+        : (Array.isArray(feature.tasks) ? feature.tasks.filter((t: any) => (t.sub_feature || t.subFeature || "").toLowerCase().trim() === subFeature.title.toLowerCase().trim()) : []);
+
+      for (const task of subTasks) {
         await db.insert(tasks).values({
           planId: plan.id,
           featureId: fid,
           subFeatureId: sid,
+          ref: task.ref,
+          title: task.title,
+          layer: task.layer,
+          phase: task.phase,
+          page: task.page ?? null,
+          deps: task.deps ?? [],
+          status: task.status ?? "pending",
+          retryCount: task.retryCount ?? 0,
+          lastFailReason: task.lastFailReason ?? null,
+          failReason: task.failReason ?? null,
+          startedAt: task.startedAt ?? null,
+          completedAt: task.completedAt ?? null,
+          order: task.order ?? 0,
+        } as any).onConflictDoNothing();
+      }
+    }
+
+    // Fallback: jika task ada di feature.tasks tapi belum tersimpan via subFeatures
+    if (Array.isArray(feature.tasks) && feature.tasks.length > 0) {
+      const firstSid = existingSubs[0]?.id || (feature.subFeatures && (feature.subFeatures as any[])[0]?.id);
+      for (const task of feature.tasks) {
+        await db.insert(tasks).values({
+          planId: plan.id,
+          featureId: fid,
+          subFeatureId: firstSid ?? null,
           ref: task.ref,
           title: task.title,
           layer: task.layer,

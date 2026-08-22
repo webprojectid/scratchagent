@@ -8,6 +8,7 @@ import DottedDemo from "@/components/ui/dotted-demo";
 import { IPhone17ShopDemo } from "@/components/ui/iphone17-shop-demo";
 import { getCurrentUser, refreshCurrentUser } from "@/lib/current-user";
 import { LanguageToggle } from "@/components/lang-toggle";
+import { SupportedAiTools } from "@/components/supported-ai-tools";
 import { useLang } from "@/lib/lang";
 import { t } from "@/lib/i18n";
 import { homeCopy } from "@/lib/copy-home";
@@ -198,6 +199,8 @@ export default function Home() {
           </Link>
         </div>
       </section>
+
+      <SupportedAiTools />
 
       <section id="solutions" className="mx-auto max-w-[1360px] px-5 pb-24 md:px-10 md:pb-32">
         <div className="flex flex-wrap items-end justify-between gap-6">
