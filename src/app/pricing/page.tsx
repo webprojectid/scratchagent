@@ -128,22 +128,26 @@ export default function PricingPage() {
         </div>
       </section>
 
-      {/* Section 4: FAQ. List dua pertiga kiri, caption kanan, jawaban langsung terlihat. */}
+      {/* Section 4: FAQ — accordion style matching reference screenshot */}
       <section id="faq" className="relative mx-auto max-w-[1100px] px-5 pt-20 md:pt-24">
         <div className="price-rise grid gap-10 lg:grid-cols-[1.5fr_.8fr]">
-          <dl>
+          {/* Left: accordion FAQ list */}
+          <div className="space-y-3">
             {c.faqs.map((item, i) => (
-              <div key={item.q} className="grid gap-2 border-t border-white/[.07] py-6 sm:grid-cols-[44px_1fr]">
-                <span className="pt-0.5 font-mono text-[11px] tabular-nums text-white/35">
-                  {String(i + 1).padStart(2, "0")}
-                </span>
-                <div>
-                  <dt className="text-[14.5px] font-medium tracking-[-.01em] text-[#E8F0E8]">{item.q}</dt>
-                  <dd className="mt-2 max-w-[62ch] text-[13px] leading-[1.75] text-[#8C97A5]">{item.a}</dd>
-                </div>
-              </div>
+              <details key={item.q} className="group rounded-2xl border border-[#74FA6A]/20 bg-gradient-to-r from-[#EDFBEA]/[0.06] to-[#D4F5CF]/[0.04] px-6 py-5 shadow-[inset_0_1px_1px_rgba(116,250,106,0.08)] backdrop-blur-sm transition-all duration-200 open:border-[#74FA6A]/40 open:from-[#EDFBEA]/[0.09] open:to-[#D4F5CF]/[0.06] hover:border-[#74FA6A]/35">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-[15px] font-medium text-[#E4F5E1] [&::-webkit-details-marker]:hidden">
+                  <span className="flex items-baseline gap-3">
+                    <span className="font-mono text-[11px] tabular-nums text-[#74FA6A]/50">{String(i + 1).padStart(2, "0")}</span>
+                    {item.q}
+                  </span>
+                  <span className="grid size-7 shrink-0 place-items-center rounded-full bg-[#74FA6A] text-[16px] font-bold text-black shadow-[0_0_10px_rgba(116,250,106,0.35)] transition-transform duration-200 group-open:rotate-45">+</span>
+                </summary>
+                <p className="mt-3 max-w-[62ch] text-[14px] leading-[1.75] text-[#A9C5A7]">{item.a}</p>
+              </details>
             ))}
-          </dl>
+          </div>
+
+          {/* Right: title + caption */}
           <div className="lg:pt-1">
             <h2 className="text-[clamp(1.5rem,2.8vw,2.1rem)] font-semibold tracking-[-.045em] text-[#F0F3F5]">
               {c.faqTitle}
