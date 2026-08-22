@@ -97,13 +97,17 @@ export default function DocsPage() {
             <SectionHead id="faq" label={c.faqLabel} title={c.faqTitle} />
             <div className="mt-12 space-y-3">
               {c.faqs.map((item, i) => (
-                <details key={item.q} className="group rounded-2xl border border-[#74FA6A]/20 bg-gradient-to-r from-[#EDFBEA]/[0.06] to-[#D4F5CF]/[0.04] px-6 py-5 shadow-[inset_0_1px_1px_rgba(116,250,106,0.08)] backdrop-blur-sm transition-all duration-200 open:border-[#74FA6A]/40 open:bg-gradient-to-r open:from-[#EDFBEA]/[0.09] open:to-[#D4F5CF]/[0.06] hover:border-[#74FA6A]/35 hover:from-[#EDFBEA]/[0.08]">
+                <details
+                  key={item.q}
+                  className="group rounded-2xl border border-[#74FA6A]/25 px-6 py-5 transition-all duration-200 hover:border-[#74FA6A]/50"
+                  style={{ background: "linear-gradient(135deg, rgba(157,232,141,0.13) 0%, rgba(116,250,106,0.07) 100%)" }}
+                >
                   <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-[15px] font-medium text-[#E4F5E1] [&::-webkit-details-marker]:hidden">
                     <span className="flex items-baseline gap-3">
-                      <span className="font-mono text-[11px] tabular-nums text-[#74FA6A]/50">{String(i + 1).padStart(2, "0")}</span>
+                      <span className="font-mono text-[11px] tabular-nums text-[#74FA6A]/60">{String(i + 1).padStart(2, "0")}</span>
                       {item.q}
                     </span>
-                    <span className="grid size-7 shrink-0 place-items-center rounded-full bg-[#74FA6A] text-[16px] font-bold text-black shadow-[0_0_10px_rgba(116,250,106,0.35)] transition-transform duration-200 group-open:rotate-45">+</span>
+                    <span className="grid size-7 shrink-0 place-items-center rounded-full bg-[#74FA6A] text-[16px] font-bold text-black shadow-[0_0_10px_rgba(116,250,106,0.4)] transition-transform duration-200 group-open:rotate-45">+</span>
                   </summary>
                   <p className="mt-3 max-w-[68ch] text-[14px] leading-[1.7] text-[#A9C5A7]">{item.a}</p>
                 </details>
