@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useRef } from "react";
+import React, { useState } from "react";
 import Image from "next/image";
+import { motion, useAnimationControls } from "motion/react";
 import { ChevronLeft, ChevronRight, MessageSquareQuote } from "lucide-react";
 
 interface Testimonial {
@@ -78,15 +79,8 @@ const TESTIMONIALS: Testimonial[] = [
 ];
 
 export function TestimonialsSection() {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const repeatedTestimonials = [...TESTIMONIALS, ...TESTIMONIALS];
-
-  const handleScroll = (direction: "left" | "right") => {
-    if (scrollRef.current) {
-      const offset = direction === "left" ? -420 : 420;
-      scrollRef.current.scrollBy({ left: offset, behavior: "smooth" });
-    }
-  };
+  const [isPaused, setIsPaused] = useState(false);
+  const repeatedTestimonials = [...TESTIMONIALS, ...TESTIMONIALS, ...TESTIMONIALS];
 
   return (
     <section className="relative mx-auto w-full max-w-[1360px] overflow-hidden px-5 py-20 md:px-10 md:py-28" aria-label="User Testimonials">
@@ -105,41 +99,35 @@ export function TestimonialsSection() {
           </h2>
         </div>
 
-        <div className="flex flex-col items-start gap-4 md:items-end">
-          <p className="max-w-[340px] text-left text-[14px] leading-relaxed text-[#8C97A5] md:text-right">
+        <div className="max-w-[340px] text-left md:text-right">
+          <p className="text-[14px] leading-relaxed text-[#8C97A5]">
             Real feedback from developers & creators building with Scratch Agent.
           </p>
-          
-          {/* Navigation buttons */}
-          <div className="hidden items-center gap-2 md:flex">
-            <button
-              onClick={() => handleScroll("left")}
-              className="grid size-9 place-items-center rounded-full border border-white/[0.12] bg-white/[0.05] text-white/70 backdrop-blur-md transition hover:border-white/30 hover:bg-white/10 hover:text-white"
-              aria-label="Scroll left"
-            >
-              <ChevronLeft size={18} />
-            </button>
-            <button
-              onClick={() => handleScroll("right")}
-              className="grid size-9 place-items-center rounded-full border border-white/[0.12] bg-white/[0.05] text-white/70 backdrop-blur-md transition hover:border-white/30 hover:bg-white/10 hover:text-white"
-              aria-label="Scroll right"
-            >
-              <ChevronRight size={18} />
-            </button>
-          </div>
         </div>
       </div>
 
-      {/* Smooth Auto-moving Marquee Slider Track with interactive hover pause */}
+      {/* Hardware-Accelerated Auto-Slider with Motion Loop */}
       <div
-        ref={scrollRef}
-        className="relative mt-12 w-full overflow-x-auto no-scrollbar scroll-smooth"
+        className="relative mt-12 w-full overflow-hidden"
+        onMouseEnter={() => setIsPaused(true)}
+        onMouseLeave={() => setIsPaused(false)}
       >
         {/* Soft edge blur gradients */}
-        <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-12 bg-gradient-to-r from-[#0A0A0A] to-transparent md:w-28" />
-        <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-12 bg-gradient-to-l from-[#0A0A0A] to-transparent md:w-28" />
+        <div className="pointer-events-none absolute inset-y-0 left-0 z-20 w-16 bg-gradient-to-r from-[#0A0A0A] to-transparent md:w-32" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 z-20 w-16 bg-gradient-to-l from-[#0A0A0A] to-transparent md:w-32" />
 
-        <div className="flex w-max gap-5 py-4 animate-marquee hover:[animation-play-state:paused]">
+        <motion.div
+          className="flex w-max gap-5 py-4 cursor-grab active:cursor-grabbing"
+          animate={isPaused ? {} : { x: ["0%", "-33.333%"] }}
+          transition={{
+            x: {
+              repeat: Infinity,
+              repeatType: "loop",
+              duration: 36,
+              ease: "linear",
+            },
+          }}
+        >
           {repeatedTestimonials.map((item, idx) => (
             <div
               key={`${item.name}-${idx}`}
@@ -175,7 +163,7 @@ export function TestimonialsSection() {
               </div>
             </div>
           ))}
-        </div>
+        </motion.div>
       </div>
     </section>
   );
