@@ -1,9 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import Image from "next/image";
-import { motion, useAnimationControls } from "motion/react";
-import { ChevronLeft, ChevronRight, MessageSquareQuote } from "lucide-react";
+import { MessageSquareQuote } from "lucide-react";
 
 interface Testimonial {
   quote: string;
@@ -67,26 +66,22 @@ const TESTIMONIALS: Testimonial[] = [
       "Sebagai solo builder, Scratch Agent beneran jadi co-founder teknis. Mulai dari ide mentah di chat langsung ditransformasikan jadi fase koding lengkap yang siap dieksekusi.",
     name: "Budi Santoso",
     role: "Backend Architect @ Surabaya",
-    avatar: "/avatars/reza.jpg",
+    avatar: "/avatars/budi.jpg",
   },
   {
     quote:
       "Hemat waktu riset berjam-jam saat nentuin arsitektur Next.js 14 dan database relational. Hasil PRD-nya siap diajukan ke klien dan langsung siap dikerjakan tim engineer.",
     name: "Siti Nurhaliza",
     role: "Software Engineer @ Bandung",
-    avatar: "/avatars/anisa.jpg",
+    avatar: "/avatars/siti.jpg",
   },
 ];
 
 export function TestimonialsSection() {
-  const [isPaused, setIsPaused] = useState(false);
   const repeatedTestimonials = [...TESTIMONIALS, ...TESTIMONIALS, ...TESTIMONIALS];
 
   return (
     <section className="relative mx-auto w-full max-w-[1360px] overflow-hidden px-5 py-20 md:px-10 md:py-28" aria-label="User Testimonials">
-      {/* Background ambient glow */}
-      <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 size-[600px] rounded-full bg-[radial-gradient(circle_at_center,rgba(116,250,106,0.05),transparent_70%)] blur-3xl" />
-
       {/* Header Section matching screenshot layout */}
       <div className="relative flex flex-col justify-between gap-6 md:flex-row md:items-end">
         <div className="max-w-[620px]">
@@ -106,28 +101,16 @@ export function TestimonialsSection() {
         </div>
       </div>
 
-      {/* Hardware-Accelerated Auto-Slider with Motion Loop */}
+      {/* Hardware-Accelerated Auto-Slider: pure CSS animation so hover-pause
+          freezes mid-track (no snap-back) and resumes from the same pixel. */}
       <div
-        className="relative mt-12 w-full overflow-hidden"
-        onMouseEnter={() => setIsPaused(true)}
-        onMouseLeave={() => setIsPaused(false)}
+        className="testimonials-track relative mt-12 w-full overflow-hidden"
       >
         {/* Soft edge blur gradients */}
         <div className="pointer-events-none absolute inset-y-0 left-0 z-20 w-16 bg-gradient-to-r from-[#0A0A0A] to-transparent md:w-32" />
         <div className="pointer-events-none absolute inset-y-0 right-0 z-20 w-16 bg-gradient-to-l from-[#0A0A0A] to-transparent md:w-32" />
 
-        <motion.div
-          className="flex w-max gap-5 py-4 cursor-grab active:cursor-grabbing"
-          animate={isPaused ? {} : { x: ["0%", "-33.333%"] }}
-          transition={{
-            x: {
-              repeat: Infinity,
-              repeatType: "loop",
-              duration: 36,
-              ease: "linear",
-            },
-          }}
-        >
+        <div className="bp-marquee flex w-max gap-5 py-4">
           {repeatedTestimonials.map((item, idx) => (
             <div
               key={`${item.name}-${idx}`}
@@ -163,7 +146,7 @@ export function TestimonialsSection() {
               </div>
             </div>
           ))}
-        </motion.div>
+        </div>
       </div>
     </section>
   );
