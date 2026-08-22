@@ -257,3 +257,14 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--accent); outline-of
   }
 }
 
+/* FAQ accordion mint-green card */
+.faq-card {
+  background: linear-gradient(135deg, rgba(157,232,141,0.18) 0%, rgba(116,250,106,0.09) 100%) !important;
+  border: 1px solid rgba(116,250,106,0.28) !important;
+  border-radius: 1rem;
+  transition: border-color 0.2s, background 0.2s;
+}
+.faq-card:hover {
+  background: linear-gradient(135deg, rgba(157,232,141,0.25) 0%, rgba(116,250,106,0.14) 100%) !important;
+  border-color: rgba(116,250,106,0.5) !important;
+}
