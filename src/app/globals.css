@@ -239,3 +239,21 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--accent); outline-of
 .saas-slide-down{animation:saas-slide-down .3s ease-out both}
 @media(prefers-reduced-motion:reduce){.saas-fade,.saas-slide-down{animation:none}}
 
+/* Infinite marquee scroll for testimonials & showcase */
+@keyframes marquee-scroll {
+  0% { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(-50%, 0, 0); }
+}
+.animate-marquee {
+  animation: marquee-scroll 38s linear infinite;
+  will-change: transform;
+}
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+@media(prefers-reduced-motion:reduce) {
+  .animate-marquee {
+    animation: none;
+  }
+}
+
