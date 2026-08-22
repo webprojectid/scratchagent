@@ -9,6 +9,7 @@ import { IPhone17ShopDemo } from "@/components/ui/iphone17-shop-demo";
 import { getCurrentUser, refreshCurrentUser } from "@/lib/current-user";
 import { LanguageToggle } from "@/components/lang-toggle";
 import { SupportedAiTools } from "@/components/supported-ai-tools";
+import { BorderBeamPanel } from "@/components/ui/border-beam-panel";
 import { TestimonialsSection } from "@/components/testimonials-section";
 import { useLang } from "@/lib/lang";
 import { t } from "@/lib/i18n";
@@ -165,7 +166,7 @@ export default function Home() {
       <section id="showcase" className="mx-auto max-w-[1360px] px-5 pb-14 md:px-10 md:pb-20">
         <div className="flex flex-wrap items-end justify-between gap-6">
           <div><Eyebrow>case studies</Eyebrow><h2 className="mt-5 max-w-[20ch] text-balance text-[clamp(2.35rem,4.2vw,3.75rem)] font-medium leading-[.98] tracking-[-.055em] text-[#F0F3F5]">Dari brief jadi plan siap eksekusi.</h2></div>
-          <p className="max-w-[42ch] text-sm leading-6 text-[#8C97A5]">Project simulasi nyata: dihasilkan otomatis dari brief singkat, lalu dijalankan task demi task oleh agent — dari aplikasi mobile sampai website.</p>
+          <p className="max-w-[42ch] text-sm leading-6 text-[#8C97A5]">Project simulasi nyata: dihasilkan otomatis dari brief singkat, lalu dijalankan task demi task oleh agent, dari aplikasi mobile sampai website.</p>
         </div>
         <div className="mt-12 grid gap-10 md:grid-cols-4">
           <div className="flex flex-col items-center gap-4">
@@ -278,7 +279,7 @@ export default function Home() {
       <TestimonialsSection />
 
       <section id="agents" className="mx-auto w-[calc(100%-32px)] max-w-[1280px] mb-8 mt-8 overflow-hidden rounded-[24px] border border-white/10 bg-[#111318] px-5 py-16 md:px-10 md:py-20">
-        <div className="mx-auto grid max-w-[1280px] gap-12 lg:grid-cols-2"><div><Eyebrow>{hc.agentsEyebrow}</Eyebrow><h2 className="mt-4 text-[clamp(2.1rem,4.8vw,3.8rem)] font-semibold leading-[.95] tracking-[-.06em] text-white">{hc.agentsTitleA}<br />{hc.agentsTitleB}</h2><p className="mt-5 max-w-[44ch] text-sm leading-6 text-[#8C97A5]">{hc.agentsSub}</p><Magnetic className="mt-8 inline-block"><a href="https://scratchagent.store/" target="_blank" rel="noopener noreferrer" className="btn-donate inline-flex items-center gap-2.5"><KeyRound size={18} strokeWidth={2.2} aria-hidden="true" /> {lang === "en" ? "Get your Api Key" : "Ambil Api Key kamu"}</a></Magnetic></div><DoubleBezel className="overflow-hidden !p-1.5"><div className="rounded-[calc(24px-10px)] bg-[#0A0A0A] p-5 font-mono text-[12px] leading-7 text-[#C5CDD7]"><div className="mb-3 flex gap-1.5"><i className="size-2.5 rounded-full bg-[#FF5F56]" /><i className="size-2.5 rounded-full bg-[#FFBD2E]" /><i className="size-2.5 rounded-full bg-[#74FA6A]" /></div><PromptShowcase /></div></DoubleBezel></div>
+        <div className="mx-auto grid max-w-[1280px] gap-12 lg:grid-cols-2"><div><Eyebrow>{hc.agentsEyebrow}</Eyebrow><h2 className="mt-4 text-[clamp(2.1rem,4.8vw,3.8rem)] font-semibold leading-[.95] tracking-[-.06em] text-white">{hc.agentsTitleA}<br />{hc.agentsTitleB}</h2><p className="mt-5 max-w-[44ch] text-sm leading-6 text-[#8C97A5]">{hc.agentsSub}</p><Magnetic className="mt-8 inline-block"><a href="https://scratchagent.store/" target="_blank" rel="noopener noreferrer" className="btn-donate inline-flex items-center gap-2.5"><KeyRound size={18} strokeWidth={2.2} aria-hidden="true" /> {lang === "en" ? "Get your Api Key" : "Ambil Api Key kamu"}</a></Magnetic></div><BorderBeamPanel beams={2} thickness={2} radius={24} glow colors={["#74FA6A", "#3DDC97"]} reducedMotion={false} className="!bg-transparent !border-transparent !p-0 overflow-hidden"><DoubleBezel className="!shadow-none"><div className="rounded-[calc(24px-10px)] bg-[#0A0A0A] p-5 font-mono text-[12px] leading-7 text-[#C5CDD7]"><div className="mb-3 flex gap-1.5"><i className="size-2.5 rounded-full bg-[#FF5F56]" /><i className="size-2.5 rounded-full bg-[#FFBD2E]" /><i className="size-2.5 rounded-full bg-[#74FA6A]" /></div><PromptShowcase /></div></DoubleBezel></BorderBeamPanel></div>
       </section>
 
 

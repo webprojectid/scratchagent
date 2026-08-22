@@ -7,22 +7,22 @@ export function docsCopy(lang: Lang) {
     badge: en ? "Documentation" : "Dokumentasi",
     heroTitle: en ? "Start from a brief, let the agent move." : "Mulai dari brief, biarkan agent bergerak.",
     heroSub: en
-      ? "Scratch Agent turns a brief into a PRD and ordered tasks, then your AI agent executes it through one prompt, one task per cycle. A Free plan is available to start, no credit card."
-      : "Scratch Agent mengubah brief menjadi PRD dan task terurut, lalu agent AI kamu mengeksekusinya lewat satu prompt, satu task per siklus. Tersedia paket Free untuk mulai, tanpa kartu kredit.",
+      ? "Scratch Agent turns a brief into a PRD and ordered tasks, then your AI agent runs it from one prompt, one task per cycle. There is a Free plan to start with, no credit card."
+      : "Scratch Agent mengubah brief jadi PRD dan task terurut, lalu agent AI kamu menjalankannya dari satu prompt, satu task per siklus. Ada paket Free buat mulai, tanpa kartu kredit.",
     heroQuickstart: en ? "Start the quickstart" : "Mulai quickstart",
     heroConcepts: en ? "Read the concepts" : "Baca konsep",
 
     quickstartLabel: "01 · Quickstart",
     quickstartTitle: en ? "Five minutes to your first task." : "Lima menit sampai task pertama.",
     quickstartLead: en
-      ? "Three steps, no extra setup. Each step below shows exactly what you see in the product."
-      : "Tiga langkah, tanpa setup tambahan. Setiap langkah di bawah menunjukkan persis apa yang kamu lihat di produk.",
+      ? "Three steps, no extra setup. Each one shows exactly what you see in the product."
+      : "Tiga langkah, tanpa setup tambahan. Tiap langkah nunjukin persis apa yang kamu lihat di produk.",
 
     conceptsLabel: en ? "02 · Concepts" : "02 · Konsep",
     conceptsTitle: en ? "How Scratch Agent thinks." : "Cara Scratch Agent berpikir.",
     conceptsLead: en
-      ? "Every plan follows the same structure. Once you understand the pipeline, reading any plan becomes instant."
-      : "Semua plan mengikuti satu struktur yang sama. Begitu kamu paham pipeline-nya, membaca plan apa pun jadi instan.",
+      ? "Every plan follows the same structure. Once you know the pipeline, reading any plan takes seconds."
+      : "Semua plan pakai satu struktur yang sama. Begitu paham pipeline-nya, baca plan apa pun cuma butuh beberapa detik.",
     concepts: en
       ? [
           { t: "Plan structure", d: "Plan \u2192 Feature \u2192 Sub-feature \u2192 Task. Every task has a unique ref like F01-S02-T03." },
@@ -44,8 +44,8 @@ export function docsCopy(lang: Lang) {
     promptLabel: "03 · Prompt Agent",
     promptTitle: en ? "One prompt, the agent gets to work." : "Satu prompt, agent langsung kerja.",
     promptLead: en
-      ? "Every plan has an auto generated mission prompt, already containing the plan identity and full instructions. You never need to write instructions yourself or memorize any commands."
-      : "Setiap plan punya prompt misi yang dibuat otomatis, sudah berisi identitas plan dan instruksi lengkap. Kamu tidak perlu menulis instruksi sendiri atau menghafal perintah apa pun.",
+      ? "Every plan has a mission prompt generated for you, with the plan identity and full instructions already inside. No commands to memorize, nothing to write yourself."
+      : "Setiap plan punya prompt misi yang dibuat otomatis, identitas plan dan instruksi lengkap sudah di dalamnya. Gak perlu nulis instruksi sendiri atau hafal perintah apa pun.",
     promptCards: en
       ? [
           { t: "How to get it", d: "Open a plan that is ready, click the Start implementation button, and copy the prompt that appears. Your access token is already included in it." },
@@ -181,7 +181,7 @@ export function docsCopy(lang: Lang) {
     ],
     pipelineNote: en
       ? "Every task has a unique ref like F01-S02-T03: phase 1, sub-feature 2, task 3. The execution order is decided by the server, not the agent."
-      : "Setiap task punya ref unik seperti F01-S02-T03: fase 1, sub-feature 2, task 3. Urutan eksekusi ditentukan server, bukan agent.",
+      : "Setiap task punya ref unik seperti F01-S02-T03: fase 1, sub-fitur 2, task 3. Urutan eksekusi ditentukan server, bukan agent.",
 
     // Visuals: prompt terminal
     promptComment: en ? "# mission sent once, the agent loops on its own" : "# misi dikirim sekali, agent loop sendiri",
