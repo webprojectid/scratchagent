@@ -170,12 +170,7 @@ export function SupportedAiTools() {
       <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 size-[640px] rounded-full bg-[radial-gradient(circle_at_center,rgba(116,250,106,0.06),transparent_70%)] blur-3xl" />
 
       <div className="relative mx-auto flex max-w-[840px] flex-col items-center text-center">
-        <div className="inline-flex items-center gap-2 rounded-full border border-white/[0.12] bg-white/[0.05] px-3.5 py-1 text-[11px] font-medium tracking-wide text-[#A9C5A7] backdrop-blur-xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.15)]">
-          <span className="size-1.5 rounded-full bg-[#74FA6A] shadow-[0_0_8px_#74FA6A]" />
-          Terminal & Editor Ecosystem
-        </div>
-
-        <h2 className="mt-4 text-balance text-[clamp(2.1rem,4.2vw,3.5rem)] font-semibold leading-[1.05] tracking-[-.05em] text-[#F0F3F5]">
+        <h2 className="text-balance text-[clamp(2.1rem,4.2vw,3.5rem)] font-semibold leading-[1.05] tracking-[-.05em] text-[#F0F3F5]">
           Supported AI Tools
         </h2>
         <p className="mt-3.5 max-w-[62ch] text-[14px] leading-relaxed text-[#8C97A5] md:text-[15px]">
@@ -198,7 +193,7 @@ export function SupportedAiTools() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.1 }}
             transition={{ duration: 0.45, delay: idx * 0.03, ease: [0.16, 1, 0.3, 1] }}
-            className="group relative flex items-center gap-3.5 overflow-hidden rounded-[20px] border border-white/[0.12] bg-gradient-to-b from-white/[0.08] via-white/[0.04] to-white/[0.02] p-3.5 shadow-[inset_0_1px_1px_0_rgba(255,255,255,0.18),0_12px_32px_-8px_rgba(0,0,0,0.5)] backdrop-blur-2xl transition-all duration-300 hover:-translate-y-1 hover:border-white/[0.28] hover:bg-white/[0.09] hover:shadow-[inset_0_1px_2px_0_rgba(255,255,255,0.35),0_18px_45px_-10px_rgba(0,0,0,0.65)]"
+            className="group relative flex items-center gap-3.5 overflow-hidden rounded-[20px] border border-white/[0.12] bg-gradient-to-b from-white/[0.08] via-white/[0.04] to-white/[0.02] px-4 py-3.5 shadow-[inset_0_1px_1px_0_rgba(255,255,255,0.18),0_12px_32px_-8px_rgba(0,0,0,0.5)] backdrop-blur-2xl transition-all duration-300 hover:-translate-y-1 hover:border-white/[0.28] hover:bg-white/[0.09] hover:shadow-[inset_0_1px_2px_0_rgba(255,255,255,0.35),0_18px_45px_-10px_rgba(0,0,0,0.65)]"
           >
             {/* Top Gloss Highlight (iOS Glass Specular) */}
             <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/35 to-transparent transition-opacity duration-300 group-hover:via-white/60" />
@@ -210,13 +205,10 @@ export function SupportedAiTools() {
               {tool.customIcon || <Terminal size={17} className="text-white/80" />}
             </div>
 
-            {/* Label & Category Badge */}
-            <div className="flex flex-1 items-center justify-between min-w-0 pr-1">
-              <span className="truncate text-[14px] font-semibold tracking-[-0.01em] text-[#F1F5F9] transition-colors group-hover:text-white">
+            {/* Tool Name */}
+            <div className="flex flex-1 items-center min-w-0">
+              <span className="truncate text-[14.5px] font-semibold tracking-[-0.01em] text-[#F1F5F9] transition-colors group-hover:text-white">
                 {tool.name}
-              </span>
-              <span className="shrink-0 rounded-full border border-white/[0.08] bg-white/[0.06] px-2 py-0.5 font-mono text-[9px] font-medium uppercase tracking-wider text-white/45 transition-colors group-hover:border-white/20 group-hover:bg-white/10 group-hover:text-white/75">
-                {tool.category}
               </span>
             </div>
           </motion.div>
