@@ -136,8 +136,7 @@ export default function PricingPage() {
             {c.faqs.map((item, i) => (
               <details
                 key={item.q}
-                className="group rounded-2xl border border-[#74FA6A]/25 px-6 py-5 transition-all duration-200 hover:border-[#74FA6A]/50"
-                style={{ background: "linear-gradient(135deg, rgba(157,232,141,0.13) 0%, rgba(116,250,106,0.07) 100%)" }}
+                className="faq-card group px-6 py-5"
               >
                 <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-[15px] font-medium text-[#E4F5E1] [&::-webkit-details-marker]:hidden">
                   <span className="flex items-baseline gap-3">
