@@ -2,7 +2,6 @@
 
 import React from "react";
 import Image from "next/image";
-import { MessageSquareQuote } from "lucide-react";
 
 interface Testimonial {
   quote: string;
@@ -85,11 +84,7 @@ export function TestimonialsSection() {
       {/* Header Section matching screenshot layout */}
       <div className="relative flex flex-col justify-between gap-6 md:flex-row md:items-end">
         <div className="max-w-[620px]">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/[0.1] bg-white/[0.04] px-3.5 py-1 text-[11px] font-medium tracking-wide text-[#A9C5A7] backdrop-blur-xl">
-            <MessageSquareQuote size={13} className="text-[#74FA6A]" />
-            Community & Developer Reviews
-          </div>
-          <h2 className="mt-3.5 text-balance text-[clamp(1.85rem,3.4vw,2.9rem)] font-semibold leading-[1.1] tracking-[-.045em] text-[#F0F3F5]">
+          <h2 className="text-balance text-[clamp(1.85rem,3.4vw,2.9rem)] font-semibold leading-[1.1] tracking-[-.045em] text-[#F0F3F5]">
             Explore a new way of working with agents alongside thousands of developers.
           </h2>
         </div>
