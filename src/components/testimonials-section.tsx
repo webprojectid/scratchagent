@@ -13,7 +13,7 @@ interface Testimonial {
 const TESTIMONIALS: Testimonial[] = [
   {
     quote:
-      "A tricky multi-service architecture bugfix stumped Cursor and Claude Code. Scratch Agent broke down the tasks with strict DAG dependencies, and our team shipped the entire MVP in one evening.",
+      "Bugfix arsitektur multi-service yang tricky bikin Cursor dan Claude Code mentok. Scratch Agent nge-breakdown task-nya dengan dependency DAG ketat, tim kami rilis MVP utuh dalam satu malam.",
     name: "Reza Aditya",
     role: "Founder @ DevHouse Jakarta",
     avatar: "/avatars/reza-v2.jpg",
@@ -85,13 +85,13 @@ export function TestimonialsSection() {
       <div className="relative flex flex-col justify-between gap-6 md:flex-row md:items-end">
         <div className="max-w-[620px]">
           <h2 className="text-balance text-[clamp(1.85rem,3.4vw,2.9rem)] font-semibold leading-[1.1] tracking-[-.045em] text-[#F0F3F5]">
-            Explore a new way of working with agents alongside thousands of developers.
+            Jelajahi cara baru bekerja bareng agent.
           </h2>
         </div>
 
         <div className="max-w-[340px] text-left md:text-right">
           <p className="text-[14px] leading-relaxed text-[#8C97A5]">
-            Real feedback from developers & creators building with Scratch Agent.
+            Feedback asli dari developer dan creator yang membangun dengan Scratch Agent.
           </p>
         </div>
       </div>

@@ -204,7 +204,10 @@ function BorderBeamPanelBase({
   // Resolved after mount so SSR and first client render agree on data-motion.
   const [hydrated, setHydrated] = React.useState(false);
   React.useEffect(() => setHydrated(true), []);
-  const staticMode = reducedMotion === true || (hydrated && systemReduced);
+  // Explicit prop wins both ways: `reducedMotion={false}` forces animation even
+  // under OS reduced-motion (this site's host machine has Windows animation
+  // effects disabled, which would otherwise park every beam permanently).
+  const staticMode = reducedMotion === undefined ? hydrated && systemReduced : reducedMotion;
   const onScreen = useVisibilityPause(rootRef, { threshold: 0.05 });
   const paused = pauseWhenHidden && !onScreen;
   const animate = !staticMode && !paused;

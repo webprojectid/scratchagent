@@ -8,8 +8,8 @@ export function pricingCopy(lang: Lang) {
       ? "Start on the Free plan. Upgrade when you need more."
       : "Mulai dari paket Free. Upgrade saat butuh lebih.",
     heroSub: en
-      ? "One generate turns your brief into a complete plan: structure, PRD, architecture, all the way to ordered tasks. Pick the plan that matches your working rhythm."
-      : "Satu generate memproses brief kamu jadi plan lengkap: struktur, PRD, arsitektur, sampai task terurut. Pilih paket yang sesuai ritme kerjamu.",
+      ? "One generate turns your brief into a complete plan: structure, PRD, architecture, ordered tasks. Pick the plan that fits how you work."
+      : "Satu generate memproses brief kamu jadi plan lengkap: struktur, PRD, arsitektur, task terurut. Pilih paket yang pas buat cara kerjamu.",
     heroCta: en ? "Start with the Free plan" : "Mulai dari paket Free",
     compareLink: en ? "compare all features" : "bandingkan semua fitur",
     trust: en
@@ -30,9 +30,9 @@ export function pricingCopy(lang: Lang) {
     noLabel: en ? "No" : "Tidak",
     comparison: [
       { label: en ? "Plan generates per 24 hours" : "Generate plan per 24 jam", free: "3", pro: en ? "Unlimited" : "Unlimited" },
-      { label: en ? "PRD phases per plan" : "Fase PRD per plan", free: "4–8", pro: "10–15" },
-      { label: en ? "Sub-features per phase" : "Sub-fitur per fase", free: "3–5", pro: "12–20" },
-      { label: en ? "Tasks per phase" : "Task per fase", free: "8–12", pro: "15–25" },
+      { label: en ? "PRD phases per plan" : "Fase PRD per plan", free: "4-8", pro: "10-15" },
+      { label: en ? "Sub-features per phase" : "Sub-fitur per fase", free: "3-5", pro: "12-20" },
+      { label: en ? "Tasks per phase" : "Task per fase", free: "8-12", pro: "15-25" },
       { label: "Premium AI model", free: true, pro: true },
       { label: en ? "Priority queue" : "Antrean prioritas", free: false, pro: true },
       { label: en ? "Edit and delete plan structure" : "Edit dan delete struktur plan", free: false, pro: true },
@@ -43,8 +43,8 @@ export function pricingCopy(lang: Lang) {
 
     faqTitle: en ? "Plans and billing, answered." : "Seputar paket dan pembayaran.",
     faqSub: en
-      ? "Straight answers, no clicking around. If your question is not here, start from the home page."
-      : "Jawaban langsung, tanpa perlu klik apa pun. Kalau pertanyaanmu belum terjawab, mulai dari halaman utama.",
+      ? "If your question is not here, start from the home page."
+      : "Kalau pertanyaanmu belum terjawab, mulai dari halaman utama.",
     faqs: en
       ? [
           {
@@ -93,8 +93,8 @@ export function pricingCopy(lang: Lang) {
 
     finalTitle: en ? "Ready to build your first plan?" : "Siap bikin plan pertamamu?",
     finalSub: en
-      ? "The Free plan gives you 3 generates per 24 hours. Enough to feel the whole pipeline before you decide anything."
-      : "Paket Free kasih 3 generate per 24 jam. Cukup untuk ngerasain seluruh pipeline sebelum kamu mutusin apa pun.",
+      ? "The Free plan gives you 3 generates per 24 hours, enough to try the whole pipeline before you decide anything."
+      : "Paket Free kasih 3 generate per 24 jam, cukup untuk ngerasain seluruh pipeline dulu sebelum mutusin apa pun.",
     finalCta: en ? "Start with the Free plan" : "Mulai dari paket Free",
     footer: en
       ? "© 2026 Scratch Agent. Hire your AI agent, start with the Free plan."
@@ -112,13 +112,13 @@ export function pricingCopy(lang: Lang) {
       ? [
           { text: "Premium AI model" },
           { text: "3 plan generates per 24 hours" },
-          { text: "4–8 phases, 3–5 sub-features, 8–12 tasks per phase" },
+          { text: "4-8 phases, 3-5 sub-features, 8-12 tasks per phase" },
           { text: "Private plans in the cloud, forever" },
         ]
       : [
           { text: "Premium AI model" },
           { text: "3 generate plan per 24 jam" },
-          { text: "4–8 fase, 3–5 sub-fitur, 8–12 task per fase" },
+          { text: "4-8 fase, 3-5 sub-fitur, 8-12 task per fase" },
           { text: "Plan privat di cloud, selamanya" },
         ],
     proTagline: en ? "Deep research and takes a long time" : "Riset mendalam dan butuh waktu lama",
@@ -127,14 +127,14 @@ export function pricingCopy(lang: Lang) {
       ? [
           { text: "Everything in the Free plan included" },
           { text: "Unlimited plan generates", highlight: true },
-          { text: "Deeper PRD research: 10–15 phases, 12–20 sub-features, 15–25 tasks per phase", highlight: true },
+          { text: "Deeper PRD research: 10-15 phases, 12-20 sub-features, 15-25 tasks per phase", highlight: true },
           { text: "Add ideas via chat (up to 2), or delete structure", highlight: true },
           { text: "Projects stored forever", highlight: true },
         ]
       : [
           { text: "Semua fitur dalam Free sudah termasuk" },
           { text: "Unlimited generate plan", highlight: true },
-          { text: "PRD riset lebih dalam: 10–15 fase, 12–20 sub-fitur, 15–25 task per fase", highlight: true },
+          { text: "PRD riset lebih dalam: 10-15 fase, 12-20 sub-fitur, 15-25 task per fase", highlight: true },
           { text: "Tambah ide chat (maks 2), atau delete struktur", highlight: true },
           { text: "Project disimpan selamanya", highlight: true },
         ],

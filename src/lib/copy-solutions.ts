@@ -20,8 +20,8 @@ export function solutionsCopy(lang: Lang) {
     soloEyebrow: "01 · solo dev",
     soloTitle: en ? "Side projects never stall again." : "Side project gak mangkrak lagi.",
     soloProblem: en
-      ? "Side projects usually die not because the idea is bad, but because you burn out on setup and boilerplate first. Leave it for a week, the context in your head is gone, and starting again feels heavy."
-      : "Side project biasanya mati bukan karena idenya jelek, tapi karena habis tenaga duluan di setup dan boilerplate. Ditinggal seminggu, konteks di kepala hilang, dan mulai lagi terasa berat.",
+      ? "Side projects usually die from setup burnout, not bad ideas. Leave it a week, the context in your head is gone, and starting again feels heavy."
+      : "Side project biasanya matinya bukan gara-gara ide jelek, tapi karena capek duluan di setup dan boilerplate. Ditinggal seminggu, konteks di kepala hilang, mulai lagi rasanya berat.",
     soloHelp: en
       ? "Write a 5 minute brief, Scratch Agent assembles the structure, PRD, and ordered tasks until they are ready to execute. The project context lives in the plan, not in your head, so you can pick it up anytime without losing direction."
       : "Tulis brief 5 menit, Scratch Agent menyusun struktur, PRD, dan task terurut sampai siap dieksekusi. Konteks proyek tinggal di plan, bukan di kepala kamu, jadi bisa lanjut kapan saja tanpa kehilangan arah.",
@@ -40,8 +40,8 @@ export function solutionsCopy(lang: Lang) {
     opEyebrow: "03 · agent operator",
     opTitle: en ? "A coding agent that never gets confused." : "Agent coding yang gak bingung.",
     opProblem: en
-      ? "OpenCode, Claude Code, or Cursor work great when the instructions are clear. The moment instructions get ambiguous, the agent starts guessing: the work order falls apart, context gets wasted, and the result has to be torn down and rebuilt."
-      : "OpenCode, Claude Code, atau Cursor bekerja bagus kalau instruksinya jelas. Begitu instruksinya ambigu, agent mulai menebak: urutan kerja berantakan, konteks terbuang, dan hasilnya harus dibongkar ulang.",
+      ? "OpenCode, Claude Code, and Cursor work great with clear instructions. Get ambiguous and the agent starts guessing: work order falls apart, context gets wasted, results get torn down and rebuilt."
+      : "OpenCode, Claude Code, atau Cursor emang enak dipakai kalau instruksinya jelas. Begitu instruksinya ambigu, agent mulai nebak: urutan kerja berantakan, konteks terbuang, hasilnya malah harus dibongkar ulang.",
     opHelp: en
       ? "Scratch Agent gives your agent an ordered plan with dependencies and checkpoints, not guesses. Task order is decided by the server, so the agent never takes a wrong step. When a task fails, the agent stops and reports. At a checkpoint, the agent waits for your verification before continuing."
       : "Scratch Agent memberi agent kamu plan terurut dengan dependensi dan checkpoint, bukan tebakan. Urutan task ditentukan server, jadi agent tidak pernah salah langkah. Saat task gagal, agent berhenti dan melapor. Saat checkpoint, agent menunggu verifikasi darimu sebelum lanjut.",
@@ -68,7 +68,7 @@ export function solutionsCopy(lang: Lang) {
           { label: "Agent execution", detail: "task 7 of 18 running", state: "live" },
         ]
       : [
-          { label: "Struktur produk", detail: "4 feature, 12 sub-feature", state: "done" },
+          { label: "Struktur produk", detail: "4 feature, 12 sub-fitur", state: "done" },
           { label: "PRD lengkap", detail: "tujuan, user story, kriteria selesai", state: "done" },
           { label: "Task terurut", detail: "18 task, dependensi diatur server", state: "done" },
           { label: "Eksekusi agent", detail: "task 7 dari 18 berjalan", state: "live" },
