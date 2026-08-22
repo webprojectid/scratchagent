@@ -16,63 +16,63 @@ const TESTIMONIALS: Testimonial[] = [
       "A tricky multi-service architecture bugfix stumped Cursor and Claude Code. Scratch Agent broke down the tasks with strict DAG dependencies, and our team shipped the entire MVP in one evening.",
     name: "Reza Aditya",
     role: "Founder @ DevHouse Jakarta",
-    avatar: "/avatars/reza.jpg",
+    avatar: "/avatars/reza-v2.jpg",
   },
   {
     quote:
       "Setelah pakai beberapa hari, Scratch Agent jauh lebih stabil untuk project skala menengah ke atas. PRD Blueprint-nya rapi banget dan diagram arsitektur Mermaid-nya langsung nyambung ke task koding.",
     name: "Anisa Rahmawati",
     role: "Tech Lead @ Fintech Nusantara",
-    avatar: "/avatars/anisa.jpg",
+    avatar: "/avatars/anisa-v2.jpg",
   },
   {
     quote:
       "Fitur auto-breakdown fase dengan dependency graph-nya gila sih. Agent terminal kayak Claude Code dan Qwen tinggal baca Master Prompt dan langsung eksekusi task demi task tanpa halusinasi.",
     name: "Fajar Pratama",
     role: "Senior Fullstack Engineer",
-    avatar: "/avatars/fajar.jpg",
+    avatar: "/avatars/fajar-v2.jpg",
   },
   {
     quote:
       "Biasanya bikin PRD dan task board butuh waktu berhari-hari. Di Scratch Agent tinggal masukin brief 2 kalimat, langsung keluar struktur lengkap dari frontend, backend, sampai QA test.",
     name: "Dini Maharani",
     role: "Product Designer & Indie Maker",
-    avatar: "/avatars/dini.jpg",
+    avatar: "/avatars/dini-v2.jpg",
   },
   {
     quote:
       "Struktur skema database Room SQLite dan sinkronisasi Cloud Supabase-nya beneran rock-solid. Di setiap project, spesifikasi teknisnya sangat detail sehingga eksekusi agent koding selalu presisi.",
     name: "Gilang Ramadhan",
     role: "Cloud & DevOps Architect @ Yogyakarta",
-    avatar: "/avatars/gilang.jpg",
+    avatar: "/avatars/gilang-v2.jpg",
   },
   {
     quote:
       "Paling suka bagian validasi DAG anti-circular dependencies-nya. Waktu agent AI jalanin 100+ task, urutan eksekusinya urut logis dan gak pernah nyangkut di tengah jalan.",
     name: "Maya Putri",
     role: "AI/ML Engineer & Researcher",
-    avatar: "/avatars/maya.jpg",
+    avatar: "/avatars/maya-v2.jpg",
   },
   {
     quote:
       "Export master prompt ke Cline, Cursor, dan Aider CLI langsung jalan tanpa missing context. Dari alur otentikasi sampai sinkronisasi Cloud terdefinisi jelas tanpa tebak-tebakan.",
     name: "Arya Kusuma",
     role: "Mobile Application Architect @ Bali",
-    avatar: "/avatars/arya.jpg",
+    avatar: "/avatars/arya-v2.jpg",
   },
   {
     quote:
       "Sebagai solo builder, Scratch Agent beneran jadi co-founder teknis. Mulai dari ide mentah di chat langsung ditransformasikan jadi fase koding lengkap yang siap dieksekusi.",
     name: "Budi Santoso",
     role: "Backend Architect @ Surabaya",
-    avatar: "/avatars/budi.jpg",
+    avatar: "/avatars/budi-v2.jpg",
   },
   {
     quote:
       "Hemat waktu riset berjam-jam saat nentuin arsitektur Next.js 14 dan database relational. Hasil PRD-nya siap diajukan ke klien dan langsung siap dikerjakan tim engineer.",
     name: "Siti Nurhaliza",
     role: "Software Engineer @ Bandung",
-    avatar: "/avatars/siti.jpg",
+    avatar: "/avatars/siti-v2.jpg",
   },
 ];
 
