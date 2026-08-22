@@ -3,6 +3,14 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   // Sembunyikan fingerprint framework.
   poweredByHeader: false,
+  images: {
+    remotePatterns: [
+      { protocol: "https", hostname: "lobehub.com" },
+      { protocol: "https", hostname: "lobechat.com" },
+      { protocol: "https", hostname: "avatars.githubusercontent.com" },
+      { protocol: "https", hostname: "registry.npmmirror.com" },
+    ],
+  },
   async headers() {
     return [
       {
