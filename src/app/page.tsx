@@ -162,7 +162,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section id="showcase" className="mx-auto max-w-[1360px] px-5 pb-24 md:px-10 md:pb-32">
+      <section id="showcase" className="mx-auto max-w-[1360px] px-5 pb-14 md:px-10 md:pb-20">
         <div className="flex flex-wrap items-end justify-between gap-6">
           <div><Eyebrow>case studies</Eyebrow><h2 className="mt-5 max-w-[20ch] text-balance text-[clamp(2.35rem,4.2vw,3.75rem)] font-medium leading-[.98] tracking-[-.055em] text-[#F0F3F5]">Dari brief jadi plan siap eksekusi.</h2></div>
           <p className="max-w-[42ch] text-sm leading-6 text-[#8C97A5]">Project simulasi nyata: dihasilkan otomatis dari brief singkat, lalu dijalankan task demi task oleh agent — dari aplikasi mobile sampai website.</p>
