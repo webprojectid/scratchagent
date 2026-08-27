@@ -30,7 +30,7 @@ export function HeaderNav({
   const resolvedKey: CtaKey = ctaKey ?? (loggedIn ? "createPlan" : "login");
 
   return (
-    <div className="flex items-center gap-5 font-mono text-[12px] text-white/60">
+    <div className="flex flex-wrap items-center gap-x-5 gap-y-2 font-mono text-[12px] text-white/60">
       {links.map((key) => (
         <Link key={key} href={`/${key}`} className="transition-colors hover:text-[#74FA6A]">
           {t("nav", key, lang)}

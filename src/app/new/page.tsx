@@ -89,10 +89,10 @@ export default function NewPlan() {
       ) : (
         <section
           ref={sectionRef}
-          className="relative isolate flex h-screen min-h-[100dvh] items-center justify-center bg-[#0F1113] overflow-hidden"
+          className="relative isolate flex h-screen min-h-[100dvh] max-lg:h-auto max-lg:min-h-[100dvh] items-center justify-center bg-[#0F1113] max-lg:overflow-y-auto overflow-hidden"
         >
           {/* Card */}
-          <div className="relative w-full max-w-[1200px] h-[600px] mx-auto px-4 md:px-6 overflow-hidden rounded-[24px] border border-white/10 bg-white/[0.03] backdrop-blur-xl shadow-[0_28px_90px_#000A,inset_0_1px_0_rgba(255,255,255,0.12),inset_0_0_0_1px_rgba(255,255,255,0.05)] ring-1 ring-white/[0.08]">
+          <div className="relative w-full max-w-[1200px] h-[600px] max-lg:h-auto max-lg:min-h-[560px] mx-auto px-4 md:px-6 overflow-hidden rounded-[24px] border border-white/10 bg-white/[0.03] backdrop-blur-xl shadow-[0_28px_90px_#000A,inset_0_1px_0_rgba(255,255,255,0.12),inset_0_0_0_1px_rgba(255,255,255,0.05)] ring-1 ring-white/[0.08]">
             
             {/* Cursor glow - radial gradient silver-white following mouse */}
             <div
@@ -143,9 +143,10 @@ export default function NewPlan() {
                 </form>
               </div>
 
-              {/* Robot */}
+              {/* Robot — desktop original 580x540 scale 1.15; mobile/tablet
+                  discale turun via .robot-scaler biar gak overflow layar kecil. */}
               <div className="relative flex h-full w-full items-end justify-center">
-                <div style={{ width: "580px", height: "540px", transform: "scale(1.15)", transformOrigin: "bottom center" }}>
+                <div className="robot-scaler">
                   <SplineSceneBasic />
                 </div>
               </div>
