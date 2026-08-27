@@ -19,54 +19,15 @@
   }
 }
 
-/* === Robot hero SVG (pengganti Spline 3D di /new) === */
-/* Semua animasi hanya transform/opacity → compositor/GPU, tidak reflow. */
-.robot-hero-wrap{position:relative;width:100%;height:100%;display:flex;align-items:flex-end;justify-content:center;background:radial-gradient(58% 62% at 50% 62%,rgba(116,250,106,.07),transparent 70%)}
-.robot-hero-svg{width:min(100%,460px);height:auto;overflow:visible}
-
-.robot-float{animation:robot-float 6s ease-in-out infinite;transform-origin:160px 210px}
-@keyframes robot-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
-
-.robot-shadow{fill:#000;opacity:.35;transform-origin:160px 256px;animation:robot-shadow 6s ease-in-out infinite}
-@keyframes robot-shadow{0%,100%{transform:scaleX(1);opacity:.35}50%{transform:scaleX(.86);opacity:.22}}
-
-.robot-orbit{stroke:#74FA6A;stroke-width:1;opacity:.16;transform-origin:160px 150px}
-.robot-orbit-a{animation:robot-orbit-spin 26s linear infinite}
-.robot-orbit-b{animation:robot-orbit-spin 34s linear infinite reverse}
-.robot-orbit-c{animation:robot-orbit-spin 42s linear infinite}
-@keyframes robot-orbit-spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
-
-.robot-node{fill:#74FA6A}
-.robot-node-1{opacity:.9;animation:robot-blink 3.2s ease-in-out infinite}
-.robot-node-2{opacity:.5;animation:robot-blink 4.1s ease-in-out infinite .8s}
-.robot-node-3{opacity:.6;animation:robot-blink 5s ease-in-out infinite 1.6s}
-@keyframes robot-blink{0%,100%{opacity:.2}50%{opacity:.9}}
-
-.robot-antenna{fill:#74FA6A;animation:robot-blink 2.2s ease-in-out infinite}
-
-.robot-eyes rect{animation:robot-eye 7s ease-in-out infinite}
-@keyframes robot-eye{0%,92%,100%{transform:translateX(0)}95%{transform:translateX(3px)}98%{transform:translateX(-3px)}}
-
-.robot-mouth line{animation:robot-talk 1.4s ease-in-out infinite;transform-origin:center}
-.robot-mouth line:nth-child(1){animation-delay:0s}
-.robot-mouth line:nth-child(2){animation-delay:.15s}
-.robot-mouth line:nth-child(3){animation-delay:.3s}
-.robot-mouth line:nth-child(4){animation-delay:.45s}
-@keyframes robot-talk{0%,100%{transform:scaleY(.5);opacity:.55}50%{transform:scaleY(1);opacity:1}}
-
-.robot-core{fill:#74FA6A}
-.robot-core-pulse{fill:none;stroke:#74FA6A;stroke-width:1.5;opacity:0;transform-origin:160px 206px;animation:robot-pulse 2.6s ease-out infinite}
-@keyframes robot-pulse{0%{transform:scale(1);opacity:.7}70%{transform:scale(2.1);opacity:0}100%{transform:scale(2.1);opacity:0}}
-
-.robot-arm-l{transform-origin:90px 180px;animation:robot-arm-l 6s ease-in-out infinite}
-.robot-arm-r{transform-origin:230px 180px;animation:robot-arm-r 6s ease-in-out infinite}
-@keyframes robot-arm-l{0%,100%{transform:rotate(0deg)}50%{transform:rotate(6deg)}}
-@keyframes robot-arm-r{0%,100%{transform:rotate(0deg)}50%{transform:rotate(-6deg)}}
-
-@media (prefers-reduced-motion: reduce){
-  .robot-float,.robot-shadow,.robot-orbit,.robot-node,.robot-antenna,
-  .robot-eyes rect,.robot-mouth line,.robot-core-pulse,.robot-arm-l,.robot-arm-r{animation:none}
-  .robot-node-1{opacity:.9}.robot-node-2{opacity:.5}.robot-node-3{opacity:.6}
+/* Badge "Built with Spline" di-inject runtime Spline saat scene load
+   (scene free-plan). Markup badge bisa berubah antar versi runtime,
+   jadi selain selector spesifik, semua anchor di dalam container Spline
+   (.spline-host) di-hide — kanvas 3D tidak punya link legit. */
+.spline-host a,
+a[href*="spline.design"],
+[class*="spline-badge"],
+[id*="spline-badge"] {
+  display: none !important;
 }
 
 /* === shadcn/ui theme — identitas brand: dark + hijau #74FA6A === */
