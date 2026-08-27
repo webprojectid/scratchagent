@@ -172,57 +172,35 @@ export function PlanClient({ plan: initialPlan, tier = "free" }: { plan: Plan; t
 
     let active = true;
 
-    // Generate task paralel antar fitur (batch 3): dulu sekuensial 1-per-1,
-    // 8 fitur x 60-110s = 9-10 menit; sekarang ~3x lebih cepat.
-    // Urutan antar-batch tetap berurutan, dalam batch jalan bersamaan.
-    const BATCH_SIZE = 3;
-    const total = plan.features.length;
-    const batches: number[][] = [];
-    for (let i = 0; i < total; i += BATCH_SIZE) {
-      batches.push(Array.from({ length: Math.min(BATCH_SIZE, total - i) }, (_, k) => i + k));
-    }
-
-    const generateAll = async () => {
-      for (const batch of batches) {
-        if (!active) return;
-        setStatusIdx(0);
-        const statusTimer = setInterval(() => setStatusIdx((s) => (s + 1) % statusMessages.length), 2200);
-        try {
-          await Promise.all(
-            batch.map(async (featureIndex) => {
-              try {
-                const res = await fetch(`/api/plans/${plan.id}/generate-tasks${await userQs()}`, {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ featureIndex }),
-                });
-                const data = await res.json();
-                if (data.error) {
-                  console.warn(`[generate-tasks] F${featureIndex + 1} error:`, data.error);
-                }
-              } catch (err) {
-                console.warn(`[generate-tasks] F${featureIndex + 1} failed:`, err);
-              }
-            }),
-          );
-          if (!active) return;
-          await refreshPlan();
-        } finally {
-          clearInterval(statusTimer);
+    // Generate task sekarang digerakkan SERVER (endpoint generate-all,
+    // background process): gak mati walau tab ditutup/refresh — dulu bug
+    // "plan bolong cuma sampai fase 2" karena loop fetch di browser mati.
+    // Browser tinggal trigger sekali + polling /progress (useEffect bawah).
+    const trigger = async () => {
+      try {
+        const res = await fetch(`/api/plans/${plan.id}/generate-all${await userQs()}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: "{}",
+        });
+        const data = await res.json().catch(() => null);
+        if (data?.error) {
+          console.warn(`[generate-all] error:`, data.error);
         }
+      } catch (err) {
+        console.warn(`[generate-all] failed:`, err);
       }
-      if (!active) return;
-      setPlan((prev) => ({ ...prev, status: "ready" }));
-      refreshPlan();
     };
 
-    generateAll();
+    trigger();
 
-    return () => { active = false; };
+    return () => { active = true; };
   }, []);
 
   useEffect(() => {
-    if (plan.status !== "implementing" && plan.status !== "done" && plan.status !== "ready") return;
+    // Polling juga saat "generating": task digenerate server-side sekarang,
+    // browser harus lihat task muncul satu per satu + status ready di akhir.
+    if (plan.status !== "generating" && plan.status !== "implementing" && plan.status !== "done" && plan.status !== "ready") return;
     let active = true;
     const poll = async () => {
       try {
