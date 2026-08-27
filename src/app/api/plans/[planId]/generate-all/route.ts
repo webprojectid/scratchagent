@@ -17,7 +17,7 @@ function featureHasTasks(feature: any): boolean {
   return (feature.subFeatures ?? []).some((sf: any) => (sf.tasks ?? []).length > 0);
 }
 
-async function generateAllTasks(planId: string, authHeaders: Record<string, string>) {
+async function generateAllTasks(planId: string, authHeaders: Record<string, string>, origin: string) {
   const state = running.get(planId)!;
   try {
     // Loop sampai semua fitur terisi atau mentok maxBatch (anti infinity loop
@@ -47,15 +47,15 @@ async function generateAllTasks(planId: string, authHeaders: Record<string, stri
       await Promise.all(
         batchIdx.map(async (featureIndex) => {
           try {
-            const res = await fetch(
-              `http://localhost:${process.env.PORT ?? 3000}/api/plans/${planId}/generate-tasks`,
-              {
-                method: "POST",
-                headers: authHeaders,
-                body: JSON.stringify({ featureIndex }),
-                signal: AbortSignal.timeout(300_000),
-              },
-            );
+            // URL absolut dari request asli — di Vercel gak bisa pake localhost
+            // (self-loop gagal), dan PORT env gak selalu diset di serverless.
+            const base = origin;
+            const res = await fetch(`${base}/api/plans/${planId}/generate-tasks`, {
+              method: "POST",
+              headers: authHeaders,
+              body: JSON.stringify({ featureIndex }),
+              signal: AbortSignal.timeout(300_000),
+            });
             const data = await res.json().catch(() => null);
             if (data?.error) {
               console.warn(`[generate-all] F${featureIndex + 1} error:`, data.error);
@@ -98,7 +98,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pla
 
     running.set(planId, { startedAt: Date.now(), done: false });
     // Fire-and-forget: loop jalan di server process, request balas langsung.
-    void generateAllTasks(planId, authHeaders);
+    void generateAllTasks(planId, authHeaders, new URL(request.url).origin);
 
     return NextResponse.json({ ok: true, started: true, features: (plan.features ?? []).length });
   } catch (error) {
