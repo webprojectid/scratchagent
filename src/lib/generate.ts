@@ -197,6 +197,10 @@ async function attemptModel<T>(
   const timeoutMs = Number(process.env.LLM_TIMEOUT_MS) || 180_000;
   let lastError: unknown;
   for (let attempt = 0; attempt < 3; attempt++) {
+    // Attempt pertama pakai timeout penuh; ulangan CEPAT gagal:
+    // kalau upstream hang, 60s per ulangan supaya failover ke model
+    // berikutnya gak makan 9 menit (user lihat "fetch failed" duluan).
+    const attemptTimeout = attempt === 0 ? timeoutMs : 60_000;
     // Retry pakai prompt sedikit berbeda: hindari replay respons rusak yang di-cache proxy,
     // sekaligus mengarahkan model untuk menulis ulang JSON dengan benar.
     // Nonce bikin tiap retry unik supaya varian prompt pun tidak ikut ter-cache.
@@ -204,7 +208,7 @@ async function attemptModel<T>(
       ? prompt
       : `${prompt}\n\nPerhatian: percobaan ${attempt} sebelumnya menghasilkan output TIDAK VALID. Tulis ulang SEKARANG: HANYA JSON valid di dalam triple backtick json, tanpa teks lain di luarnya. (percobaan-${attempt + 1}-${Date.now()}-${Math.random().toString(36).slice(2, 8)})`;
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+    const timeout = setTimeout(() => controller.abort(), attemptTimeout);
     const start = Date.now();
     console.log(`[LLM] request attempt ${attempt + 1} ke ${baseUrl}/chat/completions (model: ${model})`);
     try {
@@ -316,16 +320,23 @@ async function callLlm<T>(schema: z.ZodType<T>, prompt: string, usage?: LlmUsage
       return result;
     } catch (error) {
       lastError = error;
-      if (isExhaustedError(error)) {
-        exhaustedCount++;
-        const nextModel = order[i + 1];
-        if (nextModel) {
-          console.warn(`[LLM] model ${model} kehabisan quota, pindah ke ${nextModel}`);
-          modelCursor = models.indexOf(nextModel);
-          continue;
-        }
+      // Failover bukan cuma untuk quota: timeout/koneksi gagal ke satu model
+      // juga harus langsung pindah model berikutnya. Dulu hanya
+      // isExhaustedError yang failover, sehingga model yang HANG total
+      // (mis. qd/dmodel upstream mati) bikin user nunggu 3x180s = 9 menit
+      // lalu "fetch failed", padahal backup sehat.
+      const nextModel = order[i + 1];
+      if (nextModel) {
+        const why = isExhaustedError(error)
+          ? "kehabisan quota"
+          : error instanceof Error && error.name === "AbortError"
+            ? "timeout"
+            : "gagal";
+        console.warn(`[LLM] model ${model} ${why}, pindah ke ${nextModel}`);
+        modelCursor = models.indexOf(nextModel);
+        continue;
       }
-      throw error;
+      if (isExhaustedError(error)) exhaustedCount++;
     }
   }
   if (exhaustedCount === order.length && order.length > 1) {
