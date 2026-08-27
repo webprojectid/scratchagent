@@ -41,7 +41,10 @@ export async function getNextTask(planId: string): Promise<NextTaskResult> {
     };
   }
 
-  if (tasks.every((t) => t.status === "done")) {
+  const everyFeatureHasTasks = (plan.features ?? []).every((f) =>
+    (f.subFeatures ?? []).some((sf) => (sf.tasks ?? []).length > 0),
+  );
+  if (tasks.length > 0 && everyFeatureHasTasks && tasks.every((t) => t.status === "done")) {
     return { done: true, blocked: false, failedTasks: [], task: null, progress: { phase: { current: 0, total: 0 }, layer: "qa", page: null, checkpoint: false, remainingInLayer: 0 } };
   }
 
@@ -115,7 +118,14 @@ export async function retryTask(planId: string, ref: string): Promise<Task | nul
 
 async function checkPlanComplete(planId: string, plan: Plan) {
   const tasks = allTasks(plan);
-  if (tasks.length > 0 && tasks.every((t) => t.status === "done")) {
+  // Plan baru sah dianggap done kalau SEMUA fitur sudah punya task dan
+  // semuanya selesai. Fitur yang belum ke-generate (loop generate-tasks
+  // di browser mati di tengah) tidak boleh dihitung tuntas — dulu bug ini
+  // bikin plan 8 fitur dengan 2 fitur berisi dianggap "done".
+  const everyFeatureHasTasks = (plan.features ?? []).every((f) =>
+    (f.subFeatures ?? []).some((sf) => (sf.tasks ?? []).length > 0),
+  );
+  if (tasks.length > 0 && everyFeatureHasTasks && tasks.every((t) => t.status === "done")) {
     await updatePlanStatus(planId, "done");
   }
 }
