@@ -410,3 +410,26 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--accent); outline-of
 /* NOTE: no prefers-reduced-motion override here — the host machine has
    Windows animation effects disabled, which reports reduce: true and
    killed the marquee entirely. User explicitly wants it always scrolling. */
+
+/* Robot Spline di /new — ukuran original desktop dipertahankan (580x540,
+   scale 1.15, bottom center). Mobile/tablet: discale turun proporsional
+   biar gak overflow layar sempit; layout grid juga stack di <lg. */
+.robot-scaler {
+  width: 580px;
+  height: 540px;
+  transform: scale(1.15);
+  transform-origin: bottom center;
+}
+@media (max-width: 1023px) {
+  .robot-scaler {
+    /* 390px viewport: 580px terlalu lebar — scale agar muat ~92% lebar layar */
+    transform: scale(min(0.62, calc((100vw - 48px) / 580 * 0.92)));
+    height: 340px; /* area visual yang dipakai setelah discale */
+  }
+}
+@media (max-width: 480px) {
+  .robot-scaler {
+    transform: scale(min(0.56, calc((100vw - 32px) / 580 * 0.92)));
+    height: 300px;
+  }
+}

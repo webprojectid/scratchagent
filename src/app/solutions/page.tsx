@@ -27,7 +27,7 @@ export default function SolutionsPage() {
     <main className="min-h-screen bg-[#0A0A0A] text-[#E8EDEC] selection:bg-[#74FA6A]/30 selection:text-black">
       {/* Header */}
       <header className="sticky top-0 z-40 border-b border-white/[.06] bg-[rgba(10,10,10,0.85)] backdrop-blur-[12px]">
-        <div className="mx-auto flex h-[54px] max-w-[1100px] items-center justify-between px-5">
+        <div className="mx-auto flex h-[54px] max-w-[1100px] items-center justify-between gap-3 px-5 max-lg:h-auto max-lg:min-h-[54px] max-lg:flex-wrap max-lg:py-2.5">
           <Logo />
           <HeaderNav links={["pricing", "docs"]} ctaHref="/new" ctaKey="createPlan" />
         </div>
