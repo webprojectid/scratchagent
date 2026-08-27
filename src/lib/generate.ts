@@ -219,6 +219,11 @@ async function attemptModel<T>(
           ],
           temperature: 0.2,
           max_tokens: 16384,
+          // Streaming: parser SSE auto-detect dan fallback ke JSON, jadi aman
+          // untuk gateway yang mengabaikan flag ini. Manfaat: token pertama
+          // langsung mengalir (progress), dan gateway tidak menahan seluruh
+          // respons reasoning-model yang lambat di buffer.
+          stream: true,
         }),
         signal: controller.signal,
       });
