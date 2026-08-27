@@ -135,32 +135,42 @@ async function parseStream(
   
   const reader = body.getReader();
   const chunks: string[] = [];
-  
+  // Buffer antar network chunk: satu event SSE bisa kepotong di tengah
+  // (umum via proxy/tunnel seperti Cloudflare). Tanpa buffer, JSON kepotong
+  // → parse gagal → chunk dibuang diam-diam → konten JSON bolong →
+  // 'JSON parsing gagal' di akhir pipeline.
+  let lineBuffer = "";
+  let streamDone = false;
+
   try {
-    while (true) {
+    while (!streamDone) {
       const { done, value } = await reader.read();
-      
+
       if (done) {
         break;
       }
-      
+
       // Decode chunk
-      const text = decoder.decode(value, { stream: false });
-      
-      // Split into individual SSE lines
-      const lines = text.split('\n');
-      
+      const text = decoder.decode(value, { stream: true });
+
+      // Gabung dengan sisa chunk sebelumnya, baru split per baris.
+      // Baris terakhir belum tentu utuh — simpan di buffer.
+      const combined = lineBuffer + text;
+      const lines = combined.split("\n");
+      lineBuffer = lines.pop() ?? "";
+
       for (const line of lines) {
         const trimmed = line.trim();
-        
+
         // Skip empty lines
         if (!trimmed) continue;
-        
-        // Check for [DONE] marker
-        if (trimmed === '[DONE]' || trimmed === 'data: [DONE]') {
+
+        // Check for [DONE] marker — hentikan SELURUH pembacaan stream
+        if (trimmed === "[DONE]" || trimmed === "data: [DONE]") {
           if (options.logDebug) {
             console.log("[SSE Parser] Stream completed");
           }
+          streamDone = true;
           break;
         }
         
