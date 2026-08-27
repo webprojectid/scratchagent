@@ -171,46 +171,52 @@ export function PlanClient({ plan: initialPlan, tier = "free" }: { plan: Plan; t
     }
 
     let active = true;
-    let featureIndex = 0;
 
-    const generateNext = async () => {
-      if (!active) return;
-      const total = plan.features.length;
-      setStatusIdx(0);
+    // Generate task paralel antar fitur (batch 3): dulu sekuensial 1-per-1,
+    // 8 fitur x 60-110s = 9-10 menit; sekarang ~3x lebih cepat.
+    // Urutan antar-batch tetap berurutan, dalam batch jalan bersamaan.
+    const BATCH_SIZE = 3;
+    const total = plan.features.length;
+    const batches: number[][] = [];
+    for (let i = 0; i < total; i += BATCH_SIZE) {
+      batches.push(Array.from({ length: Math.min(BATCH_SIZE, total - i) }, (_, k) => i + k));
+    }
 
-      const statusTimer = setInterval(() => setStatusIdx((s) => (s + 1) % statusMessages.length), 2200);
-
-      try {
-        const res = await fetch(`/api/plans/${plan.id}/generate-tasks${await userQs()}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ featureIndex }),
-        });
-        const data = await res.json();
+    const generateAll = async () => {
+      for (const batch of batches) {
         if (!active) return;
-        clearInterval(statusTimer);
-
-        if (data.error) {
-          console.warn(`[generate-tasks] F${featureIndex + 1} error:`, data.error);
+        setStatusIdx(0);
+        const statusTimer = setInterval(() => setStatusIdx((s) => (s + 1) % statusMessages.length), 2200);
+        try {
+          await Promise.all(
+            batch.map(async (featureIndex) => {
+              try {
+                const res = await fetch(`/api/plans/${plan.id}/generate-tasks${await userQs()}`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ featureIndex }),
+                });
+                const data = await res.json();
+                if (data.error) {
+                  console.warn(`[generate-tasks] F${featureIndex + 1} error:`, data.error);
+                }
+              } catch (err) {
+                console.warn(`[generate-tasks] F${featureIndex + 1} failed:`, err);
+              }
+            }),
+          );
+          if (!active) return;
+          await refreshPlan();
+        } finally {
+          clearInterval(statusTimer);
         }
-
-        await refreshPlan();
-      } catch (err) {
-        clearInterval(statusTimer);
-        console.warn(`[generate-tasks] F${featureIndex + 1} failed:`, err);
       }
-
-      featureIndex++;
-
-      if (featureIndex < total) {
-        setTimeout(generateNext, 400);
-      } else {
-        setPlan((prev) => ({ ...prev, status: "ready" }));
-        refreshPlan();
-      }
+      if (!active) return;
+      setPlan((prev) => ({ ...prev, status: "ready" }));
+      refreshPlan();
     };
 
-    generateNext();
+    generateAll();
 
     return () => { active = false; };
   }, []);
