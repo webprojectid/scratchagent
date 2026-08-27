@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Shell } from "@/components/brand";
-import { SplineSceneBasic } from "@/components/ui/demo";
+import { RobotHero } from "@/components/ui/robot-hero";
 import { Loader2 } from "lucide-react";
 import { getCurrentUser, supabaseConfigured } from "@/lib/current-user";
 
@@ -143,10 +143,10 @@ export default function NewPlan() {
                 </form>
               </div>
 
-              {/* Robot */}
+              {/* Robot — SVG murni: instant render, animasi GPU, tanpa fetch */}
               <div className="relative flex h-full w-full items-end justify-center">
-                <div style={{ width: "580px", height: "540px", transform: "scale(1.15)", transformOrigin: "bottom center" }}>
-                  <SplineSceneBasic />
+                <div style={{ width: "580px", maxWidth: "100%", height: "540px", transform: "scale(1.15)", transformOrigin: "bottom center" }}>
+                  <RobotHero />
                 </div>
               </div>
             </div>
