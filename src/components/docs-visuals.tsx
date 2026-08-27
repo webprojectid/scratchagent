@@ -144,8 +144,8 @@ export function QuickstartVisual() {
 export function ConceptPipeline() {
   const c = docsCopy(useLang());
   return (
-    <div className="overflow-x-auto rounded-2xl border border-white/[.08] bg-[#141414] p-6">
-      <div className="flex min-w-[560px] items-center gap-3">
+    <div className="overflow-x-auto rounded-2xl border border-white/[.08] bg-[#141414] p-6 max-lg:p-4">
+      <div className="flex min-w-[560px] items-center gap-3 max-lg:min-w-0 max-lg:flex-col max-lg:items-stretch max-lg:gap-2">
         {c.pipelineNodes.map((node, i) => (
           <div key={node.label} className="flex flex-1 items-center gap-3">
             <div className="flex-1 rounded-xl border border-white/[.08] bg-[#0d0d0d] px-4 py-4 text-center">
