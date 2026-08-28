@@ -266,6 +266,7 @@ export type SecurityEventType =
   | "rate_limited" // 429: jatah habis
   | "quota_exhausted" // kuota harian free habis
   | "generate" // generate plan sukses (jejak biaya LLM)
+  | "generate_failed" // generate plan gagal di background (jejak refund kuota)
   | "generate_tasks" // generate task per fitur
   | "idea_submitted" // chat ide Pro dipakai
   | "structure_deleted" // hapus fase/sub-fitur/task
