@@ -66,7 +66,7 @@ export interface Plan {
   userFlow?: UserFlow[];
   architecture?: string;
   databaseSchema?: string;
-  status: "generating" | "ready" | "implementing" | "done";
+  status: "generating" | "ready" | "implementing" | "done" | "failed";
   features: Feature[];
   createdAt?: string;
   userId?: string;

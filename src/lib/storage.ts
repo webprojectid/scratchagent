@@ -112,10 +112,12 @@ export async function savePlan(plan: Plan, userId: string): Promise<void> {
     status: plan.status ?? "generating",
     createdAt: plan.createdAt ? new Date(plan.createdAt) : new Date(),
   } as any)
-    // onConflict update tech_prefs: metadata dinamis (ideas, tier, warnings)
+    // onConflict update tech_prefs + title: metadata dinamis (ideas, tier, warnings)
     // hidup di tech_prefs dan HARUS ikut ter-update saat plan disimpan ulang
-    // (contoh: submit ide dari kolom chat "Ide Kamu").
-    .onConflictDoUpdate({ target: plans.id, set: { techPrefs: { stack: plan.stack ?? [], techStack: plan.techStack ?? [], architecture: plan.architecture ?? "", databaseSchema: plan.databaseSchema ?? "", requirements: plan.requirements ?? { fungsional: [], nonFungsional: [] }, userFlow: plan.userFlow ?? [], warnings: plan.warnings ?? [], tier: plan.tier ?? "free", ideas: plan.ideas ?? [] } } });
+    // (contoh: submit ide dari kolom chat "Ide Kamu"). Title ikut di-update karena
+    // generate API sekarang bikin placeholder "Menyusun PRD..." dulu, lalu
+    // background job re-save dengan judul asli hasil LLM.
+    .onConflictDoUpdate({ target: plans.id, set: { title: plan.title, techPrefs: { stack: plan.stack ?? [], techStack: plan.techStack ?? [], architecture: plan.architecture ?? "", databaseSchema: plan.databaseSchema ?? "", requirements: plan.requirements ?? { fungsional: [], nonFungsional: [] }, userFlow: plan.userFlow ?? [], warnings: plan.warnings ?? [], tier: plan.tier ?? "free", ideas: plan.ideas ?? [] } } });
 
   for (const feature of (plan.features as any[])) {
     const fid = feature.id || crypto.randomUUID();
