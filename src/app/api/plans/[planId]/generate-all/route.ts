@@ -42,8 +42,9 @@ async function generateAllTasks(planId: string, authHeaders: Record<string, stri
         break;
       }
 
-      // Ambil sampai 3 fitur per batch (paralel, sama seperti versi browser).
-      const batchIdx = pendingIdx.slice(0, 3);
+      // Ambil sampai 6 fitur per batch (naik dari 3 — savePlan insert-only dengan
+      // onConflictDoNothing per row fitur, aman dari race antar paralel).
+      const batchIdx = pendingIdx.slice(0, 6);
       await Promise.all(
         batchIdx.map(async (featureIndex) => {
           try {
