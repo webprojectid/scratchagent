@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
 import { Lightbulb } from "lucide-react";
 import { Shell, Brand } from "@/components/brand";
@@ -79,7 +78,6 @@ function ViewTabs({ view, setView, pillId }: { view: ViewKey; setView: (v: ViewK
 
 export function PlanClient({ plan: initialPlan, tier = "free" }: { plan: Plan; tier?: "free" | "pro" }) {
   const [plan, setPlan] = useState(initialPlan);
-  const router = useRouter();
   const [liveTasks, setLiveTasks] = useState<Record<string, Task["status"]> | undefined>(undefined);
   const [showModal, setShowModal] = useState(false);
   const [showIdeas, setShowIdeas] = useState(false);
@@ -218,17 +216,6 @@ export function PlanClient({ plan: initialPlan, tier = "free" }: { plan: Plan; t
         setLiveTasks(map);
         if (data.status && data.status !== plan.status) {
           setPlan((prev) => ({ ...prev, status: data.status }));
-        }
-        // PRD placeholder: fitur/judul diisi background job (after() di /api/generate).
-        // Saat fitur pertama muncul (0 -> N) atau judul bukan lagi "Menyusun PRD...",
-        // ambil data plan terbaru dari server component (router.refresh).
-        const nFeatures = (data.features ?? []).length;
-        if (nFeatures > 0 && (plan.features ?? []).length === 0) {
-          setPlan((prev) => ({ ...prev, features: data.features }));
-        }
-        if (plan.title === "Menyusun PRD..." && data.title && data.title !== plan.title) {
-          setPlan((prev) => ({ ...prev, title: data.title }));
-          router.refresh();
         }
       } catch { /* ignore */ }
     };
