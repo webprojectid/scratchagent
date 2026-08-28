@@ -23,19 +23,6 @@ async function generateAllTasks(planId: string, authHeaders: Record<string, stri
     // Loop sampai semua fitur terisi atau mentok maxBatch (anti infinity loop
     // kalau LLM/gateway konsisten gagal — fitur gagal dicoba lagi di batch berikut).
     const MAX_BATCH = 20;
-    // PRD sekarang digenerate background (after() di /api/generate) — plan bisa
-    // jadi punya 0 fitur di detik awal. Tunggu fitur pertama muncul dulu
-    // (maks 10 menit) sebelum mulai loop task, biar gak salah tandai ready.
-    const featuresReady = async () => {
-      const p = await getPlan(planId);
-      return (p?.features ?? []).length > 0 ? p : null;
-    };
-    for (let w = 0; w < 60; w++) {
-      const p = await getPlan(planId);
-      if (!p || p.status !== "generating") break; // failed/deleted -> stop
-      if ((p.features ?? []).length > 0) break;   // PRD background sudah masuk
-      await new Promise((r) => setTimeout(r, 10_000));
-    }
     for (let batch = 0; batch < MAX_BATCH; batch++) {
       const plan = await getPlan(planId);
       if (!plan) break;

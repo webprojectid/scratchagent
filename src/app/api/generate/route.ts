@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
-import { after } from "next/server";
 import { z } from "zod";
 import { getRequestUser, planOwnerKey, unauthorized } from "@/lib/api-auth";
 import { generatePlanStructure } from "@/lib/generate";
-import { savePlan, updatePlanStatus } from "@/lib/storage";
+import { savePlan } from "@/lib/storage";
 import { consumeQuota, finalizeQuota, getQuota, refundQuota } from "@/lib/quota";
 import { getAccountState } from "@/lib/billing";
 import { RATE_LIMITS, blockedIpResponse, clientKey, getClientIp, logSecurity, rateLimit, rateLimitedResponse } from "@/lib/security";
@@ -73,70 +72,32 @@ export async function POST(request: Request) {
     }
 
     try {
-      // ARSITEKTUR BARU (fix "Misi gagal: Unexpected token"): dulu PRD digenerate
-      // BLOCKING di request ini (2-7 menit) — di Vercel function dibunuh platform
-      // pas timeout dan balas teks error (bukan JSON), client pecah di r.json().
-      // Sekarang: buat plan placeholder (status generating) + balas CEPAT,
-      // struktur PRD digenerate di background via after() (pola sama dengan
-      // generate-all yang sudah terbukti). Sisa kuota tetap dikunci dulu;
-      // refund/finalize dijalankan di dalam background job.
+      const result = await generatePlanStructure(data.brief, data.techPrefs, data.answers, tier);
       const planId = randomUUID();
       await savePlan(
         {
           id: planId,
-          title: "Menyusun PRD...",
+          title: result.title,
           brief: data.brief,
-          stack: [],
-          techStack: [],
-          asumsi: [],
-          requirements: { fungsional: [], nonFungsional: [] },
-          userFlow: [],
-          architecture: "",
-          databaseSchema: "",
+          stack: result.stack,
+          techStack: result.techStack,
+          asumsi: result.asumsi,
+          requirements: result.requirements,
+          userFlow: result.userFlow,
+          architecture: result.architecture,
+          databaseSchema: result.databaseSchema,
           status: "generating",
-          features: [] as never,
-          warnings: [],
+          features: result.features as never,
+          warnings: result.warnings,
           tier,
           createdAt: new Date().toISOString(),
         },
         ownerId,
       );
 
-      after(async () => {
-        try {
-          const result = await generatePlanStructure(data.brief, data.techPrefs, data.answers, tier);
-          // Re-save penuh: timpa placeholder dengan hasil PRD (fitur ikut ter-insert).
-          await savePlan(
-            {
-              id: planId,
-              title: result.title,
-              brief: data.brief,
-              stack: result.stack,
-              techStack: result.techStack,
-              asumsi: result.asumsi,
-              requirements: result.requirements,
-              userFlow: result.userFlow,
-              architecture: result.architecture,
-              databaseSchema: result.databaseSchema,
-              status: "generating",
-              features: result.features as never,
-              warnings: result.warnings,
-              tier,
-              createdAt: new Date().toISOString(),
-            },
-            ownerId,
-          );
-          await finalizeQuota(receipt, planId, result.usage);
-          await logSecurity("generate", { planId, tier, features: result.features.length, tokens: result.usage.tokensIn + result.usage.tokensOut }, { ip, userId: user.userId, request });
-        } catch (error) {
-          await refundQuota(receipt);
-          await updatePlanStatus(planId, "failed");
-          await logSecurity("generate_failed", { planId, tier, reason: error instanceof Error ? error.message : "unknown" }, { ip, userId: user.userId, request });
-          console.error("[generate:background]", error);
-        }
-      });
-
-      return NextResponse.json({ id: planId, warnings: [] });
+      await finalizeQuota(receipt, planId, result.usage);
+      await logSecurity("generate", { planId, tier, features: result.features.length, tokens: result.usage.tokensIn + result.usage.tokensOut }, { ip, userId: user.userId, request });
+      return NextResponse.json({ id: planId, warnings: result.warnings });
     } catch (error) {
       await refundQuota(receipt);
       throw error;

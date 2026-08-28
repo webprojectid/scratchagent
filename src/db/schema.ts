@@ -1,6 +1,6 @@
 import { pgEnum, pgTable, text, timestamp, uuid, varchar, integer, jsonb, boolean, unique } from "drizzle-orm/pg-core";
 
-export const planStatus = pgEnum("plan_status", ["generating", "ready", "implementing", "done", "failed"]);
+export const planStatus = pgEnum("plan_status", ["generating", "ready", "implementing", "done"]);
 export const featureStatus = pgEnum("feature_status", ["direncanakan", "berjalan", "selesai"]);
 export const taskStatus = pgEnum("task_status", ["pending", "in_progress", "done", "failed"]);
 export const taskLayer = pgEnum("task_layer", ["frontend", "backend", "qa"]);
