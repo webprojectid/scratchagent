@@ -485,13 +485,16 @@ export async function generatePlanStructure(
   }
   const featureTitles = stage1Features.map((f) => f.title);
 
-  const two = await callLlm(
-    stage2Schema,
-    `Brief: ${brief}\nFitur: ${JSON.stringify(featureTitles)}\n\nKamu adalah arsitek produk. Untuk setiap fitur, lakukan dekomposisi kritis:\n${STYLE_RULE}\n1. Untuk tiap fitur identifikasi ${limits.subFeatures[0]} sampai ${limits.subFeatures[1]} sub-fitur yang saling eksklusif namun collectively exhaustive, pilih aspek paling penting dari tiap fitur.\n2. Tiap sub-fitur pecahkan SATU masalah spesifik.\n3. Tujuan terukur.\n4. Selesai_bila berisi acceptance criteria konkret (min 2).\n5. Tandai sub-fitur risiko tinggi atau dependency eksternal.\n\nWAJIB field: title, sub_features (title, tujuan, selesai_bila). Format: {"features":[{"title":"...","sub_features":[{"title":"...","tujuan":"...","selesai_bila":["..."]}]}]}}`,
-    usage,
-  );
-
-  const [archDataRaw, dbDataRaw, reqDataRaw] = await Promise.all([
+  // Stage-2 (dekomposisi sub-fitur), architecture, database schema, dan requirements
+  // semuanya HANYA butuh output stage-1 (judul fitur + stack) — bukan satu sama lain.
+  // Dulu stage-2 di-await dulu baru arch/db/req paralel = satu panggilan serial
+  // terbuang (±2 menit). Sekarang 4-way paralel.
+  const [two, archDataRaw, dbDataRaw, reqDataRaw] = await Promise.all([
+    callLlm(
+      stage2Schema,
+      `Brief: ${brief}\nFitur: ${JSON.stringify(featureTitles)}\n\nKamu adalah arsitek produk. Untuk setiap fitur, lakukan dekomposisi kritis:\n${STYLE_RULE}\n1. Untuk tiap fitur identifikasi ${limits.subFeatures[0]} sampai ${limits.subFeatures[1]} sub-fitur yang saling eksklusif namun collectively exhaustive, pilih aspek paling penting dari tiap fitur.\n2. Tiap sub-fitur pecahkan SATU masalah spesifik.\n3. Tujuan terukur.\n4. Selesai_bila berisi acceptance criteria konkret (min 2).\n5. Tandai sub-fitur risiko tinggi atau dependency eksternal.\n\nWAJIB field: title, sub_features (title, tujuan, selesai_bila). Format: {"features":[{"title":"...","sub_features":[{"title":"...","tujuan":"...","selesai_bila":["..."]}]}]}}`,
+      usage,
+    ),
     callLlm(
       archSchema,
       `Brief: ${brief}\nFitur: ${JSON.stringify(featureTitles)}\nStack: ${JSON.stringify(one.stack ?? [])}\n\nKamu adalah solution architect. Buat architecture detail untuk produk ini.\n${STYLE_RULE} Jelaskan komponen utama, alur data end-to-end, keputusan arsitektur, trade-off (monolith vs microservices, SSR vs CSR, SQL vs NoSQL), error handling, caching, autentikasi, dan skalabilitas. Narasi 2-3 paragraf. WAJIB sertakan diagram mermaid flowchart TD di dalam triple backtick.\n\nFormat: {"architecture":"narasi detail lalu mermaid flowchart TD di triple backtick"}}`,
