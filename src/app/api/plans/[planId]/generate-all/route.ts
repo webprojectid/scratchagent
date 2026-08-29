@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { accessPlan, getRequestUser } from "@/lib/api-auth";
-import { getPlan, updatePlanStatus } from "@/lib/storage";
+import { getPlan, savePlan, updatePlanStatus } from "@/lib/storage";
+import { ensureQaPhase } from "@/lib/tasks";
 
 // Generate SEMUA task di sisi server, digerakkan di background process —
 // bukan loop fetch di browser. Dulu loop di plan-client.tsx mati kalau tab
@@ -17,7 +18,7 @@ function featureHasTasks(feature: any): boolean {
   return (feature.subFeatures ?? []).some((sf: any) => (sf.tasks ?? []).length > 0);
 }
 
-async function generateAllTasks(planId: string, authHeaders: Record<string, string>, origin: string) {
+async function generateAllTasks(planId: string, userId: string, authHeaders: Record<string, string>, origin: string) {
   const state = running.get(planId)!;
   try {
     // Loop sampai semua fitur terisi atau mentok maxBatch (anti infinity loop
@@ -35,16 +36,23 @@ async function generateAllTasks(planId: string, authHeaders: Record<string, stri
       });
 
       if (pendingIdx.length === 0) {
-        // Semua fitur terisi -> tandai ready (konsisten dengan logika lama
-        // di generate-tasks route yang hanya set ready saat call terakhir).
+        // Semua fitur terisi -> finalisasi: inject fase "QA & Integrasi" bila
+        // belum ada (helper idempoten, dipakai bersama generate-tasks) lalu
+        // tandai ready. plan di-fetch fresh di awal iterasi ini (setelah batch
+        // sebelumnya tuntas), jadi snapshot-nya tidak basi — ini yang dulu
+        // bikin QA & Integrasi bolong saat fitur digenerate paralel.
         const anyTask = (plan.features ?? []).some((f: any) => featureHasTasks(f));
-        if (anyTask) await updatePlanStatus(planId, "ready");
+        if (anyTask) {
+          const { ready } = ensureQaPhase(plan);
+          if (ready) await updatePlanStatus(planId, "ready");
+          await savePlan(plan, userId);
+        }
         break;
       }
 
-      // Ambil sampai 6 fitur per batch (naik dari 3 — savePlan insert-only dengan
-      // onConflictDoNothing per row fitur, aman dari race antar paralel).
-      const batchIdx = pendingIdx.slice(0, 6);
+      // Ambil 8 fitur per batch: free tier maksimal 8 fitur, jadi umumnya satu
+      // gelombang kelar semua (tidak ada nunggu gelombang kedua).
+      const batchIdx = pendingIdx.slice(0, 8);
       await Promise.all(
         batchIdx.map(async (featureIndex) => {
           try {
@@ -79,6 +87,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pla
     const user = await getRequestUser(legacyUserId);
     const { plan, error } = await accessPlan(planId, user, { write: true });
     if (error || !plan) return error;
+    const ownerId = user?.userId ?? plan.userId ?? "";
 
     if (plan.status !== "generating") {
       return NextResponse.json({ ok: true, alreadyDone: true, status: plan.status });
@@ -99,7 +108,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pla
 
     running.set(planId, { startedAt: Date.now(), done: false });
     // Fire-and-forget: loop jalan di server process, request balas langsung.
-    void generateAllTasks(planId, authHeaders, new URL(request.url).origin);
+    void generateAllTasks(planId, ownerId, authHeaders, new URL(request.url).origin);
 
     return NextResponse.json({ ok: true, started: true, features: (plan.features ?? []).length });
   } catch (error) {
