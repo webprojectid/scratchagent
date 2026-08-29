@@ -106,24 +106,50 @@ export function PlanClient({ plan: initialPlan, tier = "free" }: { plan: Plan; t
             for (const serverSf of serverF.subFeatures ?? []) {
               for (const t of serverSf.tasks ?? []) map[t.ref] = t.status;
             }
+            const serverSubs: {
+              title: string;
+              tujuan?: string;
+              selesaiBila?: string[];
+              tasks?: Pick<Task, "ref" | "title" | "layer" | "phase" | "page" | "status" | "deps">[];
+            }[] = serverF.subFeatures ?? [];
             return {
               ...f,
-              subFeatures: f.subFeatures.map((sf) => {
-                const serverSf = serverF.subFeatures?.find((ssf: { title: string }) => ssf.title === sf.title);
-                if (!serverSf) return sf;
-                const existingRefs = new Set(sf.tasks.map((t) => t.ref));
-                const newTasks = (serverSf.tasks ?? []).filter((t: Task) => !existingRefs.has(t.ref));
-                if (newTasks.length === 0) return sf;
-                return {
-                  ...sf,
-                  tasks: [...sf.tasks, ...newTasks.map((t: Task) => ({
-                    ref: t.ref, title: t.title, layer: t.layer, phase: t.phase,
-                    page: t.page, deps: t.deps ?? [], status: t.status,
-                    retryCount: 0, lastFailReason: null, failReason: null,
-                    startedAt: null, completedAt: null,
-                  }))],
-                };
-              }),
+              subFeatures: [
+                // Task baru dari server disuntikkan ke sub-fitur yang sudah ada:
+                // inilah yang bikin task terisi satu per satu tanpa refresh.
+                ...f.subFeatures.map((sf) => {
+                  const serverSf = serverSubs.find((ssf) => ssf.title === sf.title);
+                  if (!serverSf) return sf;
+                  const existingRefs = new Set(sf.tasks.map((t) => t.ref));
+                  const newTasks = (serverSf.tasks ?? []).filter((t: Task) => !existingRefs.has(t.ref));
+                  if (newTasks.length === 0) return sf;
+                  return {
+                    ...sf,
+                    tasks: [...sf.tasks, ...newTasks.map((t: Task) => ({
+                      ref: t.ref, title: t.title, layer: t.layer, phase: t.phase,
+                      page: t.page, deps: t.deps ?? [], status: t.status,
+                      retryCount: 0, lastFailReason: null, failReason: null,
+                      startedAt: null, completedAt: null,
+                    }))],
+                  };
+                }),
+                // Sub-fitur yang BELUM ada di state lokal (mis. fase "QA &
+                // Integrasi" yang disuntikkan server saat semua fitur terisi)
+                // ikut ditambahkan, bukan didiamkan sampai user refresh.
+                ...serverSubs
+                  .filter((ssf) => !f.subFeatures.some((sf) => sf.title === ssf.title))
+                  .map((ssf) => ({
+                    title: ssf.title,
+                    tujuan: ssf.tujuan ?? "",
+                    selesaiBila: ssf.selesaiBila ?? [],
+                    tasks: (ssf.tasks ?? []).map((t: Task) => ({
+                      ref: t.ref, title: t.title, layer: t.layer, phase: t.phase,
+                      page: t.page, deps: t.deps ?? [], status: t.status,
+                      retryCount: 0, lastFailReason: null, failReason: null,
+                      startedAt: null, completedAt: null,
+                    })),
+                  })),
+              ],
             };
           });
           return updated;
@@ -131,7 +157,7 @@ export function PlanClient({ plan: initialPlan, tier = "free" }: { plan: Plan; t
         setLiveTasks(map);
       }
     } catch { /* ignore */ }
-  }, [plan.id, plan.status]);
+  }, [plan.id]);
 
   // Hapus struktur (fitur Pro). Target: fase, sub-fitur, atau task.
   // Server menolak bila plan sedang dikerjakan agent (409) atau Free (403).
@@ -198,31 +224,21 @@ export function PlanClient({ plan: initialPlan, tier = "free" }: { plan: Plan; t
   }, []);
 
   useEffect(() => {
-    // Polling juga saat "generating": task digenerate server-side sekarang,
-    // browser harus lihat task muncul satu per satu + status ready di akhir.
+    // Polling saat "generating" (task digenerate server-side, browser harus
+    // melihat task muncul satu per satu) dan saat plan dikerjakan agent
+    // (status task berubah). refreshPlan menyuntikkan task & sub-fitur baru
+    // ke state + meng-update status plan; dulu polling ini HANYA meng-update
+    // peta status tanpa menambah task, jadi UI kosong sampai user refresh.
     if (plan.status !== "generating" && plan.status !== "implementing" && plan.status !== "done" && plan.status !== "ready") return;
     let active = true;
     const poll = async () => {
-      try {
-        const res = await fetch(`/api/plans/${plan.id}/progress${await userQs()}`);
-        const data = await res.json();
-        if (!active) return;
-        const map: Record<string, Task["status"]> = {};
-        for (const f of data.features ?? []) {
-          for (const sf of f.subFeatures ?? []) {
-            for (const t of sf.tasks ?? []) map[t.ref] = t.status;
-          }
-        }
-        setLiveTasks(map);
-        if (data.status && data.status !== plan.status) {
-          setPlan((prev) => ({ ...prev, status: data.status }));
-        }
-      } catch { /* ignore */ }
+      if (!active) return;
+      await refreshPlan();
     };
     poll();
     const timer = setInterval(poll, 3000);
     return () => { active = false; clearInterval(timer); };
-  }, [plan.id, plan.status]);
+  }, [plan.id, plan.status, refreshPlan]);
 
   return (
     <Shell sidebar={false} brand={false}>

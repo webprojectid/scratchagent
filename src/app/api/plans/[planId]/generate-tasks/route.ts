@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { accessPlan, getRequestUser } from "@/lib/api-auth";
 import { generateTasksForFeature, buildTaskRef, sanitizeDeps, assignTasksToSubFeatures } from "@/lib/generate";
 import { savePlan, updatePlanStatus } from "@/lib/storage";
+import { ensureQaPhase } from "@/lib/tasks";
 
 const TUID = "701f135a-050a-4e08-bc97-b6d3ee91d7e5";
 
@@ -97,34 +98,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ pla
     }
 
     // Ready gate: plan baru boleh "ready" kalau SEMUA fitur sudah punya tasks.
-    // Dievaluasi tiap call (aman untuk generate out-of-order / retry fitur yang
-    // sempat gagal), dan idempoten lewat penanda sub-fitur "QA & Integrasi".
-    // Bersihkan dulu QA kosong duplikat hasil race/retry sebelumnya.
-    for (const f of plan.features ?? []) {
-      f.subFeatures = f.subFeatures.filter(
-        (sf: any) => !(sf.title === "QA & Integrasi" && (sf.tasks ?? []).length === 0),
-      );
-    }
-    const allFeaturesHaveTasks = (plan.features ?? []).every((f: any) =>
-      (f.subFeatures ?? []).some((sf: any) => (sf.tasks ?? []).length > 0),
-    );
-    const alreadyHasQa = (plan.features ?? []).some((f: any) =>
-      (f.subFeatures ?? []).some((sf: any) => sf.title === "QA & Integrasi"),
-    );
-    if (allFeaturesHaveTasks && !alreadyHasQa) {
-      const qaPhase = plan.features.length + 1;
-      const lastFeature = plan.features.at(-1);
-      if (lastFeature) {
-        lastFeature.subFeatures.push({
-          title: "QA & Integrasi",
-          tasks: [
-            { ref: `F${String(plan.features.length).padStart(2, "0")}-S99-T01`, title: "Jalankan aplikasi end-to-end", layer: "qa", phase: qaPhase, page: null, deps: [], status: "pending", retryCount: 0, lastFailReason: null, failReason: null, startedAt: null, completedAt: null },
-            { ref: `F${String(plan.features.length).padStart(2, "0")}-S99-T02`, title: "Uji setiap alur utama terhadap selesai bila", layer: "qa", phase: qaPhase, page: null, deps: [], status: "pending", retryCount: 0, lastFailReason: null, failReason: null, startedAt: null, completedAt: null },
-            { ref: `F${String(plan.features.length).padStart(2, "0")}-S99-T03`, title: "Perbaiki bug yang ditemukan", layer: "qa", phase: qaPhase, page: null, deps: [], status: "pending", retryCount: 0, lastFailReason: null, failReason: null, startedAt: null, completedAt: null },
-            { ref: `F${String(plan.features.length).padStart(2, "0")}-S99-T04`, title: "Bersihkan sisa stub dan console.log", layer: "qa", phase: qaPhase, page: null, deps: [], status: "pending", retryCount: 0, lastFailReason: null, failReason: null, startedAt: null, completedAt: null },
-          ],
-        });
-      }
+    // Logika bersih-subfitur-QA-kosong + inject fase "QA & Integrasi" ada di
+    // helper ensureQaPhase (dipakai bersama generate-all biar tidak dobel).
+    const { ready } = ensureQaPhase(plan);
+    if (ready) {
       plan.status = "ready";
       await updatePlanStatus(planId, "ready");
     }

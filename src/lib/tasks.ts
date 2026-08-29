@@ -129,3 +129,61 @@ async function checkPlanComplete(planId: string, plan: Plan) {
     await updatePlanStatus(planId, "done");
   }
 }
+
+const QA_TITLES = [
+  "Jalankan aplikasi end-to-end",
+  "Uji setiap alur utama terhadap selesai bila",
+  "Perbaiki bug yang ditemukan",
+  "Bersihkan sisa stub dan console.log",
+];
+
+/**
+ * Finalisasi struktur plan: bersihkan sub-fitur "QA & Integrasi" kosong yang
+ * duplikat (sisa race/retry), lalu inject fase QA & Integrasi berisi 4 task QA
+ * kalau SEMUA fitur sudah punya task. Idempoten: tidak melakukan apa-apa kalau
+ * sub-fitur QA sudah ada atau masih ada fitur yang kosong.
+ * Return `ready` = plan baru saja memenuhi syarat ready (dipakai caller untuk
+ * updatePlanStatus); mutasi fitur dilakukan in-place (caller yang savePlan).
+ */
+export function ensureQaPhase(plan: Plan): { changed: boolean; ready: boolean } {
+  let changed = false;
+  for (const f of plan.features ?? []) {
+    const before = (f.subFeatures ?? []).length;
+    f.subFeatures = (f.subFeatures ?? []).filter(
+      (sf) => !(sf.title === "QA & Integrasi" && (sf.tasks ?? []).length === 0),
+    );
+    if (f.subFeatures.length !== before) changed = true;
+  }
+
+  const features = plan.features ?? [];
+  const allFeaturesHaveTasks = features.every((f) =>
+    (f.subFeatures ?? []).some((sf) => (sf.tasks ?? []).length > 0),
+  );
+  const alreadyHasQa = features.some((f) =>
+    (f.subFeatures ?? []).some((sf) => sf.title === "QA & Integrasi"),
+  );
+  if (!allFeaturesHaveTasks || alreadyHasQa || features.length === 0) {
+    return { changed, ready: false };
+  }
+
+  const qaPhase = features.length + 1;
+  const lastFeature = features.at(-1)!;
+  lastFeature.subFeatures.push({
+    title: "QA & Integrasi",
+    tasks: QA_TITLES.map((title, i) => ({
+      ref: `F${String(features.length).padStart(2, "0")}-S99-T${String(i + 1).padStart(2, "0")}`,
+      title,
+      layer: "qa" as const,
+      phase: qaPhase,
+      page: null,
+      deps: [],
+      status: "pending" as const,
+      retryCount: 0,
+      lastFailReason: null,
+      failReason: null,
+      startedAt: null,
+      completedAt: null,
+    })),
+  });
+  return { changed: true, ready: true };
+}
