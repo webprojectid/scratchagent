@@ -1,8 +1,9 @@
+import "./lib-env";
 import pg from 'pg';
 
 const run = async () => {
   const client = new pg.Client({ 
-    connectionString: 'REMOVED_EXPOSED_DATABASE_CREDENTIAL' 
+    connectionString: process.env.DATABASE_URL! 
   });
   await client.connect();
   

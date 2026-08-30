@@ -1,8 +1,9 @@
+import "./lib-env";
 import pg from 'pg';
 
 const run = async () => {
   const client = new pg.Client({ 
-    connectionString: 'REMOVED_EXPOSED_DATABASE_CREDENTIAL' 
+    connectionString: process.env.DATABASE_URL! 
   });
   await client.connect();
   
@@ -17,9 +18,9 @@ const run = async () => {
       model = EXCLUDED.model,
       updated_at = NOW()
   `, [
-    'http://localhost:20128/v1',
-    'REMOVED_EXPOSED_API_KEY',
-    'qd/qmodel_38max'
+    process.env.LLM_BASE_URL ?? "",
+    process.env.LLM_API_KEY ?? "",
+    process.env.LLM_MODEL ?? ""
   ]);
   
   console.log('✅ Database updated!');
