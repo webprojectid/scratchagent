@@ -1,7 +1,7 @@
 import { after } from "next/server";
 import { generatePlanStructure } from "./generate";
 import { savePlan, deletePlan, updatePlanTitle } from "./storage";
-import { finalizeQuota, refundQuota, type QuotaReceipt } from "./quota";
+import { finalizeQuota, refundQuota, recordUsage, type QuotaReceipt } from "./quota";
 import { logSecurity } from "./security";
 
 export interface GenerationJob {
@@ -54,7 +54,14 @@ export function scheduleGeneration(job: GenerationJob, tryNo = 1) {
         job.ownerId,
       );
       await updatePlanTitle(job.planId, result.title);
-      await finalizeQuota(job.receipt, job.planId, result.usage);
+      // Receipt dengan eventId (percobaan pertama) di-finalize; retry watchdog
+      // tanpa eventId dicatat sebagai baris usage baru supaya model & token
+      // pemakaian yang berhasil tetap tercatat.
+      if (job.receipt.eventId) {
+        await finalizeQuota(job.receipt, job.planId, result.usage);
+      } else {
+        await recordUsage(job.userId, job.tier, job.planId, result.usage);
+      }
       await logSecurity("generate", { planId: job.planId, tier: job.tier, features: result.features.length, tokens: result.usage.tokensIn + result.usage.tokensOut, tryNo }, { ip: job.ip, userId: job.userId });
     } catch (error) {
       await refundQuota(job.receipt);

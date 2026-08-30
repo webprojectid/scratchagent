@@ -184,3 +184,21 @@ export async function finalizeQuota(receipt: QuotaReceipt, planId: string, usage
     } as never)
     .where(eq(usageEvents.id, receipt.eventId));
 }
+
+/**
+ * Catat pemakaian sukses tanpa receipt (jalur retry watchdog: kuota percobaan
+ * pertama sudah di-refund, tapi pemakaian yang berhasil tetap harus tercatat).
+ */
+export async function recordUsage(userId: string, tier: "free" | "pro", planId: string, usage: TokenUsage): Promise<void> {
+  if (isMemoryMode()) return;
+  const db = getDb();
+  await db.insert(usageEvents).values({
+    userId,
+    planId,
+    stage: GENERATE_STAGE,
+    tier,
+    tokensIn: usage.tokensIn,
+    tokensOut: usage.tokensOut,
+    model: usage.models?.length ? usage.models.join(", ") : null,
+  } as never);
+}
