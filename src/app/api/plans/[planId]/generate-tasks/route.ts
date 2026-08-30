@@ -4,6 +4,9 @@ import { generateTasksForFeature, buildTaskRef, sanitizeDeps, assignTasksToSubFe
 import { savePlan, updatePlanStatus } from "@/lib/storage";
 import { ensureQaPhase } from "@/lib/tasks";
 
+// Satu fitur bisa makan 1-3 menit dengan failover — beri jendela penuh.
+export const maxDuration = 300;
+
 const TUID = "701f135a-050a-4e08-bc97-b6d3ee91d7e5";
 
 interface FinalTask {

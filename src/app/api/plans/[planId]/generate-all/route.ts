@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { after } from "next/server";
 import { accessPlan, getRequestUser } from "@/lib/api-auth";
 import { getPlan, savePlan, updatePlanStatus } from "@/lib/storage";
 import { ensureQaPhase } from "@/lib/tasks";
@@ -80,6 +81,9 @@ async function generateAllTasks(planId: string, userId: string, authHeaders: Rec
   }
 }
 
+// Loop task bisa berjalan menit — after() menjaga function tetap hidup di Vercel.
+export const maxDuration = 300;
+
 export async function POST(request: Request, { params }: { params: Promise<{ planId: string }> }) {
   try {
     const { planId } = await params;
@@ -108,7 +112,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pla
 
     running.set(planId, { startedAt: Date.now(), done: false });
     // Fire-and-forget: loop jalan di server process, request balas langsung.
-    void generateAllTasks(planId, ownerId, authHeaders, new URL(request.url).origin);
+    after(() => generateAllTasks(planId, ownerId, authHeaders, new URL(request.url).origin));
 
     return NextResponse.json({ ok: true, started: true, features: (plan.features ?? []).length });
   } catch (error) {

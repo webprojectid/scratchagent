@@ -6,6 +6,9 @@ import { allTasks } from "@/lib/storage";
 // Pelacak kick watchdog per instance server (cukup perkiraan, bukan sumber kebenaran).
 const generationKicks = new Map<string, { n: number; at: number }>();
 
+// Jendela waktu untuk watchdog after() yang men-regenerasi plan zombie.
+export const maxDuration = 300;
+
 export async function GET(request: Request, { params }: { params: Promise<{ planId: string }> }) {
   const { planId } = await params;
   const legacyUserId = new URL(request.url).searchParams.get("userId");
