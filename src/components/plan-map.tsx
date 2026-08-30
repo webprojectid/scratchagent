@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useEffect, useMemo, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import {
   Background,
   BackgroundVariant,
@@ -335,14 +335,27 @@ export function PlanMap({ plan, liveTasks, isPro, onRemoveStructure }: { plan: P
     features: mergedPlan.features.map((feature) => ({ ...feature, status: deriveFeatureStatus(feature) })),
   }), [mergedPlan]);
 
-  const { nodes, edges } = useMemo(() => {
+  // Stabilkan node: snapshot plan terbaru via ref, dan rebuild HANYA kalau isi
+// roadmap berubah. Tanpa ini tiap polling bikin objek node baru -> React Flow
+// re-init -> production build bisa stuck visibility:hidden ("muncul lalu hilang").
+const structureKey = useMemo(
+  () => JSON.stringify({
+    f: displayPlan.features.map((f) => ({
+      i: f.slug,
+      s: f.status,
+      sf: f.subFeatures.map((sf) => ({ t: sf.title, k: sf.tasks.map((t) => [t.ref, t.status]) })),
+    })),
+  }),
+  [displayPlan],
+);
+const { nodes, edges } = useMemo(() => {
     const rowGap = 230;
     const top = 40;
     const nextNodes: Node<MapNodeData>[] = [{
       id: "root",
       type: "mapNode",
-      position: { x: 0, y: top + ((mergedPlan.features.length - 1) * rowGap) / 2 },
-      data: { kind: "root", label: plan.title },
+      position: { x: 0, y: top + ((displayPlan.features.length - 1) * rowGap) / 2 },
+      data: { kind: "root", label: plan.title }, initialWidth: 224, initialHeight: 100,
     }];
     const nextEdges: Edge[] = [];
 
@@ -362,9 +375,9 @@ export function PlanMap({ plan, liveTasks, isPro, onRemoveStructure }: { plan: P
       const taskId = `tasks-${featureIndex}`;
 
       nextNodes.push(
-        { id: featureId, type: "mapNode", position: { x: 440, y }, data: { kind: "feature", label: feature.title, feature, phase, done, total: tasks.length } },
-        { id: subFeatureId, type: "mapNode", position: { x: 880, y: y - 8 }, data: { kind: "sub-features", label: "Sub fitur", feature, items: feature.subFeatures.map((subFeature) => ({ label: subFeature.title, status: isSubDone(subFeature) ? "done" : isSubActive(subFeature) ? "in_progress" : "pending" })), total: feature.subFeatures.length, done: subsDone } },
-        { id: taskId, type: "mapNode", position: { x: 1280, y: y - 8 }, data: { kind: "tasks", label: "Tasks", feature, items: tasks.map((task) => ({ label: task.title, status: task.status })), total: tasks.length, done, generating: plan.status === "generating" } },
+        { id: featureId, type: "mapNode", position: { x: 440, y }, data: { kind: "feature", label: feature.title, feature, phase, done, total: tasks.length }, initialWidth: 240, initialHeight: 112 },
+        { id: subFeatureId, type: "mapNode", position: { x: 880, y: y - 8 }, initialWidth: 224, initialHeight: 132, data: { kind: "sub-features", label: "Sub fitur", feature, items: feature.subFeatures.map((subFeature) => ({ label: subFeature.title, status: isSubDone(subFeature) ? "done" : isSubActive(subFeature) ? "in_progress" : "pending" })), total: feature.subFeatures.length, done: subsDone } },
+        { id: taskId, type: "mapNode", position: { x: 1280, y: y - 8 }, initialWidth: 224, initialHeight: 132, data: { kind: "tasks", label: "Tasks", feature, items: tasks.map((task) => ({ label: task.title, status: task.status })), total: tasks.length, done, generating: plan.status === "generating" } },
       );
       // Gaya konektor mengikuti referensi user: kelengkungan bezier (bukan siku
       // smoothstep yang kaku). Root -> fase garis halus penuh; lanjutan antar
@@ -377,7 +390,8 @@ export function PlanMap({ plan, liveTasks, isPro, onRemoveStructure }: { plan: P
     });
 
     return { nodes: nextNodes, edges: nextEdges };
-  }, [displayPlan, plan.status, plan.title]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- structureKey mewakili seluruh dependensi isi; displayPlan sengaja gak masuk deps
+}, [structureKey, plan.status, plan.title]);
 
   return (
     <div className="relative h-[calc(100vh-150px)] min-h-[620px] bg-[#14161A]">
