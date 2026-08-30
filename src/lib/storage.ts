@@ -117,51 +117,67 @@ export async function savePlan(plan: Plan, userId: string): Promise<void> {
     // (contoh: submit ide dari kolom chat "Ide Kamu").
     .onConflictDoUpdate({ target: plans.id, set: { techPrefs: { stack: plan.stack ?? [], techStack: plan.techStack ?? [], architecture: plan.architecture ?? "", databaseSchema: plan.databaseSchema ?? "", requirements: plan.requirements ?? { fungsional: [], nonFungsional: [] }, userFlow: plan.userFlow ?? [], warnings: plan.warnings ?? [], tier: plan.tier ?? "free", ideas: plan.ideas ?? [] } } });
 
-  for (const feature of (plan.features as any[])) {
+  // BATCH INSERT: fitur, sub-fitur, dan task dikumpulkan lalu ditulis masing-
+  // masing SATU statement. Dulu tiap baris INSERT sendiri-sendiri — plan 90
+  // task berarti 120+ perjalanan bolak-balik ke pooler Supabase, makan waktu
+  // dan menggempur koneksi (max 5). Sekarang ~3-6 query total.
+  const featureRows: (typeof features.$inferInsert)[] = [];
+  const subRows: (typeof subFeatures.$inferInsert)[] = [];
+  const taskRows: (typeof tasks.$inferInsert)[] = [];
+  const fidByIndex = new Map<number, string>();
+
+  for (const [index, feature] of (plan.features as any[]).entries()) {
     const fid = feature.id || crypto.randomUUID();
+    fidByIndex.set(index, fid);
     const slug = feature.slug || feature.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || `fase-${fid.slice(0, 8)}`;
-    const description = feature.description || feature.tujuan || feature.title || "";
-    const icon = feature.icon || "📦";
-    const tujuan = feature.tujuan || feature.description || feature.title || "";
-    const selesaiBila = Array.isArray(feature.selesaiBila) ? feature.selesaiBila : [];
-    await db.insert(features).values({
+    featureRows.push({
       id: fid,
       planId: plan.id,
       slug,
       title: feature.title,
-      icon,
-      description,
-      tujuan,
-      selesaiBila,
+      icon: feature.icon || "📦",
+      description: feature.description || feature.tujuan || feature.title || "",
+      tujuan: feature.tujuan || feature.description || feature.title || "",
+      selesaiBila: Array.isArray(feature.selesaiBila) ? feature.selesaiBila : [],
       priority: feature.priority ?? null,
       status: feature.status ?? "direncanakan",
       order: feature.order ?? 0,
-    } as any).onConflictDoNothing();
+    } as any);
+  }
+  if (featureRows.length > 0) {
+    await db.insert(features).values(featureRows).onConflictDoNothing();
+  }
 
-    const existingSubs = await db
-      .select({ id: subFeatures.id, title: subFeatures.title })
-      .from(subFeatures)
-      .where(eq(subFeatures.featureId, fid));
-    const titleToSid = new Map<string, string>(existingSubs.map((s) => [s.title, s.id]));
+  // Satu query untuk SEMUA sub-fitur existing dari seluruh fitur plan ini
+  // (dulu satu query per fitur), dipakai buat dedupe sub-fitur berdasar judul.
+  const existingSubs = featureRows.length > 0
+    ? await db
+        .select({ id: subFeatures.id, title: subFeatures.title, featureId: subFeatures.featureId })
+        .from(subFeatures)
+        .where(inArray(subFeatures.featureId, Array.from(fidByIndex.values())))
+    : [];
+  const titleToSid = new Map<string, string>(existingSubs.map((s) => [`${s.featureId}::${s.title}`, s.id]));
 
-      for (const subFeature of (feature.subFeatures as any[])) {
-      const sid = subFeature.id || titleToSid.get(subFeature.title) || crypto.randomUUID();
-      titleToSid.set(subFeature.title, sid);
-      await db.insert(subFeatures).values({
+  for (const [index, feature] of (plan.features as any[]).entries()) {
+    const fid = fidByIndex.get(index)!;
+    for (const subFeature of (feature.subFeatures as any[])) {
+      const sid = subFeature.id || titleToSid.get(`${fid}::${subFeature.title}`) || crypto.randomUUID();
+      titleToSid.set(`${fid}::${subFeature.title}`, sid);
+      subRows.push({
         id: sid,
         featureId: fid,
         title: subFeature.title,
         tujuan: subFeature.tujuan ?? null,
         selesaiBila: subFeature.selesaiBila ?? [],
         order: 0,
-      } as any).onConflictDoNothing();
+      } as any);
 
       const subTasks = Array.isArray(subFeature.tasks)
         ? subFeature.tasks
         : (Array.isArray(feature.tasks) ? feature.tasks.filter((t: any) => (t.sub_feature || t.subFeature || "").toLowerCase().trim() === subFeature.title.toLowerCase().trim()) : []);
 
       for (const task of subTasks) {
-        await db.insert(tasks).values({
+        taskRows.push({
           planId: plan.id,
           featureId: fid,
           subFeatureId: sid,
@@ -178,18 +194,18 @@ export async function savePlan(plan: Plan, userId: string): Promise<void> {
           startedAt: task.startedAt ?? null,
           completedAt: task.completedAt ?? null,
           order: task.order ?? 0,
-        } as any).onConflictDoNothing();
+        } as any);
       }
     }
 
     // Fallback: jika task ada di feature.tasks tapi belum tersimpan via subFeatures
     if (Array.isArray(feature.tasks) && feature.tasks.length > 0) {
-      const firstSid = existingSubs[0]?.id || (feature.subFeatures && (feature.subFeatures as any[])[0]?.id);
+      const firstSid = existingSubs.find((s) => s.featureId === fid)?.id ?? subRows.find((r) => r.featureId === fid)?.id ?? null;
       for (const task of feature.tasks) {
-        await db.insert(tasks).values({
+        taskRows.push({
           planId: plan.id,
           featureId: fid,
-          subFeatureId: firstSid ?? null,
+          subFeatureId: firstSid,
           ref: task.ref,
           title: task.title,
           layer: task.layer,
@@ -203,9 +219,16 @@ export async function savePlan(plan: Plan, userId: string): Promise<void> {
           startedAt: task.startedAt ?? null,
           completedAt: task.completedAt ?? null,
           order: task.order ?? 0,
-        } as any).onConflictDoNothing();
+        } as any);
       }
     }
+  }
+
+  if (subRows.length > 0) {
+    await db.insert(subFeatures).values(subRows).onConflictDoNothing();
+  }
+  if (taskRows.length > 0) {
+    await db.insert(tasks).values(taskRows).onConflictDoNothing();
   }
 }
 

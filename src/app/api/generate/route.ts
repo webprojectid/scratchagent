@@ -4,7 +4,7 @@ import { getRequestUser, planOwnerKey, unauthorized } from "@/lib/api-auth";
 import { generatePlanStructure } from "@/lib/generate";
 import { savePlan } from "@/lib/storage";
 import { consumeQuota, finalizeQuota, getQuota, refundQuota } from "@/lib/quota";
-import { getAccountState } from "@/lib/billing";
+import { getAccountState, isAdminEmail } from "@/lib/billing";
 import { RATE_LIMITS, blockedIpResponse, clientKey, getClientIp, logSecurity, rateLimit, rateLimitedResponse } from "@/lib/security";
 import { randomUUID } from "crypto";
 
@@ -60,12 +60,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Akun ini telah diblokir secara permanen." }, { status: 403 });
     }
     const tier = account?.tier ?? "free";
+    // Admin (ADMIN_EMAILS + daftar bawaan) bebas kuota harian: batas dilewati,
+    // tapi pemakaian tetap tercatat di usage_events dengan tier asli untuk
+    // audit. Batas struktur PRD (jumlah fase/sub-fitur/task) tetap tier akun.
 
     if (!process.env.LLM_BASE_URL || !process.env.LLM_API_KEY || !process.env.LLM_MODEL) {
       return NextResponse.json({ error: "Konfigurasi LLM belum lengkap. Set LLM_BASE_URL, LLM_API_KEY, LLM_MODEL di .env" }, { status: 503 });
     }
 
-    const receipt = await consumeQuota(ownerId, tier);
+    const receipt = await consumeQuota(ownerId, tier, { skipLimit: await isAdminEmail(user.email) });
     if (!receipt) {
       await logSecurity("quota_exhausted", { route: "/api/generate", tier }, { ip, userId: user.userId, request });
       return NextResponse.json({ error: "Kuota generate harian habis. Coba besok." }, { status: 429 });
@@ -115,5 +118,5 @@ export async function GET(request: Request) {
   if (!user) return unauthorized();
   const account = await getAccountState(user.userId);
   const tier = account?.tier ?? "free";
-  return NextResponse.json(await getQuota(planOwnerKey(user), tier));
+  return NextResponse.json(await getQuota(planOwnerKey(user), tier, { unlimited: await isAdminEmail(user.email) }));
 }
