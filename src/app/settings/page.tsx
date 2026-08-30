@@ -17,11 +17,15 @@ import {
   RefreshCw,
   ShieldCheck,
   ArrowLeft,
+  ArrowUp,
+  ArrowDown,
   Activity,
   Database,
   CheckCircle2,
   AlertCircle,
   Code2,
+  PlugZap,
+  Layers,
 } from "lucide-react";
 import { getCurrentUser } from "@/lib/current-user";
 
@@ -46,6 +50,21 @@ interface LlmCfgInfo {
   apiKeySet: boolean;
   apiKeyMasked: string;
   source: string;
+  providers: { baseUrl: string; models: string[]; apiKeySet: boolean; apiKeyMasked: string }[];
+}
+
+/** Satu provider di form Settings: baseUrl + key (baru) + daftar model. */
+interface ProviderForm {
+  baseUrl: string;
+  apiKey: string;
+  models: string;
+  apiKeySet: boolean;
+  apiKeyMasked: string;
+}
+
+interface TestResult {
+  state: "running" | "ok" | "fail";
+  text: string;
 }
 
 function GlassCard({
@@ -111,8 +130,9 @@ export default function Settings() {
   const [toast, setToast] = useState<{ text: string; ok: boolean } | null>(null);
   const [authed, setAuthed] = useState(false);
   const [llmCfg, setLlmCfg] = useState<LlmCfgInfo | null>(null);
-  const [llmForm, setLlmForm] = useState({ baseUrl: "", apiKey: "", model: "" });
-  const [showApiKey, setShowApiKey] = useState(false);
+  const [providers, setProviders] = useState<ProviderForm[]>([]);
+  const [showApiKeys, setShowApiKeys] = useState<Record<number, boolean>>({});
+  const [testResults, setTestResults] = useState<Record<number, TestResult>>({});
   const [llmSaving, setLlmSaving] = useState(false);
   const [creatingToken, setCreatingToken] = useState(false);
   const [copiedHash, setCopiedHash] = useState<string | null>(null);
@@ -157,11 +177,22 @@ export default function Settings() {
           }
           return r.json();
         })
-        .then((d) => {
-          if (d && d.baseUrl !== undefined) {
-            setLlmCfg(d);
-            setLlmForm((f) => ({ ...f, baseUrl: d.baseUrl ?? "", model: d.model ?? "" }));
+        .then((d: LlmCfgInfo | undefined) => {
+          if (!d) {
+            setLlmCfg(null);
+            return;
           }
+          setLlmCfg(d);
+          const fromApi = (d.providers ?? []).map((p) => ({
+            baseUrl: p.baseUrl,
+            apiKey: "",
+            models: p.models.join(", "),
+            apiKeySet: p.apiKeySet,
+            apiKeyMasked: p.apiKeyMasked,
+          }));
+          // Config lama (sebelum multi-provider): tampil sebagai satu provider.
+          setProviders(fromApi.length > 0 ? fromApi : [{ baseUrl: d.baseUrl ?? "", apiKey: "", models: d.model ?? "", apiKeySet: d.apiKeySet, apiKeyMasked: d.apiKeyMasked }]);
+          setTestResults({});
         })
         .catch(() => setLlmCfg(null));
     });
@@ -171,6 +202,63 @@ export default function Settings() {
     load();
   }, []);
 
+  function updateProvider(index: number, patch: Partial<ProviderForm>) {
+    setProviders((list) => list.map((p, i) => (i === index ? { ...p, ...patch } : p)));
+  }
+
+  function addProvider() {
+    setProviders((list) => [...list, { baseUrl: "", apiKey: "", models: "", apiKeySet: false, apiKeyMasked: "" }]);
+  }
+
+  function removeProvider(index: number) {
+    setProviders((list) => list.filter((_, i) => i !== index));
+    setTestResults((r) => {
+      const next: Record<number, TestResult> = {};
+      for (const [k, v] of Object.entries(r)) {
+        const ki = Number(k);
+        next[ki < index ? ki : ki - 1] = v;
+      }
+      return next;
+    });
+  }
+
+  function moveProvider(index: number, direction: -1 | 1) {
+    setProviders((list) => {
+      const target = index + direction;
+      if (target < 0 || target >= list.length) return list;
+      const next = [...list];
+      [next[index], next[target]] = [next[target], next[index]];
+      return next;
+    });
+  }
+
+  async function testProvider(index: number) {
+    const p = providers[index];
+    const firstModel = p.models.split(/[\n,;]+/).map((m) => m.trim()).filter(Boolean)[0];
+    if (!p.baseUrl || !firstModel) {
+      setTestResults((r) => ({ ...r, [index]: { state: "fail", text: "Isi Base URL dan minimal 1 model dulu." } }));
+      return;
+    }
+    setTestResults((r) => ({ ...r, [index]: { state: "running", text: "Menguji..." } }));
+    try {
+      const u = await getCurrentUser();
+      const qs = u?.email ? `?userId=${encodeURIComponent(u.email)}` : "";
+      const res = await fetch(`/api/llm-config/test${qs}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ baseUrl: p.baseUrl, apiKey: p.apiKey, model: firstModel }),
+      });
+      const d = await res.json();
+      if (d?.ok) {
+        setTestResults((r) => ({ ...r, [index]: { state: "ok", text: `Tersambung dalam ${d.latencyMs} ms via ${d.model}` } }));
+      } else {
+        setTestResults((r) => ({ ...r, [index]: { state: "fail", text: d?.error ?? "Gagal terhubung." } }));
+      }
+    } catch {
+      setTestResults((r) => ({ ...r, [index]: { state: "fail", text: "Gagal terhubung (jaringan)." } }));
+    }
+  }
+
   function saveLlm() {
     setLlmSaving(true);
     getCurrentUser().then((u) => {
@@ -178,14 +266,15 @@ export default function Settings() {
       fetch(`/api/llm-config${qs}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(llmForm),
+        body: JSON.stringify({
+          providers: providers.map((p) => ({ baseUrl: p.baseUrl, apiKey: p.apiKey, models: p.models })),
+        }),
       })
         .then((r) => r.json())
         .then((d) => {
           setLlmSaving(false);
           if (d?.ok) {
-            setToast({ text: "Konfigurasi LLM berhasil disimpan", ok: true });
-            setLlmForm((f) => ({ ...f, apiKey: "" }));
+            setToast({ text: `${d.providers} provider LLM tersimpan, failover berurutan aktif`, ok: true });
             setTimeout(() => setToast(null), 3000);
             load();
           } else {
@@ -328,8 +417,8 @@ export default function Settings() {
                     <SectionHeader
                       icon={<Cpu size={14} />}
                       tag="engine ai &amp; provider"
-                      title="Konfigurasi LLM"
-                      subtitle="Ubah token atau model tanpa perlu redeploy aplikasi."
+                      title="Konfigurasi LLM Multi-Provider"
+                      subtitle="Provider dicoba berurutan dari atas; di dalamnya failover antar model."
                     />
                     <div className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[.04] px-2.5 py-0.5 font-mono text-[10.5px] text-white/60">
                       <Database size={11} className="text-[#74FA6A]" />
@@ -339,64 +428,127 @@ export default function Settings() {
                     </div>
                   </div>
 
-                  <div className="mt-5 space-y-3.5">
-                    {/* Base URL */}
-                    <div>
-                      <label className="block font-mono text-[10.5px] font-semibold uppercase tracking-[.1em] text-white/40">
-                        Base URL Provider
-                      </label>
-                      <input
-                        type="text"
-                        className="mt-1 w-full rounded-[10px] border border-white/[.08] bg-white/[.04] px-3.5 py-2 font-mono text-[12.5px] text-white placeholder:text-white/20 focus:border-[#74FA6A]/50 focus:outline-none"
-                        value={llmForm.baseUrl}
-                        onChange={(e) => setLlmForm((f) => ({ ...f, baseUrl: e.target.value }))}
-                        placeholder="https://api.deepseek.com/v1 atau http://localhost:20128/v1"
-                      />
-                    </div>
+                  {/* Daftar provider failover: kartu per prioritas */}
+                  <div className="mt-4 space-y-3">
+                    {providers.map((p, i) => {
+                      const test = testResults[i];
+                      return (
+                        <div key={i} className="rounded-[14px] border border-white/[.08] bg-white/[.02] p-3.5">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex min-w-0 items-center gap-2">
+                              <span className={`grid size-5 shrink-0 place-items-center rounded-md font-mono text-[10.5px] font-bold ${i === 0 ? "bg-[#74FA6A] text-black" : "bg-white/10 text-white/60"}`}>
+                                {i + 1}
+                              </span>
+                              <span className="truncate font-mono text-[10.5px] font-semibold uppercase tracking-[.12em] text-white/50">
+                                {i === 0 ? "Provider Utama" : `Backup ${i}`}
+                                {p.apiKeySet && <span className="ml-1.5 normal-case tracking-normal text-white/30">{p.apiKeyMasked}</span>}
+                              </span>
+                            </div>
+                            <div className="flex shrink-0 items-center gap-0.5">
+                              <button
+                                type="button"
+                                onClick={() => moveProvider(i, -1)}
+                                disabled={i === 0}
+                                className="rounded p-1 text-white/40 transition hover:bg-white/10 hover:text-white disabled:opacity-20 disabled:hover:bg-transparent"
+                                aria-label="Naikkan prioritas provider"
+                              ><ArrowUp size={12} /></button>
+                              <button
+                                type="button"
+                                onClick={() => moveProvider(i, 1)}
+                                disabled={i === providers.length - 1}
+                                className="rounded p-1 text-white/40 transition hover:bg-white/10 hover:text-white disabled:opacity-20 disabled:hover:bg-transparent"
+                                aria-label="Turunkan prioritas provider"
+                              ><ArrowDown size={12} /></button>
+                              <button
+                                type="button"
+                                onClick={() => removeProvider(i)}
+                                disabled={providers.length === 1}
+                                className="rounded p-1 text-white/40 transition hover:bg-red-500/10 hover:text-red-400 disabled:opacity-20 disabled:hover:bg-transparent disabled:hover:text-white/40"
+                                aria-label="Hapus provider"
+                              ><Trash2 size={12} /></button>
+                            </div>
+                          </div>
 
-                    {/* Multi-Model Failover */}
-                    <div>
-                      <div className="flex items-center justify-between">
-                        <label className="block font-mono text-[10.5px] font-semibold uppercase tracking-[.1em] text-white/40">
-                          Model LLM (Multi-Model Failover)
-                        </label>
-                        <span className="font-mono text-[10px] text-[#74FA6A]">Auto failover</span>
-                      </div>
-                      <textarea
-                        className="mt-1 w-full rounded-[10px] border border-white/[.08] bg-white/[.04] p-2.5 font-mono text-[12px] text-white placeholder:text-white/20 focus:border-[#74FA6A]/50 focus:outline-none"
-                        rows={2}
-                        value={llmForm.model}
-                        onChange={(e) => setLlmForm((f) => ({ ...f, model: e.target.value }))}
-                        placeholder={"deepseek-chat\nqmodel_38max\nmimo-v2.5"}
-                      />
-                      <p className="mt-1 text-[11px] leading-4 text-white/35">
-                        Pisahkan dengan koma/baris baru. Otomatis pindah ke model berikutnya bila kena 429/402.
-                      </p>
-                    </div>
+                          <label className="mt-3 block font-mono text-[10px] font-semibold uppercase tracking-[.1em] text-white/40">
+                            Base URL
+                          </label>
+                          <input
+                            type="text"
+                            className="mt-1 w-full rounded-[10px] border border-white/[.08] bg-white/[.04] px-3 py-2 font-mono text-[12px] text-white placeholder:text-white/20 focus:border-[#74FA6A]/50 focus:outline-none"
+                            value={p.baseUrl}
+                            onChange={(e) => updateProvider(i, { baseUrl: e.target.value })}
+                            placeholder="https://tunnel.example.com/v1"
+                          />
 
-                    {/* API Key */}
-                    <div>
-                      <label className="block font-mono text-[10.5px] font-semibold uppercase tracking-[.1em] text-white/40">
-                        API Key {llmCfg.apiKeySet ? `(Aktif: ${llmCfg.apiKeyMasked})` : "(Belum disetel)"}
-                      </label>
-                      <div className="relative mt-1">
-                        <input
-                          type={showApiKey ? "text" : "password"}
-                          className="w-full rounded-[10px] border border-white/[.08] bg-white/[.04] py-2 pl-3.5 pr-10 font-mono text-[12.5px] text-white placeholder:text-white/20 focus:border-[#74FA6A]/50 focus:outline-none"
-                          value={llmForm.apiKey}
-                          onChange={(e) => setLlmForm((f) => ({ ...f, apiKey: e.target.value }))}
-                          placeholder={llmCfg.apiKeySet ? "Kosongkan jika tetap memakai key yang lama" : "sk-..."}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowApiKey(!showApiKey)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 transition hover:text-white"
-                        >
-                          {showApiKey ? <EyeOff size={14} /> : <Eye size={14} />}
-                        </button>
-                      </div>
-                    </div>
+                          <div className="mt-2.5 grid gap-2.5 sm:grid-cols-2">
+                            <div>
+                              <label className="block font-mono text-[10px] font-semibold uppercase tracking-[.1em] text-white/40">
+                                API Key
+                              </label>
+                              <div className="relative mt-1">
+                                <input
+                                  type={showApiKeys[i] ? "text" : "password"}
+                                  className="w-full rounded-[10px] border border-white/[.08] bg-white/[.04] py-2 pl-3 pr-8 font-mono text-[12px] text-white placeholder:text-white/20 focus:border-[#74FA6A]/50 focus:outline-none"
+                                  value={p.apiKey}
+                                  onChange={(e) => updateProvider(i, { apiKey: e.target.value })}
+                                  placeholder={p.apiKeySet ? `Tersimpan ${p.apiKeyMasked}` : "sk-..."}
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => setShowApiKeys((s) => ({ ...s, [i]: !s[i] }))}
+                                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/30 transition hover:text-white"
+                                  aria-label={showApiKeys[i] ? "Sembunyikan API key" : "Tampilkan API key"}
+                                >
+                                  {showApiKeys[i] ? <EyeOff size={13} /> : <Eye size={13} />}
+                                </button>
+                              </div>
+                            </div>
+                            <div>
+                              <label className="block font-mono text-[10px] font-semibold uppercase tracking-[.1em] text-white/40">
+                                Model (failover)
+                              </label>
+                              <input
+                                type="text"
+                                className="mt-1 w-full rounded-[10px] border border-white/[.08] bg-white/[.04] px-3 py-2 font-mono text-[12px] text-white placeholder:text-white/20 focus:border-[#74FA6A]/50 focus:outline-none"
+                                value={p.models}
+                                onChange={(e) => updateProvider(i, { models: e.target.value })}
+                                placeholder="model-utama, model-backup"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="mt-2.5 flex min-h-[24px] flex-wrap items-center justify-between gap-2">
+                            <button
+                              type="button"
+                              onClick={() => testProvider(i)}
+                              disabled={test?.state === "running"}
+                              className="inline-flex items-center gap-1.5 rounded-full border border-white/15 px-2.5 py-1 font-mono text-[10.5px] font-semibold text-white/70 transition hover:border-[#74FA6A]/50 hover:text-[#74FA6A] disabled:opacity-50"
+                            >
+                              {test?.state === "running" ? <RefreshCw size={11} className="animate-spin" /> : <PlugZap size={11} />}
+                              Tes Koneksi
+                            </button>
+                            {test && (
+                              <span className={`min-w-0 flex-1 truncate text-right font-mono text-[10.5px] ${test.state === "ok" ? "text-[#74FA6A]" : test.state === "fail" ? "text-red-400" : "text-white/40"}`}>
+                                {test.state === "ok" && "✓ "}{test.text}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
+
+                  <button
+                    type="button"
+                    onClick={addProvider}
+                    className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-[12px] border border-dashed border-white/[.14] py-2 text-[12px] font-medium text-white/50 transition hover:border-[#74FA6A]/40 hover:text-[#74FA6A]"
+                  >
+                    <Plus size={13} /> Tambah Provider Backup
+                  </button>
+                  <p className="mt-2.5 flex items-start gap-1.5 text-[11px] leading-4 text-white/35">
+                    <Layers size={12} className="mt-0.5 shrink-0 text-white/30" />
+                    Saat provider utama habis kuota, timeout, atau down, generate otomatis lanjut ke backup di bawahnya, lalu ke model berikutnya di dalam provider yang sama.
+                  </p>
                 </div>
 
                 <div className="mt-5 pt-3 border-t border-white/[.06]">
@@ -477,7 +629,7 @@ export default function Settings() {
                   <div className="mt-2 max-h-[175px] overflow-y-auto pr-1 space-y-1.5">
                     {sortedTokens.length === 0 ? (
                       <div className="py-6 text-center text-[12px] text-white/30">
-                        Belum ada CLI token. Klik "Buat Token" di atas.
+                        Belum ada CLI token. Klik &quot;Buat Token&quot; di atas.
                       </div>
                     ) : (
                       sortedTokens.map((t) => (
@@ -566,13 +718,13 @@ export default function Settings() {
                 <div className="flex flex-wrap items-center gap-4">
                   <div className="rounded-[12px] border border-white/[.06] bg-white/[.02] px-4 py-2.5 min-w-[160px]">
                     <p className="font-mono text-[10px] uppercase tracking-[.12em] text-white/40">
-                      {quota.tier === "pro" ? "Status Quota Pro" : "Sisa Free Quota"}
+                      {quota.tier === "pro" ? "Status Quota Pro" : quota.unlimited ? "Kuota Admin" : "Sisa Free Quota"}
                     </p>
                     <p
                       className="mt-1 font-bold text-[#74FA6A]"
                       style={{ fontSize: "17px" }}
                     >
-                      {quota.tier === "pro" || quota.remaining === Infinity ? (
+                      {quota.tier === "pro" || quota.unlimited || quota.remaining === Infinity ? (
                         "Unlimited"
                       ) : (
                         <>
@@ -584,10 +736,10 @@ export default function Settings() {
 
                   <div className="rounded-[12px] border border-white/[.06] bg-white/[.02] px-4 py-2.5 min-w-[180px]">
                     <p className="font-mono text-[10px] uppercase tracking-[.12em] text-white/40">
-                      {quota.tier === "pro" ? "Akses Kuota" : "Jadwal Reset"}
+                      {quota.tier === "pro" || quota.unlimited ? "Akses Kuota" : "Jadwal Reset"}
                     </p>
                     <p className="mt-1 font-mono text-[12px] font-semibold text-white">
-                      {quota.tier === "pro" ? (
+                      {quota.tier === "pro" || quota.unlimited ? (
                         <span className="text-[#74FA6A]">Tanpa batas generate</span>
                       ) : (
                         <>

@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { isExhaustedError, parseModelList } from "@/lib/llm-config";
+import { isExhaustedError, normalizeProviders, parseModelList } from "@/lib/llm-config";
 
 test("parseModelList memisahkan koma, titik koma, dan baris baru", () => {
   assert.deepEqual(parseModelList("a,b,c"), ["a", "b", "c"]);
@@ -36,4 +36,26 @@ test("isExhaustedError tidak false-positive pada error umum", () => {
   assert.equal(isExhaustedError(new Error("LLM gagal: 500 Internal Server Error")), false);
   assert.equal(isExhaustedError(new Error("JSON parsing gagal")), false);
   assert.equal(isExhaustedError(new Error("timeout after 180000ms")), false);
+});
+
+test("normalizeProviders membuang entry tidak lengkap dan merapikan baseUrl", () => {
+  const providers = normalizeProviders([
+    { baseUrl: "https://a.example.com/v1/", apiKey: "k1", models: ["m1", "m2"] },
+    { baseUrl: "", apiKey: "k2", models: ["m"] },
+    { baseUrl: "https://b.example.com/v1", apiKey: "", models: ["m"] },
+    { baseUrl: "https://c.example.com/v1", apiKey: "k3", models: [] },
+  ]);
+  assert.equal(providers.length, 1);
+  assert.equal(providers[0].baseUrl, "https://a.example.com/v1");
+  assert.deepEqual(providers[0].models, ["m1", "m2"]);
+});
+
+test("normalizeProviders menerima models dalam bentuk string dan buang duplikat", () => {
+  const providers = normalizeProviders([{ baseUrl: "https://x.com/v1", apiKey: "k", models: "a, b,a" }]);
+  assert.deepEqual(providers[0].models, ["a", "b"]);
+});
+
+test("normalizeProviders bukan array menghasilkan kosong", () => {
+  assert.deepEqual(normalizeProviders(undefined), []);
+  assert.deepEqual(normalizeProviders("nope"), []);
 });
