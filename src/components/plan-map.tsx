@@ -1,14 +1,17 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
 import {
   Background,
   BackgroundVariant,
+  BaseEdge,
   Controls,
   Handle,
   Position,
   ReactFlow,
+  getBezierPath,
   type Edge,
+  type EdgeProps,
   type Node,
 } from "@xyflow/react";
 import { AnimatePresence, motion } from "motion/react";
@@ -40,36 +43,49 @@ type MapNodeData = {
 };
 
 function MapNode({ data }: { data: MapNodeData }) {
+  // Bahasa visual peta versi Scratch Agent sendiri (sengaja menjauh dari
+  // referensi awal): rel status di sisi kiri kartu (hijau=selesai, amber=berjalan,
+  // abu=belum), angka fase besar transparan di pojok, dan trail cahaya di garis.
   if (data.kind === "root") {
     return (
-      <div className="w-52 rounded-lg border border-[#74FA6A]/25 bg-[#0C0E10] p-3 shadow-lg shadow-black/20">
-        <Handle type="source" position={Position.Right} className="!size-2 !border-[#74FA6A]/40 !bg-[#74FA6A]" />
-        <div className="flex items-center gap-1.5 text-[#74FA6A]">
-          <Network size={13} />
-          <b className="truncate text-[11px] text-slate-100">{data.label}</b>
+      <div className="relative w-56 overflow-hidden rounded-2xl border border-white/[.08] bg-[#1C2330] p-4 pl-5 shadow-lg shadow-black/30">
+        <span className="absolute inset-y-2 left-0 w-[3px] rounded-full bg-[#74FA6A]" />
+        <Handle type="source" position={Position.Right} className="!size-2.5 !border-2 !border-[#14161A] !bg-[#74FA6A]" />
+        <div className="flex items-center gap-2.5">
+          <span className="grid size-8 shrink-0 place-items-center rounded-xl bg-[#74FA6A]/12 text-[#74FA6A]">
+            <Network size={15} />
+          </span>
+          <b className="text-[13px] leading-tight text-slate-50">{data.label}</b>
         </div>
-        <p className="mt-1.5 text-[9px] uppercase tracking-[.14em] text-slate-500">Perencanaan</p>
+        <p className="mt-2 text-[10px] font-medium text-slate-500">Perencanaan</p>
       </div>
     );
   }
 
   if (data.kind === "feature") {
+    const pct = data.total ? Math.round(((data.done ?? 0) / data.total) * 100) : 0;
+    const status = data.feature?.status ?? "direncanakan";
+    const rail = status === "selesai" ? "bg-[#74FA6A]" : status === "berjalan" ? "bg-amber-400" : "bg-white/20";
     return (
-      <div className="w-52 rounded-lg border border-white/[.06] bg-[#0C0E10] p-3 shadow-lg shadow-black/20 transition hover:border-[#74FA6A]/40 hover:shadow-[0_0_12px_#74FA6A12]">
-        <Handle type="target" position={Position.Left} className="!size-2 !border-slate-400 !bg-[#0C0E10]" />
-        <Handle type="source" position={Position.Right} className="!size-2 !border-slate-400 !bg-[#0C0E10]" />
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex min-w-0 items-center gap-1.5">
-            <FolderKanban size={12} className="shrink-0 text-slate-400" />
-            <b className="truncate text-[11px] text-slate-100">{data.label}</b>
-          </div>
-          <span className="shrink-0 rounded bg-[#74FA6A]/10 px-1 py-0.5 text-[7px] font-bold uppercase tracking-wider text-[#74FA6A]">
-            Fase {data.phase}
+      <div className="relative w-60 cursor-pointer overflow-hidden rounded-2xl border border-white/[.08] bg-[#1C2330] p-3.5 pl-4 shadow-lg shadow-black/30 transition hover:border-[#74FA6A]/40">
+        <span className={`absolute inset-y-2 left-0 w-[3px] rounded-full ${rail}`} />
+        <span className="pointer-events-none absolute right-2.5 top-1.5 select-none font-mono text-[28px] font-bold leading-none text-white/[.05]">
+          {String(data.phase ?? 0).padStart(2, "0")}
+        </span>
+        <Handle type="target" position={Position.Left} className="!size-2 !border-2 !border-[#14161A] !bg-slate-500" />
+        <Handle type="source" position={Position.Right} className="!size-2 !border-2 !border-[#14161A] !bg-slate-500" />
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="grid size-6 shrink-0 place-items-center rounded-lg bg-white/[.05] text-slate-400">
+            <FolderKanban size={12} />
           </span>
+          <b className="truncate text-[12px] leading-snug text-slate-100">{data.label}</b>
         </div>
-        <div className="mt-2 flex items-center justify-between text-[8px] text-slate-500">
-          <span>○ {data.feature?.status ?? "direncanakan"}</span>
-          <span>{data.done}/{data.total}</span>
+        <div className="mt-2.5 flex items-center justify-between text-[10px] text-slate-500">
+          <span className="capitalize">{status}</span>
+          <span className="font-mono tabular-nums">{data.done}/{data.total}</span>
+        </div>
+        <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-white/[.06]">
+          <div className="h-full rounded-full bg-[#74FA6A]/70 transition-all duration-500" style={{ width: `${pct}%` }} />
         </div>
       </div>
     );
@@ -77,43 +93,108 @@ function MapNode({ data }: { data: MapNodeData }) {
 
   const taskNode = data.kind === "tasks";
   return (
-    <div className={`w-48 rounded-lg border p-2 shadow-lg shadow-black/20 ${taskNode ? "border-white/[.06] bg-[#0C0E10]" : "border-white/[.06] bg-[#0C0E10]"}`}>
-      <Handle type="target" position={Position.Left} className={`!size-1.5 ${taskNode ? "!border-slate-500 !bg-[#0C0E10]" : "!border-slate-500 !bg-[#0C0E10]"}`} />
-      {!taskNode && <Handle type="source" position={Position.Right} className="!size-1.5 !border-slate-500 !bg-[#0C0E10]" />}
-      <div className="mb-1 flex items-center justify-between text-[6px] font-bold uppercase tracking-[.14em] text-slate-500">
-        <span className="flex items-center gap-0.5"><ListChecks size={8} />{taskNode ? "Tasks" : "Sub fitur"}</span>
-        <span>{data.done ?? 0}/{data.total ?? 0}</span>
+    <div className="w-56 cursor-pointer rounded-2xl border border-white/[.08] bg-[#1C2330] p-3 shadow-lg shadow-black/30 transition hover:border-white/[.16]">
+      <Handle type="target" position={Position.Left} className="!size-2 !border-2 !border-[#14161A] !bg-slate-600" />
+      {!taskNode && <Handle type="source" position={Position.Right} className="!size-2 !border-2 !border-[#14161A] !bg-slate-600" />}
+      <div className="mb-2 flex items-center justify-between text-[9px] font-semibold tracking-wide text-slate-500">
+        <span className="flex items-center gap-1"><ListChecks size={10} />{taskNode ? "TASKS" : "SUB FITUR"}</span>
+        <span className="font-mono tabular-nums">{data.done ?? 0}/{data.total ?? 0}</span>
       </div>
       {taskNode && (!data.items || data.items.length === 0) && data.generating ? (
-        <div className="space-y-1">
+        <div className="space-y-1.5">
           {[0, 1, 2].map((i) => (
-            <div key={i} className="flex items-center gap-1 rounded border border-white/[.04] bg-[#0C0E10] px-1 py-0.5">
-              <div className="size-1 animate-pulse rounded-full bg-white/[.06]" />
-              <div className="h-1 w-16 animate-pulse rounded bg-white/[.04]" />
+            <div key={i} className="flex items-center gap-1.5 rounded-lg border border-white/[.05] bg-white/[.02] px-2 py-1">
+              <div className="size-1.5 animate-pulse rounded-full bg-white/20" />
+              <div className="h-1.5 w-20 animate-pulse rounded bg-white/10" />
             </div>
           ))}
-          <p className="text-center text-[6px] text-slate-500/50">Menyusun...</p>
+          <p className="pt-0.5 text-center text-[9px] text-slate-500">Menyusun...</p>
         </div>
       ) : (
-        <div className="space-y-0.5">
+        <div className="space-y-1">
           {data.items?.slice(0, 3).map((item, index) => (
-            <div key={`${item.label}-${index}`} className="flex min-w-0 items-center gap-1 rounded border border-white/[.04] bg-[#0C0E10] px-1 py-0.5">
-              {taskNode ? (
-                item.status === "done" ? <Check size={7} className="shrink-0 text-emerald-400" /> : item.status === "in_progress" ? <span className="size-1 shrink-0 animate-spin rounded-full border border-amber-400 border-r-transparent" /> : <Circle size={6} className="shrink-0 text-slate-600" />
-              ) : item.status === "done" ? <Check size={7} className="shrink-0 text-emerald-400" /> : item.status === "in_progress" ? <span className="size-1 shrink-0 animate-spin rounded-full border border-amber-400 border-r-transparent" /> : <span className="size-0.5 shrink-0 rounded-full bg-slate-600" />}
-              <span className={`truncate text-[7px] ${item.status === "done" ? "line-through text-slate-600" : "text-slate-300"}`}>{item.label}</span>
+            <div key={`${item.label}-${index}`} className="flex min-w-0 items-center gap-1.5 rounded-lg border border-white/[.05] bg-white/[.02] px-2 py-1">
+              {item.status === "done" ? <Check size={9} className="shrink-0 text-emerald-400" /> : item.status === "in_progress" ? <span className="size-1.5 shrink-0 animate-spin rounded-full border border-amber-400 border-r-transparent" /> : taskNode ? <Circle size={7} className="shrink-0 text-slate-600" /> : <span className="size-1 shrink-0 rounded-full bg-slate-600" />}
+              <span className={`truncate text-[10px] ${item.status === "done" ? "text-slate-600 line-through" : "text-slate-300"}`}>{item.label}</span>
             </div>
           ))}
         </div>
       )}
-      <div className="mt-1 text-right text-[6px] text-slate-600">
-        Lihat semua ({data.total ?? 0}) →
+      <div className="mt-1.5 text-right text-[9px] text-slate-500">
+        Lihat semua ({data.total ?? 0})
       </div>
     </div>
   );
 }
 
 const nodeTypes = { mapNode: MapNode };
+
+// Light trail pada konektor: segmen cahaya putih->hijau meluncur dari judul ke
+// tasks, looping. Animasi CSS murni (stroke-dashoffset, GPU) + pathLength={100}
+// supaya trail selalu menyapu penuh apa pun panjang garisnya. Delay tiap edge
+// dibedakan dari hash id biar ngalir organik, tidak serempak.
+const TRAIL_CSS = `
+@keyframes scratchTrail {
+  from { stroke-dashoffset: 0; }
+  to { stroke-dashoffset: -100; }
+}
+.edge-trail { animation: scratchTrail 1.3s linear infinite; }`;
+
+const AnimatedFlowEdge = memo(function AnimatedFlowEdge({
+  id,
+  sourceX,
+  sourceY,
+  targetX,
+  targetY,
+  sourcePosition,
+  targetPosition,
+  style,
+}: EdgeProps) {
+  const [path] = getBezierPath({ sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition });
+  const gradId = `trail-grad-${id}`;
+  let hash = 0;
+  for (const ch of id) hash = (hash * 31 + ch.charCodeAt(0)) % 1000;
+  const delay = (-(hash / 1000) * 1.3).toFixed(2);
+  const gradient = `url(#${gradId})`;
+  const dash = "10 90";
+  return (
+    <>
+      <defs>
+        <linearGradient id={gradId} gradientUnits="userSpaceOnUse" x1={sourceX} y1={sourceY} x2={targetX} y2={targetY}>
+          <stop offset="0%" stopColor="#FFFFFF" />
+          <stop offset="100%" stopColor="#74FA6A" />
+        </linearGradient>
+      </defs>
+      <BaseEdge path={path} style={style} />
+      {/* glow lebar transparan di bawah trail inti, murah tanpa filter blur */}
+      <path
+        d={path}
+        pathLength={100}
+        fill="none"
+        stroke={gradient}
+        strokeWidth={3.4}
+        strokeLinecap="round"
+        strokeDasharray={dash}
+        opacity={0.3}
+        className="edge-trail"
+        style={{ animationDelay: `${delay}s` }}
+      />
+      <path
+        d={path}
+        pathLength={100}
+        fill="none"
+        stroke={gradient}
+        strokeWidth={1.8}
+        strokeLinecap="round"
+        strokeDasharray={dash}
+        className="edge-trail"
+        style={{ animationDelay: `${delay}s` }}
+      />
+    </>
+  );
+});
+
+const edgeTypes = { flow: AnimatedFlowEdge };
 
 function FeaturePanel({ plan, index, onClose, onNav, isPro, onDeleteFeature, onDeleteSubFeature }: { plan: Plan; index: number; onClose: () => void; onNav: (direction: number) => void; isPro?: boolean; onDeleteFeature?: (slug: string, title: string) => void; onDeleteSubFeature?: (slug: string, title: string) => void }) {
   const feature = plan.features[index];
@@ -255,12 +336,12 @@ export function PlanMap({ plan, liveTasks, isPro, onRemoveStructure }: { plan: P
   }), [mergedPlan]);
 
   const { nodes, edges } = useMemo(() => {
-    const rowGap = 190;
+    const rowGap = 230;
     const top = 40;
     const nextNodes: Node<MapNodeData>[] = [{
       id: "root",
       type: "mapNode",
-      position: { x: 20, y: top + ((mergedPlan.features.length - 1) * rowGap) / 2 },
+      position: { x: 0, y: top + ((mergedPlan.features.length - 1) * rowGap) / 2 },
       data: { kind: "root", label: plan.title },
     }];
     const nextEdges: Edge[] = [];
@@ -281,14 +362,17 @@ export function PlanMap({ plan, liveTasks, isPro, onRemoveStructure }: { plan: P
       const taskId = `tasks-${featureIndex}`;
 
       nextNodes.push(
-        { id: featureId, type: "mapNode", position: { x: 340, y }, data: { kind: "feature", label: feature.title, feature, phase, done, total: tasks.length } },
-        { id: subFeatureId, type: "mapNode", position: { x: 670, y: y - 16 }, data: { kind: "sub-features", label: "Sub fitur", feature, items: feature.subFeatures.map((subFeature) => ({ label: subFeature.title, status: isSubDone(subFeature) ? "done" : isSubActive(subFeature) ? "in_progress" : "pending" })), total: feature.subFeatures.length, done: subsDone } },
-        { id: taskId, type: "mapNode", position: { x: 1000, y: y - 16 }, data: { kind: "tasks", label: "Tasks", feature, items: tasks.map((task) => ({ label: task.title, status: task.status })), total: tasks.length, done, generating: plan.status === "generating" } },
+        { id: featureId, type: "mapNode", position: { x: 440, y }, data: { kind: "feature", label: feature.title, feature, phase, done, total: tasks.length } },
+        { id: subFeatureId, type: "mapNode", position: { x: 880, y: y - 8 }, data: { kind: "sub-features", label: "Sub fitur", feature, items: feature.subFeatures.map((subFeature) => ({ label: subFeature.title, status: isSubDone(subFeature) ? "done" : isSubActive(subFeature) ? "in_progress" : "pending" })), total: feature.subFeatures.length, done: subsDone } },
+        { id: taskId, type: "mapNode", position: { x: 1280, y: y - 8 }, data: { kind: "tasks", label: "Tasks", feature, items: tasks.map((task) => ({ label: task.title, status: task.status })), total: tasks.length, done, generating: plan.status === "generating" } },
       );
+      // Gaya konektor mengikuti referensi user: kelengkungan bezier (bukan siku
+      // smoothstep yang kaku). Root -> fase garis halus penuh; lanjutan antar
+      // kolom putus-putus titik-titik, jadi terbaca sebagai "aliran rencana".
       nextEdges.push(
-        { id: `root-${featureId}`, source: "root", target: featureId, type: "smoothstep", style: { stroke: "#374151", strokeWidth: 1.2 } },
-        { id: `${featureId}-${subFeatureId}`, source: featureId, target: subFeatureId, type: "smoothstep", style: { stroke: "#2d3748", strokeWidth: 1 } },
-        { id: `${subFeatureId}-${taskId}`, source: subFeatureId, target: taskId, type: "smoothstep", style: { stroke: "#2d3748", strokeWidth: 1 } },
+        { id: `root-${featureId}`, source: "root", target: featureId, type: "flow", style: { stroke: "#6b7280", strokeWidth: 1.8 } },
+        { id: `${featureId}-${subFeatureId}`, source: featureId, target: subFeatureId, type: "flow", style: { stroke: "#7b8595", strokeWidth: 2.2, strokeDasharray: "0.1 7", strokeLinecap: "round" } },
+        { id: `${subFeatureId}-${taskId}`, source: subFeatureId, target: taskId, type: "flow", style: { stroke: "#7b8595", strokeWidth: 2.2, strokeDasharray: "0.1 7", strokeLinecap: "round" } },
       );
     });
 
@@ -296,11 +380,13 @@ export function PlanMap({ plan, liveTasks, isPro, onRemoveStructure }: { plan: P
   }, [displayPlan, plan.status, plan.title]);
 
   return (
-    <div className="relative h-[calc(100vh-150px)] min-h-[620px] bg-[#0A0A0A]">
+    <div className="relative h-[calc(100vh-150px)] min-h-[620px] bg-[#14161A]">
+      <style>{TRAIL_CSS}</style>
       <ReactFlow
         nodes={nodes}
         edges={edges}
         nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
         minZoom={0.25}
         maxZoom={1.5}
         fitView
@@ -310,7 +396,7 @@ export function PlanMap({ plan, liveTasks, isPro, onRemoveStructure }: { plan: P
           if (feature) setSelected(displayPlan.features.findIndex((candidate) => candidate.slug === feature.slug));
         }}
       >
-        <Background variant={BackgroundVariant.Dots} gap={18} size={1} color="#1f2937" />
+        <Background variant={BackgroundVariant.Dots} gap={18} size={1.2} color="#282C33" />
         <Controls showInteractive={false} />
       </ReactFlow>
       <AnimatePresence>
