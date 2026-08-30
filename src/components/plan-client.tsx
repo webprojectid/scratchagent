@@ -89,6 +89,7 @@ export function PlanClient({ plan: initialPlan, tier = "free" }: { plan: Plan; t
   const [statusIdx, setStatusIdx] = useState(0);
   const [notice, setNotice] = useState<string | null>(null);
   const lastPollSig = useRef("");
+  const genAllKickAt = useRef(0);
   const generatingTasks = plan.status === "generating";
   const isPro = tier === "pro";
 
@@ -205,10 +206,13 @@ export function PlanClient({ plan: initialPlan, tier = "free" }: { plan: Plan; t
         });
         });
         setLiveTasks(map);
-        // Struktur baru datang di plan kerangka asinkron (fase ada, task belum):
-        // picu generate-all lagi — di server idempoten lewat registry + skip
-        // fitur yang sudah berisi task.
-        if (data.status === "generating" && (data.features ?? []).length > 0 && Object.keys(map).length === 0) {
+        // Selama generating: kalau masih ada fase tanpa task, kick generate-all
+        // lagi (maksimal sekali per 45 detik). Function Vercel bisa mati di
+        // tengah loop — tanpa kick ulang, fase tersisa tidak pernah terisi.
+        // Server idempoten: registry + skip fitur yang sudah berisi task.
+        const adaFaseKosong = (data.features ?? []).some((f: { subFeatures?: { tasks?: unknown[] }[] }) => !(f.subFeatures ?? []).some((sf) => (sf.tasks ?? []).length > 0));
+        if (data.status === "generating" && adaFaseKosong && Date.now() - genAllKickAt.current > 45_000) {
+          genAllKickAt.current = Date.now();
           fetch(`/api/plans/${plan.id}/generate-all${await userQs()}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
