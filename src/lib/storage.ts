@@ -607,3 +607,14 @@ export async function removeTask(planId: string, ref: string): Promise<boolean> 
   await syncFeatureStatuses(planId);
   return true;
 }
+
+/** Ganti judul plan (dipakai alur asinkron: kerangka -> judul catchy hasil LLM). */
+export async function updatePlanTitle(planId: string, title: string): Promise<void> {
+  if (isMemoryMode()) {
+    const p = memoryGetPlan(planId);
+    if (p) p.title = title;
+    return;
+  }
+  const db = getDb();
+  await db.update(plans).set({ title } as any).where(eq(plans.id, planId));
+}
