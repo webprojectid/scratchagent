@@ -60,6 +60,13 @@ export default function Generate() {
     if (!alreadyGenerating) {
       const answersStr = sessionStorage.getItem("rv_answers");
       getCurrentUser().then((user) => {
+        let pollTimer: ReturnType<typeof setTimeout> | undefined;
+        const cleanup = () => {
+          sessionStorage.removeItem("rv_generating");
+          clearInterval(stageTimer);
+          clearInterval(elapsedTimer);
+          if (pollTimer) clearTimeout(pollTimer);
+        };
         fetch("/api/generate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -70,22 +77,47 @@ export default function Generate() {
             answers: answersStr ? JSON.parse(answersStr) : [],
           }),
         })
-          .then((r) => r.json())
+          .then(async (r) => {
+            // Respons non-JSON berarti function-nya error di tingkat platform
+            if (!r.ok) {
+              const text = await r.text().catch(() => "");
+              let msg = `HTTP ${r.status}`;
+              try { msg = (await r.json()).error ?? msg; } catch { msg = text.slice(0, 200) || msg; }
+              throw new Error(msg);
+            }
+            return r.json();
+          })
           .then((data) => {
-            sessionStorage.removeItem("rv_generating");
-            clearInterval(stageTimer);
-            clearInterval(elapsedTimer);
             if (data.error) {
+              cleanup();
               setError(data.error);
               return;
             }
-            setStep(stages.length);
-            setTimeout(() => router.push(`/project/${data.id}`), 400);
+            // Generate jalan di background (after). Tunggu struktur PRD siap
+            // (fase pertama muncul di /progress) baru pindah ke halaman project
+            // — di situ task lanjut terisi realtime dan generate-all terpicu.
+            const pollStructure = async () => {
+              try {
+                const pr = await fetch(`/api/plans/${data.id}/progress`);
+                if (pr.status === 404) {
+                  cleanup();
+                  setError("Generate gagal di tengah jalan. Kuota sudah dikembalikan — silakan coba lagi.");
+                  return;
+                }
+                const pj = await pr.json();
+                if ((pj.features ?? []).length > 0) {
+                  cleanup();
+                  setStep(stages.length);
+                  setTimeout(() => router.push(`/project/${data.id}`), 400);
+                  return;
+                }
+              } catch { /* jaringan putus sesaat: coba lagi */ }
+              pollTimer = setTimeout(pollStructure, 3000);
+            };
+            pollStructure();
           })
           .catch((err) => {
-            sessionStorage.removeItem("rv_generating");
-            clearInterval(stageTimer);
-            clearInterval(elapsedTimer);
+            cleanup();
             setError(err.message);
           });
       });

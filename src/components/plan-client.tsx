@@ -175,10 +175,46 @@ export function PlanClient({ plan: initialPlan, tier = "free" }: { plan: Plan; t
               ],
             };
           });
+          // Fase baru dari server ikut ditambahkan: plan kerangka (asinkron)
+          // awalnya kosong, lalu server menyuntikkan struktur lengkap — tanpa
+          // ini fase-fasenya tidak pernah muncul sampai user refresh.
+          for (const sf of data.features ?? []) {
+            if (updated.features.some((f) => f.slug === sf.slug)) continue;
+            updated.features.push({
+              slug: sf.slug,
+              title: sf.title,
+              icon: "📦",
+              description: sf.title,
+              tujuan: sf.title,
+              selesaiBila: [],
+              status: "direncanakan" as const,
+              subFeatures: (sf.subFeatures ?? []).map((ssf: { title: string; tujuan?: string; selesaiBila?: string[]; tasks?: Pick<Task, "ref" | "title" | "layer" | "phase" | "page" | "status" | "deps">[] }) => ({
+                title: ssf.title,
+                tujuan: ssf.tujuan ?? "",
+                selesaiBila: ssf.selesaiBila ?? [],
+                tasks: (ssf.tasks ?? []).map((t) => ({
+                  ref: t.ref, title: t.title, layer: t.layer, phase: t.phase,
+                  page: t.page, deps: t.deps ?? [], status: t.status,
+                  retryCount: 0, lastFailReason: null, failReason: null,
+                  startedAt: null, completedAt: null,
+                })),
+              })),
+            });
+          }
           return updated;
         });
         });
         setLiveTasks(map);
+        // Struktur baru datang di plan kerangka asinkron (fase ada, task belum):
+        // picu generate-all lagi — di server idempoten lewat registry + skip
+        // fitur yang sudah berisi task.
+        if (data.status === "generating" && (data.features ?? []).length > 0 && Object.keys(map).length === 0) {
+          fetch(`/api/plans/${plan.id}/generate-all${await userQs()}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: "{}",
+          }).catch(() => {});
+        }
       }
     } catch { /* ignore */ }
   }, [plan.id]);
