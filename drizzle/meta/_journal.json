@@ -50,6 +50,20 @@
       "when": 1787185614929,
       "tag": "0006_blocked_ips",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1788038612170,
+      "tag": "0007_llm_providers",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1788071187008,
+      "tag": "0008_usage_model",
+      "breakpoints": true
     }
   ]
 }

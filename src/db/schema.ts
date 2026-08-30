@@ -98,6 +98,8 @@ export const usageEvents = pgTable("usage_events", {
   tier: text().notNull().default("free"),
   tokensIn: integer("tokens_in").notNull().default(0),
   tokensOut: integer("tokens_out").notNull().default(0),
+  /** Model LLM yang melayani generate ini (hasil failover, dipisah koma). */
+  model: text("model"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -148,10 +150,13 @@ export const subscriptions = pgTable("subscriptions", {
 
 // Konfigurasi LLM runtime (single row, id=1). Dibaca generate.ts sebelum fallback ke env,
 // supaya token/model bisa diganti lewat Settings tanpa redeploy.
+// providers: daftar provider failover berurutan (base URL + API key + model masing-masing).
+// Kosong = mundur ke kolom legacy baseUrl/apiKey/model sebagai satu-satunya provider.
 export const llmSettings = pgTable("llm_settings", {
   id: integer("id").primaryKey(),
   baseUrl: text("base_url"),
   apiKey: text("api_key"),
   model: text("model"),
+  providers: jsonb("providers").$type<Array<{ baseUrl: string; apiKey: string; models: string[] }>>().notNull().default([]),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
