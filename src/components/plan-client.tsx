@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, startTransition } from "react";
+import { useEffect, useState, useCallback, useRef, startTransition } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Lightbulb, Map, FileText, ListChecks } from "lucide-react";
 import { Shell, Brand } from "@/components/brand";
@@ -88,6 +88,7 @@ export function PlanClient({ plan: initialPlan, tier = "free" }: { plan: Plan; t
   const [view, setView] = useState<"struktur" | "prd" | "task">("struktur");
   const [statusIdx, setStatusIdx] = useState(0);
   const [notice, setNotice] = useState<string | null>(null);
+  const lastPollSig = useRef("");
   const generatingTasks = plan.status === "generating";
   const isPro = tier === "pro";
 
@@ -102,6 +103,20 @@ export function PlanClient({ plan: initialPlan, tier = "free" }: { plan: Plan; t
       const data = await res.json();
       if (data.features) {
         const map: Record<string, Task["status"]> = {};
+        for (const f of data.features) {
+          for (const sf of f.subFeatures ?? []) {
+            for (const t of sf.tasks ?? []) map[t.ref] = t.status;
+          }
+        }
+        // Skip polling yang isinya identik: tiap setState bikin objek plan baru,
+        // dan PlanMap me-recreate node React Flow — node gak perlu di-reinit
+        // kalau gak ada yang berubah (ini biang roadmap "muncul lalu hilang").
+        // Sig mencakup status + seluruh isi fitur/task, jadi cukup sebagai penanda.
+        const sig = JSON.stringify({ s: data.status, f: data.features });
+        if (sig === lastPollSig.current) {
+          return;
+        }
+        lastPollSig.current = sig;
         // startTransition: polling bisa resolve pas React Flow lagi render
         // (komponen ForwardRef internal-nya) — tanpa ini muncul console error
         // "Cannot update a component while rendering a different component".
