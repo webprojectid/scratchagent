@@ -1,8 +1,9 @@
+import "./lib-env";
 import pg from 'pg';
 
 const run = async () => {
   const client = new pg.Client({ 
-    connectionString: 'postgresql://postgres.loqbxknhnwukhikcpgab:Kurangkerjaan93asd%21%21@aws-0-ap-northeast-1.pooler.supabase.com:6543/postgres' 
+    connectionString: process.env.DATABASE_URL! 
   });
   await client.connect();
   

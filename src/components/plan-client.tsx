@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, startTransition } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { Lightbulb } from "lucide-react";
+import { Lightbulb, Map, FileText, ListChecks } from "lucide-react";
 import { Shell, Brand } from "@/components/brand";
 import { PlanMap } from "@/components/plan-map";
 import { AgentPromptModal } from "@/components/agent-modal";
@@ -28,9 +28,9 @@ const statusMessages = [
 ];
 
 const viewTabs = [
-  { key: "struktur", label: "Struktur" },
-  { key: "prd", label: "PRD" },
-  { key: "task", label: "Tasks" },
+  { key: "struktur", label: "Roadmap", icon: Map },
+  { key: "prd", label: "PRD", icon: FileText },
+  { key: "task", label: "Tasks", icon: ListChecks },
 ] as const;
 
 type ViewKey = (typeof viewTabs)[number]["key"];
@@ -49,27 +49,31 @@ function FallbackWarningBanner({ warnings }: { warnings?: string[] }) {
 
 function ViewTabs({ view, setView, pillId }: { view: ViewKey; setView: (v: ViewKey) => void; pillId: string }) {
   return (
-    <div className="flex items-center gap-0.5 rounded-full border border-white/[.08] bg-[#0C0F0C]/85 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] backdrop-blur-xl">
+    <div role="tablist" className="flex items-center gap-1 rounded-2xl border border-white/[.08] bg-white/[.03] p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] backdrop-blur-xl">
       {viewTabs.map((t) => {
         const active = view === t.key;
+        const Icon = t.icon;
         return (
-          <button
+          <motion.button
             key={t.key}
+            role="tab"
+            aria-selected={active}
             onClick={() => setView(t.key)}
-            aria-pressed={active}
-            className={`relative rounded-full px-4 py-1.5 text-[12px] font-semibold tracking-tight transition-colors duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+            whileTap={{ scale: 0.95 }}
+            className={`relative flex min-w-[106px] items-center justify-center gap-1.5 rounded-xl px-4 py-2 text-[12.5px] font-semibold transition-colors duration-300 ${
               active ? "text-[#07120A]" : "text-slate-400 hover:text-slate-100"
             }`}
           >
             {active && (
               <motion.span
                 layoutId={pillId}
-                className="absolute inset-0 rounded-full bg-[#74FA6A] shadow-[0_0_18px_rgba(116,250,106,0.45),0_2px_10px_rgba(116,250,106,0.28)]"
-                transition={{ type: "spring", stiffness: 380, damping: 32 }}
+                className="absolute inset-0 rounded-xl bg-[#74FA6A] shadow-[0_2px_16px_rgba(116,250,106,0.35)]"
+                transition={{ type: "spring", stiffness: 420, damping: 32 }}
               />
             )}
+            <Icon size={13} className="relative z-10" />
             <span className="relative z-10">{t.label}</span>
-          </button>
+          </motion.button>
         );
       })}
     </div>
@@ -98,7 +102,11 @@ export function PlanClient({ plan: initialPlan, tier = "free" }: { plan: Plan; t
       const data = await res.json();
       if (data.features) {
         const map: Record<string, Task["status"]> = {};
-        setPlan((prev) => {
+        // startTransition: polling bisa resolve pas React Flow lagi render
+        // (komponen ForwardRef internal-nya) — tanpa ini muncul console error
+        // "Cannot update a component while rendering a different component".
+        startTransition(() => {
+          setPlan((prev) => {
           const updated = { ...prev, status: data.status ?? prev.status };
           updated.features = updated.features.map((f) => {
             const serverF = data.features?.find((sf: { slug: string }) => sf.slug === f.slug);
@@ -153,6 +161,7 @@ export function PlanClient({ plan: initialPlan, tier = "free" }: { plan: Plan; t
             };
           });
           return updated;
+        });
         });
         setLiveTasks(map);
       }

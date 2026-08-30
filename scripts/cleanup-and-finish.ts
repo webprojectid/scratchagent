@@ -1,3 +1,4 @@
+import "./lib-env";
 import { readFileSync, writeFileSync, mkdirSync } from "fs";
 
 function loadEnv() {
@@ -18,7 +19,7 @@ import { eq } from "drizzle-orm";
 import { deletePlan, getPlan, savePlan, updatePlanStatus } from "../src/lib/storage";
 import { generateTasksForFeature, buildTaskRef, sanitizeDeps, assignTasksToSubFeatures } from "../src/lib/generate";
 
-const TOKEN = "rv_caa0f2fd53231b55922ce182d2bfe9d248306720a31c490b";
+const TOKEN = process.env.SIM_TOKEN ?? "";
 const USER_ID = "d8442b9f-85ac-493b-9c55-ff93866f0a20";
 const BRIEF = "Aplikasi Kasir Kopi bernama KopiKu, web app untuk kedai kopi kecil mencatat transaksi penjualan. Fitur yang dibutuhkan: menu digital berisi kategori dan harga, transaksi kasir dengan pembayaran tunai dan QRIS, laporan penjualan harian yang terhitung otomatis, serta stok bahan yang berkurang setiap penjualan terjadi. Dipakai satu kedai saja, login sederhana email dan password untuk kasir dan pemilik, tanpa multi cabang.";
 

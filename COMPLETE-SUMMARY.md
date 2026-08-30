@@ -178,7 +178,7 @@ When you generate a plan via web UI or CLI:
    ```bash
    # Ensure .env file has:
    LLM_BASE_URL=http://localhost:20128/v1
-   LLM_API_KEY=sk-7587337097600db9-wuye2z-dd0434bb
+   LLM_API_KEY=sk-*** (redacted)
    LLM_MODEL=qd/qmodel_38max
    DATABASE_URL="postgresql://..." # Optional for history
    ```

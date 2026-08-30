@@ -1,3 +1,4 @@
+import "./lib-env";
 /**
  * REAL-TEST GENERATION SCRIPT v2
  * 
@@ -6,7 +7,7 @@
 
 // Force-set environment variables BEFORE importing generate.ts
 process.env.LLM_BASE_URL = 'http://localhost:20128/v1';
-process.env.LLM_API_KEY = 'sk-7587337097600db9-wuye2z-dd0434bb';
+process.env.LLM_API_KEY = 'process.env.LLM_API_KEY ?? ""';
 process.env.LLM_MODEL = 'qd/qmodel_38max';
 process.env.NODE_ENV = 'development';
 

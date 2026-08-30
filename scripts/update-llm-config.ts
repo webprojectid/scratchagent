@@ -1,8 +1,9 @@
+import "./lib-env";
 import pg from 'pg';
 
 const run = async () => {
   const client = new pg.Client({ 
-    connectionString: 'postgresql://postgres.loqbxknhnwukhikcpgab:Kurangkerjaan93asd%21%21@aws-0-ap-northeast-1.pooler.supabase.com:6543/postgres' 
+    connectionString: process.env.DATABASE_URL! 
   });
   await client.connect();
   
@@ -17,9 +18,9 @@ const run = async () => {
       model = EXCLUDED.model,
       updated_at = NOW()
   `, [
-    'http://localhost:20128/v1',
-    'sk-7587337097600db9-wuye2z-dd0434bb',
-    'qd/qmodel_38max'
+    process.env.LLM_BASE_URL ?? "",
+    process.env.LLM_API_KEY ?? "",
+    process.env.LLM_MODEL ?? ""
   ]);
   
   console.log('✅ Database updated!');

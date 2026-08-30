@@ -1,3 +1,4 @@
+import "./lib-env";
 /**
  * MODEL ADAPTATION TEST SCRIPT
  * 
@@ -13,7 +14,7 @@ const TEST_CONFIGS = [
     name: 'qd/qmodel_38max (Local)',
     baseUrl: 'http://localhost:20128/v1',
     model: 'qd/qmodel_38max',
-    apiKey: 'sk-7587337097600db9-wuye2z-dd0434bb',
+    apiKey: 'process.env.LLM_API_KEY ?? ""',
   },
   {
     name: 'OpenAI GPT-4o-mini (External)',

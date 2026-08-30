@@ -1,3 +1,4 @@
+import "./lib-env";
 /**
  * Benchmark model LLM di tunnel aktif — TANPA menyentuh llm_settings DB.
  * Jalur sama seperti stage-3 (generateTasksForFeature): prompt, system prompt,
@@ -8,7 +9,7 @@
  */
 
 const BASE_URL = "https://r8tur3s.abc-tunnel.us/v1";
-const API_KEY = "sk-7587337097600db9-wuye2z-dd0434bb";
+const API_KEY = process.env.LLM_API_KEY ?? "";
 const TIMEOUT_MS = 300_000;
 
 const MODELS = [

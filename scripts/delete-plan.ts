@@ -1,3 +1,4 @@
+import "./lib-env";
 import { readFileSync } from "fs";
 
 function loadEnv() {
@@ -34,7 +35,7 @@ async function main() {
   console.log(`Features: ${plan.features.length}`);
   console.log(`Total Tasks: ${totalTasks}`);
 
-  const TOKEN = "rv_caa0f2fd53231b55922ce182d2bfe9d248306720a31c490b";
+  const TOKEN = process.env.SIM_TOKEN ?? "";
   const prompt = `Kamu akan mengerjakan task dari Scratch Agent lewat CLI scratch-agent (package npm: @notdeadlysins/scratch-agent).
 Prasyarat: Node.js + Python 3.x.
 

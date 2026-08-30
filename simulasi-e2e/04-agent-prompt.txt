@@ -10,7 +10,7 @@ LANGKAH 0: Install Skill Scratch Agent v2.4 (sekali saja):
 
 LANGKAH 1: Install CLI, login & init (sekali saja):
  npm install -g @notdeadlysins/scratch-agent
- scratch-agent login --token rv_caa0f2fd53231b55922ce182d2bfe9d248306720a31c490b
+ scratch-agent login --token <token>
  scratch-agent init --agent opencode
 
 LANGKAH 2: Baca PRD (sekali):
