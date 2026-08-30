@@ -1,10 +1,9 @@
 import { NextResponse } from "next/server";
-import { after } from "next/server";
+import { scheduleGeneration } from "@/lib/run-generation";
 import { z } from "zod";
 import { getRequestUser, planOwnerKey, unauthorized } from "@/lib/api-auth";
-import { generatePlanStructure } from "@/lib/generate";
 import { savePlan, deletePlan, updatePlanTitle } from "@/lib/storage";
-import { consumeQuota, finalizeQuota, getQuota, refundQuota } from "@/lib/quota";
+import { consumeQuota, getQuota } from "@/lib/quota";
 import { getAccountState, isAdminEmail } from "@/lib/billing";
 import { RATE_LIMITS, blockedIpResponse, clientKey, getClientIp, logSecurity, rateLimit, rateLimitedResponse } from "@/lib/security";
 import { randomUUID } from "crypto";
@@ -29,6 +28,9 @@ const input = z.object({
     .optional()
     .default([]),
 });
+
+// Batas maksimum function Vercel untuk paket Hobby: generasi butuh waktu panjang.
+export const maxDuration = 300;
 
 export async function POST(request: Request) {
   const ip = await getClientIp(request);
@@ -95,42 +97,22 @@ export async function POST(request: Request) {
       ownerId,
     );
 
-    after(async () => {
-      try {
-        const result = await generatePlanStructure(data.brief, data.techPrefs, data.answers, tier);
-        await savePlan(
-          {
-            id: planId,
-            title: result.title,
-            brief: data.brief,
-            stack: result.stack,
-            techStack: result.techStack,
-            asumsi: result.asumsi,
-            requirements: result.requirements,
-            userFlow: result.userFlow,
-            architecture: result.architecture,
-            databaseSchema: result.databaseSchema,
-            status: "generating",
-            features: result.features as never,
-            warnings: result.warnings,
-            tier,
-            createdAt: new Date().toISOString(),
-          },
-          ownerId,
-        );
-        await updatePlanTitle(planId, result.title);
-        await finalizeQuota(receipt, planId, result.usage);
-        await logSecurity("generate", { planId, tier, features: result.features.length, tokens: result.usage.tokensIn + result.usage.tokensOut }, { ip, userId: user.userId, request });
-      } catch (error) {
-        // Generate gagal: kembalikan kuota dan buang kerangka kosong supaya
-        // user bisa retry bersih (halaman project-nya jadi 404, bukan plan zombie).
-        await refundQuota(receipt);
-        await deletePlan(planId);
-        console.error("[generate][after]", error);
-      }
-    });
+    scheduleGeneration(
+      {
+        planId,
+        brief: data.brief,
+        techPrefs: data.techPrefs,
+        answers: data.answers,
+        tier,
+        ownerId,
+        userId: user.userId,
+        receipt,
+        ip,
+      },
+      1,
+    );
 
-    return NextResponse.json({ id: planId, async: true });
+        return NextResponse.json({ id: planId, async: true });
   } catch (error) {
     console.error("[generate]", error);
     if (error instanceof z.ZodError) return NextResponse.json({ error: error.issues.map((i) => i.message).join("; ") }, { status: 400 });
