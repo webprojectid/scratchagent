@@ -27,6 +27,8 @@ export interface QuotaReceipt {
 export interface TokenUsage {
   tokensIn: number;
   tokensOut: number;
+  /** Model LLM yang melayani generate (hasil failover, dipisah koma). */
+  models?: string[];
 }
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -46,16 +48,19 @@ function freeInfo(limit: number, used: number, oldestMs: number | null): QuotaIn
   return { remaining: Math.max(0, limit - used), limit, resetAt, tier: "free", unlimited: false };
 }
 
-function proInfo(): QuotaInfo {
-  return { remaining: Infinity, limit: quotaLimit(), resetAt: Date.now() + DAY_MS, tier: "pro", unlimited: true };
-}
-
 /**
  * Cek kuota generate user dalam rolling 24 jam.
  * Pro: unlimited. Free: dihitung dari usage_events tier free 24 jam terakhir.
+ * Opts.unlimited (admin): laporan unlimited tanpa mengubah tier.
  */
-export async function getQuota(userId: string, tier: "free" | "pro" = "free"): Promise<QuotaInfo> {
-  if (tier === "pro") return proInfo();
+export async function getQuota(
+  userId: string,
+  tier: "free" | "pro" = "free",
+  opts: { unlimited?: boolean } = {},
+): Promise<QuotaInfo> {
+  if (tier === "pro" || opts.unlimited) {
+    return { remaining: Infinity, limit: quotaLimit(), resetAt: Date.now() + DAY_MS, tier, unlimited: true };
+  }
   const limit = quotaLimit();
 
   if (isMemoryMode()) {
@@ -83,22 +88,28 @@ export async function getQuota(userId: string, tier: "free" | "pro" = "free"): P
 
 /**
  * Konsumsi kuota secara atomik.
+ * - Opts.skipLimit (admin): batas harian dilewati, pemakaian tetap dicatat
+ *   dengan tier asli untuk audit.
  * - Pro: tanpa limit, tetap dicatat sebagai usage_events tier pro (untuk audit admin).
  * - Free DB mode: dalam satu transaksi, cek event tier free 24 jam terakhir < limit,
  *   lalu INSERT baris usage_events (stage=generate, planId masih null).
  * - Free memory mode: hitung dari usageStore rolling 24 jam.
  * Return null kalau kuota free habis.
  */
-export async function consumeQuota(userId: string, tier: "free" | "pro" = "free"): Promise<QuotaReceipt | null> {
-  if (tier === "pro") {
+export async function consumeQuota(
+  userId: string,
+  tier: "free" | "pro" = "free",
+  opts: { skipLimit?: boolean } = {},
+): Promise<QuotaReceipt | null> {
+  if (tier === "pro" || opts.skipLimit) {
     if (isMemoryMode()) {
-      const ev = memoryAddUsage(userId, GENERATE_STAGE, "pro");
+      const ev = memoryAddUsage(userId, GENERATE_STAGE, tier);
       return { userId, eventId: ev.id, tier };
     }
     const db = getDb();
     const inserted = await db
       .insert(usageEvents)
-      .values({ userId, stage: GENERATE_STAGE, tier: "pro" } as never)
+      .values({ userId, stage: GENERATE_STAGE, tier } as never)
       .returning();
     return { userId, eventId: inserted[0]?.id ?? undefined, tier };
   }
@@ -165,6 +176,11 @@ export async function finalizeQuota(receipt: QuotaReceipt, planId: string, usage
   const db = getDb();
   await db
     .update(usageEvents)
-    .set({ planId, tokensIn: usage.tokensIn, tokensOut: usage.tokensOut } as never)
+    .set({
+      planId,
+      tokensIn: usage.tokensIn,
+      tokensOut: usage.tokensOut,
+      model: usage.models?.length ? usage.models.join(", ") : null,
+    } as never)
     .where(eq(usageEvents.id, receipt.eventId));
 }
