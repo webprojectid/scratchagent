@@ -6,7 +6,7 @@ import {
   hasMermaidDiagram,
   normalizeMermaidFences,
 } from "./arch-fallback";
-import { isExhaustedError, parseModelList, resolveLlmConfig } from "./llm-config";
+import { isExhaustedError, resolveLlmProviders } from "./llm-config";
 import { structureLimits, taskRangePerFeature, trimToMax, type Tier } from "./plan-limits";
 import type { PlanIdea } from "./types";
 import { parseLLMResponse } from "./sse-parser"; // NEW: Dual-mode SSE/JSON parser
@@ -87,7 +87,9 @@ const layerSchema = z.string().transform((v): "frontend" | "backend" | "qa" => {
 
 const rawTaskSchema = z.object({
   id: z.string().default(""),
-  feature: z.string(),
+  // Tidak diminta lagi di prompt (redundan: call sudah per fitur), tapi tetap
+  // diterima kalau model kebiasaan menulisnya.
+  feature: z.string().default(""),
   sub_feature: z.string(),
   title: z.string(),
   layer: layerSchema,
@@ -172,175 +174,133 @@ function extractJson(value: string): string {
   }
 }
 
-interface LlmUsage { tokensIn: number; tokensOut: number; }
+interface LlmUsage {
+  tokensIn: number;
+  tokensOut: number;
+  /** Model yang melayani call (diisi callLlm, ikut tersimpan di usage_events). */
+  models: string[];
+}
 
-// Model yang terakhir sukses / sedang dipakai. Kalau satu model kehabisan
-// quota, kursor maju ke model berikutnya dan tetap di situ sampai habis lagi,
-// jadi kita tidak bolak-balik nabrak model yang sudah pasti exhausted.
-let modelCursor = 0;
+// Entri failover (provider x model) yang terakhir sukses / sedang dipakai.
+// Kalau satu entri kehabisan quota, kursor maju ke entri berikutnya dan tetap
+// di situ sampai habis lagi, jadi kita tidak bolak-balik nabrak entri yang
+// sudah pasti exhausted.
+let entryCursor = 0;
 
 /** Helper untuk cek quota exhaustion dari HTTP status + response body */
 const isQuotaExhausted = (status: number, body: string): boolean => {
-  return status === 429 || 
-         status === 402 || 
+  return status === 429 ||
+         status === 402 ||
          /exhaust|quota|insufficient balance|too many requests|rate.?limit/i.test(body);
 };
 
-/** Satu request ke satu model dengan retry internal (maks 3x). */
-async function attemptModel<T>(
+/** SATU request HTTP ke satu entri provider. Gak ada retry di sini — failover
+ * antar entri ditangani callLlm, biar model yang sakit langsung ditinggal. */
+async function attemptOnce<T>(
   schema: z.ZodType<T>,
   prompt: string,
   cfg: { baseUrl: string; apiKey: string; model: string },
-  usage?: LlmUsage,
+  usage: LlmUsage | undefined,
+  cycle: number,
 ): Promise<T> {
   const { baseUrl, apiKey, model } = cfg;
-  const timeoutMs = Number(process.env.LLM_TIMEOUT_MS) || 180_000;
-  let lastError: unknown;
-  for (let attempt = 0; attempt < 3; attempt++) {
-    // Attempt pertama pakai timeout penuh; ulangan CEPAT gagal:
-    // kalau upstream hang, 60s per ulangan supaya failover ke model
-    // berikutnya gak makan 9 menit (user lihat "fetch failed" duluan).
-    const attemptTimeout = attempt === 0 ? timeoutMs : 60_000;
-    // Retry pakai prompt sedikit berbeda: hindari replay respons rusak yang di-cache proxy,
-    // sekaligus mengarahkan model untuk menulis ulang JSON dengan benar.
-    // Nonce bikin tiap retry unik supaya varian prompt pun tidak ikut ter-cache.
-    const userContent = attempt === 0
-      ? prompt
-      : `${prompt}\n\nPerhatian: percobaan ${attempt} sebelumnya menghasilkan output TIDAK VALID. Tulis ulang SEKARANG: HANYA JSON valid di dalam triple backtick json, tanpa teks lain di luarnya. (percobaan-${attempt + 1}-${Date.now()}-${Math.random().toString(36).slice(2, 8)})`;
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), attemptTimeout);
-    const start = Date.now();
-    console.log(`[LLM] request attempt ${attempt + 1} ke ${baseUrl}/chat/completions (model: ${model})`);
-    try {
-      const res = await fetch(`${baseUrl}/chat/completions`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model,
-          messages: [
-            { role: "system", content: "Kamu adalah coding assistant. Output HANYA JSON valid di dalam triple backtick dengan kata json. Jangan gunakan reasoning_content, jangan tulis penjelasan, jangan tambah teks di luar JSON. JSON harus valid: double-quoted field names dan string, tanpa trailing comma, tanpa komentar, tanpa single quote. String boleh mengandung newline." },
-            { role: "user", content: userContent },
-          ],
-          temperature: 0.2,
-          max_tokens: 16384,
-          // Streaming: parser SSE auto-detect dan fallback ke JSON, jadi aman
-          // untuk gateway yang mengabaikan flag ini. Manfaat: token pertama
-          // langsung mengalir (progress), dan gateway tidak menahan seluruh
-          // respons reasoning-model yang lambat di buffer.
-          stream: true,
-        }),
-        signal: controller.signal,
-      });
-      clearTimeout(timeout);
-      const elapsed = Date.now() - start;
-      console.log(`[LLM] response ${res.status} in ${elapsed}ms`);
-      
-      if (!res.ok) {
-        const text = await res.text();
-        console.error(`[LLM] error body: ${text.slice(0, 500)}`);
-        
-        // FIX v2: Early exit for quota errors - no retry!
-        if (isQuotaExhausted(res.status, text)) {
-          const err = new Error(`Quota habis untuk model ${model} (${res.status})`);
-          throw err;
-        }
-        
-        throw new Error(`LLM gagal: ${res.status} ${text.slice(0, 200)}`);
+  const timeoutMs = Number(process.env.LLM_TIMEOUT_MS) || 120_000;
+  // Siklus kedua pakai varian prompt: hindari replay respons rusak yang
+  // di-cache proxy, sekaligus mengarahkan model menulis ulang JSON dengan
+  // benar. Nonce bikin varian unik supaya gak ikut ter-cache.
+  const userContent = cycle === 0
+    ? prompt
+    : `${prompt}\n\nPerhatian: percobaan sebelumnya menghasilkan output TIDAK VALID. Tulis ulang SEKARANG: HANYA JSON valid di dalam triple backtick json, tanpa teks lain di luarnya. (coba-${cycle + 1}-${Date.now()}-${Math.random().toString(36).slice(2, 8)})`;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  const start = Date.now();
+  console.log(`[LLM] request ke ${baseUrl}/chat/completions (model: ${model}, siklus ${cycle + 1})`);
+  try {
+    const res = await fetch(`${baseUrl}/chat/completions`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model,
+        messages: [
+          { role: "system", content: "Kamu adalah coding assistant. Output HANYA JSON valid di dalam triple backtick dengan kata json. Jangan gunakan reasoning_content, jangan tulis penjelasan, jangan tambah teks di luar JSON. JSON harus valid: double-quoted field names dan string, tanpa trailing comma, tanpa komentar, tanpa single quote. String boleh mengandung newline." },
+          { role: "user", content: userContent },
+        ],
+        temperature: 0.2,
+        max_tokens: 16384,
+        // Streaming: parser SSE auto-detect dan fallback ke JSON, jadi aman
+        // untuk gateway yang mengabaikan flag ini. Manfaat: token pertama
+        // langsung mengalir (progress), dan gateway tidak menahan seluruh
+        // respons reasoning-model yang lambat di buffer.
+        stream: true,
+      }),
+      signal: controller.signal,
+    });
+    const elapsed = Date.now() - start;
+    if (!res.ok) {
+      const text = await res.text();
+      console.error(`[LLM] ${model} error ${res.status} in ${elapsed}ms: ${text.slice(0, 200)}`);
+      if (isQuotaExhausted(res.status, text)) {
+        throw new Error(`Quota habis untuk model ${model} (${res.status})`);
       }
-      
-      // NEW: Use dual-mode parser (SSE + JSON fallback)
-      try {
-        const parsed = await parseLLMResponse(res, {
-          logDebug: false, // Set true untuk debug
-          onToken: (chunk) => { /* Optional streaming progress */ },
-        });
-        
-        const messageContent = { content: parsed.content };
-        if (usage && parsed.usage) {
-          usage.tokensIn += parsed.usage.prompt_tokens ?? 0;
-          usage.tokensOut += parsed.usage.completion_tokens ?? 0;
-        }
-        
-        // Parse and validate JSON from content
-        const raw = JSON.parse(extractJson(messageContent?.content ?? ""));
-        return schema.parse(normalize(raw));
-        
-      } catch (error) {
-        lastError = error;
-        const errorMsg = error instanceof Error ? error.message : String(error);
-        console.error(`[LLM] response parsing failed: ${errorMsg}`);
-        
-        if (attempt === 2) throw error;
-        
-        // Log which mode was detected (helps debugging)
-        const isSSE = errorMsg.includes("streaming") || errorMsg.includes("stream");
-        console.warn(`[LLM] Mode ${isSSE ? "SSE" : "JSON"} failed, will retry...`);
-        
-      }
-    } catch (error) {
-      clearTimeout(timeout);
-      lastError = error;
-      // Error quota langsung throw, tidak retry
-      if (error instanceof Error && /quota|habis|insufficient balance/i.test(error.message)) {
-        throw error;
-      }
-      if (isExhaustedError(error)) throw error;
-      if (attempt === 2) throw error;
-      if (error instanceof Error && error.name === "AbortError") {
-        console.warn(`[LLM] timeout pada attempt ${attempt + 1} setelah ${Date.now() - start}ms, retry...`);
-      } else if (error instanceof Error) {
-        console.warn(`[LLM] attempt ${attempt + 1} error: ${error.message}, retry...`);
-      }
+      throw new Error(`LLM gagal: ${res.status} ${text.slice(0, 200)}`);
     }
+    const parsed = await parseLLMResponse(res, { logDebug: false });
+    if (usage && parsed.usage) {
+      usage.tokensIn += parsed.usage.prompt_tokens ?? 0;
+      usage.tokensOut += parsed.usage.completion_tokens ?? 0;
+    }
+    const raw = JSON.parse(extractJson(parsed.content ?? ""));
+    console.log(`[LLM] ${model} OK in ${elapsed}ms`);
+    return schema.parse(normalize(raw));
+  } finally {
+    clearTimeout(timeout);
   }
-  throw lastError instanceof Error ? lastError : new Error("Parsing LLM gagal setelah 3 percobaan");
 }
 
 /**
- * Panggil LLM dengan failover antar-model: config boleh berisi banyak model
- * dalam satu base URL + API key (pola 9router). Kalau satu model kehabisan
- * quota (429/402/exhausted), langsung coba model berikutnya dalam daftar.
+ * Panggil LLM dengan failover berlapis dan cepat: SATU percobaan per entri
+ * (provider x model), gagal langsung pindah ke entri berikutnya. Setelah
+ * seluruh entri dicoba satu kali, semua entri yang belum kehabisan quota
+ * dicoba sekali lagi (siklus 2, pakai varian prompt). Dulu tiap model di-retry
+ * 3x dengan timeout panjang sebelum pindah — di hari upstream sakit, satu call
+ * bisa buang 5+ menit cuma buat nembak model yang jelas-jelas mati.
  */
 async function callLlm<T>(schema: z.ZodType<T>, prompt: string, usage?: LlmUsage): Promise<T> {
-  const cfg = await resolveLlmConfig();
-  const baseUrl = cfg.baseUrl;
-  const apiKey = cfg.apiKey;
-  const models = cfg.models.length > 0 ? cfg.models : parseModelList(cfg.model ?? "");
-  if (!baseUrl || !apiKey || models.length === 0) throw new Error("Konfigurasi LLM belum lengkap (isi lewat Settings atau env)");
+  const providers = await resolveLlmProviders();
+  if (providers.length === 0) throw new Error("Konfigurasi LLM belum lengkap (isi lewat Settings atau env)");
+  const entries = providers.flatMap((p) => p.models.map((model) => ({ baseUrl: p.baseUrl, apiKey: p.apiKey, model })));
+  if (entries.length === 0) throw new Error("Konfigurasi LLM belum lengkap: tidak ada model di daftar provider");
 
-  if (modelCursor >= models.length) modelCursor = 0;
-  const order = [...models.slice(modelCursor), ...models.slice(0, modelCursor)];
+  if (entryCursor >= entries.length) entryCursor = 0;
+  const exhausted = new Set<string>();
   let lastError: unknown;
-  let exhaustedCount = 0;
-  for (let i = 0; i < order.length; i++) {
-    const model = order[i];
-    try {
-      const result = await attemptModel(schema, prompt, { baseUrl, apiKey, model }, usage);
-      modelCursor = models.indexOf(model);
-      return result;
-    } catch (error) {
-      lastError = error;
-      // Failover bukan cuma untuk quota: timeout/koneksi gagal ke satu model
-      // juga harus langsung pindah model berikutnya. Dulu hanya
-      // isExhaustedError yang failover, sehingga model yang HANG total
-      // (mis. qd/dmodel upstream mati) bikin user nunggu 3x180s = 9 menit
-      // lalu "fetch failed", padahal backup sehat.
-      const nextModel = order[i + 1];
-      if (nextModel) {
+  let exhaustedAll = true;
+  for (let cycle = 0; cycle < 2; cycle++) {
+    for (let i = 0; i < entries.length; i++) {
+      const entry = entries[(entryCursor + i) % entries.length];
+      const key = `${entry.baseUrl}|${entry.model}`;
+      if (exhausted.has(key)) continue;
+      try {
+        const result = await attemptOnce(schema, prompt, entry, usage, cycle);
+        if (usage && !usage.models.includes(entry.model)) usage.models.push(entry.model);
+        entryCursor = (entryCursor + i) % entries.length;
+        return result;
+      } catch (error) {
+        lastError = error;
         const why = isExhaustedError(error)
           ? "kehabisan quota"
           : error instanceof Error && error.name === "AbortError"
             ? "timeout"
             : "gagal";
-        console.warn(`[LLM] model ${model} ${why}, pindah ke ${nextModel}`);
-        modelCursor = models.indexOf(nextModel);
-        continue;
+        console.warn(`[LLM] ${entry.model} (${entry.baseUrl}) ${why}, pindah ke entri berikutnya`);
+        if (isExhaustedError(error)) exhausted.add(key);
       }
-      if (isExhaustedError(error)) exhaustedCount++;
     }
+    exhaustedAll = exhausted.size >= entries.length;
+    if (exhaustedAll) break;
   }
-  if (exhaustedCount === order.length && order.length > 1) {
-    throw new Error(`Semua model (${models.join(", ")}) kehabisan quota. Coba lagi nanti atau tambah model di Settings.`);
+  if (exhaustedAll && entries.length > 1) {
+    throw new Error(`Semua model (${entries.map((e) => e.model).join(", ")}) kehabisan quota. Coba lagi nanti atau tambah provider/model di Settings.`);
   }
   throw lastError instanceof Error ? lastError : new Error("Semua model gagal");
 }
@@ -449,7 +409,7 @@ export async function generatePlanStructure(
   contextAnswers?: ContextAnswer[],
   tier: Tier | string | null | undefined = "free",
 ): Promise<GenerateResult> {
-  const usage: LlmUsage = { tokensIn: 0, tokensOut: 0 };
+  const usage: LlmUsage = { tokensIn: 0, tokensOut: 0, models: [] };
   // Batas struktur per tier: fase (fitur), sub-fitur per fitur, total task.
   const limits = structureLimits(tier);
   const structureWarnings: string[] = [];
@@ -474,12 +434,18 @@ export async function generatePlanStructure(
 
   const one = await callLlm(
     stage1Schema,
-    `${enforcedBrief}\n${stackHint}${answersBlock}\n\nKamu adalah product manager senior. Buat PRD awal yang mendalam:\n${STYLE_RULE}\n1. Judul produk yang jelas.\n2. Asumsi wajar (min 5): bisnis, teknis, perilaku pengguna. Jika ada jawaban klarifikasi dari user, gunakan itu dan JANGAN jadikan hal yang sudah dijawab sebagai asumsi.\n3. Stack teknologi yang cocok.\n4. Daftar fitur: buat maksimal ${limits.features[1]} fitur. CAKUPAN WAJIB: setiap subsistem, komponen, atau fungsi yang disebut di brief harus tercover; bila subsistem melebihi jumlah maksimum, gabungkan subsistem yang serumpun ke satu fitur dan jelaskan penggabungannya di field description. JANGAN menghapus, melewati, atau mengabaikan subsistem apa pun.\n5. Untuk tiap fitur: deskripsi 1-2 kalimat, tujuan bisnis yang terukur, dan 3-5 kriteria "selesai bila" yang spesifik dan bisa diuji.\n\nWAJIB gunakan field PERSIS: title, assumptions, stack, features (title, icon, description, tujuan, selesai_bila, priority). Format: {"title":"...","assumptions":[],"stack":[],"features":[{"title":"...","icon":"...","description":"...","tujuan":"...","selesai_bila":[],"priority":"high"}]}}`,
+    `${enforcedBrief}\n${stackHint}${answersBlock}\n\nKamu adalah product manager senior. Buat PRD awal yang mendalam:\n${STYLE_RULE}\n1. Judul produk WAJIB nama brand berbahasa INDONESIA yang kreatif dan berkelas: satu kata (maksimal dua), gali bahasa yang kaya seperti Sanskerta/Melayu kuno (Swarna, Semesta), istilah daerah (Lumbung, Sedulur, Sabe), kata yang dihias/distir (Warunk, Kopdul), atau kata digandeng (Kedai Kala). Mudah diingat, punya makna yang nyambung dengan fungsinya. VARIASIKAN teknik penamaannya dan DILARANG: (a) memakai istilah Inggris (Cents, Wallet, Vendor), (b) pola tempelan berulang seperti "-Ku", "-Go", "-in" di akhir kata, (c) menempelkan deskripsi atau tanda titik dua seperti "KasirKu: Aplikasi Warung".\n2. Asumsi wajar (min 5): bisnis, teknis, perilaku pengguna. Jika ada jawaban klarifikasi dari user, gunakan itu dan JANGAN jadikan hal yang sudah dijawab sebagai asumsi.\n3. Stack teknologi yang cocok.\n4. Daftar fitur: buat maksimal ${limits.features[1]} fitur. CAKUPAN WAJIB: setiap subsistem, komponen, atau fungsi yang disebut di brief harus tercover; bila subsistem melebihi jumlah maksimum, gabungkan subsistem yang serumpun ke satu fitur dan jelaskan penggabungannya di field description. JANGAN menghapus, melewati, atau mengabaikan subsistem apa pun.\n5. Untuk tiap fitur: deskripsi 1-2 kalimat, tujuan bisnis yang terukur, dan 3-5 kriteria "selesai bila" yang spesifik dan bisa diuji.\n\nWAJIB gunakan field PERSIS: title, assumptions, stack, features (title, icon, description, tujuan, selesai_bila, priority). Format: {"title":"...","assumptions":[],"stack":[],"features":[{"title":"...","icon":"...","description":"...","tujuan":"...","selesai_bila":[],"priority":"high"}]}}`,
     usage,
   );
 
   // Hard cutoff AFTER validation but still warn
   const stage1Features = one.features.slice(0, limits.features[1]);
+
+  // Jaring pengaman nama brand: LLM kadang tetap menempel deskripsi di judul
+  // ("FutsalGo: Aplikasi Booking Lapangan"). Kepala plan cukup nama mereknya;
+  // deskripsi dibuang karena sudah ada di brief dan isi PRD.
+  const brandTitle =
+    one.title.split(/[:\u2013\u2014]|\s+-\s+/)[0].trim() || one.title;
   if (one.features.length > limits.features[1]) {
     structureWarnings.push(`Prompt melebihi batas (${one.features.length} fitur). Dipotong jadi ${limits.features[1]} sesuai paket ${tier === "pro" ? "Pro" : "Free"}.`);
   }
@@ -564,7 +530,7 @@ export async function generatePlanStructure(
   // (spesifik per project) SEBELUM fallback template punya kesempatan masuk.
   const archRaw = normalizeMermaidFences((archData.architecture ?? "").trim());
   const dbRaw = normalizeMermaidFences((archData.databaseSchema ?? "").trim());
-  const ctx = { title: one.title, stack: resolvedStack, featureTitles: featureTitles };
+  const ctx = { title: brandTitle, stack: resolvedStack, featureTitles: featureTitles };
 
   const [archDiagram, dbDiagram] = await Promise.all([
     archRaw && !hasMermaidDiagram(archRaw) ? regenerateDiagram("architecture", ctx, archRaw, usage) : Promise.resolve(null),
@@ -572,7 +538,7 @@ export async function generatePlanStructure(
   ]);
 
   const { architecture, databaseSchema, usedFallback } = applyArchFallback(
-    { title: one.title, stack: resolvedStack, features: features as never },
+    { title: brandTitle, stack: resolvedStack, features: features as never },
     archDiagram ? `${archRaw}\n\n${archDiagram}` : archRaw,
     dbDiagram ? `${dbRaw}\n\n${dbDiagram}` : dbRaw,
     { injectDiagrams: true },
@@ -592,7 +558,7 @@ export async function generatePlanStructure(
   }
 
   return {
-    title: one.title,
+    title: brandTitle,
     brief,
     stack: resolvedStack,
     techStack: archData.techStack,
@@ -617,7 +583,7 @@ export async function generateTasksForFeature(
   /** Ide user dari kolom chat (Pro). WAJIB dibaca AI sebagai referensi tambahan. */
   ideas?: PlanIdea[] | null,
 ): Promise<{ tasks: Omit<GenerateTask, "ref">[]; usage: LlmUsage }> {
-  const usage: LlmUsage = { tokensIn: 0, tokensOut: 0 };
+  const usage: LlmUsage = { tokensIn: 0, tokensOut: 0, models: [] };
   // Budget task per fitur berlaku per unit fitur/sub-fitur sesuai batas tier.
   const [minTasks, maxTasks] = taskRangePerFeature(tier, featureCount, subFeatures.length);
   const taskBudgetRule = `Buat ${minTasks} sampai ${maxTasks} task untuk fitur ini (WAJIB tidak melebihi ${maxTasks}). Pastikan SETIAP sub-fitur memiliki alokasi task (minimal frontend, backend, atau QA).`;
@@ -629,7 +595,7 @@ export async function generateTasksForFeature(
     : "";
   const result = await callLlm(
     stage3Schema,
-    `Brief: ${brief}\nFitur: ${featureTitle}\nSub-fitur: ${JSON.stringify(subFeatures)}\n${ideaBlock}\nKamu adalah tech lead senior. Buat task untuk fitur ini saja dengan pendekatan kritis:\n${STYLE_RULE}\n1. ${taskBudgetRule} Tiap task harus spesifik dan actionable.\n2. Setiap sub-fitur harus ada task (frontend, backend, dan/atau QA/testing). Pastikan tidak ada sub-fitur yang dibiarkan tanpa task.\n3. Tiap task title WAJIB diawali kata kerja (Buat, Integrasikan, Uji, Deploy, Refactor, dll).\n4. Sertakan task untuk: validasi input, error handling, state management, integrasi antar komponen, unit/integration test, accessibility/perf jika relevan.\n5. Beri SETIAP task id unik berurutan: "t1", "t2", "t3", dst.\n6. Dependency (deps): isi dengan id task lain yang harus selesai LEBIH DULU (hanya id dari daftar task ini, mis. ["t1","t3"]). Jangan membuat ketergantungan melingkar. Task yang bisa dikerjakan paralel tanpa prasyarat diberi deps [].\n7. Urutan logis layer: frontend -> backend -> qa. Tandai task yang blocker atau high-risk.\n8. Setiap task wajib field: id, feature, sub_feature, title, layer (frontend/backend/qa), phase, page (null atau path), deps (array id).\n\nFormat: {"tasks":[{"id":"t1","feature":"...","sub_feature":"...","title":"...","layer":"frontend","phase":${featureIndex + 1},"page":null,"deps":[]},{"id":"t2","feature":"...","sub_feature":"...","title":"...","layer":"backend","phase":${featureIndex + 1},"page":null,"deps":["t1"]}]}`,
+    `Brief: ${brief}\nFitur: ${featureTitle}\nSub-fitur: ${JSON.stringify(subFeatures)}\n${ideaBlock}\nKamu adalah tech lead senior. Buat task untuk fitur ini saja dengan pendekatan kritis:\n${STYLE_RULE}\n1. ${taskBudgetRule} Tiap task harus spesifik dan actionable.\n2. Setiap sub-fitur harus ada task (frontend, backend, dan/atau QA/testing).\n3. Tiap task title WAJIB singkat dan padat, MAKSIMAL 60 karakter, diawali kata kerja (Buat, Integrasikan, Uji, Deploy, Refactor, dll). Tanpa menyebut nama fitur.\n4. Sertakan task untuk: validasi input, error handling, state management, integrasi antar komponen, unit/integration test, accessibility/perf jika relevan.\n5. Beri SETIAP task id unik berurutan: "t1", "t2", "t3", dst.\n6. Dependency (deps): isi dengan id task lain yang harus selesai LEBIH DULU (hanya id dari daftar task ini, mis. ["t1","t3"]). Jangan membuat ketergantungan melingkar. Task yang bisa dikerjakan paralel tanpa prasyarat diberi deps [].\n7. Urutan logis layer: frontend -> backend -> qa.\n8. Setiap task wajib field: id, sub_feature (judul sub-fitur persis dari daftar), title, layer (frontend/backend/qa), phase, page (null atau path), deps (array id). JANGAN tulis field feature.\n\nFormat: {"tasks":[{"id":"t1","sub_feature":"${subFeatures[0] ?? "..."}","title":"...","layer":"frontend","phase":${featureIndex + 1},"page":null,"deps":[]},{"id":"t2","sub_feature":"${subFeatures[0] ?? "..."}","title":"...","layer":"backend","phase":${featureIndex + 1},"page":null,"deps":["t1"]}]}`,
     usage,
   );
   // Enforce keras: potong task berlebih dari LLM ke budget maksimum.
@@ -677,7 +643,7 @@ export interface IdeaFeature {
  * ikut budget task yang sama dengan fitur reguler.
  */
 export async function convertIdeaToFeature(brief: string, ideaText: string, phase: number): Promise<IdeaFeature> {
-  const usage: LlmUsage = { tokensIn: 0, tokensOut: 0 };
+  const usage: LlmUsage = { tokensIn: 0, tokensOut: 0, models: [] };
   const result = await callLlm(
     ideaPhaseSchema,
     `Brief project: ${brief}
