@@ -1,3 +1,4 @@
+import "./lib-env";
 import pg from 'pg';
 import { getPlan, savePlan } from '../src/lib/storage';
 import { generateTasksForFeature, buildTaskRef, sanitizeDeps, assignTasksToSubFeatures } from '../src/lib/generate';
@@ -18,7 +19,7 @@ async function main() {
   
   // 1. Pastikan Fase 15 punya sub-fitur di database dulu jika kosong
   const client = new pg.Client({ 
-    connectionString: 'REMOVED_EXPOSED_DATABASE_CREDENTIAL' 
+    connectionString: process.env.DATABASE_URL! 
   });
   await client.connect();
   
