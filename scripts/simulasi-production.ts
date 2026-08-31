@@ -1,3 +1,4 @@
+import "./lib-env";
 import { createClient } from "@supabase/supabase-js";
 
 const BASE_URL = "https://scratchagent.web.id";
@@ -6,7 +7,7 @@ const SUPABASE_ANON_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvcWJ4a25obnd1a2hpa2NwZ2FiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYwNzIzNjAsImV4cCI6MjEwMTY0ODM2MH0.x5dA1ztdxQHKOWCuEj7quwWUyJAbdeGtpio-vuv6OEo";
 
 const EMAIL = "admin@scratchagent.com";
-const PASSWORD = "Bleedemo1993!!";
+const PASSWORD = process.env.DB_PASSWORD ?? ""; // dari .env, jangan hardcode
 
 const BRIEF_TEXT =
   "Platform SaaS Real-time Server & Uptime Monitor dengan multi-channel alert (Telegram, Discord, Email), public status page kustom, visual latency analytics, automatic SSL certificate expiration checker, dan team role permissions.";
