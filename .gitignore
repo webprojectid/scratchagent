@@ -56,3 +56,6 @@ nul
 
 /.*-id
 /.tmp-*
+
+# script simulasi lokal (perlu password DB)
+scripts/simulasi-production.ts
