@@ -128,6 +128,7 @@ export default function ProfilePage() {
 
   const [plans, setPlans] = useState<PlanSummary[]>([]);
   const [plansLoading, setPlansLoading] = useState(true);
+  const [origin, setOrigin] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "done" | "active" | "generating">("all");
 
@@ -144,6 +145,7 @@ export default function ProfilePage() {
   useEffect(() => {
     let active = true;
 
+    setOrigin(window.location.origin);
     getCurrentUser().then((u) => {
       if (!active) return;
       if (!u) {
@@ -584,7 +586,7 @@ export default function ProfilePage() {
             </Link>
           </div>
           <p className="mt-2 text-[12.5px] text-white/50">
-            Gunakan token ini untuk login ke agent CLI (<code className="rounded bg-black/40 px-1.5 py-0.5 font-mono text-[#74FA6A]">scratch-agent login --token &lt;token&gt;</code>)
+            Gunakan token ini untuk login ke agent CLI (<code className="rounded bg-black/40 px-1.5 py-0.5 font-mono text-[#74FA6A]">scratch-agent login --token &lt;token&gt; --url {origin || "https://www.scratchagent.web.id"}</code>)
           </p>
 
           {tokens.length > 0 ? (
@@ -597,7 +599,7 @@ export default function ProfilePage() {
                   <span className="font-mono text-[11px] text-white/70">{t.label}</span>
                   <span className="font-mono text-[11px] text-white/30">({t.hash.slice(0, 10)}…)</span>
                   <button
-                    onClick={() => handleCopy(`scratch-agent login --token ${t.hash}`, t.hash)}
+                    onClick={() => handleCopy(`scratch-agent login --token ${t.hash} --url ${origin || "https://www.scratchagent.web.id"}`, t.hash)}
                     className="inline-flex items-center gap-1 rounded-md bg-[#74FA6A]/[.12] px-2 py-1 font-mono text-[10.5px] font-semibold text-[#74FA6A] transition hover:bg-[#74FA6A]/[.2]"
                   >
                     {copiedToken === t.hash ? <Check size={12} /> : <Copy size={12} />}
