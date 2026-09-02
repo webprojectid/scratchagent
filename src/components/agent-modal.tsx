@@ -50,9 +50,18 @@ export function AgentPromptModal({ planId, onClose }: { planId: string; onClose:
     return () => window.removeEventListener("keydown", handler);
   }, [onClose]);
 
+  const serverUrl = typeof window !== "undefined" ? window.location.origin : "";
+
   const prompt = token
     ? `Kamu akan mengerjakan task dari Scratch Agent lewat CLI scratch-agent (package npm: @notdeadlysins/scratch-agent).
 Prasyarat: Node.js + Python 3.x.
+
+PENTING — SERVER SCRATCH AGENT:
+Server API: ${serverUrl}
+- Semua perintah scratch-agent mengarah ke server di atas (login sudah menyimpannya, lihat LANGKAH 1).
+- scratch-agent hanyalah CLI client: PRD, task, dan progress hidup di server tersebut.
+- JANGAN menyala-kan server/dev server Scratch Agent sendiri (npm run dev, next dev, dsb).
+- Jika koneksi gagal, JANGAN cari atau proyekkan server lokal. Laporkan error koneksi ke user, lalu berhenti.
 
 LANGKAH 0: Install Skill Scratch Agent v2.4 (sekali saja):
  Cek apakah sudah terpasang: uipro --version
@@ -63,7 +72,7 @@ LANGKAH 0: Install Skill Scratch Agent v2.4 (sekali saja):
 
 LANGKAH 1: Install CLI, login & init (sekali saja):
  npm install -g @notdeadlysins/scratch-agent
- scratch-agent login --token ${token}
+ scratch-agent login --token ${token} --url ${serverUrl}
  scratch-agent init --agent opencode
 
 LANGKAH 2: Baca PRD (sekali):
@@ -83,6 +92,9 @@ ATURAN:
 - Jika respons blocked=true: berhenti, lapor daftar task gagal, tunggu perintah.
 - Jika respons checkpoint=true: JANGAN mulai task. Berhenti, lapor, tunggu "lanjut".
 - Jangan borong task; percayakan urutan ke server.
+- Server Scratch Agent (${serverUrl}) BUKAN bagian dari project yang kamu kerjakan.
+  Project-mu (Vite/Next.js/dst) dan server Scratch Agent itu dua hal berbeda —
+  jangan pernah menjalankan atau memodifikasi server Scratch Agent.
 - Saat mengerjakan task frontend/UI: CEK apakah Skill Scratch Agent aktif
   otomatis. Jika AKTIF: terapkan rekomendasinya (warna, tipografi, layout,
   best practice) supaya hasil profesional. Jika TIDAK aktif: beri tau user
