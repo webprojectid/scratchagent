@@ -30,5 +30,5 @@ export function getToken(): string | null {
 }
 
 export function getBaseUrl(): string {
-  return loadConfig()?.baseUrl ?? process.env.SCRATCH_AGENT_URL ?? "http://localhost:3000";
+  return loadConfig()?.baseUrl || process.env.SCRATCH_AGENT_URL || "";
 }

@@ -136,9 +136,11 @@ export default function Settings() {
   const [llmSaving, setLlmSaving] = useState(false);
   const [creatingToken, setCreatingToken] = useState(false);
   const [copiedHash, setCopiedHash] = useState<string | null>(null);
+  const [origin, setOrigin] = useState("");
 
   useEffect(() => {
     let active = true;
+    setOrigin(window.location.origin);
     getCurrentUser().then((u) => {
       if (!active) return;
       if (!u) {
@@ -657,11 +659,11 @@ export default function Settings() {
                             {!t.revoked && (
                               <>
                                 <button
-                                  onClick={() => handleCopy(`scratch-agent login --token ${t.hash}`)}
+                                  onClick={() => handleCopy(`scratch-agent login --token ${t.hash} --url ${origin || "https://www.scratchagent.web.id"}`)}
                                   className="rounded p-1 text-white/40 transition hover:bg-white/10 hover:text-white"
                                   title="Salin scratch-agent login"
                                 >
-                                  {copiedHash === `scratch-agent login --token ${t.hash}` ? (
+                                  {copiedHash === `scratch-agent login --token ${t.hash} --url ${origin || "https://www.scratchagent.web.id"}` ? (
                                     <Check size={13} className="text-[#74FA6A]" />
                                   ) : (
                                     <Copy size={13} />
@@ -692,7 +694,7 @@ export default function Settings() {
                 </div>
                 <div className="mt-2 space-y-1.5 font-mono text-[11px]">
                   <div className="flex items-center justify-between rounded-[8px] bg-black/40 px-2.5 py-1.5 text-white/70">
-                    <span>1. Login: <code className="text-[#74FA6A]">scratch-agent login --token &lt;token&gt;</code></span>
+                    <span>1. Login: <code className="text-[#74FA6A]">scratch-agent login --token &lt;token&gt; --url {origin || "https://www.scratchagent.web.id"}</code></span>
                   </div>
                   <div className="flex items-center justify-between rounded-[8px] bg-black/40 px-2.5 py-1.5 text-white/70">
                     <span>2. Run: <code className="text-[#74FA6A]">scratch-agent run --plan &lt;planId&gt;</code></span>

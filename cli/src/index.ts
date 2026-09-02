@@ -13,10 +13,16 @@ program
   .command("login")
   .description("Simpan token akses")
   .requiredOption("--token <token>", "Token akses (rv_...)")
-  .option("--url <url>", "URL server", "http://localhost:3000")
-  .action((opts: { token: string; url: string }) => {
-    saveConfig({ token: opts.token, baseUrl: opts.url });
-    console.log("✓ Token disimpan");
+  .option("--url <url>", "URL server Scratch Agent (mis. https://www.scratchagent.web.id)")
+  .action((opts: { token: string; url?: string }) => {
+    const prev = loadConfig();
+    const baseUrl = opts.url ?? prev?.baseUrl ?? "";
+    saveConfig({ token: opts.token, baseUrl });
+    console.log(`✓ Token disimpan · Server: ${baseUrl || "(belum diset)"}`);
+    if (!baseUrl) {
+      console.error("⚠ URL server belum diset. Jalankan ulang dengan --url, contoh:");
+      console.error("  scratch-agent login --token <token> --url https://www.scratchagent.web.id");
+    }
   });
 
 program
