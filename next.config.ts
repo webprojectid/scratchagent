@@ -11,6 +11,10 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "registry.npmmirror.com" },
     ],
   },
+  env: {
+    NEXT_PUBLIC_TURNSTILE_SITE_KEY:
+      process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "0x4AAAAAAEnBHa0BVZ4egzVD",
+  },
   async headers() {
     return [
       {
