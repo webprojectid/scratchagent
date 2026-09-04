@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { KeyRound } from "lucide-react";
 import { LanguageToggle } from "@/components/lang-toggle";
+import { UserNav } from "@/components/user-nav";
 import { useLang } from "@/lib/lang";
 import { t, type NavKey, type CtaKey } from "@/lib/i18n";
 import { useCurrentUser } from "@/lib/current-user";
@@ -45,11 +46,7 @@ export function HeaderNav({
         <KeyRound size={13} strokeWidth={2.2} aria-hidden="true" />
         Api Key
       </a>
-      {loggedIn && (
-        <Link href="/profile" className="text-white/80 transition-colors hover:text-[#74FA6A]">
-          {t("nav", "profile", lang)}
-        </Link>
-      )}
+      {loggedIn && <UserNav />}
       <LanguageToggle />
       <Link
         href={resolvedHref}

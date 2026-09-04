@@ -33,6 +33,7 @@ import {
   AlertTriangle,
   X,
   Layers,
+  Settings,
 } from "lucide-react";
 import { getCurrentUser, refreshCurrentUser, supabaseConfigured } from "@/lib/current-user";
 import { createClient } from "@/lib/supabase/client";
@@ -364,10 +365,10 @@ export default function ProfilePage() {
         >
           <div className="flex items-center gap-5">
             <div className="relative">
-              <div className="grid size-[64px] shrink-0 place-items-center rounded-[20px] border border-[#74FA6A]/30 bg-[#74FA6A]/[.08] font-bold tracking-tight text-[#74FA6A] shadow-[0_0_30px_rgba(116,250,106,0.15)]" style={{ fontSize: "18px" }}>
+              <div className="grid size-[56px] shrink-0 place-items-center rounded-2xl border border-white/10 bg-white/[.04] font-mono text-[16px] font-bold tracking-tight text-[#74FA6A]">
                 {initials || "?"}
               </div>
-              <div className="absolute -bottom-1 -right-1 size-3.5 rounded-full border-2 border-[#0E1210] bg-[#74FA6A]" />
+              <div className="absolute -bottom-0.5 -right-0.5 size-3 rounded-full border-2 border-[#0E1210] bg-[#74FA6A]" />
             </div>
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2.5">
@@ -421,12 +422,12 @@ export default function ProfilePage() {
                   </span>
                 )}
                 {isPro ? (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-[#74FA6A] to-[#A8FF9B] px-2.5 py-0.2 font-mono text-[10px] font-bold uppercase tracking-[.12em] text-black shadow-[0_0_15px_rgba(116,250,106,0.3)]">
-                    <Crown size={11} /> PRO MEMBER
+                  <span className="inline-flex items-center gap-1 rounded-md border border-[#74FA6A]/40 bg-[#74FA6A]/10 px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-[.08em] text-[#74FA6A]">
+                    <Crown size={11} /> PRO
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/[.06] px-2 py-0.2 font-mono text-[9.5px] font-bold uppercase tracking-[.12em] text-white/50">
-                    FREE TIER
+                  <span className="inline-flex items-center gap-1 rounded-md border border-white/10 bg-white/[.04] px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-[.08em] text-white/50">
+                    FREE
                   </span>
                 )}
               </div>
@@ -465,9 +466,15 @@ export default function ProfilePage() {
                 <ShieldCheck size={13} /> Developer Setting
               </Link>
             )}
+            <Link
+              href="/settings"
+              className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/[.04] px-3.5 py-2 text-[12px] font-medium text-white/80 transition hover:border-[#74FA6A]/40 hover:text-[#74FA6A]"
+            >
+              <Settings size={13} /> Setting
+            </Link>
             <button
               onClick={handleLogout}
-              className="inline-flex items-center gap-1.5 rounded-full border border-red-500/30 bg-red-500/[.06] px-3.5 py-2 text-[12px] font-semibold text-red-400 transition hover:bg-red-500/[.15] active:scale-[.985]"
+              className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/[.04] px-3.5 py-2 text-[12px] font-medium text-white/60 transition hover:border-red-500/40 hover:bg-red-500/10 hover:text-red-400 active:scale-[.985]"
             >
               <LogOut size={13} /> Keluar
             </button>
@@ -477,19 +484,19 @@ export default function ProfilePage() {
         {/* Tier & Quota Hub */}
         <div className="mt-5 grid gap-4 md:grid-cols-3">
           {/* Card 1: Subscription Status */}
-          <GlassCard className="relative overflow-hidden p-5" delay={0.05} hover>
+          <GlassCard className="p-5" delay={0.05}>
             <div className="flex items-center justify-between">
-              <p className="font-mono text-[10px] font-bold uppercase tracking-[.14em] text-white/40">
+              <p className="font-mono text-[10px] font-semibold uppercase tracking-[.14em] text-white/40">
                 Paket Langganan
               </p>
               {isPro ? (
-                <Crown size={15} className="text-[#74FA6A]" />
+                <Crown size={14} className="text-[#74FA6A]" />
               ) : (
-                <Zap size={15} className="text-white/40" />
+                <Zap size={14} className="text-white/40" />
               )}
             </div>
             <div className="mt-2 flex items-baseline gap-2">
-              <p className="font-bold text-white" style={{ fontSize: "18px" }}>{isPro ? "Scratch Pro" : "Scratch Free"}</p>
+              <p className="font-bold text-white text-[17px]">{isPro ? "Scratch Pro" : "Scratch Free"}</p>
             </div>
             <p className="mt-1 text-[12px] text-white/45">
               {isPro
@@ -505,7 +512,7 @@ export default function ProfilePage() {
             {!isPro && (
               <Link
                 href="/pricing"
-                className="mt-3 inline-flex items-center gap-1 text-[11.5px] font-semibold text-[#74FA6A] hover:underline"
+                className="mt-3 inline-flex items-center gap-1 text-[11.5px] font-medium text-[#74FA6A] hover:underline"
               >
                 Lihat benefit paket Pro <ArrowUpRight size={12} />
               </Link>
@@ -513,15 +520,15 @@ export default function ProfilePage() {
           </GlassCard>
 
           {/* Card 2: Quota & Generates */}
-          <GlassCard className="p-5" delay={0.1} hover>
+          <GlassCard className="p-5" delay={0.1}>
             <div className="flex items-center justify-between">
-              <p className="font-mono text-[10px] font-bold uppercase tracking-[.14em] text-white/40">
+              <p className="font-mono text-[10px] font-semibold uppercase tracking-[.14em] text-white/40">
                 Kuota Generate Plan
               </p>
-              <Clock size={15} className="text-[#74FA6A]" />
+              <Clock size={14} className="text-[#74FA6A]" />
             </div>
             <div className="mt-2 flex items-baseline gap-2">
-              <p className="font-bold text-[#74FA6A]" style={{ fontSize: "18px" }}>
+              <p className="font-bold text-[#74FA6A] text-[17px]">
                 {isPro ? "Unlimited" : `${quota?.remaining ?? 3} / 3`}
               </p>
               {!isPro && <span className="text-[11.5px] text-white/40">tersisa hari ini</span>}
@@ -534,15 +541,15 @@ export default function ProfilePage() {
           </GlassCard>
 
           {/* Card 3: Completion Rate */}
-          <GlassCard className="p-5" delay={0.15} hover>
+          <GlassCard className="p-5" delay={0.15}>
             <div className="flex items-center justify-between">
-              <p className="font-mono text-[10px] font-bold uppercase tracking-[.14em] text-white/40">
+              <p className="font-mono text-[10px] font-semibold uppercase tracking-[.14em] text-white/40">
                 Task Completion Rate
               </p>
-              <CheckCircle2 size={15} className="text-[#74FA6A]" />
+              <CheckCircle2 size={14} className="text-[#74FA6A]" />
             </div>
             <div className="mt-2 flex items-baseline gap-2">
-              <p className="font-bold text-white" style={{ fontSize: "18px" }}>{completionRate}%</p>
+              <p className="font-bold text-white text-[17px]">{completionRate}%</p>
               <span className="text-[11.5px] text-white/40">({doneTasks}/{totalTasks} task)</span>
             </div>
             <div className="mt-2.5 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
@@ -556,26 +563,26 @@ export default function ProfilePage() {
 
         {/* Stats Row */}
         <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <GlassCard className="p-4" delay={0.18} hover>
-            <p className="font-mono text-[10px] font-bold uppercase tracking-[.14em] text-white/35">Total Projects</p>
-            <p className="mt-1 font-bold text-white" style={{ fontSize: "18px" }}>{plans.length}</p>
+          <GlassCard className="p-4" delay={0.18}>
+            <p className="font-mono text-[10px] font-semibold uppercase tracking-[.14em] text-white/35">Total Projects</p>
+            <p className="mt-1 font-bold text-white text-[17px]">{plans.length}</p>
           </GlassCard>
-          <GlassCard className="p-4" delay={0.2} hover>
-            <p className="font-mono text-[10px] font-bold uppercase tracking-[.14em] text-white/35">Project Selesai</p>
-            <p className="mt-1 font-bold text-[#74FA6A]" style={{ fontSize: "18px" }}>{donePlansCount}</p>
+          <GlassCard className="p-4" delay={0.2}>
+            <p className="font-mono text-[10px] font-semibold uppercase tracking-[.14em] text-white/35">Project Selesai</p>
+            <p className="mt-1 font-bold text-[#74FA6A] text-[17px]">{donePlansCount}</p>
           </GlassCard>
-          <GlassCard className="p-4" delay={0.22} hover>
-            <p className="font-mono text-[10px] font-bold uppercase tracking-[.14em] text-white/35">Total Tasks</p>
-            <p className="mt-1 font-bold text-white" style={{ fontSize: "18px" }}>{totalTasks}</p>
+          <GlassCard className="p-4" delay={0.22}>
+            <p className="font-mono text-[10px] font-semibold uppercase tracking-[.14em] text-white/35">Total Tasks</p>
+            <p className="mt-1 font-bold text-white text-[17px]">{totalTasks}</p>
           </GlassCard>
-          <GlassCard className="p-4" delay={0.24} hover>
-            <p className="font-mono text-[10px] font-bold uppercase tracking-[.14em] text-white/35">Tasks Selesai</p>
-            <p className="mt-1 font-bold text-[#74FA6A]" style={{ fontSize: "18px" }}>{doneTasks}</p>
+          <GlassCard className="p-4" delay={0.24}>
+            <p className="font-mono text-[10px] font-semibold uppercase tracking-[.14em] text-white/35">Tasks Selesai</p>
+            <p className="mt-1 font-bold text-[#74FA6A] text-[17px]">{doneTasks}</p>
           </GlassCard>
         </div>
 
         {/* CLI Token Quick Access */}
-        <GlassCard className="mt-6 p-6" delay={0.26} hover>
+        <GlassCard className="mt-6 p-6" delay={0.26}>
           <div className="flex flex-wrap items-center justify-between gap-4">
             <SectionLabel icon={<Terminal size={14} />}>cli token &amp; integrasi</SectionLabel>
             <Link
@@ -649,7 +656,7 @@ export default function ProfilePage() {
 
         {activeTab === "projects" ? (
           /* Project History with Search & Filters */
-          <GlassCard className="mt-5 p-6" delay={0.1} hover>
+          <GlassCard className="mt-5 p-6" delay={0.1}>
             <div className="flex flex-wrap items-center justify-between gap-4">
               <SectionLabel icon={<FolderOpen size={14} />}>project history</SectionLabel>
               <div className="flex flex-wrap items-center gap-2.5">
