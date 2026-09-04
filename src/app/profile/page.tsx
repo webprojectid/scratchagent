@@ -382,7 +382,7 @@ export default function ProfilePage() {
                           </div>
                         ) : (
                           <>
-                            <h1 className="text-sm font-semibold text-white">{user.name}</h1>
+                            <span className="text-xs font-semibold text-white">{user.name}</span>
                             <button
                               onClick={() => {
                                 setNameInput(user.name);
@@ -539,7 +539,7 @@ export default function ProfilePage() {
               <div className="rounded-xl border border-white/[.04] bg-[#0E1113] p-4">
                 <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/[.06] pb-3">
                   <div>
-                    <h2 className="text-xs font-semibold text-white uppercase tracking-wider font-mono">Daftar Project</h2>
+                    <span className="text-[11px] font-semibold text-white font-mono">Daftar Project</span>
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2">
@@ -654,7 +654,7 @@ export default function ProfilePage() {
           /* Security Tab */
           <div className="mt-5 rounded-2xl border border-white/[.06] bg-white/[.02] p-1.5 max-w-md">
             <div className="rounded-xl border border-white/[.04] bg-[#0E1113] p-5">
-              <h2 className="text-xs font-semibold text-white uppercase tracking-wider font-mono">Ganti Password</h2>
+              <span className="text-[11px] font-semibold text-white font-mono">Ganti Password</span>
               <p className="mt-1 text-xs text-white/40">Khusus kredensial dev lokal. Minimal 6 karakter.</p>
 
               <div className="relative mt-3.5">
