@@ -112,16 +112,16 @@ export default function DocsPage() {
                   {c.faqs.map((item, i) => (
                     <details
                       key={item.q}
-                      className="rounded-[20px] border border-[#0F1A12]/10 bg-[#F6FAF7]/90 px-6 py-5 shadow-[0_2px_10px_-2px_rgba(15,26,18,0.12)] transition-all duration-300 hover:border-[#0F1A12]/25 hover:bg-white hover:shadow-[0_8px_24px_-6px_rgba(15,26,18,0.22)]"
+                      className="group rounded-[20px] border border-[#0F1A12]/10 bg-[#F6FAF7]/90 px-6 py-5 shadow-[0_2px_10px_-2px_rgba(15,26,18,0.12)] transition-all duration-300 hover:border-[#0F1A12]/25 hover:bg-white hover:shadow-[0_8px_24px_-6px_rgba(15,26,18,0.22)]"
                     >
                       <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-[15px] font-medium text-[#1A2B1F] [&::-webkit-details-marker]:hidden">
                         <span className="flex items-baseline gap-3">
                           <span className="font-mono text-[11px] tabular-nums text-[#33473A]/70">{String(i + 1).padStart(2, "0")}</span>
                           {item.q}
                         </span>
-                        <span className="grid size-7 shrink-0 place-items-center rounded-full bg-[#0F1A12] text-[16px] font-bold text-[#9EC5AB] transition-transform duration-200 group-open:rotate-45">+</span>
+                        <span className="grid size-7 shrink-0 place-items-center rounded-full bg-[#0F1A12] text-[16px] font-bold text-[#9EC5AB] transition-transform duration-300 group-open:rotate-45 leading-none select-none">+</span>
                       </summary>
-                      <p className="mt-3 max-w-[68ch] text-[14px] leading-[1.7] text-[#33473A]">{item.a}</p>
+                      <p className="mt-3 max-w-[68ch] text-[14px] leading-[1.7] text-[#33473A] animate-in fade-in-50 duration-200">{item.a}</p>
                     </details>
                   ))}
                 </div>

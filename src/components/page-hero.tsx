@@ -30,7 +30,7 @@ export function PageHero({
             "radial-gradient(ellipse 60% 55% at 50% -15%, rgba(116,250,106,.10), transparent 65%)",
         }}
       />
-      <div className="relative mx-auto max-w-[980px] px-5 pb-16 pt-16 text-center md:pt-24">
+      <div className="relative mx-auto max-w-[980px] px-5 pb-16 pt-16 text-center md:pt-24 animate-in fade-in slide-in-from-bottom-3 duration-500">
         {eyebrow && (
           <p className="font-mono text-[10px] font-bold uppercase tracking-[.18em] text-[#8FDB90]">
             {eyebrow}

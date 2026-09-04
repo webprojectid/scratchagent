@@ -130,7 +130,7 @@ export default function SolutionsPage() {
 function BriefToPlanMock() {
   const c = solutionsCopy(useLang());
   return (
-    <div className="overflow-hidden rounded-[16px] border border-white/10 bg-[#111413]">
+    <div className="overflow-hidden rounded-[16px] border border-white/10 bg-[#111413] transition-all duration-300 hover:border-white/20 hover:shadow-xl hover:shadow-[#74FA6A]/5">
       <div className="border-b border-white/[.07] px-5 py-3.5">
         <p className="font-mono text-[10px] font-bold uppercase tracking-[.16em] text-white/30">{c.briefLabel}</p>
       </div>
@@ -168,7 +168,7 @@ function BriefToPlanMock() {
 function PrdArtifactMock() {
   const c = solutionsCopy(useLang());
   return (
-    <div className="overflow-hidden rounded-[16px] border border-white/10 bg-[#111413]">
+    <div className="overflow-hidden rounded-[16px] border border-white/10 bg-[#111413] transition-all duration-300 hover:border-white/20 hover:shadow-xl hover:shadow-[#74FA6A]/5">
       <div className="flex items-center justify-between border-b border-white/[.07] px-5 py-3.5">
         <p className="font-mono text-[10px] font-bold uppercase tracking-[.16em] text-white/30">{c.prdLabel}</p>
         <span className="rounded-full bg-[#74FA6A]/10 px-2.5 py-1 font-mono text-[10px] font-bold text-[#74FA6A]">v1</span>
@@ -204,7 +204,7 @@ function MissionTerminalMock() {
   const c = solutionsCopy(useLang());
   const [l1, l2, l3, l4, l5, l6] = c.missionLines;
   return (
-    <div className="mt-10 overflow-hidden rounded-[16px] border border-white/10 bg-[#0D0F0E]">
+    <div className="mt-10 overflow-hidden rounded-[16px] border border-white/10 bg-[#0D0F0E] transition-all duration-300 hover:border-white/20 hover:shadow-xl hover:shadow-[#74FA6A]/5">
       <div className="flex items-center gap-1.5 border-b border-white/[.07] px-5 py-3">
         <i className="size-2.5 rounded-full bg-[#FF5F56]" /><i className="size-2.5 rounded-full bg-[#FFBD2E]" /><i className="size-2.5 rounded-full bg-[#74FA6A]" />
         <span className="ml-3 font-mono text-[11px] text-[#5B6676]">{c.missionLabel}</span>

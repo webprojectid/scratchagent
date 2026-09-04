@@ -97,7 +97,7 @@ export function PricingCards() {
           }}
         />
         {/* Kartu Free — glass card standar, CTA outline */}
-        <PricingCard.Card className="price-rise">
+        <PricingCard.Card className="price-rise transition-all duration-300 hover:-translate-y-1.5 hover:border-white/20 hover:shadow-2xl hover:shadow-[#74FA6A]/5">
           <PricingCard.Header>
             <PricingCard.Plan>
               <PricingCard.PlanName>
@@ -149,7 +149,7 @@ export function PricingCards() {
         {/* Kartu Pro — border lime, CTA lime solid, semua fitur tampil sebagai aktif.
             Override dark: eksplisit biar emphasis lime gak ditimpa dark:border-border/80
             dari komponen dasar. */}
-        <PricingCard.Card className="price-rise border-[#74FA6A]/35 dark:border-[#74FA6A]/35 shadow-[0_20px_60px_-30px_rgba(116,250,106,.3)]" style={{ animationDelay: ".06s" }}>
+        <PricingCard.Card className="price-rise border-[#74FA6A]/35 dark:border-[#74FA6A]/35 shadow-[0_20px_60px_-30px_rgba(116,250,106,.3)] transition-all duration-300 hover:-translate-y-2 hover:border-[#74FA6A]/60 hover:shadow-[0_25px_70px_-20px_rgba(116,250,106,.45)]" style={{ animationDelay: ".06s" }}>
           <PricingCard.Header className="border-[#74FA6A]/25 bg-[#11170F] dark:bg-[#11170F]">
             <PricingCard.Plan>
               <PricingCard.PlanName>
