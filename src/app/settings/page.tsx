@@ -77,15 +77,15 @@ function GlassCard({
   delay?: number;
 }) {
   const reduce = useReducedMotion();
-  const enter = reduce ? {} : { opacity: 0, y: 10 };
+  const enter = reduce ? {} : { opacity: 0, y: 8 };
   const visible = reduce ? {} : { opacity: 1, y: 0 };
 
   return (
     <motion.div
       initial={enter}
       animate={visible}
-      transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1], delay: reduce ? 0 : delay }}
-      className={`rounded-[18px] border border-white/[.08] bg-[#0E1210]/85 p-5 md:p-6 backdrop-blur-2xl shadow-[0_8px_32px_#000A,inset_0_1px_0_rgba(255,255,255,0.06)] transition-all duration-200 hover:border-white/[.14] ${className}`}
+      transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1], delay: reduce ? 0 : delay }}
+      className={`rounded-2xl border border-white/[.08] bg-[#0E1210]/90 p-5 md:p-6 backdrop-blur-xl transition-colors hover:border-white/15 ${className}`}
     >
       {children}
     </motion.div>
