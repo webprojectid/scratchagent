@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo, useRef } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Shell } from "@/components/brand";
@@ -10,7 +10,6 @@ import {
   EyeOff,
   Plus,
   ShieldCheck,
-  Crown,
   FolderOpen,
   ChevronRight,
   Loader2,
@@ -21,21 +20,17 @@ import {
   Copy,
   Check,
   Trash2,
-  ArrowUpRight,
   Terminal,
   Calendar,
-  CheckCircle2,
   Pencil,
   AlertTriangle,
-  X,
   Settings,
-  Flame,
+  Activity,
   Layers,
+  Sparkles,
 } from "lucide-react";
 import { getCurrentUser, refreshCurrentUser, supabaseConfigured } from "@/lib/current-user";
 import { createClient } from "@/lib/supabase/client";
-import gsap from "gsap";
-import { useGSAP } from "@gsap/react";
 
 type UserData = {
   email: string;
@@ -76,7 +71,6 @@ type TokenItem = {
 
 export default function ProfilePage() {
   const router = useRouter();
-  const containerRef = useRef<HTMLDivElement>(null);
 
   const [user, setUser] = useState<UserData | null>(null);
   const [showPass, setShowPass] = useState(false);
@@ -88,7 +82,7 @@ export default function ProfilePage() {
   const [plansLoading, setPlansLoading] = useState(true);
   const [origin, setOrigin] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"all" | "done" | "active" | "generating">("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "done">("all");
 
   const [quota, setQuota] = useState<QuotaData | null>(null);
   const [tokens, setTokens] = useState<TokenItem[]>([]);
@@ -96,7 +90,7 @@ export default function ProfilePage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [planToDelete, setPlanToDelete] = useState<PlanSummary | null>(null);
   const [deleteToast, setDeleteToast] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"projects" | "security">("projects");
+  const [activeTab, setActiveTab] = useState<"overview" | "security">("overview");
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState("");
 
@@ -180,27 +174,6 @@ export default function ProfilePage() {
     };
   }, []);
 
-  useGSAP(
-    () => {
-      if (!user) return;
-      gsap.from(".gsap-hero", {
-        y: 24,
-        opacity: 0,
-        duration: 0.7,
-        ease: "power3.out",
-      });
-      gsap.from(".gsap-card", {
-        y: 20,
-        opacity: 0,
-        duration: 0.6,
-        stagger: 0.08,
-        ease: "power2.out",
-        delay: 0.15,
-      });
-    },
-    { scope: containerRef, dependencies: [user] },
-  );
-
   const handleLogout = () => {
     localStorage.removeItem("scratch_user");
     refreshCurrentUser();
@@ -226,12 +199,12 @@ export default function ProfilePage() {
     if (storedUsers[userKey]) {
       storedUsers[userKey].password = newPass;
       localStorage.setItem("scratch_users", JSON.stringify(storedUsers));
-      setMsg("Password berhasil diubah.");
+      setMsg("Password berhasil diperbarui.");
       setMsgType("success");
       setNewPass("");
       setTimeout(() => setMsg(""), 3000);
     } else {
-      setMsg("Akun tidak terdaftar, password tidak bisa disimpan.");
+      setMsg("Akun tidak terdaftar pada sesi lokal.");
       setMsgType("error");
     }
   };
@@ -282,14 +255,14 @@ export default function ProfilePage() {
       if (res.ok) {
         setPlans((prev) => prev.filter((p) => p.id !== planId));
         setDeleteToast(`Project "${title}" berhasil dihapus.`);
-        setTimeout(() => setDeleteToast(null), 3500);
+        setTimeout(() => setDeleteToast(null), 3000);
         setPlanToDelete(null);
       } else {
         const data = await res.json().catch(() => null);
         alert(data?.error || "Gagal menghapus plan");
       }
     } catch {
-      alert("Terjadi kesalahan jaringan.");
+      alert("Gagal menghubungi server.");
     } finally {
       setDeletingId(null);
     }
@@ -300,8 +273,7 @@ export default function ProfilePage() {
       const matchesSearch = p.title.toLowerCase().includes(searchQuery.toLowerCase());
       if (!matchesSearch) return false;
       if (statusFilter === "done") return p.status === "done";
-      if (statusFilter === "generating") return p.status === "generating";
-      if (statusFilter === "active") return p.status !== "done" && p.status !== "generating";
+      if (statusFilter === "active") return p.status !== "done";
       return true;
     });
   }, [plans, searchQuery, statusFilter]);
@@ -325,387 +297,364 @@ export default function ProfilePage() {
 
   return (
     <Shell back="/" sidebar={false}>
-      <div ref={containerRef} className="mx-auto w-full max-w-[1200px] px-5 pb-24 pt-10 md:px-8 md:pt-14">
-        {/* Editorial Wide Hero Architecture (2-line rule) */}
-        <section className="gsap-hero relative overflow-hidden rounded-[28px] border border-white/[.08] bg-[#0C0F11] p-6 md:p-10 shadow-2xl">
-          <div className="absolute right-0 top-0 -mr-20 -mt-20 size-80 rounded-full bg-[#74FA6A]/[0.03] blur-3xl pointer-events-none" />
-
-          <div className="relative flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-            {/* User Identity Details */}
-            <div className="flex items-center gap-5">
-              <div className="relative group shrink-0">
-                <div className="flex size-16 items-center justify-center rounded-2xl border border-white/10 bg-white/[.04] font-mono text-xl font-bold text-[#74FA6A] shadow-inner transition-transform duration-500 group-hover:scale-105">
-                  {initials}
-                </div>
-                <div className="absolute -bottom-1 -right-1 size-3.5 rounded-full border-2 border-[#0C0F11] bg-[#74FA6A]" />
-              </div>
-
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2.5">
-                  {editingName ? (
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="text"
-                        value={nameInput}
-                        onChange={(e) => setNameInput(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") handleSaveName();
-                          if (e.key === "Escape") setEditingName(false);
-                        }}
-                        autoFocus
-                        className="rounded-lg border border-[#74FA6A]/50 bg-black/60 px-2.5 py-1 text-base font-bold text-white focus:outline-none"
-                      />
-                      <button
-                        onClick={handleSaveName}
-                        className="rounded-lg bg-[#74FA6A] px-2.5 py-1 text-xs font-bold text-black hover:bg-[#A8FF9B]"
-                      >
-                        Simpan
-                      </button>
-                      <button
-                        onClick={() => setEditingName(false)}
-                        className="rounded-lg border border-white/10 px-2 py-1 text-xs text-white/50 hover:text-white"
-                      >
-                        Batal
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <h1 className="truncate text-xl font-bold tracking-tight text-white md:text-2xl">
-                        {user.name}
-                      </h1>
-                      <button
-                        onClick={() => {
-                          setNameInput(user.name);
-                          setEditingName(true);
-                        }}
-                        className="rounded p-1 text-white/30 hover:text-[#74FA6A]"
-                        title="Edit nama"
-                      >
-                        <Pencil size={13} />
-                      </button>
-                    </div>
-                  )}
-
-                  {isAdmin && (
-                    <span className="rounded-md border border-[#74FA6A]/30 bg-[#74FA6A]/10 px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wider text-[#74FA6A]">
-                      Admin
-                    </span>
-                  )}
-                  {isPro ? (
-                    <span className="flex items-center gap-1 rounded-md border border-[#74FA6A]/40 bg-[#74FA6A]/15 px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wider text-[#74FA6A]">
-                      <Crown size={11} /> Pro Tier
-                    </span>
-                  ) : (
-                    <span className="rounded-md border border-white/10 bg-white/[.04] px-2 py-0.5 font-mono text-[10px] font-medium uppercase tracking-wider text-white/40">
-                      Free Tier
-                    </span>
-                  )}
-                </div>
-
-                <div className="mt-1.5 flex flex-wrap items-center gap-3 font-mono text-xs text-white/40">
-                  <span>{user.email}</span>
-                  {user.createdAt && (
-                    <>
-                      <span>•</span>
-                      <span className="flex items-center gap-1">
-                        <Calendar size={12} /> Sejak {new Date(user.createdAt).toLocaleDateString("id-ID", { month: "short", year: "numeric" })}
-                      </span>
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Quick Actions */}
-            <div className="flex flex-wrap items-center gap-2">
-              <Link
-                href="/new"
-                className="flex items-center gap-1.5 rounded-full bg-[#74FA6A] px-4 py-2 text-xs font-semibold text-black transition hover:bg-[#A8FF9B]"
-              >
-                <Plus size={14} /> Plan Baru
-              </Link>
-              {!isPro && (
-                <Link
-                  href="/pricing"
-                  className="flex items-center gap-1.5 rounded-full border border-[#74FA6A]/40 bg-[#74FA6A]/10 px-4 py-2 text-xs font-semibold text-[#74FA6A] transition hover:bg-[#74FA6A]/20"
-                >
-                  <Zap size={13} /> Upgrade Pro
-                </Link>
-              )}
-              {isAdmin && (
-                <Link
-                  href="/admin/users"
-                  className="flex items-center gap-1.5 rounded-full border border-white/15 bg-white/[.04] px-4 py-2 text-xs font-medium text-white transition hover:border-[#74FA6A]/40 hover:text-[#74FA6A]"
-                >
-                  <ShieldCheck size={14} /> Developer
-                </Link>
-              )}
-              <Link
-                href="/settings"
-                className="flex items-center gap-1.5 rounded-full border border-white/15 bg-white/[.04] px-4 py-2 text-xs font-medium text-white/70 transition hover:border-white/30 hover:text-white"
-              >
-                <Settings size={14} /> Setting
-              </Link>
-              <button
-                onClick={handleLogout}
-                className="flex items-center gap-1.5 rounded-full border border-red-500/25 bg-red-500/[.05] px-4 py-2 text-xs font-medium text-red-400 transition hover:bg-red-500/10"
-              >
-                <LogOut size={13} /> Keluar
-              </button>
-            </div>
+      <div className="mx-auto w-full max-w-[1100px] px-4 pb-20 pt-8 sm:px-6 md:pt-12">
+        {/* Navigation Tabs (Top Sub-header) */}
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/[.08] pb-4">
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setActiveTab("overview")}
+              className={`rounded-lg px-3.5 py-1.5 text-xs font-semibold transition ${
+                activeTab === "overview"
+                  ? "bg-white/[.08] text-white"
+                  : "text-white/40 hover:text-white/70"
+              }`}
+            >
+              Overview &amp; Projects
+            </button>
+            <button
+              onClick={() => setActiveTab("security")}
+              className={`rounded-lg px-3.5 py-1.5 text-xs font-semibold transition ${
+                activeTab === "security"
+                  ? "bg-white/[.08] text-white"
+                  : "text-white/40 hover:text-white/70"
+              }`}
+            >
+              Keamanan Akun
+            </button>
           </div>
-        </section>
 
-        {/* Gapless Dense Bento Grid */}
-        <section className="mt-8 grid grid-flow-dense grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-4">
-          {/* Bento Cell 1: Quota Status (Wide span) */}
-          <div className="gsap-card col-span-1 rounded-2xl border border-white/[.08] bg-[#0E1214] p-5 md:col-span-2">
-            <div className="flex items-center justify-between border-b border-white/[.06] pb-3">
-              <span className="font-mono text-[10.5px] font-semibold uppercase tracking-wider text-white/40">
-                Status Kapasitas AI
-              </span>
-              <Flame size={14} className="text-[#74FA6A]" />
+          <div className="flex items-center gap-2">
+            {isAdmin && (
+              <Link
+                href="/admin/users"
+                className="flex items-center gap-1.5 rounded-lg border border-[#74FA6A]/30 bg-[#74FA6A]/10 px-3 py-1.5 text-xs font-medium text-[#74FA6A] transition hover:bg-[#74FA6A]/20"
+              >
+                <ShieldCheck size={13} /> Developer Hub
+              </Link>
+            )}
+            <Link
+              href="/settings"
+              className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[.03] px-3 py-1.5 text-xs font-medium text-white/80 transition hover:bg-white/[.07] hover:text-white"
+            >
+              <Settings size={13} /> Setting
+            </Link>
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[.03] px-3 py-1.5 text-xs font-medium text-red-400/80 transition hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-400"
+            >
+              <LogOut size={13} /> Keluar
+            </button>
+          </div>
+        </div>
+
+        {activeTab === "overview" ? (
+          <>
+            {/* Account Card Profile */}
+            <div className="mt-6 rounded-2xl border border-white/[.08] bg-[#111417] p-6">
+              <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="flex size-14 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[.04] font-mono text-lg font-bold text-[#74FA6A]">
+                    {initials}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      {editingName ? (
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            type="text"
+                            value={nameInput}
+                            onChange={(e) => setNameInput(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") handleSaveName();
+                              if (e.key === "Escape") setEditingName(false);
+                            }}
+                            autoFocus
+                            className="rounded border border-[#74FA6A]/50 bg-black/50 px-2 py-0.5 text-sm font-semibold text-white focus:outline-none"
+                          />
+                          <button
+                            onClick={handleSaveName}
+                            className="rounded bg-[#74FA6A] px-2 py-0.5 text-[11px] font-bold text-black"
+                          >
+                            Simpan
+                          </button>
+                        </div>
+                      ) : (
+                        <>
+                          <h1 className="text-base font-bold text-white">{user.name}</h1>
+                          <button
+                            onClick={() => {
+                              setNameInput(user.name);
+                              setEditingName(true);
+                            }}
+                            className="text-white/30 hover:text-white"
+                            title="Edit nama"
+                          >
+                            <Pencil size={12} />
+                          </button>
+                        </>
+                      )}
+                      <span className={`rounded px-1.5 py-0.2 font-mono text-[9.5px] font-bold uppercase ${
+                        isPro ? "bg-[#74FA6A]/15 text-[#74FA6A]" : "bg-white/10 text-white/50"
+                      }`}>
+                        {isPro ? "Pro Plan" : "Free Plan"}
+                      </span>
+                    </div>
+                    <div className="mt-1 flex items-center gap-2 text-xs text-white/45">
+                      <span>{user.email}</span>
+                      {user.createdAt && (
+                        <>
+                          <span>•</span>
+                          <span className="flex items-center gap-1">
+                            <Calendar size={11} />
+                            Bergabung {new Date(user.createdAt).toLocaleDateString("id-ID", { month: "short", year: "numeric" })}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  {!isPro && (
+                    <Link
+                      href="/pricing"
+                      className="flex items-center gap-1.5 rounded-lg border border-[#74FA6A]/40 bg-[#74FA6A]/10 px-3.5 py-2 text-xs font-semibold text-[#74FA6A] transition hover:bg-[#74FA6A]/20"
+                    >
+                      <Sparkles size={13} /> Upgrade Pro
+                    </Link>
+                  )}
+                  <Link
+                    href="/new"
+                    className="flex items-center gap-1.5 rounded-lg bg-[#74FA6A] px-4 py-2 text-xs font-semibold text-black transition hover:bg-[#A8FF9B]"
+                  >
+                    <Plus size={14} /> Buat Plan
+                  </Link>
+                </div>
+              </div>
             </div>
-            <div className="mt-4 flex flex-wrap items-baseline justify-between gap-2">
-              <div>
-                <p className="text-3xl font-bold tracking-tight text-[#74FA6A]">
-                  {isPro ? "Unlimited" : `${quota?.remaining ?? 3} / 3`}
-                </p>
-                <p className="mt-1 text-xs text-white/50">
-                  {isPro ? "Akses generate tanpa batas kuota rolling." : "Jatah generate harian tersisa."}
+
+            {/* Standard Metrics Strip */}
+            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+              {/* Stat 1: Quota */}
+              <div className="rounded-xl border border-white/[.08] bg-[#111417] p-4">
+                <div className="flex items-center justify-between text-xs text-white/40 font-mono">
+                  <span>KUOTA GENERATE</span>
+                  <Zap size={13} className="text-[#74FA6A]" />
+                </div>
+                <div className="mt-2 flex items-baseline gap-2">
+                  <span className="text-2xl font-bold tracking-tight text-white">
+                    {isPro ? "Unlimited" : `${quota?.remaining ?? 3} / 3`}
+                  </span>
+                  {!isPro && <span className="text-[11px] text-white/40">tersisa</span>}
+                </div>
+                <p className="mt-1 text-[11px] text-white/40">
+                  {isPro ? "Akses penuh tanpa limitasi harian" : "Reset rolling otomatis per 24 jam"}
                 </p>
               </div>
-              <div className="text-right font-mono text-[11px] text-white/40">
-                {isPro ? (
-                  <span>Status: Pro Aktif</span>
+
+              {/* Stat 2: Projects Done */}
+              <div className="rounded-xl border border-white/[.08] bg-[#111417] p-4">
+                <div className="flex items-center justify-between text-xs text-white/40 font-mono">
+                  <span>STATUS PROJECT</span>
+                  <FolderOpen size={13} className="text-white/40" />
+                </div>
+                <div className="mt-2 flex items-baseline gap-2">
+                  <span className="text-2xl font-bold tracking-tight text-white">{plans.length}</span>
+                  <span className="text-[11px] text-[#74FA6A]">({donePlansCount} selesai)</span>
+                </div>
+                <p className="mt-1 text-[11px] text-white/40">Total plan PRD yang tersimpan</p>
+              </div>
+
+              {/* Stat 3: Tasks Done */}
+              <div className="rounded-xl border border-white/[.08] bg-[#111417] p-4">
+                <div className="flex items-center justify-between text-xs text-white/40 font-mono">
+                  <span>EKSEKUSI TASK</span>
+                  <Activity size={13} className="text-white/40" />
+                </div>
+                <div className="mt-2 flex items-baseline gap-2">
+                  <span className="text-2xl font-bold tracking-tight text-white">{completionRate}%</span>
+                  <span className="text-[11px] text-white/40">({doneTasks}/{totalTasks})</span>
+                </div>
+                <div className="mt-2 h-1 w-full rounded-full bg-white/[.08]">
+                  <div
+                    className="h-full rounded-full bg-[#74FA6A]"
+                    style={{ width: `${completionRate}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Terminal CLI Guide */}
+            <div className="mt-4 rounded-xl border border-white/[.08] bg-[#111417] p-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <Terminal size={14} className="text-[#74FA6A]" />
+                  <span className="text-xs font-semibold text-white">CLI Agent Login</span>
+                </div>
+                <Link href="/settings" className="text-[11px] font-mono text-[#74FA6A] hover:underline">
+                  Kelola Token →
+                </Link>
+              </div>
+              <div className="mt-2.5 flex flex-col gap-2 sm:flex-row sm:items-center">
+                {tokens.length > 0 ? (
+                  tokens.slice(0, 2).map((t) => {
+                    const cmd = `scratch-agent login --token ${t.hash} --url ${origin || "https://www.scratchagent.web.id"}`;
+                    return (
+                      <button
+                        key={t.hash}
+                        onClick={() => handleCopy(cmd, t.hash)}
+                        className="flex items-center justify-between gap-3 rounded-lg border border-white/[.08] bg-black/40 px-3 py-1.5 font-mono text-xs text-white/80 transition hover:border-[#74FA6A]/40"
+                      >
+                        <span className="truncate max-w-[280px]">{t.label}: {t.hash.slice(0, 10)}…</span>
+                        {copiedToken === t.hash ? (
+                          <Check size={12} className="text-[#74FA6A]" />
+                        ) : (
+                          <Copy size={12} className="text-white/40" />
+                        )}
+                      </button>
+                    );
+                  })
                 ) : (
-                  <span>Reset rolling: 24 jam per-generate</span>
+                  <p className="text-xs text-white/40">Belum ada CLI token. Buat di halaman Setting.</p>
                 )}
               </div>
             </div>
-          </div>
 
-          {/* Bento Cell 2: Execution Rate */}
-          <div className="gsap-card col-span-1 rounded-2xl border border-white/[.08] bg-[#0E1214] p-5">
-            <div className="flex items-center justify-between border-b border-white/[.06] pb-3">
-              <span className="font-mono text-[10.5px] font-semibold uppercase tracking-wider text-white/40">
-                Tingkat Selesai
-              </span>
-              <CheckCircle2 size={14} className="text-[#74FA6A]" />
-            </div>
-            <p className="mt-4 text-3xl font-bold tracking-tight text-white">{completionRate}%</p>
-            <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-white/[.06]">
-              <div
-                className="h-full rounded-full bg-[#74FA6A] transition-all duration-700"
-                style={{ width: `${completionRate}%` }}
-              />
-            </div>
-            <p className="mt-2 font-mono text-[11px] text-white/40">
-              {doneTasks} dari {totalTasks} task tuntas
-            </p>
-          </div>
+            {/* Project List */}
+            <div className="mt-6 rounded-2xl border border-white/[.08] bg-[#111417] p-5">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/[.06] pb-4">
+                <div>
+                  <h2 className="text-sm font-bold text-white">Daftar Project</h2>
+                  <p className="text-xs text-white/40">Semua plan produk dan breakdown task Anda</p>
+                </div>
 
-          {/* Bento Cell 3: Total Projects */}
-          <div className="gsap-card col-span-1 rounded-2xl border border-white/[.08] bg-[#0E1214] p-5">
-            <div className="flex items-center justify-between border-b border-white/[.06] pb-3">
-              <span className="font-mono text-[10.5px] font-semibold uppercase tracking-wider text-white/40">
-                Total Projek
-              </span>
-              <Layers size={14} className="text-white/40" />
-            </div>
-            <p className="mt-4 text-3xl font-bold tracking-tight text-white">{plans.length}</p>
-            <p className="mt-2 font-mono text-[11px] text-[#74FA6A]">
-              {donePlansCount} project rampung
-            </p>
-          </div>
-        </section>
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="relative">
+                    <Search size={13} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
+                    <input
+                      type="text"
+                      placeholder="Cari project…"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-48 rounded-lg border border-white/10 bg-black/30 py-1.5 pl-8 pr-3 text-xs text-white placeholder:text-white/30 focus:border-[#74FA6A]/50 focus:outline-none"
+                    />
+                  </div>
 
-        {/* CLI Integration Section */}
-        <section className="gsap-card mt-6 rounded-2xl border border-white/[.08] bg-[#0E1214] p-6">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/[.06] pb-4">
-            <div className="flex items-center gap-2">
-              <Terminal size={16} className="text-[#74FA6A]" />
-              <h2 className="text-sm font-semibold tracking-wide text-white">Koneksi Agent CLI</h2>
-            </div>
-            <Link
-              href="/settings"
-              className="font-mono text-xs text-[#74FA6A] hover:underline"
-            >
-              Kelola Token di Settings →
-            </Link>
-          </div>
-
-          <div className="mt-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <p className="max-w-xl text-xs text-white/50 leading-relaxed">
-              Jalankan coding agent dari terminal lokal dengan menghubungkan token aktif Anda:
-            </p>
-
-            {tokens.length > 0 ? (
-              <div className="flex flex-wrap items-center gap-2">
-                {tokens.slice(0, 2).map((t) => {
-                  const cmd = `scratch-agent login --token ${t.hash} --url ${origin || "https://www.scratchagent.web.id"}`;
-                  return (
+                  <div className="flex items-center rounded-lg border border-white/10 bg-black/30 p-0.5 text-xs font-mono">
                     <button
-                      key={t.hash}
-                      onClick={() => handleCopy(cmd, t.hash)}
-                      className="group flex items-center gap-2 rounded-xl border border-white/10 bg-white/[.03] px-3 py-2 text-left transition hover:border-[#74FA6A]/40"
+                      onClick={() => setStatusFilter("all")}
+                      className={`rounded px-2.5 py-1 ${statusFilter === "all" ? "bg-white/15 text-white" : "text-white/40 hover:text-white"}`}
                     >
-                      <span className="font-mono text-xs text-white/70">{t.label}</span>
-                      <span className="font-mono text-[10px] text-white/30">({t.hash.slice(0, 8)}…)</span>
-                      {copiedToken === t.hash ? (
-                        <Check size={12} className="text-[#74FA6A]" />
-                      ) : (
-                        <Copy size={12} className="text-white/30 group-hover:text-white" />
-                      )}
+                      Semua
                     </button>
-                  );
-                })}
-              </div>
-            ) : (
-              <Link
-                href="/settings"
-                className="inline-flex items-center gap-1 font-mono text-xs text-white/40 hover:text-white"
-              >
-                <Plus size={12} /> Buat token di settings
-              </Link>
-            )}
-          </div>
-        </section>
-
-        {/* Tab Selection */}
-        <div className="mt-10 flex items-center gap-3 border-b border-white/[.08] pb-3">
-          <button
-            onClick={() => setActiveTab("projects")}
-            className={`flex items-center gap-2 rounded-full px-4 py-2 font-mono text-xs font-semibold transition ${
-              activeTab === "projects" ? "bg-[#74FA6A] text-black" : "text-white/40 hover:text-white"
-            }`}
-          >
-            <FolderOpen size={14} /> Daftar Project ({plans.length})
-          </button>
-          <button
-            onClick={() => setActiveTab("security")}
-            className={`flex items-center gap-2 rounded-full px-4 py-2 font-mono text-xs font-semibold transition ${
-              activeTab === "security" ? "bg-[#74FA6A] text-black" : "text-white/40 hover:text-white"
-            }`}
-          >
-            <Shield size={14} /> Keamanan &amp; Akun
-          </button>
-        </div>
-
-        {/* Tab Content */}
-        {activeTab === "projects" ? (
-          <section className="mt-6">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div className="relative w-full max-w-sm">
-                <Search className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-white/30" size={14} />
-                <input
-                  type="text"
-                  placeholder="Cari nama project…"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full rounded-xl border border-white/10 bg-[#0E1214] py-2 pl-9 pr-4 text-xs text-white placeholder:text-white/30 focus:border-[#74FA6A]/50 focus:outline-none"
-                />
-              </div>
-
-              <div className="flex items-center gap-1 rounded-xl border border-white/10 bg-[#0E1214] p-1 font-mono text-xs">
-                {(["all", "active", "done", "generating"] as const).map((tab) => (
-                  <button
-                    key={tab}
-                    onClick={() => setStatusFilter(tab)}
-                    className={`rounded-lg px-3 py-1 capitalize transition ${
-                      statusFilter === tab ? "bg-[#74FA6A] font-bold text-black" : "text-white/40 hover:text-white"
-                    }`}
-                  >
-                    {tab === "all" ? "Semua" : tab === "active" ? "Berjalan" : tab === "done" ? "Selesai" : "Draft"}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {plansLoading ? (
-              <div className="flex items-center justify-center py-20 text-white/30">
-                <Loader2 size={18} className="animate-spin mr-2" />
-                <span className="font-mono text-xs">Memuat data project…</span>
-              </div>
-            ) : filteredPlans.length === 0 ? (
-              <div className="mt-8 rounded-2xl border border-white/[.06] bg-[#0E1214] py-16 text-center">
-                <FolderOpen size={32} className="mx-auto text-white/20" />
-                <p className="mt-3 text-sm text-white/40">Tidak ada project yang ditemukan.</p>
-              </div>
-            ) : (
-              <div className="mt-5 space-y-2.5">
-                {filteredPlans.map((plan) => {
-                  const pct = plan.taskCount > 0 ? Math.round((plan.tasksDone / plan.taskCount) * 100) : 0;
-                  return (
-                    <Link
-                      key={plan.id}
-                      href={`/project/${plan.id}`}
-                      className="group flex flex-col justify-between gap-4 rounded-xl border border-white/[.06] bg-[#0E1214] p-4 transition hover:border-[#74FA6A]/30 hover:bg-white/[.02] sm:flex-row sm:items-center"
+                    <button
+                      onClick={() => setStatusFilter("active")}
+                      className={`rounded px-2.5 py-1 ${statusFilter === "active" ? "bg-white/15 text-white" : "text-white/40 hover:text-white"}`}
                     >
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2.5">
-                          <p className="truncate text-sm font-semibold text-white group-hover:text-[#74FA6A]">
-                            {plan.title}
-                          </p>
-                          <span
-                            className={`rounded px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase ${
+                      Berjalan
+                    </button>
+                    <button
+                      onClick={() => setStatusFilter("done")}
+                      className={`rounded px-2.5 py-1 ${statusFilter === "done" ? "bg-white/15 text-white" : "text-white/40 hover:text-white"}`}
+                    >
+                      Selesai
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {plansLoading ? (
+                <div className="flex items-center justify-center py-16 text-white/30">
+                  <Loader2 size={16} className="animate-spin mr-2" />
+                  <span className="text-xs">Memuat project…</span>
+                </div>
+              ) : filteredPlans.length === 0 ? (
+                <div className="py-14 text-center">
+                  <FolderOpen size={30} className="mx-auto text-white/20" />
+                  <p className="mt-2 text-xs text-white/40">Belum ada project yang cocok.</p>
+                </div>
+              ) : (
+                <div className="mt-3 divide-y divide-white/[.04]">
+                  {filteredPlans.map((plan) => {
+                    const pct = plan.taskCount > 0 ? Math.round((plan.tasksDone / plan.taskCount) * 100) : 0;
+                    return (
+                      <div
+                        key={plan.id}
+                        className="flex flex-col justify-between gap-3 py-3.5 sm:flex-row sm:items-center"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <Link
+                              href={`/project/${plan.id}`}
+                              className="truncate text-xs font-semibold text-white/90 hover:text-[#74FA6A]"
+                            >
+                              {plan.title}
+                            </Link>
+                            <span className={`rounded px-1.5 py-0.2 font-mono text-[9px] uppercase ${
                               plan.status === "done"
                                 ? "bg-[#74FA6A]/10 text-[#74FA6A]"
                                 : plan.status === "generating"
-                                ? "bg-amber-400/10 text-amber-300"
-                                : "bg-white/10 text-white/60"
-                            }`}
+                                ? "bg-amber-500/10 text-amber-400"
+                                : "bg-white/10 text-white/50"
+                            }`}>
+                              {plan.status}
+                            </span>
+                          </div>
+
+                          <div className="mt-1 flex items-center gap-3 font-mono text-[10.5px] text-white/35">
+                            {plan.createdAt && (
+                              <span>{new Date(plan.createdAt).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}</span>
+                            )}
+                            <span>•</span>
+                            <span>{plan.featureCount} Fase</span>
+                            <span>•</span>
+                            <span>{plan.tasksDone}/{plan.taskCount} Task ({pct}%)</span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <Link
+                            href={`/project/${plan.id}`}
+                            className="rounded-lg border border-white/10 bg-white/[.04] px-3 py-1 text-xs font-medium text-white/70 hover:bg-white/[.08] hover:text-white"
                           >
-                            {plan.status}
-                          </span>
-                        </div>
-
-                        <div className="mt-2 flex items-center gap-3 font-mono text-[11px] text-white/35">
-                          {plan.createdAt && (
-                            <span>{new Date(plan.createdAt).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}</span>
-                          )}
-                          <span>•</span>
-                          <span>{plan.featureCount} Fase</span>
-                          <span>•</span>
-                          <span>{plan.tasksDone}/{plan.taskCount} task ({pct}%)</span>
+                            Buka
+                          </Link>
+                          <button
+                            onClick={(e) => openDeleteModal(e, plan)}
+                            disabled={deletingId === plan.id}
+                            className="rounded-lg p-1 text-white/25 hover:text-red-400"
+                            title="Hapus project"
+                          >
+                            <Trash2 size={13} />
+                          </button>
                         </div>
                       </div>
-
-                      <div className="flex items-center gap-2 self-end sm:self-center">
-                        <button
-                          onClick={(e) => openDeleteModal(e, plan)}
-                          disabled={deletingId === plan.id}
-                          className="rounded-lg p-2 text-white/20 hover:text-red-400"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                        <ChevronRight size={14} className="text-white/30 group-hover:text-white" />
-                      </div>
-                    </Link>
-                  );
-                })}
-              </div>
-            )}
-          </section>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </>
         ) : (
-          <section className="mt-6 max-w-md rounded-2xl border border-white/[.08] bg-[#0E1214] p-6">
-            <h3 className="text-sm font-semibold text-white">Ganti Password Akun</h3>
-            <p className="mt-1 text-xs text-white/40">Khusus akun lokal dev. Minimal 6 karakter.</p>
+          /* Security Tab */
+          <div className="mt-6 max-w-lg rounded-2xl border border-white/[.08] bg-[#111417] p-6">
+            <h2 className="text-sm font-bold text-white">Ganti Password</h2>
+            <p className="mt-1 text-xs text-white/40">Khusus kredensial dev lokal. Minimal 6 karakter.</p>
 
             <div className="relative mt-4">
               <input
                 type={showPass ? "text" : "password"}
                 value={newPass}
                 onChange={(e) => setNewPass(e.target.value)}
-                placeholder="Password baru…"
-                className="w-full rounded-xl border border-white/10 bg-black/40 px-3.5 py-2 pr-10 text-xs text-white placeholder:text-white/30 focus:border-[#74FA6A]/50 focus:outline-none"
+                placeholder="Masukkan password baru…"
+                className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 pr-10 text-xs text-white placeholder:text-white/30 focus:border-[#74FA6A]/50 focus:outline-none"
               />
               <button
                 type="button"
                 onClick={() => setShowPass(!showPass)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white"
               >
-                {showPass ? <EyeOff size={14} /> : <Eye size={14} />}
+                {showPass ? <EyeOff size={13} /> : <Eye size={13} />}
               </button>
             </div>
 
@@ -717,46 +666,46 @@ export default function ProfilePage() {
 
             <button
               onClick={handleChangePass}
-              className="mt-4 rounded-full bg-[#74FA6A] px-4 py-2 text-xs font-semibold text-black transition hover:bg-[#A8FF9B]"
+              className="mt-4 rounded-lg bg-[#74FA6A] px-4 py-2 text-xs font-semibold text-black transition hover:bg-[#A8FF9B]"
             >
-              Update Password
+              Simpan Password Baru
             </button>
-          </section>
+          </div>
         )}
 
-        {/* Delete Modal */}
+        {/* Modal Konfirmasi Hapus */}
         {planToDelete && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
-            <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#121517] p-6">
-              <div className="flex items-center gap-3 text-red-400">
-                <AlertTriangle size={20} />
-                <h3 className="text-sm font-bold text-white">Hapus Riwayat Project?</h3>
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+            <div className="w-full max-w-sm rounded-xl border border-white/10 bg-[#16191D] p-5">
+              <div className="flex items-center gap-2 text-red-400">
+                <AlertTriangle size={17} />
+                <h3 className="text-sm font-bold text-white">Hapus Project?</h3>
               </div>
               <p className="mt-2 text-xs text-white/60 leading-relaxed">
-                Project &quot;<strong>{planToDelete.title}</strong>&quot; akan dihapus permanen. Tindakan ini tidak dapat dibatalkan.
+                Project &quot;<strong>{planToDelete.title}</strong>&quot; akan dihapus permanen.
               </p>
-              <div className="mt-6 flex items-center justify-end gap-2">
+              <div className="mt-5 flex items-center justify-end gap-2">
                 <button
                   onClick={() => setPlanToDelete(null)}
-                  className="rounded-full border border-white/10 px-4 py-1.5 text-xs text-white/60 hover:text-white"
+                  className="rounded-lg border border-white/10 px-3 py-1.5 text-xs text-white/60 hover:text-white"
                 >
                   Batal
                 </button>
                 <button
                   onClick={confirmDeletePlan}
                   disabled={deletingId !== null}
-                  className="rounded-full bg-red-500 px-4 py-1.5 text-xs font-semibold text-white hover:bg-red-600 disabled:opacity-50"
+                  className="rounded-lg bg-red-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-600 disabled:opacity-50"
                 >
-                  {deletingId ? "Menghapus…" : "Hapus Permanen"}
+                  {deletingId ? "Menghapus…" : "Hapus"}
                 </button>
               </div>
             </div>
           </div>
         )}
 
-        {/* Toast */}
+        {/* Toast Notification */}
         {deleteToast && (
-          <div className="fixed bottom-6 right-6 z-50 rounded-xl border border-white/10 bg-[#121517] px-4 py-2.5 text-xs text-white shadow-xl">
+          <div className="fixed bottom-6 right-6 z-50 rounded-lg border border-white/10 bg-[#16191D] px-3.5 py-2 text-xs text-white shadow-xl">
             {deleteToast}
           </div>
         )}
