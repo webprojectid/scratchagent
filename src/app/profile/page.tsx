@@ -31,6 +31,7 @@ import {
   ArrowUp,
   ArrowDown,
   ExternalLink,
+  Settings,
 } from "lucide-react";
 import { getCurrentUser, refreshCurrentUser, supabaseConfigured } from "@/lib/current-user";
 import { createClient } from "@/lib/supabase/client";
@@ -616,6 +617,13 @@ export default function ProfilePage() {
 
         {/* Footer Nav Kiri */}
         <div className="border-t border-white/[.06] pt-4 space-y-1">
+          <button
+            onClick={() => setActiveTab("profile")}
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-xs font-medium text-white/60 hover:bg-white/[.04] hover:text-white transition"
+          >
+            <Settings size={16} className="text-white/40" />
+            <span>Settings</span>
+          </button>
           <Link
             href="/docs"
             className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-xs font-medium text-white/60 hover:bg-white/[.04] hover:text-white transition"
