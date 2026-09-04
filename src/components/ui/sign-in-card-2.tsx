@@ -293,7 +293,7 @@ export function SignInCard2() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-        className="relative z-10 w-full max-w-sm px-4"
+        className="relative z-10 w-full max-w-md px-4"
         style={{ perspective: 1100 }}
       >
         <motion.div
