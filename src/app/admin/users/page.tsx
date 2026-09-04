@@ -101,6 +101,7 @@ export default function AdminUsersPage() {
     const res = await fetch(url);
     if (res.status === 401 || res.status === 403) {
       setAllowed(false);
+      router.replace("/profile");
       return;
     }
     if (!res.ok) throw new Error("Gagal memuat daftar akun");
@@ -114,13 +115,20 @@ export default function AdminUsersPage() {
     getCurrentUser().then(async (u) => {
       if (!active) return;
       if (!u) {
-        router.push("/login");
+        router.replace("/login");
+        return;
+      }
+      if (u.role !== "admin") {
+        router.replace("/profile");
         return;
       }
       try {
         await loadAccounts();
       } catch {
-        if (active) setAllowed(true);
+        if (active) {
+          setAllowed(false);
+          router.replace("/profile");
+        }
       }
     });
     return () => {
@@ -235,24 +243,7 @@ export default function AdminUsersPage() {
     loadAccounts(q).catch(() => setToast({ text: "Pencarian gagal, coba lagi", ok: false }));
   };
 
-  if (allowed === null) return null;
-
-  if (!allowed) {
-    return (
-      <Shell back="/" sidebar={false}>
-        <div className="mx-auto w-full max-w-[640px] px-5 pb-12 pt-20 text-center">
-          <div className="mx-auto grid size-14 place-items-center rounded-[16px] border border-red-500/30 bg-red-500/[.08] text-red-400">
-            <ShieldCheck size={22} />
-          </div>
-          <h1 className="mt-5 text-[20px] font-semibold tracking-[-.02em] text-white">Halaman khusus admin</h1>
-          <p className="mt-2 text-[13.5px] leading-6 text-[#8C97A5]">Developer setting hanya bisa diakses oleh email admin yang terdaftar. Kalau kamu merasa ini keliru, hubungi tim developer.</p>
-          <Link href="/profile" className="mt-6 inline-flex items-center gap-1.5 rounded-full bg-[#74FA6A] px-5 py-2.5 text-[13px] font-semibold text-black transition hover:bg-[#A8FF9B]">
-            <ArrowLeft size={14} /> Kembali ke profile
-          </Link>
-        </div>
-      </Shell>
-    );
-  }
+  if (allowed === null || !allowed) return null;
 
   return (
     <Shell back="/profile" sidebar={false}>

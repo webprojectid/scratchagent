@@ -113,6 +113,7 @@ export default function AdminSecurityPage() {
       const res = await fetch(`/api/admin/security?${params}`, { credentials: "include" });
       if (res.status === 401 || res.status === 403) {
         setAllowed(false);
+        router.replace("/profile");
         return;
       }
       const d = await res.json().catch(() => null);
@@ -138,7 +139,12 @@ export default function AdminSecurityPage() {
     getCurrentUser().then(async (u) => {
       if (!active) return;
       if (!u) {
-        router.push("/login");
+        router.replace("/login");
+        return;
+      }
+      if (u.role !== "admin") {
+        setAllowed(false);
+        router.replace("/profile");
         return;
       }
       setAllowed(true);
