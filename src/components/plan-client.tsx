@@ -4,7 +4,22 @@ import { useEffect, useState, useCallback, useRef, startTransition } from "react
 import { AnimatePresence, motion } from "motion/react";
 import { Lightbulb, Map, FileText, ListChecks } from "lucide-react";
 import { Shell, Brand } from "@/components/brand";
-import { PlanMap } from "@/components/plan-map";
+import dynamic from "next/dynamic";
+
+const PlanMap = dynamic(
+  () => import("@/components/plan-map").then((mod) => mod.PlanMap),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-full w-full items-center justify-center bg-[#070A0D]">
+        <div className="flex items-center gap-2 font-mono text-xs text-white/40">
+          <span className="size-2 animate-pulse rounded-full bg-[#74FA6A]" />
+          <span>Rendering node graph...</span>
+        </div>
+      </div>
+    ),
+  }
+);
 import { AgentPromptModal } from "@/components/agent-modal";
 import { IdeaChatPanel } from "@/components/idea-chat";
 import { TaskBoard } from "@/components/task-board";

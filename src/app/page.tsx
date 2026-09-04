@@ -133,7 +133,7 @@ export default function Home() {
            <p className="mt-5 max-w-[54ch] text-balance text-[15px] leading-[1.6] text-[#A9C5A7]">{hc.heroSub}</p>
            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
                <Magnetic><Link href={loggedIn ? "/new" : "/login"} className="rv2-button min-w-[146px] bg-[#74FA6A] text-black hover:bg-[#A8FF9B] group">{hc.heroStart} <span className="grid size-6 place-items-center rounded-full bg-black/10 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5"><ArrowUpRight size={12} /></span></Link></Magnetic>
-             <Link href="/project/demo" className="rv2-button light min-w-[146px]"><Play size={13} fill="currentColor" /> {hc.heroDemo}</Link>
+             <Link href="/project/demo" prefetch={true} className="rv2-button light min-w-[146px]"><Play size={13} fill="currentColor" /> {hc.heroDemo}</Link>
            </div>
         </motion.div>
       </section>
@@ -145,7 +145,43 @@ export default function Home() {
            <div className="grid min-h-[420px] md:grid-cols-[176px_1fr_296px]">
              <aside className="hidden border-r border-white/10 p-4 md:block"><p className="font-mono text-[9px] uppercase tracking-[.18em] text-white/30">{hc.mockPlanLabel}</p>{hc.mockPlanItems.map((item, index) => (<div key={item} className={`mt-2 flex items-center gap-2 rounded-[10px] px-2.5 py-2 font-mono text-[11px] ${index === 0 ? "bg-[#74FA6A]/10 text-[#74FA6A] border border-[#74FA6A]/20" : "text-white/44"}`}><span className="size-1.5 rounded-full bg-current" />{item}</div>))}</aside>
              <div className="relative overflow-x-auto p-5 md:p-6"><div className="absolute inset-0 opacity-[.14] [background-image:radial-gradient(#9AA5B366_1px,transparent_1px)] [background-size:18px_18px]" /><div className="relative flex min-w-[640px] items-center gap-10 py-16"><BentoMock ok title={hc.mockProjectTitle} name={hc.mockProjectName} meta="0 / 120 task" /><Connector /><div className="space-y-5"><BentoMock eyebrow={`${hc.mockPhase} 1`} name={hc.mockPhaseOrder[0]} meta="20 task" pulse /><BentoMock eyebrow={`${hc.mockPhase} 2`} name={hc.mockPhaseOrder[1]} meta="14 task" /><BentoMock eyebrow={`${hc.mockPhase} 3`} name={hc.mockPhaseOrder[2]} meta="16 task" /></div><Connector /><div className="space-y-5"><BentoMock title={hc.mockSubFeatureTitle} list={hc.mockSubFeatures} /><BentoMock title={hc.mockTaskTitle} list={hc.mockTasks} typing /></div></div></div>
-             <aside className="hidden border-l border-white/10 bg-[#0E1115] p-5 lg:block"><Eyebrow>{hc.mockAgentLabel}</Eyebrow><h3 className="mt-3 text-[15px] font-semibold tracking-[-.02em] text-white">F01-S01-T02</h3><p className="mt-2 text-xs leading-5 text-white/48">{hc.mockAgentTask}</p><div className="mt-5 rounded-xl border border-white/10 bg-black/30 p-3 font-mono text-[10px] leading-6 text-white/50"><span className="text-white/70">{hc.mockNextTask}</span><br /><span className="text-emerald-300">✓</span> {hc.mockDepsReady}<br /><span className="text-white">›</span> checkpoint: false</div><div className="mt-5 flex items-center gap-2 font-mono text-[10px] text-white/30"><Zap size={11} className="text-white/40" /> polling 5s</div></aside>
+             <aside className="hidden border-l border-white/10 bg-[#0E1115] p-5 lg:block">
+               <Eyebrow>{hc.mockAgentLabel}</Eyebrow>
+               <h3 className="mt-3 text-[15px] font-semibold tracking-[-.02em] text-white">F01-S01-T02</h3>
+               <p className="mt-2 text-xs leading-5 text-white/48">{hc.mockAgentTask}</p>
+               
+               {/* Terminal Interaktif Realistis Sesuai CLI Scratch Agent */}
+               <div className="mt-4 overflow-hidden rounded-xl border border-white/10 bg-black/60 shadow-inner">
+                 <div className="flex items-center justify-between border-b border-white/[.08] bg-white/[.02] px-3 py-1.5 font-mono text-[9px] text-white/40">
+                   <span className="flex items-center gap-1.5">
+                     <span className="size-1.5 rounded-full bg-[#74FA6A] animate-pulse" />
+                     cli runtime
+                   </span>
+                   <span>antigravity</span>
+                 </div>
+                 <div className="p-3 font-mono text-[10px] leading-5 text-white/70 space-y-1.5">
+                   <div className="flex items-center gap-1.5 text-white/40">
+                     <span className="text-[#74FA6A]">$</span>
+                     <span className="text-white/80">scratch-agent task next</span>
+                   </div>
+                   <div className="rounded border border-white/[.06] bg-white/[.02] p-2 text-[9.5px] leading-4 text-white/60">
+                     <p className="text-white/90 font-semibold text-[10px]">› ref: <span className="text-[#74FA6A]">F01-S01-T02</span></p>
+                     <p className="text-white/50">status: in_progress</p>
+                     <p className="text-white/50">checkpoint: <span className="text-[#74FA6A]">false</span></p>
+                     <p className="text-white/50">blocked: <span className="text-white/40">false</span></p>
+                   </div>
+                   <div className="pt-1 flex items-center gap-1.5 text-[9px] text-emerald-400/90 font-mono">
+                     <span className="size-1 rounded-full bg-[#74FA6A]" />
+                     <span>uipro skill v2.4 active</span>
+                   </div>
+                 </div>
+               </div>
+
+               <div className="mt-4 flex items-center justify-between font-mono text-[10px] text-white/30 border-t border-white/[.06] pt-3">
+                 <span className="flex items-center gap-1.5"><Zap size={11} className="text-[#74FA6A]" /> polling 5s</span>
+                 <span className="text-[#74FA6A]/80">FutsalGo (12/120)</span>
+               </div>
+             </aside>
            </div>
          </div>
        </motion.section>

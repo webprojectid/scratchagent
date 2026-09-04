@@ -25,7 +25,7 @@ function TerminalChrome({ title }: { title: string }) {
   );
 }
 
-const frame = "overflow-hidden rounded-2xl border border-white/[.08] bg-[#141414]";
+const frame = "overflow-hidden rounded-2xl border border-white/[.08] bg-[#141414] transition-all duration-300 hover:border-white/20 hover:shadow-xl hover:shadow-[#74FA6A]/5";
 
 /** Step 1: mockup mini halaman /new, brief sedang diketik. */
 function MockBrief() {
