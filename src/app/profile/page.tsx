@@ -25,6 +25,7 @@ import {
   Pencil,
   AlertTriangle,
   Settings,
+  ArrowUpRight,
   Activity,
   Layers,
   Sparkles,
@@ -297,29 +298,29 @@ export default function ProfilePage() {
 
   return (
     <Shell back="/" sidebar={false}>
-      <div className="mx-auto w-full max-w-[1100px] px-4 pb-20 pt-8 sm:px-6 md:pt-12">
-        {/* Navigation Tabs (Top Sub-header) */}
-        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/[.08] pb-4">
+      <div className="mx-auto w-full max-w-[1040px] px-4 pb-24 pt-6 sm:px-6 md:pt-10">
+        {/* Subtle Top Island Navigation */}
+        <div className="flex items-center justify-between border-b border-white/[.06] pb-3 text-xs">
           <div className="flex items-center gap-1">
             <button
               onClick={() => setActiveTab("overview")}
-              className={`rounded-lg px-3.5 py-1.5 text-xs font-semibold transition ${
+              className={`rounded-md px-3 py-1.5 font-medium transition ${
                 activeTab === "overview"
-                  ? "bg-white/[.08] text-white"
-                  : "text-white/40 hover:text-white/70"
+                  ? "bg-white/[.06] text-white"
+                  : "text-white/40 hover:text-white/80"
               }`}
             >
-              Overview &amp; Projects
+              Overview
             </button>
             <button
               onClick={() => setActiveTab("security")}
-              className={`rounded-lg px-3.5 py-1.5 text-xs font-semibold transition ${
+              className={`rounded-md px-3 py-1.5 font-medium transition ${
                 activeTab === "security"
-                  ? "bg-white/[.08] text-white"
-                  : "text-white/40 hover:text-white/70"
+                  ? "bg-white/[.06] text-white"
+                  : "text-white/40 hover:text-white/80"
               }`}
             >
-              Keamanan Akun
+              Keamanan
             </button>
           </div>
 
@@ -327,374 +328,390 @@ export default function ProfilePage() {
             {isAdmin && (
               <Link
                 href="/admin/users"
-                className="flex items-center gap-1.5 rounded-lg border border-[#74FA6A]/30 bg-[#74FA6A]/10 px-3 py-1.5 text-xs font-medium text-[#74FA6A] transition hover:bg-[#74FA6A]/20"
+                className="flex items-center gap-1 rounded-md border border-[#74FA6A]/20 bg-[#74FA6A]/[0.05] px-2.5 py-1 text-[11px] font-medium text-[#74FA6A] transition hover:bg-[#74FA6A]/10"
               >
-                <ShieldCheck size={13} /> Developer Hub
+                <ShieldCheck size={12} /> Developer Hub
               </Link>
             )}
             <Link
               href="/settings"
-              className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[.03] px-3 py-1.5 text-xs font-medium text-white/80 transition hover:bg-white/[.07] hover:text-white"
+              className="flex items-center gap-1 rounded-md border border-white/[.08] bg-white/[.02] px-2.5 py-1 text-[11px] font-medium text-white/70 transition hover:bg-white/[.05] hover:text-white"
             >
-              <Settings size={13} /> Setting
+              <Settings size={12} /> Setting
             </Link>
             <button
               onClick={handleLogout}
-              className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[.03] px-3 py-1.5 text-xs font-medium text-red-400/80 transition hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-400"
+              className="flex items-center gap-1 rounded-md border border-red-500/20 bg-red-500/[0.04] px-2.5 py-1 text-[11px] font-medium text-red-400/80 transition hover:border-red-500/40 hover:bg-red-500/10 hover:text-red-400"
             >
-              <LogOut size={13} /> Keluar
+              <LogOut size={12} /> Keluar
             </button>
           </div>
         </div>
 
         {activeTab === "overview" ? (
           <>
-            {/* Account Card Profile */}
-            <div className="mt-6 rounded-2xl border border-white/[.08] bg-[#111417] p-6">
-              <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="flex size-14 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[.04] font-mono text-lg font-bold text-[#74FA6A]">
-                    {initials}
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      {editingName ? (
-                        <div className="flex items-center gap-1.5">
-                          <input
-                            type="text"
-                            value={nameInput}
-                            onChange={(e) => setNameInput(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") handleSaveName();
-                              if (e.key === "Escape") setEditingName(false);
-                            }}
-                            autoFocus
-                            className="rounded border border-[#74FA6A]/50 bg-black/50 px-2 py-0.5 text-sm font-semibold text-white focus:outline-none"
-                          />
-                          <button
-                            onClick={handleSaveName}
-                            className="rounded bg-[#74FA6A] px-2 py-0.5 text-[11px] font-bold text-black"
-                          >
-                            Simpan
-                          </button>
-                        </div>
-                      ) : (
-                        <>
-                          <h1 className="text-base font-bold text-white">{user.name}</h1>
-                          <button
-                            onClick={() => {
-                              setNameInput(user.name);
-                              setEditingName(true);
-                            }}
-                            className="text-white/30 hover:text-white"
-                            title="Edit nama"
-                          >
-                            <Pencil size={12} />
-                          </button>
-                        </>
-                      )}
-                      <span className={`rounded px-1.5 py-0.2 font-mono text-[9.5px] font-bold uppercase ${
-                        isPro ? "bg-[#74FA6A]/15 text-[#74FA6A]" : "bg-white/10 text-white/50"
-                      }`}>
-                        {isPro ? "Pro Plan" : "Free Plan"}
-                      </span>
+            {/* Double-Bezel Header Card */}
+            <div className="mt-5 rounded-2xl border border-white/[.06] bg-white/[.02] p-1.5">
+              <div className="rounded-xl border border-white/[.04] bg-[#0E1113] p-5">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-center gap-3.5">
+                    <div className="flex size-11 shrink-0 items-center justify-center rounded-lg border border-white/[.08] bg-white/[.03] font-mono text-sm font-semibold text-[#74FA6A]">
+                      {initials}
                     </div>
-                    <div className="mt-1 flex items-center gap-2 text-xs text-white/45">
-                      <span>{user.email}</span>
-                      {user.createdAt && (
-                        <>
-                          <span>•</span>
-                          <span className="flex items-center gap-1">
-                            <Calendar size={11} />
-                            Bergabung {new Date(user.createdAt).toLocaleDateString("id-ID", { month: "short", year: "numeric" })}
-                          </span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  {!isPro && (
-                    <Link
-                      href="/pricing"
-                      className="flex items-center gap-1.5 rounded-lg border border-[#74FA6A]/40 bg-[#74FA6A]/10 px-3.5 py-2 text-xs font-semibold text-[#74FA6A] transition hover:bg-[#74FA6A]/20"
-                    >
-                      <Sparkles size={13} /> Upgrade Pro
-                    </Link>
-                  )}
-                  <Link
-                    href="/new"
-                    className="flex items-center gap-1.5 rounded-lg bg-[#74FA6A] px-4 py-2 text-xs font-semibold text-black transition hover:bg-[#A8FF9B]"
-                  >
-                    <Plus size={14} /> Buat Plan
-                  </Link>
-                </div>
-              </div>
-            </div>
-
-            {/* Standard Metrics Strip */}
-            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
-              {/* Stat 1: Quota */}
-              <div className="rounded-xl border border-white/[.08] bg-[#111417] p-4">
-                <div className="flex items-center justify-between text-xs text-white/40 font-mono">
-                  <span>KUOTA GENERATE</span>
-                  <Zap size={13} className="text-[#74FA6A]" />
-                </div>
-                <div className="mt-2 flex items-baseline gap-2">
-                  <span className="text-2xl font-bold tracking-tight text-white">
-                    {isPro ? "Unlimited" : `${quota?.remaining ?? 3} / 3`}
-                  </span>
-                  {!isPro && <span className="text-[11px] text-white/40">tersisa</span>}
-                </div>
-                <p className="mt-1 text-[11px] text-white/40">
-                  {isPro ? "Akses penuh tanpa limitasi harian" : "Reset rolling otomatis per 24 jam"}
-                </p>
-              </div>
-
-              {/* Stat 2: Projects Done */}
-              <div className="rounded-xl border border-white/[.08] bg-[#111417] p-4">
-                <div className="flex items-center justify-between text-xs text-white/40 font-mono">
-                  <span>STATUS PROJECT</span>
-                  <FolderOpen size={13} className="text-white/40" />
-                </div>
-                <div className="mt-2 flex items-baseline gap-2">
-                  <span className="text-2xl font-bold tracking-tight text-white">{plans.length}</span>
-                  <span className="text-[11px] text-[#74FA6A]">({donePlansCount} selesai)</span>
-                </div>
-                <p className="mt-1 text-[11px] text-white/40">Total plan PRD yang tersimpan</p>
-              </div>
-
-              {/* Stat 3: Tasks Done */}
-              <div className="rounded-xl border border-white/[.08] bg-[#111417] p-4">
-                <div className="flex items-center justify-between text-xs text-white/40 font-mono">
-                  <span>EKSEKUSI TASK</span>
-                  <Activity size={13} className="text-white/40" />
-                </div>
-                <div className="mt-2 flex items-baseline gap-2">
-                  <span className="text-2xl font-bold tracking-tight text-white">{completionRate}%</span>
-                  <span className="text-[11px] text-white/40">({doneTasks}/{totalTasks})</span>
-                </div>
-                <div className="mt-2 h-1 w-full rounded-full bg-white/[.08]">
-                  <div
-                    className="h-full rounded-full bg-[#74FA6A]"
-                    style={{ width: `${completionRate}%` }}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Quick Terminal CLI Guide */}
-            <div className="mt-4 rounded-xl border border-white/[.08] bg-[#111417] p-4">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <Terminal size={14} className="text-[#74FA6A]" />
-                  <span className="text-xs font-semibold text-white">CLI Agent Login</span>
-                </div>
-                <Link href="/settings" className="text-[11px] font-mono text-[#74FA6A] hover:underline">
-                  Kelola Token →
-                </Link>
-              </div>
-              <div className="mt-2.5 flex flex-col gap-2 sm:flex-row sm:items-center">
-                {tokens.length > 0 ? (
-                  tokens.slice(0, 2).map((t) => {
-                    const cmd = `scratch-agent login --token ${t.hash} --url ${origin || "https://www.scratchagent.web.id"}`;
-                    return (
-                      <button
-                        key={t.hash}
-                        onClick={() => handleCopy(cmd, t.hash)}
-                        className="flex items-center justify-between gap-3 rounded-lg border border-white/[.08] bg-black/40 px-3 py-1.5 font-mono text-xs text-white/80 transition hover:border-[#74FA6A]/40"
-                      >
-                        <span className="truncate max-w-[280px]">{t.label}: {t.hash.slice(0, 10)}…</span>
-                        {copiedToken === t.hash ? (
-                          <Check size={12} className="text-[#74FA6A]" />
+                    <div>
+                      <div className="flex items-center gap-2">
+                        {editingName ? (
+                          <div className="flex items-center gap-1.5">
+                            <input
+                              type="text"
+                              value={nameInput}
+                              onChange={(e) => setNameInput(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") handleSaveName();
+                                if (e.key === "Escape") setEditingName(false);
+                              }}
+                              autoFocus
+                              className="rounded border border-[#74FA6A]/40 bg-black/50 px-2 py-0.5 text-xs font-semibold text-white focus:outline-none"
+                            />
+                            <button
+                              onClick={handleSaveName}
+                              className="rounded bg-[#74FA6A] px-2 py-0.5 text-[10.5px] font-bold text-black"
+                            >
+                              Simpan
+                            </button>
+                          </div>
                         ) : (
-                          <Copy size={12} className="text-white/40" />
+                          <>
+                            <h1 className="text-sm font-semibold text-white">{user.name}</h1>
+                            <button
+                              onClick={() => {
+                                setNameInput(user.name);
+                                setEditingName(true);
+                              }}
+                              className="text-white/30 hover:text-white"
+                              title="Edit nama"
+                            >
+                              <Pencil size={11} />
+                            </button>
+                          </>
                         )}
-                      </button>
-                    );
-                  })
-                ) : (
-                  <p className="text-xs text-white/40">Belum ada CLI token. Buat di halaman Setting.</p>
-                )}
+                        <span className={`rounded px-1.5 py-0.2 font-mono text-[9px] font-medium uppercase tracking-wider ${
+                          isPro ? "bg-[#74FA6A]/10 text-[#74FA6A] border border-[#74FA6A]/20" : "bg-white/[.06] text-white/50 border border-white/[.06]"
+                        }`}>
+                          {isPro ? "Pro Plan" : "Free Plan"}
+                        </span>
+                      </div>
+                      <div className="mt-0.5 flex items-center gap-2 text-[11.5px] text-white/40">
+                        <span>{user.email}</span>
+                        {user.createdAt && (
+                          <>
+                            <span>•</span>
+                            <span className="flex items-center gap-1">
+                              <Calendar size={10} />
+                              {new Date(user.createdAt).toLocaleDateString("id-ID", { month: "short", year: "numeric" })}
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    {!isPro && (
+                      <Link
+                        href="/pricing"
+                        className="flex items-center gap-1.5 rounded-lg border border-[#74FA6A]/30 bg-[#74FA6A]/[0.05] px-3 py-1.5 text-xs font-medium text-[#74FA6A] transition hover:bg-[#74FA6A]/15"
+                      >
+                        <Sparkles size={12} /> Upgrade
+                      </Link>
+                    )}
+                    <Link
+                      href="/new"
+                      className="group flex items-center gap-1.5 rounded-lg bg-[#74FA6A] px-3.5 py-1.5 text-xs font-medium text-black transition hover:bg-[#A8FF9B]"
+                    >
+                      <span>Buat Plan</span>
+                      <div className="flex size-4 items-center justify-center rounded-full bg-black/10 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5">
+                        <ArrowUpRight size={10} />
+                      </div>
+                    </Link>
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* Project List */}
-            <div className="mt-6 rounded-2xl border border-white/[.08] bg-[#111417] p-5">
-              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/[.06] pb-4">
-                <div>
-                  <h2 className="text-sm font-bold text-white">Daftar Project</h2>
-                  <p className="text-xs text-white/40">Semua plan produk dan breakdown task Anda</p>
+            {/* Double-Bezel Metrics Row (Clean, Normal Sized Fonts) */}
+            <div className="mt-3.5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+              {/* Stat 1 */}
+              <div className="rounded-2xl border border-white/[.06] bg-white/[.02] p-1.5">
+                <div className="rounded-xl border border-white/[.04] bg-[#0E1113] p-3.5">
+                  <div className="flex items-center justify-between text-[11px] font-mono text-white/40">
+                    <span>KUOTA GENERATE</span>
+                    <Zap size={12} className="text-[#74FA6A]" />
+                  </div>
+                  <div className="mt-2 flex items-baseline gap-1.5">
+                    <span className="text-lg font-semibold tracking-tight text-white">
+                      {isPro ? "Unlimited" : `${quota?.remaining ?? 3} / 3`}
+                    </span>
+                    {!isPro && <span className="text-[11px] text-white/40">tersisa</span>}
+                  </div>
+                  <p className="mt-1 text-[11px] text-white/40">
+                    {isPro ? "Bebas buat plan tanpa limit" : "Reset rolling 24 jam"}
+                  </p>
                 </div>
+              </div>
 
-                <div className="flex flex-wrap items-center gap-2">
-                  <div className="relative">
-                    <Search size={13} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
-                    <input
-                      type="text"
-                      placeholder="Cari project…"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-48 rounded-lg border border-white/10 bg-black/30 py-1.5 pl-8 pr-3 text-xs text-white placeholder:text-white/30 focus:border-[#74FA6A]/50 focus:outline-none"
+              {/* Stat 2 */}
+              <div className="rounded-2xl border border-white/[.06] bg-white/[.02] p-1.5">
+                <div className="rounded-xl border border-white/[.04] bg-[#0E1113] p-3.5">
+                  <div className="flex items-center justify-between text-[11px] font-mono text-white/40">
+                    <span>PROJECT TERSIMPAN</span>
+                    <FolderOpen size={12} className="text-white/40" />
+                  </div>
+                  <div className="mt-2 flex items-baseline gap-1.5">
+                    <span className="text-lg font-semibold tracking-tight text-white">{plans.length}</span>
+                    <span className="text-[11px] text-[#74FA6A]">({donePlansCount} selesai)</span>
+                  </div>
+                  <p className="mt-1 text-[11px] text-white/40">Total arsip PRD aktif</p>
+                </div>
+              </div>
+
+              {/* Stat 3 */}
+              <div className="rounded-2xl border border-white/[.06] bg-white/[.02] p-1.5">
+                <div className="rounded-xl border border-white/[.04] bg-[#0E1113] p-3.5">
+                  <div className="flex items-center justify-between text-[11px] font-mono text-white/40">
+                    <span>PROGRESS TASK</span>
+                    <Activity size={12} className="text-white/40" />
+                  </div>
+                  <div className="mt-2 flex items-baseline gap-1.5">
+                    <span className="text-lg font-semibold tracking-tight text-white">{completionRate}%</span>
+                    <span className="text-[11px] text-white/40">({doneTasks}/{totalTasks} tuntas)</span>
+                  </div>
+                  <div className="mt-2 h-1 w-full rounded-full bg-white/[.06]">
+                    <div
+                      className="h-full rounded-full bg-[#74FA6A]"
+                      style={{ width: `${completionRate}%` }}
                     />
                   </div>
-
-                  <div className="flex items-center rounded-lg border border-white/10 bg-black/30 p-0.5 text-xs font-mono">
-                    <button
-                      onClick={() => setStatusFilter("all")}
-                      className={`rounded px-2.5 py-1 ${statusFilter === "all" ? "bg-white/15 text-white" : "text-white/40 hover:text-white"}`}
-                    >
-                      Semua
-                    </button>
-                    <button
-                      onClick={() => setStatusFilter("active")}
-                      className={`rounded px-2.5 py-1 ${statusFilter === "active" ? "bg-white/15 text-white" : "text-white/40 hover:text-white"}`}
-                    >
-                      Berjalan
-                    </button>
-                    <button
-                      onClick={() => setStatusFilter("done")}
-                      className={`rounded px-2.5 py-1 ${statusFilter === "done" ? "bg-white/15 text-white" : "text-white/40 hover:text-white"}`}
-                    >
-                      Selesai
-                    </button>
-                  </div>
                 </div>
               </div>
+            </div>
 
-              {plansLoading ? (
-                <div className="flex items-center justify-center py-16 text-white/30">
-                  <Loader2 size={16} className="animate-spin mr-2" />
-                  <span className="text-xs">Memuat project…</span>
+            {/* CLI Command Helper Card */}
+            <div className="mt-3.5 rounded-2xl border border-white/[.06] bg-white/[.02] p-1.5">
+              <div className="rounded-xl border border-white/[.04] bg-[#0E1113] p-3.5">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 text-xs">
+                    <Terminal size={13} className="text-[#74FA6A]" />
+                    <span className="font-medium text-white/90">CLI Agent Quick Login</span>
+                  </div>
+                  <Link href="/settings" className="font-mono text-[11px] text-[#74FA6A] hover:underline">
+                    Kelola Token →
+                  </Link>
                 </div>
-              ) : filteredPlans.length === 0 ? (
-                <div className="py-14 text-center">
-                  <FolderOpen size={30} className="mx-auto text-white/20" />
-                  <p className="mt-2 text-xs text-white/40">Belum ada project yang cocok.</p>
+                <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
+                  {tokens.length > 0 ? (
+                    tokens.slice(0, 2).map((t) => {
+                      const cmd = `scratch-agent login --token ${t.hash} --url ${origin || "https://www.scratchagent.web.id"}`;
+                      return (
+                        <button
+                          key={t.hash}
+                          onClick={() => handleCopy(cmd, t.hash)}
+                          className="flex items-center justify-between gap-3 rounded-lg border border-white/[.06] bg-black/40 px-3 py-1.5 font-mono text-xs text-white/80 transition hover:border-[#74FA6A]/30"
+                        >
+                          <span className="truncate max-w-[280px]">{t.label}: {t.hash.slice(0, 10)}…</span>
+                          {copiedToken === t.hash ? (
+                            <Check size={11} className="text-[#74FA6A]" />
+                          ) : (
+                            <Copy size={11} className="text-white/40" />
+                          )}
+                        </button>
+                      );
+                    })
+                  ) : (
+                    <p className="text-xs text-white/40">Belum ada CLI token. Generate di Setting.</p>
+                  )}
                 </div>
-              ) : (
-                <div className="mt-3 divide-y divide-white/[.04]">
-                  {filteredPlans.map((plan) => {
-                    const pct = plan.taskCount > 0 ? Math.round((plan.tasksDone / plan.taskCount) * 100) : 0;
-                    return (
-                      <div
-                        key={plan.id}
-                        className="flex flex-col justify-between gap-3 py-3.5 sm:flex-row sm:items-center"
+              </div>
+            </div>
+
+            {/* Project List Section */}
+            <div className="mt-5 rounded-2xl border border-white/[.06] bg-white/[.02] p-1.5">
+              <div className="rounded-xl border border-white/[.04] bg-[#0E1113] p-4">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/[.06] pb-3">
+                  <div>
+                    <h2 className="text-xs font-semibold text-white uppercase tracking-wider font-mono">Daftar Project</h2>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className="relative">
+                      <Search size={12} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-white/30" />
+                      <input
+                        type="text"
+                        placeholder="Cari project…"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-44 rounded-lg border border-white/[.08] bg-black/40 py-1 pl-7 pr-2.5 text-xs text-white placeholder:text-white/30 focus:border-[#74FA6A]/40 focus:outline-none"
+                      />
+                    </div>
+
+                    <div className="flex items-center rounded-lg border border-white/[.08] bg-black/40 p-0.5 text-xs font-mono">
+                      <button
+                        onClick={() => setStatusFilter("all")}
+                        className={`rounded px-2 py-0.5 text-[11px] ${statusFilter === "all" ? "bg-white/10 text-white" : "text-white/40 hover:text-white"}`}
                       >
-                        <div className="min-w-0 flex-1">
+                        Semua
+                      </button>
+                      <button
+                        onClick={() => setStatusFilter("active")}
+                        className={`rounded px-2 py-0.5 text-[11px] ${statusFilter === "active" ? "bg-white/10 text-white" : "text-white/40 hover:text-white"}`}
+                      >
+                        Berjalan
+                      </button>
+                      <button
+                        onClick={() => setStatusFilter("done")}
+                        className={`rounded px-2 py-0.5 text-[11px] ${statusFilter === "done" ? "bg-white/10 text-white" : "text-white/40 hover:text-white"}`}
+                      >
+                        Selesai
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {plansLoading ? (
+                  <div className="flex items-center justify-center py-12 text-white/30">
+                    <Loader2 size={14} className="animate-spin mr-2" />
+                    <span className="text-xs font-mono">Memuat project…</span>
+                  </div>
+                ) : filteredPlans.length === 0 ? (
+                  <div className="py-10 text-center">
+                    <FolderOpen size={24} className="mx-auto text-white/20" />
+                    <p className="mt-2 text-xs text-white/40">Belum ada project yang cocok.</p>
+                  </div>
+                ) : (
+                  <div className="mt-2 divide-y divide-white/[.03]">
+                    {filteredPlans.map((plan) => {
+                      const pct = plan.taskCount > 0 ? Math.round((plan.tasksDone / plan.taskCount) * 100) : 0;
+                      return (
+                        <div
+                          key={plan.id}
+                          className="flex flex-col justify-between gap-2.5 py-3 sm:flex-row sm:items-center"
+                        >
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <Link
+                                href={`/project/${plan.id}`}
+                                className="truncate text-xs font-medium text-white/90 hover:text-[#74FA6A]"
+                              >
+                                {plan.title}
+                              </Link>
+                              <span className={`rounded px-1.5 py-0.2 font-mono text-[9px] uppercase ${
+                                plan.status === "done"
+                                  ? "bg-[#74FA6A]/10 text-[#74FA6A]"
+                                  : plan.status === "generating"
+                                  ? "bg-amber-500/10 text-amber-400"
+                                  : "bg-white/10 text-white/50"
+                              }`}>
+                                {plan.status}
+                              </span>
+                            </div>
+
+                            <div className="mt-1 flex items-center gap-2.5 font-mono text-[10.5px] text-white/35">
+                              {plan.createdAt && (
+                                <span>{new Date(plan.createdAt).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}</span>
+                              )}
+                              <span>•</span>
+                              <span>{plan.featureCount} Fase</span>
+                              <span>•</span>
+                              <span>{plan.tasksDone}/{plan.taskCount} Task ({pct}%)</span>
+                            </div>
+                          </div>
+
                           <div className="flex items-center gap-2">
                             <Link
                               href={`/project/${plan.id}`}
-                              className="truncate text-xs font-semibold text-white/90 hover:text-[#74FA6A]"
+                              className="rounded-md border border-white/[.08] bg-white/[.02] px-2.5 py-1 text-[11px] font-medium text-white/70 hover:bg-white/[.06] hover:text-white"
                             >
-                              {plan.title}
+                              Buka
                             </Link>
-                            <span className={`rounded px-1.5 py-0.2 font-mono text-[9px] uppercase ${
-                              plan.status === "done"
-                                ? "bg-[#74FA6A]/10 text-[#74FA6A]"
-                                : plan.status === "generating"
-                                ? "bg-amber-500/10 text-amber-400"
-                                : "bg-white/10 text-white/50"
-                            }`}>
-                              {plan.status}
-                            </span>
-                          </div>
-
-                          <div className="mt-1 flex items-center gap-3 font-mono text-[10.5px] text-white/35">
-                            {plan.createdAt && (
-                              <span>{new Date(plan.createdAt).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}</span>
-                            )}
-                            <span>•</span>
-                            <span>{plan.featureCount} Fase</span>
-                            <span>•</span>
-                            <span>{plan.tasksDone}/{plan.taskCount} Task ({pct}%)</span>
+                            <button
+                              onClick={(e) => openDeleteModal(e, plan)}
+                              disabled={deletingId === plan.id}
+                              className="rounded-md p-1 text-white/20 hover:text-red-400"
+                              title="Hapus project"
+                            >
+                              <Trash2 size={12} />
+                            </button>
                           </div>
                         </div>
-
-                        <div className="flex items-center gap-2">
-                          <Link
-                            href={`/project/${plan.id}`}
-                            className="rounded-lg border border-white/10 bg-white/[.04] px-3 py-1 text-xs font-medium text-white/70 hover:bg-white/[.08] hover:text-white"
-                          >
-                            Buka
-                          </Link>
-                          <button
-                            onClick={(e) => openDeleteModal(e, plan)}
-                            disabled={deletingId === plan.id}
-                            className="rounded-lg p-1 text-white/25 hover:text-red-400"
-                            title="Hapus project"
-                          >
-                            <Trash2 size={13} />
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
           </>
         ) : (
           /* Security Tab */
-          <div className="mt-6 max-w-lg rounded-2xl border border-white/[.08] bg-[#111417] p-6">
-            <h2 className="text-sm font-bold text-white">Ganti Password</h2>
-            <p className="mt-1 text-xs text-white/40">Khusus kredensial dev lokal. Minimal 6 karakter.</p>
+          <div className="mt-5 rounded-2xl border border-white/[.06] bg-white/[.02] p-1.5 max-w-md">
+            <div className="rounded-xl border border-white/[.04] bg-[#0E1113] p-5">
+              <h2 className="text-xs font-semibold text-white uppercase tracking-wider font-mono">Ganti Password</h2>
+              <p className="mt-1 text-xs text-white/40">Khusus kredensial dev lokal. Minimal 6 karakter.</p>
 
-            <div className="relative mt-4">
-              <input
-                type={showPass ? "text" : "password"}
-                value={newPass}
-                onChange={(e) => setNewPass(e.target.value)}
-                placeholder="Masukkan password baru…"
-                className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 pr-10 text-xs text-white placeholder:text-white/30 focus:border-[#74FA6A]/50 focus:outline-none"
-              />
+              <div className="relative mt-3.5">
+                <input
+                  type={showPass ? "text" : "password"}
+                  value={newPass}
+                  onChange={(e) => setNewPass(e.target.value)}
+                  placeholder="Password baru…"
+                  className="w-full rounded-lg border border-white/[.08] bg-black/40 px-3 py-1.5 pr-9 text-xs text-white placeholder:text-white/30 focus:border-[#74FA6A]/40 focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPass(!showPass)}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/30 hover:text-white"
+                >
+                  {showPass ? <EyeOff size={12} /> : <Eye size={12} />}
+                </button>
+              </div>
+
+              {msg && (
+                <p className={`mt-2 text-xs ${msgType === "success" ? "text-[#74FA6A]" : "text-red-400"}`}>
+                  {msg}
+                </p>
+              )}
+
               <button
-                type="button"
-                onClick={() => setShowPass(!showPass)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white"
+                onClick={handleChangePass}
+                className="mt-3.5 rounded-lg bg-[#74FA6A] px-3.5 py-1.5 text-xs font-medium text-black transition hover:bg-[#A8FF9B]"
               >
-                {showPass ? <EyeOff size={13} /> : <Eye size={13} />}
+                Simpan Password
               </button>
             </div>
-
-            {msg && (
-              <p className={`mt-2 text-xs ${msgType === "success" ? "text-[#74FA6A]" : "text-red-400"}`}>
-                {msg}
-              </p>
-            )}
-
-            <button
-              onClick={handleChangePass}
-              className="mt-4 rounded-lg bg-[#74FA6A] px-4 py-2 text-xs font-semibold text-black transition hover:bg-[#A8FF9B]"
-            >
-              Simpan Password Baru
-            </button>
           </div>
         )}
 
         {/* Modal Konfirmasi Hapus */}
         {planToDelete && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-            <div className="w-full max-w-sm rounded-xl border border-white/10 bg-[#16191D] p-5">
+            <div className="w-full max-w-sm rounded-xl border border-white/10 bg-[#14171A] p-4">
               <div className="flex items-center gap-2 text-red-400">
-                <AlertTriangle size={17} />
-                <h3 className="text-sm font-bold text-white">Hapus Project?</h3>
+                <AlertTriangle size={15} />
+                <h3 className="text-xs font-semibold text-white">Hapus Project?</h3>
               </div>
-              <p className="mt-2 text-xs text-white/60 leading-relaxed">
-                Project &quot;<strong>{planToDelete.title}</strong>&quot; akan dihapus permanen.
+              <p className="mt-1.5 text-xs text-white/60">
+                Project &quot;{planToDelete.title}&quot; akan dihapus permanen.
               </p>
-              <div className="mt-5 flex items-center justify-end gap-2">
+              <div className="mt-4 flex items-center justify-end gap-2">
                 <button
                   onClick={() => setPlanToDelete(null)}
-                  className="rounded-lg border border-white/10 px-3 py-1.5 text-xs text-white/60 hover:text-white"
+                  className="rounded-md border border-white/10 px-2.5 py-1 text-xs text-white/60 hover:text-white"
                 >
                   Batal
                 </button>
                 <button
                   onClick={confirmDeletePlan}
                   disabled={deletingId !== null}
-                  className="rounded-lg bg-red-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-600 disabled:opacity-50"
+                  className="rounded-md bg-red-500 px-3 py-1 text-xs font-medium text-white hover:bg-red-600 disabled:opacity-50"
                 >
                   {deletingId ? "Menghapus…" : "Hapus"}
                 </button>
@@ -703,9 +720,9 @@ export default function ProfilePage() {
           </div>
         )}
 
-        {/* Toast Notification */}
+        {/* Toast */}
         {deleteToast && (
-          <div className="fixed bottom-6 right-6 z-50 rounded-lg border border-white/10 bg-[#16191D] px-3.5 py-2 text-xs text-white shadow-xl">
+          <div className="fixed bottom-5 right-5 z-50 rounded-lg border border-white/10 bg-[#14171A] px-3 py-1.5 text-xs text-white shadow-lg">
             {deleteToast}
           </div>
         )}
