@@ -70,25 +70,18 @@ interface TestResult {
 function GlassCard({
   children,
   className = "",
-  delay = 0,
 }: {
   children: React.ReactNode;
   className?: string;
-  delay?: number;
 }) {
-  const reduce = useReducedMotion();
-  const enter = reduce ? {} : { opacity: 0, y: 8 };
-  const visible = reduce ? {} : { opacity: 1, y: 0 };
-
   return (
-    <motion.div
-      initial={enter}
-      animate={visible}
-      transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1], delay: reduce ? 0 : delay }}
-      className={`rounded-2xl border border-white/[.08] bg-[#0E1210]/90 p-5 md:p-6 backdrop-blur-xl transition-colors hover:border-white/15 ${className}`}
+    <div
+      className={`rounded-2xl border border-white/[.06] bg-white/[.02] p-1.5 ${className}`}
     >
-      {children}
-    </motion.div>
+      <div className="rounded-xl border border-white/[.04] bg-[#0E1113] p-5 h-full">
+        {children}
+      </div>
+    </div>
   );
 }
 
@@ -105,16 +98,16 @@ function SectionHeader({
 }) {
   return (
     <div>
-      <div className="flex items-center gap-2">
-        <div className="flex size-6 items-center justify-center rounded-md bg-[#74FA6A]/10 text-[#74FA6A]">
+      <div className="flex items-center gap-1.5">
+        <div className="flex size-5 items-center justify-center rounded bg-[#74FA6A]/10 text-[#74FA6A]">
           {icon}
         </div>
-        <p className="font-mono text-[10px] font-bold uppercase tracking-[.18em] text-[#74FA6A]/80">{tag}</p>
+        <span className="font-mono text-[10px] font-semibold uppercase tracking-wider text-[#74FA6A]/80">{tag}</span>
       </div>
-      <div className="mt-1 font-bold text-white leading-snug" style={{ fontSize: "15px" }}>
+      <div className="mt-1 font-semibold text-white text-xs">
         {title}
       </div>
-      {subtitle && <p className="mt-0.5 text-[12px] text-white/45">{subtitle}</p>}
+      {subtitle && <p className="mt-0.5 text-[11.5px] text-white/40">{subtitle}</p>}
     </div>
   );
 }
@@ -361,69 +354,51 @@ export default function Settings() {
 
   return (
     <Shell back={isAdmin ? "/admin/users" : "/profile"} sidebar={false}>
-      <div className="mx-auto w-full max-w-[1140px] px-5 pb-16 pt-12 md:pt-16">
-        {/* Top Header */}
-        <motion.section
-          initial={enter}
-          animate={visible}
-          transition={{ duration: 0.3, ease }}
-          className="flex flex-wrap items-center justify-between gap-5 rounded-[20px] border border-white/[.08] bg-[#0E1210]/90 p-5 md:p-7 backdrop-blur-2xl"
-        >
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="font-mono text-[10.5px] font-bold uppercase tracking-[.18em] text-[#74FA6A]">
-                {isAdmin ? "developer hub" : "account hub"}
-              </span>
-              <span className="text-white/20">•</span>
-              <span className="font-mono text-[10.5px] font-medium text-white/40">
-                {isAdmin ? "system configuration" : "developer settings"}
-              </span>
-            </div>
-            <div
-              className="mt-1 font-bold tracking-tight text-white"
-              style={{ fontSize: "18px", lineHeight: "1.3" }}
-            >
-              {isAdmin ? "Konfigurasi & LLM Settings" : "Pengaturan Integrasi & CLI"}
-            </div>
-            <p className="mt-1 text-[12.5px] text-white/50">
-              {isAdmin
-                ? "Kelola engine LLM, multi-model failover, API key, token agent CLI, dan kapasitas kuota generate."
-                : "Kelola token agent CLI dan pantau kapasitas kuota generate kamu."}
-            </p>
+      <div className="mx-auto w-full max-w-[1040px] px-4 pb-24 pt-6 sm:px-6 md:pt-10">
+        {/* Subtle Top Island Navigation */}
+        <div className="flex items-center justify-between border-b border-white/[.06] pb-3 text-xs">
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-[10.5px] uppercase tracking-wider text-[#74FA6A]">
+              {isAdmin ? "Developer Hub" : "Account Hub"}
+            </span>
+            <span className="text-white/20">•</span>
+            <span className="text-xs font-semibold text-white">
+              {isAdmin ? "Konfigurasi & LLM Settings" : "Pengaturan CLI & Integrasi"}
+            </span>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-2">
             {isAdmin && (
               <>
                 <Link
                   href="/admin/users"
-                  className="inline-flex items-center gap-1.5 rounded-full border border-white/15 px-3.5 py-1.5 text-[12px] font-semibold text-white transition hover:border-[#74FA6A]/50 hover:text-[#74FA6A]"
+                  className="flex items-center gap-1 rounded-md border border-[#74FA6A]/20 bg-[#74FA6A]/[0.05] px-2.5 py-1 text-[11px] font-medium text-[#74FA6A] transition hover:bg-[#74FA6A]/10"
                 >
-                  <ArrowLeft size={13} /> Kelola Akun
+                  <ArrowLeft size={12} /> Kelola Akun
                 </Link>
                 <Link
                   href="/admin/security"
-                  className="inline-flex items-center gap-1.5 rounded-full border border-white/15 px-3.5 py-1.5 text-[12px] font-semibold text-white transition hover:border-[#74FA6A]/50 hover:text-[#74FA6A]"
+                  className="flex items-center gap-1 rounded-md border border-white/[.08] bg-white/[.02] px-2.5 py-1 text-[11px] font-medium text-white/70 transition hover:bg-white/[.05] hover:text-white"
                 >
-                  <ShieldCheck size={13} /> Pusat Keamanan
+                  <ShieldCheck size={12} /> Keamanan
                 </Link>
               </>
             )}
             <Link
               href="/profile"
-              className="inline-flex items-center gap-1.5 rounded-full bg-[#74FA6A] px-3.5 py-1.5 text-[12px] font-semibold text-black transition hover:bg-[#A8FF9B]"
+              className="flex items-center gap-1 rounded-md border border-white/[.08] bg-white/[.02] px-2.5 py-1 text-[11px] font-medium text-white/70 transition hover:bg-white/[.05] hover:text-white"
             >
               Profile
             </Link>
           </div>
-        </motion.section>
+        </div>
 
         {/* Layout Grid */}
-        <div className={`mt-5 grid gap-5 items-stretch ${isAdmin && llmCfg ? "lg:grid-cols-2" : "grid-cols-1"}`}>
+        <div className={`mt-5 grid gap-4 items-stretch ${isAdmin && llmCfg ? "lg:grid-cols-2" : "grid-cols-1"}`}>
           {/* LEFT COLUMN: Engine AI & LLM Provider (Hanya untuk Admin) */}
           {isAdmin && llmCfg && (
             <div className="flex flex-col h-full">
-              <GlassCard delay={0.05} className="flex-1 flex flex-col justify-between">
+              <GlassCard className="flex-1 flex flex-col justify-between">
                 <div>
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <SectionHeader
@@ -579,7 +554,7 @@ export default function Settings() {
 
           {/* RIGHT COLUMN: Integrasi CLI & Token Hub (Same Height) */}
           <div className="flex flex-col h-full">
-            <GlassCard delay={0.1} className="flex-1 flex flex-col justify-between">
+            <GlassCard className="flex-1 flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between">
                   <SectionHeader
@@ -591,57 +566,57 @@ export default function Settings() {
                   <button
                     onClick={createToken}
                     disabled={creatingToken}
-                    className="inline-flex items-center gap-1 rounded-full bg-[#74FA6A] px-3 py-1 text-[11.5px] font-semibold text-black transition hover:bg-[#A8FF9B] disabled:opacity-50"
+                    className="inline-flex items-center gap-1 rounded-md bg-[#74FA6A] px-2.5 py-1 text-[11px] font-medium text-black transition hover:bg-[#A8FF9B] disabled:opacity-50"
                   >
-                    {creatingToken ? <RefreshCw size={11} className="animate-spin" /> : <Plus size={12} />}
+                    {creatingToken ? <RefreshCw size={11} className="animate-spin" /> : <Plus size={11} />}
                     Buat Token
                   </button>
                 </div>
 
                 {/* Newly Generated Token Alert */}
                 {newToken && (
-                  <div className="mt-4 rounded-[12px] border border-[#74FA6A]/35 bg-[#74FA6A]/[.06] p-3">
+                  <div className="mt-3 rounded-lg border border-[#74FA6A]/30 bg-[#74FA6A]/[0.05] p-2.5">
                     <div className="flex items-center justify-between">
-                      <p className="font-mono text-[10px] font-bold uppercase tracking-[.1em] text-[#74FA6A]">
+                      <p className="font-mono text-[10px] font-semibold uppercase tracking-wider text-[#74FA6A]">
                         Token Baru (Simpan Sekarang):
                       </p>
                       <button
                         onClick={() => handleCopy(newToken, true)}
-                        className="inline-flex items-center gap-1 rounded bg-[#74FA6A] px-2 py-0.5 font-mono text-[10px] font-bold text-black hover:bg-[#A8FF9B]"
+                        className="inline-flex items-center gap-1 rounded bg-[#74FA6A] px-2 py-0.5 font-mono text-[10px] font-semibold text-black hover:bg-[#A8FF9B]"
                       >
                         {tokenCopied ? <Check size={10} /> : <Copy size={10} />}
-                        {tokenCopied ? "Tersalin!" : "Salin"}
+                        {tokenCopied ? "Tersalin" : "Salin"}
                       </button>
                     </div>
-                    <code className="mt-1.5 block break-all rounded-md bg-black/50 p-2 font-mono text-[10.5px] text-white/90">
+                    <code className="mt-1 block break-all rounded bg-black/50 p-1.5 font-mono text-[10.5px] text-white/90">
                       {newToken}
                     </code>
                   </div>
                 )}
 
-                {/* Token List (Sorted: Active first) */}
-                <div className="mt-4">
-                  <div className="flex items-center justify-between text-[11px] font-mono text-white/35 pb-1 border-b border-white/[.06]">
+                {/* Token List */}
+                <div className="mt-3.5">
+                  <div className="flex items-center justify-between text-[10.5px] font-mono text-white/35 pb-1 border-b border-white/[.06]">
                     <span>Daftar Token ({sortedTokens.length})</span>
                     <span>Aksi</span>
                   </div>
 
                   <div className="mt-2 max-h-[175px] overflow-y-auto pr-1 space-y-1.5">
                     {sortedTokens.length === 0 ? (
-                      <div className="py-6 text-center text-[12px] text-white/30">
+                      <div className="py-6 text-center text-xs text-white/30">
                         Belum ada CLI token. Klik &quot;Buat Token&quot; di atas.
                       </div>
                     ) : (
                       sortedTokens.map((t) => (
                         <div
                           key={t.hash}
-                          className="flex items-center justify-between gap-2 rounded-[10px] border border-white/[.06] bg-white/[.02] px-3 py-2 text-[12px] transition hover:bg-white/[.04]"
+                          className="flex items-center justify-between gap-2 rounded-lg border border-white/[.06] bg-white/[.02] px-2.5 py-1.5 text-xs transition hover:bg-white/[.04]"
                         >
                           <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2">
-                              <span className="font-semibold text-white/85 truncate">{t.label}</span>
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-medium text-white/80 truncate text-xs">{t.label}</span>
                               <span
-                                className={`rounded px-1.5 py-0.2 font-mono text-[9px] font-bold uppercase ${
+                                className={`rounded px-1 py-0.2 font-mono text-[8.5px] font-bold uppercase ${
                                   t.revoked ? "bg-red-500/15 text-red-400" : "bg-[#74FA6A]/15 text-[#74FA6A]"
                                 }`}
                               >
@@ -662,9 +637,9 @@ export default function Settings() {
                                   title="Salin scratch-agent login"
                                 >
                                   {copiedHash === `scratch-agent login --token ${t.hash} --url ${origin || "https://www.scratchagent.web.id"}` ? (
-                                    <Check size={13} className="text-[#74FA6A]" />
+                                    <Check size={12} className="text-[#74FA6A]" />
                                   ) : (
-                                    <Copy size={13} />
+                                    <Copy size={12} />
                                   )}
                                 </button>
                                 <button
@@ -672,7 +647,7 @@ export default function Settings() {
                                   className="rounded p-1 text-white/30 transition hover:bg-red-500/10 hover:text-red-400"
                                   title="Cabut Token"
                                 >
-                                  <Trash2 size={13} />
+                                  <Trash2 size={12} />
                                 </button>
                               </>
                             )}
@@ -685,17 +660,29 @@ export default function Settings() {
               </div>
 
               {/* Integrated CLI Quick Commands */}
-              <div className="mt-5 border-t border-white/[.06] pt-3">
-                <div className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[.14em] text-white/40">
-                  <Code2 size={12} className="text-[#74FA6A]" />
-                  <span>Perintah Eksekusi CLI:</span>
+              <div className="mt-4 border-t border-white/[.06] pt-3">
+                <div className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider text-white/40">
+                  <Code2 size={11} className="text-[#74FA6A]" />
+                  <span>Perintah Eksekusi Terminal:</span>
                 </div>
-                <div className="mt-2 space-y-1.5 font-mono text-[11px]">
-                  <div className="flex items-center justify-between rounded-[8px] bg-black/40 px-2.5 py-1.5 text-white/70">
-                    <span>1. Login: <code className="text-[#74FA6A]">scratch-agent login --token &lt;token&gt; --url {origin || "https://www.scratchagent.web.id"}</code></span>
+                <div className="mt-2 space-y-1.5 font-mono text-[10.5px]">
+                  <div className="flex items-center justify-between rounded-lg bg-black/40 px-2.5 py-1.5 text-white/70">
+                    <span className="truncate mr-2">1. Login: <code className="text-[#74FA6A]">scratch-agent login --token &lt;token&gt; --url {origin || "https://www.scratchagent.web.id"}</code></span>
+                    <button
+                      onClick={() => handleCopy(`scratch-agent login --token <token> --url ${origin || "https://www.scratchagent.web.id"}`)}
+                      className="text-white/30 hover:text-white shrink-0"
+                    >
+                      <Copy size={11} />
+                    </button>
                   </div>
-                  <div className="flex items-center justify-between rounded-[8px] bg-black/40 px-2.5 py-1.5 text-white/70">
-                    <span>2. Run: <code className="text-[#74FA6A]">scratch-agent run --plan &lt;planId&gt;</code></span>
+                  <div className="flex items-center justify-between rounded-lg bg-black/40 px-2.5 py-1.5 text-white/70">
+                    <span className="truncate mr-2">2. Run: <code className="text-[#74FA6A]">scratch-agent run --plan &lt;planId&gt;</code></span>
+                    <button
+                      onClick={() => handleCopy("scratch-agent run --plan <planId>")}
+                      className="text-white/30 hover:text-white shrink-0"
+                    >
+                      <Copy size={11} />
+                    </button>
                   </div>
                 </div>
               </div>
@@ -703,57 +690,54 @@ export default function Settings() {
           </div>
         </div>
 
-        {/* BOTTOM SECTION: Status Kuota Generate (Balanced full width) */}
-        <div className="mt-5">
-          <GlassCard delay={0.15}>
-            <div className="flex flex-wrap items-center justify-between gap-4">
+        {/* BOTTOM SECTION: Status Kuota Generate */}
+        <div className="mt-4">
+          <GlassCard>
+            <div className="flex flex-wrap items-center justify-between gap-3">
               <SectionHeader
-                icon={<Activity size={14} />}
+                icon={<Activity size={13} />}
                 tag="kapasitas sistem"
                 title="Status Kuota Generate"
-                subtitle="Pemantauan rolling reset 24 jam untuk user."
+                subtitle="Pemantauan rolling reset 24 jam untuk akun Anda."
               />
 
               {quota ? (
-                <div className="flex flex-wrap items-center gap-4">
-                  <div className="rounded-[12px] border border-white/[.06] bg-white/[.02] px-4 py-2.5 min-w-[160px]">
-                    <p className="font-mono text-[10px] uppercase tracking-[.12em] text-white/40">
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="rounded-lg border border-white/[.06] bg-black/40 px-3 py-2 min-w-[140px]">
+                    <span className="block font-mono text-[9.5px] uppercase tracking-wider text-white/40">
                       {quota.tier === "pro" ? "Status Quota Pro" : quota.unlimited ? "Kuota Admin" : "Sisa Free Quota"}
-                    </p>
-                    <p
-                      className="mt-1 font-bold text-[#74FA6A]"
-                      style={{ fontSize: "17px" }}
-                    >
+                    </span>
+                    <span className="mt-0.5 block font-semibold text-sm text-[#74FA6A]">
                       {quota.tier === "pro" || quota.unlimited || quota.remaining === Infinity ? (
                         "Unlimited"
                       ) : (
                         <>
-                          {quota.remaining} <span className="text-[13px] font-normal text-white/40">/ {quota.limit}</span>
+                          {quota.remaining} <span className="text-xs font-normal text-white/40">/ {quota.limit}</span>
                         </>
                       )}
-                    </p>
+                    </span>
                   </div>
 
-                  <div className="rounded-[12px] border border-white/[.06] bg-white/[.02] px-4 py-2.5 min-w-[180px]">
-                    <p className="font-mono text-[10px] uppercase tracking-[.12em] text-white/40">
+                  <div className="rounded-lg border border-white/[.06] bg-black/40 px-3 py-2 min-w-[150px]">
+                    <span className="block font-mono text-[9.5px] uppercase tracking-wider text-white/40">
                       {quota.tier === "pro" || quota.unlimited ? "Akses Kuota" : "Jadwal Reset"}
-                    </p>
-                    <p className="mt-1 font-mono text-[12px] font-semibold text-white">
+                    </span>
+                    <span className="mt-0.5 block font-mono text-xs font-medium text-white">
                       {quota.tier === "pro" || quota.unlimited ? (
                         <span className="text-[#74FA6A]">Tanpa batas generate</span>
                       ) : (
                         <>
                           {new Date(quota.resetAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}{" "}
-                          <span className="text-[10.5px] font-normal text-white/40">
+                          <span className="text-[10px] text-white/40">
                             ({new Date(quota.resetAt).toLocaleDateString("id-ID", { day: "numeric", month: "short" })})
                           </span>
                         </>
                       )}
-                    </p>
+                    </span>
                   </div>
                 </div>
               ) : (
-                <div className="flex items-center gap-2 text-[11.5px] text-white/40">
+                <div className="flex items-center gap-2 text-xs text-white/40">
                   <RefreshCw size={12} className="animate-spin" /> Memuat data kuota…
                 </div>
               )}
