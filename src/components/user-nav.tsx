@@ -109,7 +109,7 @@ export function UserNav() {
 
             <DropdownMenu.Item asChild>
               <Link
-                href="/settings"
+                href="/profile"
                 className="flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-[12.5px] text-white/80 outline-none transition hover:bg-white/[.07] hover:text-[#74FA6A]"
               >
                 <Settings size={14} className="text-white/40" />
