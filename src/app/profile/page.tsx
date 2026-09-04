@@ -439,54 +439,54 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            {/* Double-Bezel Metrics Row (Clean, Normal Sized Fonts) */}
-            <div className="mt-3.5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            {/* Double-Bezel Metrics Row (Clean, Compact Developer Sizing) */}
+            <div className="mt-3 grid grid-cols-1 gap-2.5 sm:grid-cols-3">
               {/* Stat 1 */}
-              <div className="rounded-2xl border border-white/[.06] bg-white/[.02] p-1.5">
-                <div className="rounded-xl border border-white/[.04] bg-[#0E1113] p-3.5">
-                  <div className="flex items-center justify-between text-[11px] font-mono text-white/40">
+              <div className="rounded-xl border border-white/[.06] bg-white/[.02] p-1">
+                <div className="rounded-lg border border-white/[.04] bg-[#0E1113] p-3">
+                  <div className="flex items-center justify-between text-[10.5px] font-mono text-white/40">
                     <span>KUOTA GENERATE</span>
-                    <Zap size={12} className="text-[#74FA6A]" />
+                    <Zap size={11} className="text-[#74FA6A]" />
                   </div>
-                  <div className="mt-2 flex items-baseline gap-1.5">
-                    <span className="text-lg font-semibold tracking-tight text-white">
+                  <div className="mt-1.5 flex items-baseline gap-1.5">
+                    <span className="text-sm font-semibold tracking-tight text-white">
                       {isPro ? "Unlimited" : `${quota?.remaining ?? 3} / 3`}
                     </span>
-                    {!isPro && <span className="text-[11px] text-white/40">tersisa</span>}
+                    {!isPro && <span className="text-[10.5px] text-white/40">tersisa</span>}
                   </div>
-                  <p className="mt-1 text-[11px] text-white/40">
+                  <p className="mt-0.5 text-[10.5px] text-white/40">
                     {isPro ? "Bebas buat plan tanpa limit" : "Reset rolling 24 jam"}
                   </p>
                 </div>
               </div>
 
               {/* Stat 2 */}
-              <div className="rounded-2xl border border-white/[.06] bg-white/[.02] p-1.5">
-                <div className="rounded-xl border border-white/[.04] bg-[#0E1113] p-3.5">
-                  <div className="flex items-center justify-between text-[11px] font-mono text-white/40">
+              <div className="rounded-xl border border-white/[.06] bg-white/[.02] p-1">
+                <div className="rounded-lg border border-white/[.04] bg-[#0E1113] p-3">
+                  <div className="flex items-center justify-between text-[10.5px] font-mono text-white/40">
                     <span>PROJECT TERSIMPAN</span>
-                    <FolderOpen size={12} className="text-white/40" />
+                    <FolderOpen size={11} className="text-white/40" />
                   </div>
-                  <div className="mt-2 flex items-baseline gap-1.5">
-                    <span className="text-lg font-semibold tracking-tight text-white">{plans.length}</span>
-                    <span className="text-[11px] text-[#74FA6A]">({donePlansCount} selesai)</span>
+                  <div className="mt-1.5 flex items-baseline gap-1.5">
+                    <span className="text-sm font-semibold tracking-tight text-white">{plans.length}</span>
+                    <span className="text-[10.5px] text-[#74FA6A]">({donePlansCount} selesai)</span>
                   </div>
-                  <p className="mt-1 text-[11px] text-white/40">Total arsip PRD aktif</p>
+                  <p className="mt-0.5 text-[10.5px] text-white/40">Total arsip PRD aktif</p>
                 </div>
               </div>
 
               {/* Stat 3 */}
-              <div className="rounded-2xl border border-white/[.06] bg-white/[.02] p-1.5">
-                <div className="rounded-xl border border-white/[.04] bg-[#0E1113] p-3.5">
-                  <div className="flex items-center justify-between text-[11px] font-mono text-white/40">
+              <div className="rounded-xl border border-white/[.06] bg-white/[.02] p-1">
+                <div className="rounded-lg border border-white/[.04] bg-[#0E1113] p-3">
+                  <div className="flex items-center justify-between text-[10.5px] font-mono text-white/40">
                     <span>PROGRESS TASK</span>
-                    <Activity size={12} className="text-white/40" />
+                    <Activity size={11} className="text-white/40" />
                   </div>
-                  <div className="mt-2 flex items-baseline gap-1.5">
-                    <span className="text-lg font-semibold tracking-tight text-white">{completionRate}%</span>
-                    <span className="text-[11px] text-white/40">({doneTasks}/{totalTasks} tuntas)</span>
+                  <div className="mt-1.5 flex items-baseline gap-1.5">
+                    <span className="text-sm font-semibold tracking-tight text-white">{completionRate}%</span>
+                    <span className="text-[10.5px] text-white/40">({doneTasks}/{totalTasks} tuntas)</span>
                   </div>
-                  <div className="mt-2 h-1 w-full rounded-full bg-white/[.06]">
+                  <div className="mt-1.5 h-1 w-full rounded-full bg-white/[.06]">
                     <div
                       className="h-full rounded-full bg-[#74FA6A]"
                       style={{ width: `${completionRate}%` }}
