@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Shell } from "@/components/brand";
 import {
   User,
   Shield,
@@ -104,7 +105,7 @@ type LlmCfgInfo = {
   }[];
 };
 
-type NavTab = "profile" | "plans" | "tokens" | "security" | "llm";
+type NavTab = "profile" | "plans" | "tokens" | "security" | "settings" | "llm";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -130,8 +131,13 @@ export default function ProfilePage() {
   const [copiedToken, setCopiedToken] = useState<string | null>(null);
 
   // Security / Pass state
-  const [showPass, setShowPass] = useState(false);
+  const [oldPass, setOldPass] = useState("");
   const [newPass, setNewPass] = useState("");
+  const [confirmPass, setConfirmPass] = useState("");
+  const [showOldPass, setShowOldPass] = useState(false);
+  const [showNewPass, setShowNewPass] = useState(false);
+  const [showConfirmPass, setShowConfirmPass] = useState(false);
+  const [passLoading, setPassLoading] = useState(false);
   const [passMsg, setPassMsg] = useState("");
   const [passMsgType, setPassMsgType] = useState<"error" | "success">("error");
 
@@ -295,25 +301,89 @@ export default function ProfilePage() {
     setEditingName(false);
   };
 
-  const handleChangePass = () => {
+  const handleChangePass = async () => {
     if (!user) return;
-    if (newPass.length < 6) {
-      setPassMsg("Password minimal 6 karakter.");
+    if (!oldPass) {
+      setPassMsg("Masukkan password lama.");
       setPassMsgType("error");
       return;
     }
-    const storedUsers = JSON.parse(localStorage.getItem("scratch_users") || "{}");
-    const userKey = user.email.toLowerCase();
-    if (storedUsers[userKey]) {
-      storedUsers[userKey].password = newPass;
-      localStorage.setItem("scratch_users", JSON.stringify(storedUsers));
-      setPassMsg("Password berhasil diperbarui.");
-      setPassMsgType("success");
-      setNewPass("");
-      setTimeout(() => setPassMsg(""), 3000);
-    } else {
-      setPassMsg("Akun tidak terdaftar pada sesi lokal.");
+    if (newPass.length < 6) {
+      setPassMsg("Password baru minimal 6 karakter.");
       setPassMsgType("error");
+      return;
+    }
+    if (newPass !== confirmPass) {
+      setPassMsg("Konfirmasi password baru tidak cocok.");
+      setPassMsgType("error");
+      return;
+    }
+
+    setPassLoading(true);
+    setPassMsg("");
+
+    try {
+      if (supabaseConfigured()) {
+        const supabase = createClient();
+        const { error: signInErr } = await supabase.auth.signInWithPassword({
+          email: user.email,
+          password: oldPass,
+        });
+
+        if (signInErr) {
+          setPassMsg("Password lama salah.");
+          setPassMsgType("error");
+          setPassLoading(false);
+          return;
+        }
+
+        const { error: updateErr } = await supabase.auth.updateUser({
+          password: newPass,
+        });
+
+        if (updateErr) {
+          setPassMsg(updateErr.message || "Gagal memperbarui password.");
+          setPassMsgType("error");
+          setPassLoading(false);
+          return;
+        }
+
+        setPassMsg("Password berhasil diperbarui!");
+        setPassMsgType("success");
+        setOldPass("");
+        setNewPass("");
+        setConfirmPass("");
+        setTimeout(() => setPassMsg(""), 3500);
+        setPassLoading(false);
+        return;
+      }
+
+      const storedUsers = JSON.parse(localStorage.getItem("scratch_users") || "{}");
+      const userKey = user.email.toLowerCase();
+      if (storedUsers[userKey]) {
+        if (storedUsers[userKey].password !== oldPass) {
+          setPassMsg("Password lama salah.");
+          setPassMsgType("error");
+          setPassLoading(false);
+          return;
+        }
+        storedUsers[userKey].password = newPass;
+        localStorage.setItem("scratch_users", JSON.stringify(storedUsers));
+        setPassMsg("Password berhasil diperbarui!");
+        setPassMsgType("success");
+        setOldPass("");
+        setNewPass("");
+        setConfirmPass("");
+        setTimeout(() => setPassMsg(""), 3500);
+      } else {
+        setPassMsg("Akun tidak terdaftar pada sesi lokal.");
+        setPassMsgType("error");
+      }
+    } catch {
+      setPassMsg("Terjadi kesalahan sistem saat memperbarui password.");
+      setPassMsgType("error");
+    } finally {
+      setPassLoading(false);
     }
   };
 
@@ -489,160 +559,146 @@ export default function ProfilePage() {
   const completionRate = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
 
   return (
-    <div className="flex min-h-screen bg-[#07090A] text-white">
-      {/* SIDEBAR NAVIGASI KIRI (Sesuai Referensi) */}
-      <aside className="w-64 shrink-0 border-r border-white/[.08] bg-[#050607] flex flex-col justify-between py-6 px-4">
-        <div>
-          {/* Brand / Logo Title */}
-          <div className="px-2 mb-6 flex items-center justify-between">
-            <Link href="/" className="text-xs font-semibold tracking-wider text-white hover:text-[#74FA6A] flex items-center gap-2">
-              <ArrowLeft size={14} className="text-white/40" />
-              <span>Kembali</span>
-            </Link>
-          </div>
-
-          {/* Seksi 1: CUSTOMIZE */}
-          <div className="mb-6">
-            <div className="flex items-center gap-2 px-2 pb-2">
-              <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-white/30">CUSTOMIZE</span>
-              <div className="h-px flex-1 bg-white/[.06]" />
-            </div>
-
-            <div className="space-y-1 mt-1">
-              <button
-                onClick={() => setActiveTab("profile")}
-                className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-xs font-medium transition ${
-                  activeTab === "profile"
-                    ? "bg-[#181B1D] text-[#74FA6A] font-semibold"
-                    : "text-white/60 hover:bg-white/[.04] hover:text-white"
-                }`}
-              >
-                <User size={16} className={activeTab === "profile" ? "text-[#74FA6A]" : "text-white/40"} />
-                <span>Profile</span>
-              </button>
-
-              <button
-                onClick={() => setActiveTab("plans")}
-                className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-xs font-medium transition ${
-                  activeTab === "plans"
-                    ? "bg-[#181B1D] text-[#74FA6A] font-semibold"
-                    : "text-white/60 hover:bg-white/[.04] hover:text-white"
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <FolderOpen size={16} className={activeTab === "plans" ? "text-[#74FA6A]" : "text-white/40"} />
-                  <span>Projects</span>
+    <Shell back="/" sidebar={false}>
+      {/* Centered wrapper for entire page */}
+      <div className="flex min-h-[calc(100vh-80px)] w-full items-center justify-center px-4 py-8 md:py-12">
+        {/* Full Single Card Dashboard, Centered */}
+        <div className="w-full max-w-5xl rounded-2xl border border-white/[.08] bg-[#0E1113] p-1.5 shadow-2xl shadow-black/80">
+          <div className="flex flex-col md:flex-row min-h-[620px] rounded-xl border border-white/[.04] bg-[#090C0E] overflow-hidden">
+            
+            {/* SIDEBAR NAVIGASI KIRI (Inside Card) */}
+            <aside className="w-full shrink-0 border-b border-white/[.06] bg-[#060809] p-5 md:w-56 md:border-b-0 md:border-r flex flex-col justify-between">
+              <div>
+                {/* Brand / Mini Info User */}
+                <div className="mb-6 flex items-center gap-2.5">
+                  <div className="flex size-8 items-center justify-center rounded-lg bg-[#74FA6A]/10 font-mono text-xs font-bold text-[#74FA6A] border border-[#74FA6A]/20">
+                    {initials}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="truncate text-xs font-semibold text-white leading-tight">{user.name}</p>
+                    <p className="truncate font-mono text-[10px] text-white/40">{isPro ? "Pro Member" : "Free Tier"}</p>
+                  </div>
                 </div>
-                <span className="font-mono text-[10px] text-white/30">{plans.length}</span>
-              </button>
 
-              <button
-                onClick={() => setActiveTab("security")}
-                className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-xs font-medium transition ${
-                  activeTab === "security"
-                    ? "bg-[#181B1D] text-[#74FA6A] font-semibold"
-                    : "text-white/60 hover:bg-white/[.04] hover:text-white"
-                }`}
-              >
-                <Shield size={16} className={activeTab === "security" ? "text-[#74FA6A]" : "text-white/40"} />
-                <span>Security</span>
-              </button>
+                {/* Seksi: CUSTOMIZE */}
+                <div className="mb-6">
+                  <div className="flex items-center gap-2 pb-2">
+                    <span className="font-mono text-[9.5px] font-bold uppercase tracking-wider text-white/30">CUSTOMIZE</span>
+                    <div className="h-px flex-1 bg-white/[.06]" />
+                  </div>
 
-              <Link
-                href="/pricing"
-                className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-xs font-medium text-white/60 hover:bg-white/[.04] hover:text-white transition"
-              >
-                <div className="flex items-center gap-3">
-                  <Crown size={16} className="text-white/40" />
-                  <span>Billing</span>
+                  <div className="space-y-1 mt-1">
+                    <button
+                      onClick={() => setActiveTab("profile")}
+                      className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left text-xs font-medium transition ${
+                        activeTab === "profile"
+                          ? "bg-[#181B1D] text-[#74FA6A] font-semibold"
+                          : "text-white/60 hover:bg-white/[.04] hover:text-white"
+                      }`}
+                    >
+                      <User size={15} className={activeTab === "profile" ? "text-[#74FA6A]" : "text-white/40"} />
+                      <span>Profile</span>
+                    </button>
+
+                    <button
+                      onClick={() => setActiveTab("plans")}
+                      className={`flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-left text-xs font-medium transition ${
+                        activeTab === "plans"
+                          ? "bg-[#181B1D] text-[#74FA6A] font-semibold"
+                          : "text-white/60 hover:bg-white/[.04] hover:text-white"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <FolderOpen size={15} className={activeTab === "plans" ? "text-[#74FA6A]" : "text-white/40"} />
+                        <span>Projects</span>
+                      </div>
+                      <span className="font-mono text-[10px] text-white/30">{plans.length}</span>
+                    </button>
+
+                    <button
+                      onClick={() => setActiveTab("security")}
+                      className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left text-xs font-medium transition ${
+                        activeTab === "security"
+                          ? "bg-[#181B1D] text-[#74FA6A] font-semibold"
+                          : "text-white/60 hover:bg-white/[.04] hover:text-white"
+                      }`}
+                    >
+                      <Shield size={15} className={activeTab === "security" ? "text-[#74FA6A]" : "text-white/40"} />
+                      <span>Security</span>
+                    </button>
+
+                    <Link
+                      href="/pricing"
+                      className="flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-left text-xs font-medium text-white/60 hover:bg-white/[.04] hover:text-white transition"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <Crown size={15} className="text-white/40" />
+                        <span>Billing</span>
+                      </div>
+                      <span className="font-mono text-[9px] uppercase px-1.5 py-0.2 rounded bg-[#74FA6A]/10 text-[#74FA6A]">
+                        {isPro ? "Pro" : "Free"}
+                      </span>
+                    </Link>
+
+                    {isAdmin && (
+                      <>
+                        <button
+                          onClick={() => setActiveTab("llm")}
+                          className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left text-xs font-medium transition ${
+                            activeTab === "llm"
+                              ? "bg-[#181B1D] text-[#74FA6A] font-semibold"
+                              : "text-white/60 hover:bg-white/[.04] hover:text-white"
+                          }`}
+                        >
+                          <Cpu size={15} className={activeTab === "llm" ? "text-[#74FA6A]" : "text-white/40"} />
+                          <span>LLM Engine</span>
+                        </button>
+
+                        <Link
+                          href="/admin/users"
+                          className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left text-xs font-medium text-white/60 hover:bg-white/[.04] hover:text-white transition"
+                        >
+                          <Shield size={15} className="text-white/40" />
+                          <span>Admin Setting</span>
+                        </Link>
+                      </>
+                    )}
+                  </div>
                 </div>
-                <span className="font-mono text-[9px] uppercase px-1.5 py-0.2 rounded bg-[#74FA6A]/10 text-[#74FA6A]">
-                  {isPro ? "Pro" : "Free"}
-                </span>
-              </Link>
-            </div>
-          </div>
+              </div>
 
-          {/* Seksi 2: TOOLS */}
-          <div className="mb-6">
-            <div className="flex items-center gap-2 px-2 pb-2">
-              <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-white/30">TOOLS</span>
-              <div className="h-px flex-1 bg-white/[.06]" />
-            </div>
+              {/* Footer Nav Kiri */}
+              <div className="border-t border-white/[.06] pt-3 space-y-0.5">
+                <button
+                  onClick={() => setActiveTab("settings")}
+                  className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left text-xs font-medium transition ${
+                    activeTab === "settings"
+                      ? "bg-[#181B1D] text-[#74FA6A] font-semibold"
+                      : "text-white/60 hover:bg-white/[.04] hover:text-white"
+                  }`}
+                >
+                  <Settings size={15} className={activeTab === "settings" ? "text-[#74FA6A]" : "text-white/40"} />
+                  <span>Settings</span>
+                </button>
+                <Link
+                  href="/docs"
+                  className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left text-xs font-medium text-white/60 hover:bg-white/[.04] hover:text-white transition"
+                >
+                  <ExternalLink size={15} className="text-white/40" />
+                  <span>Dokumentasi</span>
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left text-xs font-medium text-red-400/80 hover:bg-red-500/10 hover:text-red-400 transition"
+                >
+                  <LogOut size={15} />
+                  <span>Keluar</span>
+                </button>
+              </div>
+            </aside>
 
-            <div className="space-y-1 mt-1">
-              <button
-                onClick={() => setActiveTab("tokens")}
-                className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-xs font-medium transition ${
-                  activeTab === "tokens"
-                    ? "bg-[#181B1D] text-[#74FA6A] font-semibold"
-                    : "text-white/60 hover:bg-white/[.04] hover:text-white"
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <Terminal size={16} className={activeTab === "tokens" ? "text-[#74FA6A]" : "text-white/40"} />
-                  <span>CLI Tokens</span>
-                </div>
-                <span className="font-mono text-[10px] text-white/30">
-                  {tokens.filter((t) => !t.revoked).length}
-                </span>
-              </button>
-
-              {isAdmin && (
-                <>
-                  <button
-                    onClick={() => setActiveTab("llm")}
-                    className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-xs font-medium transition ${
-                      activeTab === "llm"
-                        ? "bg-[#181B1D] text-[#74FA6A] font-semibold"
-                        : "text-white/60 hover:bg-white/[.04] hover:text-white"
-                    }`}
-                  >
-                    <Cpu size={16} className={activeTab === "llm" ? "text-[#74FA6A]" : "text-white/40"} />
-                    <span>LLM Engine</span>
-                  </button>
-
-                  <Link
-                    href="/admin/users"
-                    className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-xs font-medium text-white/60 hover:bg-white/[.04] hover:text-white transition"
-                  >
-                    <Shield size={16} className="text-white/40" />
-                    <span>Admin Setting</span>
-                  </Link>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Footer Nav Kiri */}
-        <div className="border-t border-white/[.06] pt-4 space-y-1">
-          <button
-            onClick={() => setActiveTab("profile")}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-xs font-medium text-white/60 hover:bg-white/[.04] hover:text-white transition"
-          >
-            <Settings size={16} className="text-white/40" />
-            <span>Settings</span>
-          </button>
-          <Link
-            href="/docs"
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-xs font-medium text-white/60 hover:bg-white/[.04] hover:text-white transition"
-          >
-            <ExternalLink size={16} className="text-white/40" />
-            <span>Dokumentasi</span>
-          </Link>
-          <button
-            onClick={handleLogout}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-xs font-medium text-red-400/80 hover:bg-red-500/10 hover:text-red-400 transition"
-          >
-            <LogOut size={16} />
-            <span>Keluar</span>
-          </button>
-        </div>
-      </aside>
-
-      {/* PANEL KONTEN KANAN (Flat Borderless List Sesuai Referensi) */}
-      <main className="flex-1 p-8 md:p-12 overflow-y-auto max-w-4xl">
+            {/* PANEL KONTEN KANAN */}
+            <main className="flex-1 p-6 md:p-8 overflow-y-auto">
         
         {/* TAB 1: PROFILE */}
         {activeTab === "profile" && (
@@ -956,47 +1012,201 @@ export default function ProfilePage() {
 
         {/* TAB 4: SECURITY */}
         {activeTab === "security" && (
-          <div>
+          <div className="animate-in fade-in-50 duration-200">
             {/* Header Seksi */}
             <div className="pb-6 border-b border-white/[.08]">
               <h1 className="text-2xl font-bold tracking-tight text-white">Security</h1>
-              <p className="mt-1 text-xs text-white/50">Pengaturan kredensial keamanan akun Anda.</p>
+              <p className="mt-1 text-xs text-white/50">Pengaturan kredensial dan kata sandi akun Anda.</p>
             </div>
 
             <div className="py-8 max-w-sm space-y-4">
+              {/* Field 1: Current Password */}
               <div>
-                <label className="block text-xs font-medium text-white/70">Password Baru</label>
+                <label className="block text-xs font-medium text-white/70">Current Password</label>
                 <div className="relative mt-1.5">
                   <input
-                    type={showPass ? "text" : "password"}
-                    value={newPass}
-                    onChange={(e) => setNewPass(e.target.value)}
-                    placeholder="Minimal 6 karakter…"
-                    className="w-full rounded-md border border-white/10 bg-black/40 px-3 py-2 pr-9 text-xs text-white focus:border-[#74FA6A]/50 focus:outline-none"
+                    type={showOldPass ? "text" : "password"}
+                    value={oldPass}
+                    onChange={(e) => setOldPass(e.target.value)}
+                    placeholder="Masukkan password saat ini…"
+                    className="w-full rounded-md border border-white/10 bg-black/40 px-3 py-2 pr-9 text-xs text-white focus:border-[#74FA6A]/50 focus:outline-none transition-colors"
                   />
                   <button
                     type="button"
-                    onClick={() => setShowPass(!showPass)}
+                    onClick={() => setShowOldPass(!showOldPass)}
                     className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/30 hover:text-white"
                   >
-                    {showPass ? <EyeOff size={13} /> : <Eye size={13} />}
+                    {showOldPass ? <EyeOff size={13} /> : <Eye size={13} />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Field 2: New Password */}
+              <div>
+                <label className="block text-xs font-medium text-white/70">New Password</label>
+                <div className="relative mt-1.5">
+                  <input
+                    type={showNewPass ? "text" : "password"}
+                    value={newPass}
+                    onChange={(e) => setNewPass(e.target.value)}
+                    placeholder="Minimal 6 karakter…"
+                    className="w-full rounded-md border border-white/10 bg-black/40 px-3 py-2 pr-9 text-xs text-white focus:border-[#74FA6A]/50 focus:outline-none transition-colors"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPass(!showNewPass)}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/30 hover:text-white"
+                  >
+                    {showNewPass ? <EyeOff size={13} /> : <Eye size={13} />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Field 3: Confirm Password */}
+              <div>
+                <label className="block text-xs font-medium text-white/70">Confirm Password</label>
+                <div className="relative mt-1.5">
+                  <input
+                    type={showConfirmPass ? "text" : "password"}
+                    value={confirmPass}
+                    onChange={(e) => setConfirmPass(e.target.value)}
+                    placeholder="Ulangi password baru…"
+                    className="w-full rounded-md border border-white/10 bg-black/40 px-3 py-2 pr-9 text-xs text-white focus:border-[#74FA6A]/50 focus:outline-none transition-colors"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPass(!showConfirmPass)}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/30 hover:text-white"
+                  >
+                    {showConfirmPass ? <EyeOff size={13} /> : <Eye size={13} />}
                   </button>
                 </div>
               </div>
 
               {passMsg && (
-                <p className={`text-xs ${passMsgType === "success" ? "text-[#74FA6A]" : "text-red-400"}`}>
+                <div
+                  className={`rounded-md p-2.5 text-xs transition-all animate-in fade-in duration-200 ${
+                    passMsgType === "success"
+                      ? "bg-[#74FA6A]/10 text-[#74FA6A] border border-[#74FA6A]/30"
+                      : "bg-red-500/10 text-red-400 border border-red-500/30"
+                  }`}
+                >
                   {passMsg}
-                </p>
+                </div>
               )}
 
               <button
                 onClick={handleChangePass}
-                className="rounded-md bg-[#74FA6A] px-3.5 py-1.5 text-xs font-semibold text-black transition hover:bg-[#A8FF9B]"
+                disabled={passLoading}
+                className="flex items-center justify-center gap-1.5 rounded-md bg-[#74FA6A] px-4 py-2 text-xs font-semibold text-black transition hover:bg-[#A8FF9B] active:scale-[.98] disabled:opacity-50"
               >
-                Update Password
+                {passLoading ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
+                <span>{passLoading ? "Menyimpan…" : "Simpan Password"}</span>
               </button>
             </div>
+          </div>
+        )}
+
+        {/* TAB 5: SETTINGS */}
+        {activeTab === "settings" && (
+          <div className="animate-in fade-in-50 duration-200">
+            {/* Header Seksi */}
+            <div className="pb-6 border-b border-white/[.08] flex items-center justify-between gap-4">
+              <div>
+                <h1 className="text-2xl font-bold tracking-tight text-white">CLI Tokens</h1>
+                <p className="mt-1 text-xs text-white/50">Token otentikasi untuk agent CLI di terminal Anda.</p>
+              </div>
+              <button
+                onClick={createToken}
+                disabled={creatingToken}
+                className="flex items-center gap-1.5 rounded-md bg-[#74FA6A] px-3 py-1.5 text-xs font-semibold text-black transition hover:bg-[#A8FF9B]"
+              >
+                <Plus size={13} /> Buat Token
+              </button>
+            </div>
+
+            {newToken && (
+              <div className="my-6 rounded-lg border border-[#74FA6A]/30 bg-[#74FA6A]/[0.05] p-3">
+                <div className="flex items-center justify-between text-xs text-[#74FA6A] font-mono">
+                  <span>Token Baru Dibuat:</span>
+                  <button
+                    onClick={() => handleCopy(newToken, "new-token")}
+                    className="flex items-center gap-1 rounded bg-[#74FA6A] px-2 py-0.5 text-black font-bold"
+                  >
+                    {copiedToken === "new-token" ? <Check size={11} /> : <Copy size={11} />}
+                    {copiedToken === "new-token" ? "Tersalin" : "Salin"}
+                  </button>
+                </div>
+                <code className="mt-1 block break-all text-xs font-mono text-white/90 bg-black/60 p-2 rounded">
+                  {newToken}
+                </code>
+              </div>
+            )}
+
+            {/* Flat List Tokens */}
+            <div className="py-6 divide-y divide-white/[.06]">
+              {tokens.length === 0 ? (
+                <p className="py-8 text-center text-xs text-white/40">Belum ada CLI token.</p>
+              ) : (
+                tokens.map((t) => (
+                  <div key={t.hash} className="py-3.5 flex items-center justify-between gap-4">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-medium text-white">{t.label}</span>
+                        <span className={`rounded px-1.5 py-0.2 font-mono text-[9px] uppercase ${
+                          t.revoked ? "bg-red-500/10 text-red-400" : "bg-[#74FA6A]/10 text-[#74FA6A]"
+                        }`}>
+                          {t.revoked ? "Dicabut" : "Aktif"}
+                        </span>
+                      </div>
+                      <p className="font-mono text-[10px] text-white/30 mt-0.5">{t.hash.slice(0, 16)}…</p>
+                    </div>
+
+                    {!t.revoked && (
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleCopy(`scratch-agent login --token ${t.hash} --url ${origin || "https://www.scratchagent.web.id"}`, t.hash)}
+                          className="rounded border border-white/10 px-2.5 py-1 text-xs text-white/70 hover:text-white flex items-center gap-1"
+                        >
+                          {copiedToken === t.hash ? <Check size={11} className="text-[#74FA6A]" /> : <Copy size={11} />}
+                          <span>Salin Login</span>
+                        </button>
+                        <button
+                          onClick={() => revokeToken(t.hash)}
+                          className="p-1 text-white/30 hover:text-red-400"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Admin shortcut jika admin */}
+            {isAdmin && (
+              <div className="pt-6 mt-4 border-t border-white/[.06] flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-sm font-semibold text-white">Developer &amp; Engine Hub</h2>
+                  <p className="text-xs text-white/50 mt-0.5">Akses panel khusus pengelolaan user, keamanan sistem, dan model LLM.</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setActiveTab("llm")}
+                    className="rounded-md border border-[#74FA6A]/30 bg-[#74FA6A]/10 px-3 py-1.5 text-xs text-[#74FA6A] hover:bg-[#74FA6A]/20 transition"
+                  >
+                    Konfigurasi LLM
+                  </button>
+                  <Link
+                    href="/admin/users"
+                    className="rounded-md border border-white/10 px-3 py-1.5 text-xs text-white/80 hover:text-white transition"
+                  >
+                    Admin Users
+                  </Link>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -1104,41 +1314,44 @@ export default function ProfilePage() {
           </div>
         )}
 
-      </main>
-
-      {/* Modal Hapus */}
-      {planToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-          <div className="w-full max-w-sm rounded-xl border border-white/10 bg-[#121517] p-4">
-            <div className="flex items-center gap-2 text-red-400 text-xs font-semibold">
-              <AlertTriangle size={15} />
-              <span>Hapus Project?</span>
-            </div>
-            <p className="mt-1.5 text-xs text-white/60">
-              Project &quot;{planToDelete.title}&quot; akan dihapus permanen.
-            </p>
-            <div className="mt-4 flex items-center justify-end gap-2 text-xs">
-              <button onClick={() => setPlanToDelete(null)} className="px-2.5 py-1 text-white/60 hover:text-white">
-                Batal
-              </button>
-              <button
-                onClick={confirmDeletePlan}
-                disabled={deletingId !== null}
-                className="rounded bg-red-500 px-3 py-1 font-semibold text-white hover:bg-red-600"
-              >
-                {deletingId ? "Menghapus…" : "Hapus"}
-              </button>
-            </div>
+            </main>
           </div>
         </div>
-      )}
 
-      {/* Toast */}
-      {toast && (
-        <div className="fixed bottom-5 right-5 z-50 rounded border border-white/10 bg-[#121517] px-3.5 py-1.5 text-xs text-white shadow-xl">
-          {toast}
-        </div>
-      )}
-    </div>
+        {/* Modal Hapus */}
+        {planToDelete && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+            <div className="w-full max-w-sm rounded-xl border border-white/10 bg-[#121517] p-4">
+              <div className="flex items-center gap-2 text-red-400 text-xs font-semibold">
+                <AlertTriangle size={15} />
+                <span>Hapus Project?</span>
+              </div>
+              <p className="mt-1.5 text-xs text-white/60">
+                Project &quot;{planToDelete.title}&quot; akan dihapus permanen.
+              </p>
+              <div className="mt-4 flex items-center justify-end gap-2 text-xs">
+                <button onClick={() => setPlanToDelete(null)} className="px-2.5 py-1 text-white/60 hover:text-white">
+                  Batal
+                </button>
+                <button
+                  onClick={confirmDeletePlan}
+                  disabled={deletingId !== null}
+                  className="rounded bg-red-500 px-3 py-1 font-semibold text-white hover:bg-red-600"
+                >
+                  {deletingId ? "Menghapus…" : "Hapus"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Toast */}
+        {toast && (
+          <div className="fixed bottom-5 right-5 z-50 rounded border border-white/10 bg-[#121517] px-3.5 py-1.5 text-xs text-white shadow-xl">
+            {toast}
+          </div>
+        )}
+      </div>
+    </Shell>
   );
 }
