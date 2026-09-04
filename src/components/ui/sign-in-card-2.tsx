@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { useLang } from "@/lib/lang";
 import { createClient } from "@/lib/supabase/client";
 import { refreshCurrentUser, supabaseConfigured } from "@/lib/current-user";
+import { Turnstile } from "@marsidev/react-turnstile";
 
 function Input({ className, type, ...props }: React.ComponentProps<"input">) {
   return (
@@ -44,6 +45,7 @@ export function SignInCard2() {
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
 
   // Efek 3D card: rotasi mengikuti kursor, dibungkus useSpring supaya card
   // meluncur halus (tidak loncat di tiap mousemove). Tilt ±12 derajat, plus:
@@ -152,7 +154,10 @@ export function SignInCard2() {
         const { data, error: signUpError } = await supabase.auth.signUp({
           email,
           password,
-          options: { data: { full_name: cleanName } },
+          options: {
+            data: { full_name: cleanName },
+            captchaToken: captchaToken || undefined,
+          },
         });
         if (signUpError) {
           setError(signUpError.message);
@@ -505,6 +510,18 @@ export function SignInCard2() {
 
                 {(error || info) && (
                   <p className={`text-xs ${error ? "text-red-400" : "text-white/60"}`}>{error || info}</p>
+                )}
+
+                {/* Cloudflare Turnstile */}
+                {process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && (
+                  <div className="flex justify-center my-2">
+                    <Turnstile
+                      siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
+                      onSuccess={(token) => setCaptchaToken(token)}
+                      onError={() => setError(en ? "Captcha check failed. Refresh and try again." : "Verifikasi Captcha gagal. Coba muat ulang.")}
+                      options={{ theme: "dark", size: "compact" }}
+                    />
+                  </div>
                 )}
 
                 {/* Ingat saya & lupa password (mode masuk) */}
