@@ -8,6 +8,7 @@ import DottedDemo from "@/components/ui/dotted-demo";
 import { IPhone17ShopDemo } from "@/components/ui/iphone17-shop-demo";
 import { getCurrentUser, refreshCurrentUser } from "@/lib/current-user";
 import { LanguageToggle } from "@/components/lang-toggle";
+import { UserNav } from "@/components/user-nav";
 import { SupportedAiTools } from "@/components/supported-ai-tools";
 import { BorderBeamPanel } from "@/components/ui/border-beam-panel";
 import { TestimonialsSection } from "@/components/testimonials-section";
@@ -95,11 +96,7 @@ function Navbar() {
         </div>
         <div className="hidden items-center gap-6 md:flex">
           <LanguageToggle />
-          {loggedIn ? (
-            <Link href="/profile" className="font-mono text-[12px] tracking-[0.02em] text-white/80 transition-colors hover:text-[#74FA6A]">{t("nav", "profile", lang)}</Link>
-          ) : (
-            <Link href="/login" className="font-mono text-[12px] tracking-[0.02em] text-white/80 transition-colors hover:text-[#74FA6A]">{t("nav", "login", lang)}</Link>
-          )}
+          <UserNav />
           <Link href={loggedIn ? "/new" : "/login"} className="grid size-8 place-items-center rounded-full bg-[#74FA6A] text-black transition hover:scale-105 hover:bg-[#A8FF9B]" aria-label="Mulai sekarang"><ArrowUpRight size={16} /></Link>
         </div>
         <button className="grid size-8 place-items-center text-white md:hidden" onClick={() => setMobileNav((v) => !v)} aria-label="Navigasi"><span className="relative block h-3.5 w-5"><span className={`absolute left-0 top-0 block h-px w-full bg-white transition-all duration-300 ${mobileNav ? "translate-y-[7px] rotate-45" : ""}`} /><span className={`absolute left-0 top-[7px] block h-px w-full bg-white transition-opacity duration-200 ${mobileNav ? "opacity-0" : "opacity-100"}`} /><span className={`absolute left-0 top-[14px] block h-px w-full bg-white transition-all duration-300 ${mobileNav ? "translate-y-[-7px] -rotate-45" : ""}`} /></span></button>
