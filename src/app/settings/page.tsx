@@ -129,6 +129,7 @@ export default function Settings() {
   const [tokenCopied, setTokenCopied] = useState(false);
   const [toast, setToast] = useState<{ text: string; ok: boolean } | null>(null);
   const [authed, setAuthed] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [llmCfg, setLlmCfg] = useState<LlmCfgInfo | null>(null);
   const [providers, setProviders] = useState<ProviderForm[]>([]);
   const [showApiKeys, setShowApiKeys] = useState<Record<number, boolean>>({});
@@ -147,6 +148,7 @@ export default function Settings() {
         router.push("/login");
         return;
       }
+      setIsAdmin(u.role === "admin" || u.email === "teguhends@gmail.com" || u.email?.startsWith("admin"));
       setAuthed(true);
     });
     return () => {
@@ -358,7 +360,7 @@ export default function Settings() {
   const visible = reduce ? {} : { opacity: 1, y: 0 };
 
   return (
-    <Shell back="/admin/users" sidebar={false}>
+    <Shell back={isAdmin ? "/admin/users" : "/profile"} sidebar={false}>
       <div className="mx-auto w-full max-w-[1140px] px-5 pb-16 pt-12 md:pt-16">
         {/* Top Header */}
         <motion.section
@@ -370,35 +372,43 @@ export default function Settings() {
           <div>
             <div className="flex items-center gap-2">
               <span className="font-mono text-[10.5px] font-bold uppercase tracking-[.18em] text-[#74FA6A]">
-                developer hub
+                {isAdmin ? "developer hub" : "account hub"}
               </span>
               <span className="text-white/20">•</span>
-              <span className="font-mono text-[10.5px] font-medium text-white/40">system configuration</span>
+              <span className="font-mono text-[10.5px] font-medium text-white/40">
+                {isAdmin ? "system configuration" : "developer settings"}
+              </span>
             </div>
             <div
               className="mt-1 font-bold tracking-tight text-white"
               style={{ fontSize: "18px", lineHeight: "1.3" }}
             >
-              Konfigurasi &amp; LLM Settings
+              {isAdmin ? "Konfigurasi & LLM Settings" : "Pengaturan Integrasi & CLI"}
             </div>
             <p className="mt-1 text-[12.5px] text-white/50">
-              Kelola engine LLM, multi-model failover, API key, token agent CLI, dan kapasitas kuota generate.
+              {isAdmin
+                ? "Kelola engine LLM, multi-model failover, API key, token agent CLI, dan kapasitas kuota generate."
+                : "Kelola token agent CLI dan pantau kapasitas kuota generate kamu."}
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <Link
-              href="/admin/users"
-              className="inline-flex items-center gap-1.5 rounded-full border border-white/15 px-3.5 py-1.5 text-[12px] font-semibold text-white transition hover:border-[#74FA6A]/50 hover:text-[#74FA6A]"
-            >
-              <ArrowLeft size={13} /> Kelola Akun
-            </Link>
-            <Link
-              href="/admin/security"
-              className="inline-flex items-center gap-1.5 rounded-full border border-white/15 px-3.5 py-1.5 text-[12px] font-semibold text-white transition hover:border-[#74FA6A]/50 hover:text-[#74FA6A]"
-            >
-              <ShieldCheck size={13} /> Pusat Keamanan
-            </Link>
+            {isAdmin && (
+              <>
+                <Link
+                  href="/admin/users"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-white/15 px-3.5 py-1.5 text-[12px] font-semibold text-white transition hover:border-[#74FA6A]/50 hover:text-[#74FA6A]"
+                >
+                  <ArrowLeft size={13} /> Kelola Akun
+                </Link>
+                <Link
+                  href="/admin/security"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-white/15 px-3.5 py-1.5 text-[12px] font-semibold text-white transition hover:border-[#74FA6A]/50 hover:text-[#74FA6A]"
+                >
+                  <ShieldCheck size={13} /> Pusat Keamanan
+                </Link>
+              </>
+            )}
             <Link
               href="/profile"
               className="inline-flex items-center gap-1.5 rounded-full bg-[#74FA6A] px-3.5 py-1.5 text-[12px] font-semibold text-black transition hover:bg-[#A8FF9B]"
@@ -408,11 +418,11 @@ export default function Settings() {
           </div>
         </motion.section>
 
-        {/* 2-Column Balanced Equal Grid Layout (50% - 50%) */}
-        <div className="mt-5 grid gap-5 lg:grid-cols-2 items-stretch">
-          {/* LEFT COLUMN: Engine AI & LLM Provider */}
-          <div className="flex flex-col h-full">
-            {llmCfg ? (
+        {/* Layout Grid */}
+        <div className={`mt-5 grid gap-5 items-stretch ${isAdmin && llmCfg ? "lg:grid-cols-2" : "grid-cols-1"}`}>
+          {/* LEFT COLUMN: Engine AI & LLM Provider (Hanya untuk Admin) */}
+          {isAdmin && llmCfg && (
+            <div className="flex flex-col h-full">
               <GlassCard delay={0.05} className="flex-1 flex flex-col justify-between">
                 <div>
                   <div className="flex flex-wrap items-center justify-between gap-3">
@@ -564,20 +574,8 @@ export default function Settings() {
                   </button>
                 </div>
               </GlassCard>
-            ) : (
-              <GlassCard delay={0.05} className="flex-1 flex items-center">
-                <div className="flex items-center gap-3">
-                  <Cpu size={18} className="text-[#74FA6A]" />
-                  <div>
-                    <p className="font-semibold text-white text-[14px]">LLM Configuration (Admin Only)</p>
-                    <p className="text-[12px] text-white/40">
-                      Konfigurasi runtime LLM hanya dapat diakses oleh akun admin terdaftar.
-                    </p>
-                  </div>
-                </div>
-              </GlassCard>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* RIGHT COLUMN: Integrasi CLI & Token Hub (Same Height) */}
           <div className="flex flex-col h-full">
