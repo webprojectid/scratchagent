@@ -514,12 +514,12 @@ export function SignInCard2() {
 
                 {/* Cloudflare Turnstile */}
                 {process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && (
-                  <div className="flex justify-center my-2">
+                  <div className="flex justify-center my-2 w-full overflow-hidden">
                     <Turnstile
                       siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
                       onSuccess={(token) => setCaptchaToken(token)}
                       onError={() => setError(en ? "Captcha check failed. Refresh and try again." : "Verifikasi Captcha gagal. Coba muat ulang.")}
-                      options={{ theme: "dark", size: "compact" }}
+                      options={{ theme: "dark", size: "normal" }}
                     />
                   </div>
                 )}
