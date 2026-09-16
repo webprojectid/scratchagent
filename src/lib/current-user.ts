@@ -18,7 +18,9 @@ export function supabaseConfigured(): boolean {
 function isAdmin(email: string | null | undefined): boolean {
   if (!email) return false;
   const lower = email.toLowerCase();
-  if (lower.startsWith("admin@") || lower === "admin") return true;
+  // Hanya allowlist eksplisit — konsisten dengan isAdminEmail() di lib/billing.
+  // (Pola "admin@*" dihapus: keputusan admin final tetap di server; ini cuma
+  // untuk tampilan UI.)
   const list = ["teguhends@gmail.com"];
   return list.includes(lower);
 }

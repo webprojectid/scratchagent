@@ -90,20 +90,14 @@ export function legacyDevMode(): boolean {
 export async function getRequestUser(legacyUserId?: string | null): Promise<AuthUser | null> {
   const user = await getAuthUser();
   if (user) return user;
-  if (legacyUserId) {
-    if (isMemoryMode()) {
-      const email = legacyUserId.includes("@") ? legacyUserId : null;
-      return { userId: legacyUserId, email, via: "legacy-dev" };
-    }
-    // DB mode: jika ada userId/email di non-production, resolve akun dari database
-    try {
-      if (legacyUserId.includes("@")) {
-        const uid = await userIdByEmail(legacyUserId);
-        return { userId: uid, email: legacyUserId, via: "legacy-dev" };
-      }
-      const email = await emailById(legacyUserId);
-      return { userId: legacyUserId, email, via: "legacy-dev" };
-    } catch {}
+  // Identitas legacy (userId/email dari client, mis. ?userId=...) HANYA boleh
+  // dipakai di mode dev polos (legacyDevMode): bukan production, memory mode,
+  // tanpa Supabase. Tanpa guard ini, di production siapa pun bisa menyamar
+  // sebagai user/admin lain cukup dengan mengirim ?userId=admin@evil.tld,
+  // karena nilai dari client dipercaya mentah-mentah sebagai identitas.
+  if (legacyUserId && legacyDevMode()) {
+    const email = legacyUserId.includes("@") ? legacyUserId : null;
+    return { userId: legacyUserId, email, via: "legacy-dev" };
   }
   return null;
 }
