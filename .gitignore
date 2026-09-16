@@ -59,3 +59,6 @@ nul
 
 # script simulasi lokal (perlu password DB)
 scripts/simulasi-production.ts
+
+# security audit notes (local only - jangan dipublish ke repo publik)
+SECURITY_PATCHES.md

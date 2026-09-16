@@ -37,7 +37,10 @@ function cleanup(now: number): void {
 export function isAdminIp(ip: string | null | undefined): boolean {
   if (!ip) return false;
   const stripped = ip.trim().replace(/^::ffff:/i, "");
-  if (isPrivateIp(stripped)) return true;
+  // JANGAN perlakukan semua IP privat/loopback sebagai admin: header
+  // x-forwarded-for bisa dipalsukan client (mis. "127.0.0.1" atau "10.x"),
+  // sehingga penyerang bisa melewati rate limit & blokir IP. Hanya IP yang
+  // terdaftar eksplisit di env ADMIN_IPS yang dipercaya.
   const fromEnv = (process.env.ADMIN_IPS ?? "")
     .split(",")
     .map((s) => s.trim().replace(/^::ffff:/i, ""))
@@ -48,7 +51,8 @@ export function isAdminIp(ip: string | null | undefined): boolean {
 export function isWhitelistedAdmin(key: string): boolean {
   if (key.startsWith("u:")) {
     const identifier = key.slice(2).toLowerCase();
-    if (identifier.startsWith("admin@") || identifier === "admin") return true;
+    // Hanya allowlist eksplisit; jangan terima pattern "admin@*" (bisa dipalsukan
+    // lewat ?userId=admin@evil.tld untuk lolos dari rate limiting).
     const adminEmails = (process.env.ADMIN_EMAILS ?? "")
       .split(",")
       .map((s) => s.trim().toLowerCase())

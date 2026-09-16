@@ -118,20 +118,16 @@ export function SignInCard2() {
     setInfo("");
     setIsLoading(true);
     try {
-      // Jalan pintas admin dev (fallback lokal, di luar Supabase).
-      if (mode === "signin" && email === "admin@scratchagent.com" && password === "scratchagent2024") {
-        localStorage.setItem("scratch_user", JSON.stringify({ email, name: "Admin", role: "admin" }));
-        refreshCurrentUser();
-        router.push("/new");
-        return;
-      }
-
       // Jalur utama: Supabase Auth (sama dengan Google/GitHub OAuth).
       if (supabaseConfigured()) {
         const supabase = createClient();
 
         if (mode === "signin") {
-          const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+          const { error: signInError } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+            options: { captchaToken: captchaToken || undefined },
+          });
           if (signInError) {
             setError(en ? "Wrong email or password." : "Email atau password salah.");
             return;
