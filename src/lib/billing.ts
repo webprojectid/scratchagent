@@ -113,7 +113,9 @@ export function adminEmails(): string[] {
 export function isAdminEmail(email: string | null | undefined): boolean {
   if (!email) return false;
   const lower = email.toLowerCase();
-  if (lower.startsWith("admin@") || lower === "admin") return true;
+  // Hanya allowlist eksplisit (env ADMIN_EMAILS + bawaan) yang dianggap admin.
+  // Pattern "admin@*" sebelumnya membuat SIAPA PUN bisa jadi admin hanya dengan
+  // memakai email berawalan admin@ (mis. admin@evil.tld) -> privilege escalation.
   return adminEmails().includes(lower);
 }
 
