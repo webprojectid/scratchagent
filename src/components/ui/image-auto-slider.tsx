@@ -3,7 +3,7 @@
 const cards = [
   { image: "/slider/Brief masuk, task graph keluar.jpg", title: "Brief masuk, task graph keluar", copy: "Ubah ide mentah menjadi rencana kerja yang bisa langsung dieksekusi." },
   { image: "/slider/Agent paham.jpg", title: "Agent paham konteks", copy: "PRD, dependensi, dan checkpoint tetap terbaca di setiap langkah." },
-  { image: "/slider/Frontend dulu, backend menyusul.jpg", title: "Frontend dulu. Backend menyusul.", copy: "Urutan kerja deterministik. Tidak ada task yang lompat antrean." },
+  { image: "/slider/Frontend dulu, backend menyusul.jpg", title: "Frontend dulu. Backend menyusul.", copy: "Urutan kerja deterministik. Tidak ada task yang lompat queue." },
   { image: "/slider/Satu task per siklus.jpg", title: "Satu task per siklus", copy: "Agent bergerak fokus dengan status, retry, dan hasil yang jelas." },
   { image: "/slider/Progress yang terlihat.jpg", title: "Progress yang terlihat", copy: "Pantau misi berjalan tanpa kehilangan konteks di tengah jalan." },
   { image: "/slider/Ship dengan percaya diri.jpg", title: "Ship dengan percaya diri", copy: "Dari brief sampai selesai, semua langkah punya jejak." },

@@ -23,8 +23,8 @@ export async function GET() {
     createdAt: new Date().toISOString(),
     features: [
       {
-        slug: "autentikasi",
-        title: "Autentikasi",
+        slug: "auth",
+        title: "Auth",
         icon: "shield",
         description: "Login dan register.",
         tujuan: "Pengguna bisa masuk.",

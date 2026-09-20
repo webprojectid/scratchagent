@@ -54,9 +54,9 @@ export function docsCopy(lang: Lang) {
           { t: "Safety mechanism", d: "If a task fails, the plan is blocked and the agent stops and reports. At a checkpoint, the agent waits for your verification before continuing." },
         ]
       : [
-          { t: "Cara mendapatkannya", d: "Buka plan yang sudah ready, klik tombol Mulai implementasi, lalu salin prompt yang muncul. Token aksesmu sudah termasuk di dalamnya." },
+          { t: "Cara mendapatkannya", d: "Buka plan yang sudah ready, klik tombol Start implementation, lalu copy prompt yang muncul. Token aksesmu sudah termasuk di dalamnya." },
           { t: "Isi prompt-nya", d: "Perintah untuk terhubung ke plan, membaca PRD, lalu loop: ambil task berikutnya \u2192 kerjakan \u2192 tandai selesai. Urutan dan dependensi diatur server." },
-          { t: "Agent yang didukung", d: "OpenCode, Claude Code, Cursor, Codex, dan agent lain yang bisa menerima instruksi teks. Tempel prompt-nya, biarkan agent bekerja." },
+          { t: "Agent yang didukung", d: "OpenCode, Claude Code, Cursor, Codex, dan agent lain yang bisa menerima instruksi teks. Paste prompt-nya, biarkan agent bekerja." },
           { t: "Mekanisme aman", d: "Jika task gagal, plan terblokir dan agent berhenti lalu melapor. Saat checkpoint, agent menunggu verifikasi darimu sebelum lanjut." },
         ],
 
@@ -92,11 +92,11 @@ export function docsCopy(lang: Lang) {
       : [
           {
             q: "Apakah Scratch Agent berbayar?",
-            a: "Ada paket Free yang bisa dipakai tanpa bayar: 3 generate plan per 24 jam, tanpa kartu kredit. Kalau butuh lebih, tersedia paket Pro dengan generate unlimited, antrean prioritas, premium AI model, dan fitur kerja profesional. Perbandingan lengkapnya ada di halaman Pricing.",
+            a: "Ada paket Free yang bisa dipakai tanpa bayar: 3 generate plan per 24 jam, tanpa kartu kredit. Kalau butuh lebih, tersedia paket Pro dengan generate unlimited, priority queue, premium AI model, dan fitur kerja profesional. Perbandingan lengkapnya ada di halaman Pricing.",
           },
           {
             q: "AI agent apa saja yang didukung?",
-            a: "OpenCode, Claude Code, Cursor, Codex, dan agent lain yang bisa menerima instruksi teks. Cara paling mudah: salin prompt dari tombol Mulai implementasi di halaman plan, tempel ke agent kamu, sisanya agent yang jalankan.",
+            a: "OpenCode, Claude Code, Cursor, Codex, dan agent lain yang bisa menerima instruksi teks. Cara paling mudah: copy prompt dari tombol Start implementation di halaman plan, paste ke agent kamu, sisanya agent yang jalankan.",
           },
           {
             q: "Bagaimana cara mendapatkan token akses?",
@@ -108,7 +108,7 @@ export function docsCopy(lang: Lang) {
           },
           {
             q: "Apakah perlu setup yang rumit?",
-            a: "Tidak. Cukup buat plan dari brief, salin prompt, dan tempel ke agent kamu. Tidak ada konfigurasi tambahan. Semuanya berjalan dari satu prompt itu.",
+            a: "Tidak. Cukup buat plan dari brief, copy prompt, dan paste ke agent kamu. Tidak ada konfigurasi tambahan. Semuanya berjalan dari satu prompt itu.",
           },
           {
             q: "Di mana data plan saya disimpan?",
@@ -144,7 +144,7 @@ export function docsCopy(lang: Lang) {
         ]
       : [
           { num: "1", title: "Buat plan dari brief", copy: "Login, buka halaman New Project, tulis brief singkat. Contoh: aplikasi kasir untuk kedai kopi. AI menyusun struktur, PRD, dan task sampai status plan ready." },
-          { num: "2", title: "Salin prompt, tempel ke agent", copy: "Klik Mulai implementasi di halaman plan, salin prompt yang muncul, tempel ke AI agent kamu. Agent terhubung ke plan, membaca PRD, lalu bekerja otomatis." },
+          { num: "2", title: "Copy prompt, paste ke agent", copy: "Klik Start implementation di halaman plan, copy prompt yang muncul, paste ke AI agent kamu. Agent terhubung ke plan, membaca PRD, lalu bekerja otomatis." },
           { num: "3", title: "Pantau progress live", copy: "Task yang sedang dikerjakan tampil dengan spinner, yang selesai dicoret, progress bar bergerak real time. Kalau ada task gagal atau checkpoint, agent berhenti dan menunggu keputusanmu." },
         ],
 
@@ -158,12 +158,12 @@ export function docsCopy(lang: Lang) {
 
     // Visuals: mock prompt
     mockMissionPrompt: en ? "Mission prompt" : "Prompt misi",
-    mockStartImpl: en ? "Start implementation" : "Mulai implementasi",
+    mockStartImpl: "Start implementation",
     mockPlanReady: en ? "✓ plan ready: 3 phases, 28 tasks" : "✓ plan siap: 3 fase, 28 task",
     mockTokenNote: en ? "› token rv_\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022 already included" : "› token rv_\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022 sudah termasuk",
     mockPasteNote: en
       ? "Paste into OpenCode, Claude Code, or Cursor. The agent reads the PRD and then works through the tasks one by one."
-      : "Tempel ke OpenCode, Claude Code, atau Cursor. Agent membaca PRD lalu mengerjakan task satu per satu.",
+      : "Paste ke OpenCode, Claude Code, atau Cursor. Agent membaca PRD lalu mengerjakan task satu per satu.",
 
     // Visuals: mock progress
     mockProgressTitle: en ? "Live progress" : "Progress live",

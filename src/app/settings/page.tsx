@@ -585,7 +585,7 @@ export default function Settings() {
                         className="inline-flex items-center gap-1 rounded bg-[#74FA6A] px-2 py-0.5 font-mono text-[10px] font-semibold text-black hover:bg-[#A8FF9B]"
                       >
                         {tokenCopied ? <Check size={10} /> : <Copy size={10} />}
-                        {tokenCopied ? "Tersalin" : "Salin"}
+                        {tokenCopied ? "Copied" : "Copy"}
                       </button>
                     </div>
                     <code className="mt-1 block break-all rounded bg-black/50 p-1.5 font-mono text-[10.5px] text-white/90">
@@ -634,7 +634,7 @@ export default function Settings() {
                                 <button
                                   onClick={() => handleCopy(`scratch-agent login --token ${t.hash} --url ${origin || "https://www.scratchagent.web.id"}`)}
                                   className="rounded p-1 text-white/40 transition hover:bg-white/10 hover:text-white"
-                                  title="Salin scratch-agent login"
+                                  title="Copy scratch-agent login"
                                 >
                                   {copiedHash === `scratch-agent login --token ${t.hash} --url ${origin || "https://www.scratchagent.web.id"}` ? (
                                     <Check size={12} className="text-[#74FA6A]" />

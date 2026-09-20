@@ -34,7 +34,7 @@ export function pricingCopy(lang: Lang) {
       { label: en ? "Sub-features per phase" : "Sub-fitur per fase", free: "3-5", pro: "12-20" },
       { label: en ? "Tasks per phase" : "Task per fase", free: "8-12", pro: "15-25" },
       { label: "Premium AI model", free: true, pro: true },
-      { label: en ? "Priority queue" : "Antrean prioritas", free: false, pro: true },
+      { label: "Priority queue", free: false, pro: true },
       { label: en ? "Edit and delete plan structure" : "Edit dan delete struktur plan", free: false, pro: true },
       { label: en ? "Add ideas via chat" : "Tambah ide via kolom chat", free: false, pro: true },
       { label: en ? "Private plans in the cloud" : "Plan privat di cloud", free: en ? "Forever" : "Selamanya", pro: en ? "Forever" : "Selamanya" },
