@@ -1050,11 +1050,11 @@ function KriptoSendSelect() {
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.05 }} className="mt-1.5 flex items-center rounded-lg bg-[#F5F5F5] px-2 py-1.5">
         <span className="text-[8px] font-medium text-[#AAA]">Ke</span>
         <span className="ml-1 flex-1 text-[8px] text-[#BBB]">ENS atau Alamat</span>
-        <span className="rounded-md bg-[#111] px-1.5 py-[2px] text-[7px] font-semibold text-white">Tempel</span>
+        <span className="rounded-md bg-[#111] px-1.5 py-[2px] text-[7px] font-semibold text-white">Paste</span>
       </motion.div>
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }} className="mt-1.5 flex items-center gap-1.5 rounded-lg bg-[#F5F5F5] px-2 py-1.5">
         <QrCode size={14} className="text-[#555]" />
-        <div><p className="text-[8.5px] font-semibold text-[#111]">Pindai Kode QR</p><p className="text-[7px] text-[#999]">Ketuk untuk memindai alamat</p></div>
+        <div><p className="text-[8.5px] font-semibold text-[#111]">Scan QR Code</p><p className="text-[7px] text-[#999]">Ketuk untuk scan alamat</p></div>
       </motion.div>
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3, delay: 0.15 }} className="flex items-center gap-1 pt-1.5"><Clock size={9} className="text-[#888]" /><span className="text-[8px] font-semibold text-[#888]">Terbaru</span></motion.div>
       <KriptoContact icon={<Star size={13} className="text-[#C9A227]" />} name="Stash" sub="1 Transaksi Sebelumnya" bg="#E8E8E8" delay={0.2} />

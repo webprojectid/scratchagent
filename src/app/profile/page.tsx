@@ -938,7 +938,7 @@ export default function ProfilePage() {
             <div className="pb-6 border-b border-white/[.08] flex items-center justify-between gap-4">
               <div>
                 <h1 className="text-2xl font-bold tracking-tight text-white">CLI Tokens</h1>
-                <p className="mt-1 text-xs text-white/50">Token otentikasi untuk agent CLI di terminal Anda.</p>
+                <p className="mt-1 text-xs text-white/50">Token auth untuk agent CLI di terminal Anda.</p>
               </div>
               <button
                 onClick={createToken}
@@ -958,7 +958,7 @@ export default function ProfilePage() {
                     className="flex items-center gap-1 rounded bg-[#74FA6A] px-2 py-0.5 text-black font-bold"
                   >
                     {copiedToken === "new-token" ? <Check size={11} /> : <Copy size={11} />}
-                    {copiedToken === "new-token" ? "Tersalin" : "Salin"}
+                    {copiedToken === "new-token" ? "Copied" : "Copy"}
                   </button>
                 </div>
                 <code className="mt-1 block break-all text-xs font-mono text-white/90 bg-black/60 p-2 rounded">
@@ -993,7 +993,7 @@ export default function ProfilePage() {
                           className="rounded border border-white/10 px-2.5 py-1 text-xs text-white/70 hover:text-white flex items-center gap-1"
                         >
                           {copiedToken === t.hash ? <Check size={11} className="text-[#74FA6A]" /> : <Copy size={11} />}
-                          <span>Salin Login</span>
+                          <span>Copy Login</span>
                         </button>
                         <button
                           onClick={() => revokeToken(t.hash)}
@@ -1016,7 +1016,7 @@ export default function ProfilePage() {
             {/* Header Seksi */}
             <div className="pb-6 border-b border-white/[.08]">
               <h1 className="text-2xl font-bold tracking-tight text-white">Security</h1>
-              <p className="mt-1 text-xs text-white/50">Pengaturan kredensial dan kata sandi akun Anda.</p>
+              <p className="mt-1 text-xs text-white/50">Pengaturan credentials dan password akun Anda.</p>
             </div>
 
             <div className="py-8 max-w-sm space-y-4">
@@ -1114,7 +1114,7 @@ export default function ProfilePage() {
             <div className="pb-6 border-b border-white/[.08] flex items-center justify-between gap-4">
               <div>
                 <h1 className="text-2xl font-bold tracking-tight text-white">CLI Tokens</h1>
-                <p className="mt-1 text-xs text-white/50">Token otentikasi untuk agent CLI di terminal Anda.</p>
+                <p className="mt-1 text-xs text-white/50">Token auth untuk agent CLI di terminal Anda.</p>
               </div>
               <button
                 onClick={createToken}
@@ -1134,7 +1134,7 @@ export default function ProfilePage() {
                     className="flex items-center gap-1 rounded bg-[#74FA6A] px-2 py-0.5 text-black font-bold"
                   >
                     {copiedToken === "new-token" ? <Check size={11} /> : <Copy size={11} />}
-                    {copiedToken === "new-token" ? "Tersalin" : "Salin"}
+                    {copiedToken === "new-token" ? "Copied" : "Copy"}
                   </button>
                 </div>
                 <code className="mt-1 block break-all text-xs font-mono text-white/90 bg-black/60 p-2 rounded">
@@ -1169,7 +1169,7 @@ export default function ProfilePage() {
                           className="rounded border border-white/10 px-2.5 py-1 text-xs text-white/70 hover:text-white flex items-center gap-1"
                         >
                           {copiedToken === t.hash ? <Check size={11} className="text-[#74FA6A]" /> : <Copy size={11} />}
-                          <span>Salin Login</span>
+                          <span>Copy Login</span>
                         </button>
                         <button
                           onClick={() => revokeToken(t.hash)}
