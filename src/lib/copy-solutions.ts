@@ -5,10 +5,10 @@ export function solutionsCopy(lang: Lang) {
   const en = lang === "en";
   return {
     heroEyebrow: "solutions",
-    heroTitle: en ? "One workflow, three ways to build." : "Satu alur kerja, tiga cara membangun.",
+    heroTitle: en ? "One workflow, three ways to build." : "Satu workflow, tiga cara membangun.",
     heroSub: en
       ? "Scratch Agent turns a brief into a complete plan: structure, PRD, and ordered tasks. The only thing that changes is how you use it. Pick your profile and follow the flow from start to result."
-      : "Scratch Agent mengubah brief menjadi plan lengkap: struktur, PRD, dan task terurut. Yang berbeda cuma cara kamu memakainya. Pilih profil kamu dan lihat alurnya dari awal sampai hasil.",
+      : "Scratch Agent mengubah brief menjadi plan lengkap: struktur, PRD, dan task terurut. Yang berbeda cuma cara kamu memakainya. Pilih profil kamu dan ikuti flow dari awal sampai hasil.",
     personas: [
       { id: "solo-dev", label: "Solo dev" },
       { id: "freelancer", label: en ? "Freelancer / agency" : "Freelancer / agency" },
@@ -115,7 +115,7 @@ export function solutionsCopy(lang: Lang) {
           "task failed? agent stops and reports, never guesses",
         ]
       : [
-          "salin prompt misi dari plan kamu, tempel ke agent favoritmu",
+          "copy mission prompt dari plan kamu, paste ke agent favoritmu",
           "agent terhubung ke plan, membaca PRD, paham konteks penuh",
           "ambil task #3 \u201CAuth: form login\u201D",
           "kerjakan, laporkan hasil",

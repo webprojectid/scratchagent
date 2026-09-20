@@ -14,7 +14,7 @@ export async function GET() {
     title: "Simulasi Produk Demo",
     brief: "Aplikasi demo untuk memverifikasi UI plan dashboard tanpa menunggu LLM.",
     stack: ["Next.js", "Tailwind CSS", "PostgreSQL"],
-    asumsi: ["Demo hanya untuk verifikasi UI", "Tidak perlu autentikasi"],
+    asumsi: ["Demo hanya untuk verifikasi UI", "Tidak perlu auth"],
     requirements: { fungsional: ["Login pengguna", "Dashboard plan"], nonFungsional: ["Responsive", "Cepat"] },
     userFlow: [{ title: "Membuat plan", steps: ["Isi brief", "Tunggu generate", "Lihat plan"] }],
     architecture: "flowchart TD\n    A[Browser] -->|HTTP| B[Next.js App]\n    B --> C[API Routes]\n    C --> D[Database]\n",
@@ -23,8 +23,8 @@ export async function GET() {
     createdAt: new Date().toISOString(),
     features: [
       {
-        slug: "autentikasi",
-        title: "Autentikasi",
+        slug: "auth",
+        title: "Auth",
         icon: "shield",
         description: "Login dan register pengguna.",
         tujuan: "Pengguna bisa masuk ke aplikasi.",

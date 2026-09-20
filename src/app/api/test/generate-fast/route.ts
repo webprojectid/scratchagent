@@ -15,8 +15,8 @@ export async function GET() {
   const planId = randomUUID();
   const features = [
     {
-      slug: "autentikasi",
-      title: "Autentikasi",
+      slug: "auth",
+      title: "Auth",
       icon: "shield",
       description: "Login dan register pengguna.",
       tujuan: "Pengguna bisa masuk.",

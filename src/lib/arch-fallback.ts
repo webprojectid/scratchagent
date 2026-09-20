@@ -60,7 +60,7 @@ export function normalizeMermaidFences(text: string): string {
 
 // ---------- Deteksi sidik jari template fallback ----------
 
-const ARCH_DIAGRAM_MARKERS = ["CDN / Edge Cache", "Autentikasi & Session", "Logging & Monitoring"];
+const ARCH_DIAGRAM_MARKERS = ["CDN / Edge Cache", "Auth & Session", "Autentikasi & Session", "Logging & Monitoring"];
 
 /** Diagram arsitektur template: node-node khas buildFallbackArchitecture (min 2 marker). */
 export function containsTemplateArchitectureDiagram(text: string): boolean {
@@ -118,7 +118,7 @@ export function buildFallbackArchitecture(title: string, stack: string[], featur
 
 ${title} dibangun sebagai aplikasi web dengan pemisahan jelas antara lapisan presentasi, lapisan aplikasi, dan lapisan data. Lapisan presentasi memakai ${frontend} dengan rendering hybrid: halaman publik di-render statis untuk kecepatan dan SEO, sedangkan halaman yang bergantung pada sesi pengguna di-render di server per request. Pendekatan ini dipilih karena mayoritas trafik membaca konten, bukan menulis.
 
-Lapisan aplikasi ditangani ${backend}. Semua mutasi data melewati satu titik validasi sebelum menyentuh database, sehingga aturan bisnis tidak tersebar di banyak tempat. Autentikasi memakai session berbasis cookie httpOnly. Endpoint yang menerima input publik dilindungi rate limiting untuk meredam abuse.
+Lapisan aplikasi ditangani ${backend}. Semua mutasi data melewati satu titik validasi sebelum menyentuh database, sehingga aturan bisnis tidak tersebar di banyak tempat. Auth memakai session berbasis cookie httpOnly. Endpoint yang menerima input publik dilindungi rate limiting untuk meredam abuse.
 
 Lapisan data memakai ${database} sebagai sumber kebenaran tunggal. Data yang sering dibaca dan jarang berubah di-cache di lapisan aplikasi dengan invalidasi berbasis event, bukan berbasis waktu, supaya tidak ada data basi setelah mutasi.
 
@@ -134,10 +134,10 @@ Kegagalan dependensi eksternal ditangani dengan timeout eksplisit dan retry terb
 
 \`\`\`mermaid
 flowchart TD
-    U[Pengguna] --> CDN[CDN / Edge Cache]
+    U[User] --> CDN[CDN / Edge Cache]
     CDN --> FE[${frontend}]
     FE --> API[${backend}]
-    API --> AUTH[Autentikasi & Session]
+    API --> AUTH[Auth & Session]
     API --> CACHE[Cache Layer]
     API --> DB[(${database})]
 ${featureNodes}

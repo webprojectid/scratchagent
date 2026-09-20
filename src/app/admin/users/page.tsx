@@ -531,10 +531,10 @@ export default function AdminUsersPage() {
             <div className="flex items-center gap-3">
               {accounts !== null && <span className="font-mono text-[11px] tabular-nums text-white/40">{accounts.length} akun</span>}
               <button
-                onClick={() => loadAccounts(q).catch(() => setToast({ text: "Gagal memuat ulang", ok: false }))}
+                onClick={() => loadAccounts(q).catch(() => setToast({ text: "Gagal me-refresh", ok: false }))}
                 className="inline-flex items-center gap-1.5 rounded-full border border-white/10 px-3 py-1.5 text-[11.5px] text-white/60 transition hover:border-[#74FA6A]/40 hover:text-[#74FA6A]"
               >
-                <RefreshCw size={12} /> Muat ulang
+                <RefreshCw size={12} /> Refresh
               </button>
             </div>
           </div>

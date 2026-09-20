@@ -35,7 +35,7 @@ export function homeCopy(lang: Lang) {
 
     // Product section
     productEyebrow: "the planning cloud for agents",
-    productTitle: en ? "Full context for your agent, in one flow." : "Konteks penuh untuk agent dalam satu alur.",
+    productTitle: en ? "Full context for your agent, in one flow." : "Konteks penuh untuk agent dalam satu flow.",
     features: en
       ? [
           { label: "PRD ENGINE", title: "Brief \u2192 ordered graph.", copy: "Assumptions enriched. Features, sub-features, tasks, deps." },
@@ -62,7 +62,7 @@ export function homeCopy(lang: Lang) {
 
     // Solutions section
     solutionsEyebrow: "solutions",
-    solutionsTitle: en ? "One flow, many ways of working." : "Satu alur, berbagai cara kerja.",
+    solutionsTitle: en ? "One flow, many ways of working." : "Satu flow, berbagai cara kerja.",
     solutionsSub: en
       ? "From side projects to client briefs, Scratch Agent turns ideas into plans your agent can run right away."
       : "Dari side project sampai brief klien, Scratch Agent ubah ide jadi rencana yang bisa langsung dijalankan agent.",
@@ -84,10 +84,10 @@ export function homeCopy(lang: Lang) {
     agentsTitleB: en ? "Send the mission." : "Kirim misinya.",
     agentsSub: en
       ? "Copy one prompt, paste it into your favorite AI agent. The agent connects to the plan automatically, reads the PRD, and works through tasks one by one. Order, dependencies, and checkpoints are managed by the server."
-      : "Salin satu prompt, tempel ke AI agent favoritmu. Agent otomatis terhubung ke plan, membaca PRD, dan mengerjakan task satu per satu. Urutan, dependensi, dan checkpoint diatur server.",
+      : "Copy satu prompt, paste ke AI agent favoritmu. Agent otomatis terhubung ke plan, membaca PRD, dan mengerjakan task satu per satu. Urutan, dependensi, dan checkpoint diatur server.",
 
     // Prompt showcase
-    promptReadyBadge: en ? "ready to paste" : "siap tempel",
+    promptReadyBadge: "ready to paste",
     promptAgentAny: en ? "agent: any" : "agent: apa saja",
     promptSteps: en
       ? [
@@ -104,7 +104,7 @@ export function homeCopy(lang: Lang) {
         ],
     promptFoot: en
       ? "Stop & report when a task fails or hits a checkpoint. Copy the prompt from the \u201CStart implementation\u201D button, paste it into OpenCode, Claude Code, Cursor, etc."
-      : "Berhenti & lapor jika ada task gagal atau checkpoint. Salin prompt dari tombol \u201CMulai implementasi\u201D, tempel ke OpenCode, Claude Code, Cursor, dll.",
+      : "Berhenti & lapor jika ada task gagal atau checkpoint. Copy prompt dari tombol \u201CStart implementation\u201D, paste ke OpenCode, Claude Code, Cursor, dll.",
 
     footerTagline: en ? "Hire your AI agent. Start with the Free plan." : "Hire your AI agent. Mulai dari paket Free.",
     footerCreate: en ? "create plan" : "buat plan",

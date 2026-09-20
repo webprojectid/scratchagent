@@ -514,7 +514,7 @@ export function SignInCard2() {
                     <Turnstile
                       siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
                       onSuccess={(token) => setCaptchaToken(token)}
-                      onError={() => setError(en ? "Captcha check failed. Refresh and try again." : "Verifikasi Captcha gagal. Coba muat ulang.")}
+                      onError={() => setError(en ? "Captcha check failed. Refresh and try again." : "Verifikasi Captcha gagal. Coba refresh halaman.")}
                       options={{ theme: "dark", size: "normal" }}
                     />
                   </div>

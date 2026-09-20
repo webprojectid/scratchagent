@@ -22,7 +22,7 @@ export const CLARIFY_QUESTIONS: ClarifyQuestion[] = [
     question: "Fitur inti yang WAJIB ada di versi pertama?",
     type: "textarea",
     options: [],
-    placeholder: "Contoh: autentikasi, katalog, pemesanan, pembayaran...",
+    placeholder: "Contoh: auth, katalog, pemesanan, pembayaran...",
   },
   {
     question: "Platform mana yang jadi prioritas?",

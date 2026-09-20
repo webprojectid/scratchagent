@@ -102,7 +102,50 @@ const stage3Schema = z.object({ tasks: z.array(rawTaskSchema) });
 
 const diagramSchema = z.object({ mermaid: z.string().min(1) });
 
+/**
+ * Filter penertiban istilah teknis otomatis (deterministic safeguard).
+ * Memastikan output LLM tidak pernah meloloskan terjemahan kaku KBBI
+ * seperti pratinjau, antarmuka, tangkapan layar, papan klip, dll.
+ */
+export function sanitizeTechTerms(text: string): string {
+  if (!text || typeof text !== "string") return text;
+
+  const cap = (s: string, rep: string) => {
+    if (s[0] === s[0].toUpperCase()) {
+      return rep[0].toUpperCase() + rep.slice(1);
+    }
+    return rep;
+  };
+
+  return text
+    .replace(/\bprat[ai]njau\b/gi, (m) => cap(m, "preview"))
+    .replace(/\bantarmuka pengguna\b/gi, (m) => cap(m, "user interface"))
+    .replace(/\bantarmuka\b/gi, "UI")
+    .replace(/\b(?:tangkapan|tangkap|cuplikan) layar\b/gi, (m) => cap(m, "screenshot"))
+    .replace(/\bpapan klip\b/gi, (m) => cap(m, "clipboard"))
+    .replace(/\bbasis data\b/gi, (m) => cap(m, "database"))
+    .replace(/\bkerangka kerja\b/gi, (m) => cap(m, "framework"))
+    .replace(/\balur kerja\b/gi, (m) => cap(m, "workflow"))
+    .replace(/\bpohon hie?rarki node\b/gi, (m) => cap(m, "node tree"))
+    .replace(/\bpipa aliran data\b/gi, (m) => cap(m, "data stream"))
+    .replace(/\bPenyandi Base64\b/g, "Base64 Encoder")
+    .replace(/\bpenyandi Base64\b/gi, "Base64 encoder")
+    .replace(/\bumpan balik haptik\b/gi, (m) => cap(m, "haptic feedback"))
+    .replace(/\bpengguliran otomatis\b/gi, (m) => cap(m, "auto-scroll"))
+    .replace(/\btata letak\b/gi, (m) => cap(m, "layout"))
+    .replace(/\bkata sandi\b/gi, (m) => cap(m, "password"))
+    .replace(/\bkredensial\b/gi, (m) => cap(m, "credentials"))
+    .replace(/\bberkas log\b/gi, (m) => cap(m, "file log"))
+    .replace(/\bberkas cadangan\b/gi, (m) => cap(m, "file backup"))
+    .replace(/\bberkas diagnostik\b/gi, (m) => cap(m, "file diagnostik"))
+    .replace(/\b(?:penyusun|pembuat) header otorisasi\b/gi, (m) => cap(m, "auth header builder"))
+    .replace(/\bheader otorisasi\b/gi, (m) => cap(m, "auth header"))
+    .replace(/\bautentikasi\b/gi, (m) => cap(m, "auth"))
+    .replace(/\botentikasi\b/gi, (m) => cap(m, "auth"));
+}
+
 function normalize(obj: unknown): unknown {
+  if (typeof obj === "string") return sanitizeTechTerms(obj);
   if (typeof obj !== "object" || obj === null) return obj;
   const map: Record<string, string> = {
     judul_produk: "title",
@@ -387,7 +430,29 @@ export interface ClarifyQuestion {
  * teks yang dihasilkan (PRD, arsitektur, task, dll) bebas dari tanda hubung
  * em/en dash yang terasa "tulisannya AI". Pakai koma, titik, atau titik dua.
  */
-const STYLE_RULE = `ATURAN GAYA PENULISAN: tulis semua teks TANPA tanda hubung panjang (em dash "—" atau en dash "–"). Gunakan koma, titik, atau titik dua sebagai pengganti. Tulis seperti profesional manusia di bidangnya: konkret, spesifik, tanpa kalimat generik.`;
+const STYLE_RULE = `ATURAN GAYA PENULISAN:
+1. Tulis semua teks TANPA tanda hubung panjang (em dash "—" atau en dash "–"). Gunakan koma, titik, atau titik dua sebagai pengganti.
+2. Tulis seperti profesional manusia di bidangnya: konkret, spesifik, tanpa kalimat generik.
+3. ISTILAH TEKNIS KOMPUTER/SOFTWARE/DEV WAJIB TETAP DALAM BAHASA INGGRIS. DILARANG KERAS menerjemahkan istilah teknis bahasa Inggris ke bahasa Indonesia yang kaku/aneh. Contoh:
+   - Gunakan "preview" (JANGAN "pratinjau")
+   - Gunakan "UI" / "interface" (JANGAN "antarmuka")
+   - Gunakan "screenshot" (JANGAN "tangkapan layar" atau "cuplikan layar")
+   - Gunakan "clipboard" (JANGAN "papan klip")
+   - Gunakan "upload" (JANGAN "unggah")
+   - Gunakan "download" (JANGAN "unduh")
+   - Gunakan "database" (JANGAN "basis data")
+   - Gunakan "framework" (JANGAN "kerangka kerja")
+   - Gunakan "workflow" (JANGAN "alur kerja")
+   - Gunakan "credentials" (JANGAN "kredensial")
+   - Gunakan "password" (JANGAN "kata sandi")
+   - Gunakan "queue" (JANGAN "antrean" atau "antrian")
+   - Gunakan "layout" (JANGAN "tata letak")
+   - Gunakan "auto-scroll" (JANGAN "pengguliran otomatis")
+   - Gunakan "haptic feedback" (JANGAN "umpan balik haptik")
+   - Gunakan "node tree" (JANGAN "pohon node" atau "pohon hirarki")
+   - Gunakan "data stream" (JANGAN "pipa aliran data")
+   - Gunakan "file log" (JANGAN "berkas log")
+   - Gunakan "endpoint", "browser", "link", "cache", "cookie", "setup", "deploy", "auth", "login", "dashboard", dll apa adanya.`;
 
 // FIX v2: Enforce tier limits BEFORE calling LLM to avoid wasted tokens
 function getEnforcedBrief(brief: string, tier: Tier | string | null | undefined): string {
@@ -434,7 +499,7 @@ export async function generatePlanStructure(
 
   const one = await callLlm(
     stage1Schema,
-    `${enforcedBrief}\n${stackHint}${answersBlock}\n\nKamu adalah product manager senior. Buat PRD awal yang mendalam:\n${STYLE_RULE}\n1. Judul produk WAJIB nama brand berbahasa INDONESIA yang kreatif dan berkelas: satu kata (maksimal dua), gali bahasa yang kaya seperti Sanskerta/Melayu kuno (Swarna, Semesta), istilah daerah (Lumbung, Sedulur, Sabe), kata yang dihias/distir (Warunk, Kopdul), atau kata digandeng (Kedai Kala). Mudah diingat, punya makna yang nyambung dengan fungsinya. VARIASIKAN teknik penamaannya dan DILARANG: (a) memakai istilah Inggris (Cents, Wallet, Vendor), (b) pola tempelan berulang seperti "-Ku", "-Go", "-in" di akhir kata, (c) menempelkan deskripsi atau tanda titik dua seperti "KasirKu: Aplikasi Warung".\n2. Asumsi wajar (min 5): bisnis, teknis, perilaku pengguna. Jika ada jawaban klarifikasi dari user, gunakan itu dan JANGAN jadikan hal yang sudah dijawab sebagai asumsi.\n3. Stack teknologi yang cocok.\n4. Daftar fitur: buat maksimal ${limits.features[1]} fitur. CAKUPAN WAJIB: setiap subsistem, komponen, atau fungsi yang disebut di brief harus tercover; bila subsistem melebihi jumlah maksimum, gabungkan subsistem yang serumpun ke satu fitur dan jelaskan penggabungannya di field description. JANGAN menghapus, melewati, atau mengabaikan subsistem apa pun.\n5. Untuk tiap fitur: deskripsi 1-2 kalimat, tujuan bisnis yang terukur, dan 3-5 kriteria "selesai bila" yang spesifik dan bisa diuji.\n\nWAJIB gunakan field PERSIS: title, assumptions, stack, features (title, icon, description, tujuan, selesai_bila, priority). Format: {"title":"...","assumptions":[],"stack":[],"features":[{"title":"...","icon":"...","description":"...","tujuan":"...","selesai_bila":[],"priority":"high"}]}}`,
+    `${enforcedBrief}\n${stackHint}${answersBlock}\n\nKamu adalah product manager senior. Buat PRD awal yang mendalam:\n${STYLE_RULE}\n1. Judul produk WAJIB nama brand yang catchy, modern, dan kreatif: gunakan gaya bahasa Indonesia mix English yang keren (satu kata, maksimal dua kata, misal FutsalGo, KedaiPay, AutoKopi, QuickKasir, CariLapangan, BotPintar, dll). Mudah diingat, ringkas, dan relevan dengan fungsi produk. DILARANG menempelkan deskripsi panjang atau tanda titik dua seperti "NamaBrand: Aplikasi Apa".\n2. Asumsi wajar (min 5): bisnis, teknis, perilaku pengguna. Jika ada jawaban klarifikasi dari user, gunakan itu dan JANGAN jadikan hal yang sudah dijawab sebagai asumsi.\n3. Stack teknologi yang cocok.\n4. Daftar fitur: buat maksimal ${limits.features[1]} fitur. CAKUPAN WAJIB: setiap subsistem, komponen, atau fungsi yang disebut di brief harus tercover; bila subsistem melebihi jumlah maksimum, gabungkan subsistem yang serumpun ke satu fitur dan jelaskan penggabungannya di field description. JANGAN menghapus, melewati, atau mengabaikan subsistem apa pun.\n5. Untuk tiap fitur: deskripsi 1-2 kalimat, tujuan bisnis yang terukur, dan 3-5 kriteria "selesai bila" yang spesifik dan bisa diuji.\n\nWAJIB gunakan field PERSIS: title, assumptions, stack, features (title, icon, description, tujuan, selesai_bila, priority). Format: {"title":"...","assumptions":[],"stack":[],"features":[{"title":"...","icon":"...","description":"...","tujuan":"...","selesai_bila":[],"priority":"high"}]}}`,
     usage,
   );
 
@@ -463,7 +528,7 @@ export async function generatePlanStructure(
     ),
     callLlm(
       archSchema,
-      `Brief: ${brief}\nFitur: ${JSON.stringify(featureTitles)}\nStack: ${JSON.stringify(one.stack ?? [])}\n\nKamu adalah solution architect. Buat architecture detail untuk produk ini.\n${STYLE_RULE} Jelaskan komponen utama, alur data end-to-end, keputusan arsitektur, trade-off (monolith vs microservices, SSR vs CSR, SQL vs NoSQL), error handling, caching, autentikasi, dan skalabilitas. Narasi 2-3 paragraf. WAJIB sertakan diagram mermaid flowchart TD di dalam triple backtick.\n\nFormat: {"architecture":"narasi detail lalu mermaid flowchart TD di triple backtick"}}`,
+      `Brief: ${brief}\nFitur: ${JSON.stringify(featureTitles)}\nStack: ${JSON.stringify(one.stack ?? [])}\n\nKamu adalah solution architect. Buat architecture detail untuk produk ini.\n${STYLE_RULE} Jelaskan komponen utama, alur data end-to-end, keputusan arsitektur, trade-off (monolith vs microservices, SSR vs CSR, SQL vs NoSQL), error handling, caching, auth, dan skalabilitas. Narasi 2-3 paragraf. WAJIB sertakan diagram mermaid flowchart TD di dalam triple backtick.\n\nFormat: {"architecture":"narasi detail lalu mermaid flowchart TD di triple backtick"}}`,
       usage,
     ).catch((error) => {
       console.warn("[generate] architecture gagal, pakai fallback:", error instanceof Error ? error.message : error);

@@ -186,7 +186,7 @@ async function validateProviderUrl(
     return { ok: false, error: "Di production hanya https yang diizinkan." };
   }
   if (url.username || url.password) {
-    return { ok: false, error: "URL dengan kredensial (user:pass@host) tidak diizinkan." };
+    return { ok: false, error: "URL dengan credentials (user:pass@host) tidak diizinkan." };
   }
 
   // url.hostname untuk IPv6 sudah tanpa kurung di Node, tapi tetap bersihkan
@@ -247,7 +247,7 @@ export async function POST(request: Request) {
         stream: false,
       }),
       signal: AbortSignal.timeout(8_000),
-      redirect: "error", // tolak redirect: mencegah SSRF lewat pengalihan ke target internal
+      redirect: "error", // tolak redirect: mencegah SSRF lewat redirect ke target internal
     });
     const latencyMs = Date.now() - start;
     if (!res.ok) {

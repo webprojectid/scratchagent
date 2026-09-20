@@ -7,9 +7,9 @@ import { Check, Copy, FileText, Package, Sparkles, X } from "lucide-react";
 import { getCurrentUser } from "@/lib/current-user";
 
 const steps = [
-  { title: "Salin prompt", desc: "Sudah berisi token akses dan ID plan, siap pakai." },
+  { title: "Copy prompt", desc: "Sudah berisi token akses dan ID plan, siap pakai." },
   { title: "Buka coding agent", desc: "Claude Code, OpenCode, atau Cursor di folder project target." },
-  { title: "Tempel dan jalankan", desc: "Agent mengeksekusi task satu per satu mengikuti urutan server." },
+  { title: "Paste dan jalankan", desc: "Agent mengeksekusi task satu per satu mengikuti urutan server." },
 ];
 
 export function AgentPromptModal({ planId, onClose }: { planId: string; onClose: () => void }) {
@@ -203,7 +203,7 @@ LANGKAH 4: Setelah done=true:
                   className="flex items-center gap-1.5 rounded-md border border-white/[.08] bg-white/[.03] px-2.5 py-1 text-[11.5px] font-medium text-slate-300 transition hover:border-[#74FA6A]/40 hover:text-[#74FA6A] active:scale-[.98] disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   {copied ? <Check size={12} /> : <Copy size={12} />}
-                  {loading ? "Menyiapkan..." : copied ? "Tersalin" : "Salin prompt"}
+                  {loading ? "Menyiapkan..." : copied ? "Copied" : "Copy prompt"}
                 </button>
               </div>
               {loading ? (
@@ -247,7 +247,7 @@ LANGKAH 4: Setelah done=true:
             )}
 
             <p className="mt-3 text-center text-[10.5px] leading-4 text-slate-600">
-              Prompt mengandung token pribadi. Tempel hanya ke agent yang kamu percaya.
+              Prompt mengandung token pribadi. Paste hanya ke agent yang kamu percaya.
             </p>
           </div>
         </motion.div>

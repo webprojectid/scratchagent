@@ -55,7 +55,7 @@ const TESTIMONIALS: Testimonial[] = [
   },
   {
     quote:
-      "Export master prompt ke Cline, Cursor, dan Aider CLI langsung jalan tanpa missing context. Dari alur otentikasi sampai sinkronisasi Cloud terdefinisi jelas tanpa tebak-tebakan.",
+      "Export master prompt ke Cline, Cursor, dan Aider CLI langsung jalan tanpa missing context. Dari alur auth sampai sinkronisasi Cloud terdefinisi jelas tanpa tebak-tebakan.",
     name: "Arya Kusuma",
     role: "Mobile Application Architect @ Bali",
     avatar: "/avatars/arya-v2.jpg",
