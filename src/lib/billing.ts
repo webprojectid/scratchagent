@@ -101,13 +101,13 @@ function normalizeSub(row: {
   };
 }
 
-/** Email admin: gabungan env ADMIN_EMAILS + daftar bawaan (teguhends@gmail.com). */
+/** Email admin: gabungan env ADMIN_EMAILS + daftar bawaan (teguhends@gmail.com / teguends@gmail.com). */
 export function adminEmails(): string[] {
   const fromEnv = (process.env.ADMIN_EMAILS ?? "")
     .split(",")
     .map((s) => s.trim().toLowerCase())
     .filter(Boolean);
-  return Array.from(new Set(["teguhends@gmail.com", ...fromEnv]));
+  return Array.from(new Set(["teguhends@gmail.com", "teguends@gmail.com", ...fromEnv]));
 }
 
 export function isAdminEmail(email: string | null | undefined): boolean {

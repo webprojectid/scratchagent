@@ -21,7 +21,7 @@ function isAdmin(email: string | null | undefined): boolean {
   // Hanya allowlist eksplisit — konsisten dengan isAdminEmail() di lib/billing.
   // (Pola "admin@*" dihapus: keputusan admin final tetap di server; ini cuma
   // untuk tampilan UI.)
-  const list = ["teguhends@gmail.com"];
+  const list = ["teguhends@gmail.com", "teguends@gmail.com"];
   return list.includes(lower);
 }
 
