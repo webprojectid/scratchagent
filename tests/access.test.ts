@@ -51,6 +51,13 @@ test("accessPlan: owner boleh akses", async () => {
   assert.equal(error, undefined);
 });
 
+test("accessPlan: admin superuser boleh akses plan siapa pun", async () => {
+  const admin: AuthUser = { userId: "uuid-admin", email: "teguhends@gmail.com", via: "session" };
+  const { plan, error } = await accessPlan("plan-alice", admin);
+  assert.ok(plan, "admin mendapat plan orang lain");
+  assert.equal(error, undefined);
+});
+
 test("accessPlan: non-owner dapat 404 (bukan 403, biar tidak bocor)", async () => {
   const { plan, error } = await accessPlan("plan-alice", bob);
   assert.equal(plan, undefined);

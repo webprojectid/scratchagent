@@ -137,6 +137,7 @@ export function planNotFound() {
  * Gate akses plan: auth + ownership.
  * - planId "demo": publik untuk read-only (sesuai flow demo README); write = 403.
  * - Tanpa user: 401. Plan tidak ditemukan / bukan milik user: 404.
+ * - Superuser admin (teguhends@gmail.com) bypass ownership untuk akses semua plan.
  */
 export async function accessPlan(
   planId: string,
@@ -150,7 +151,11 @@ export async function accessPlan(
   }
   if (!user) return { error: unauthorized() };
   const plan = await getPlan(planId);
-  if (!plan || !ownsPlan(plan, user)) return { error: planNotFound() };
+  if (!plan) return { error: planNotFound() };
+  if (!ownsPlan(plan, user)) {
+    const { isAdminEmail } = await import("@/lib/billing");
+    if (!isAdminEmail(user.email)) return { error: planNotFound() };
+  }
   return { plan };
 }
 
@@ -159,6 +164,7 @@ export async function accessPlan(
  * - planId "demo": publik (read-only).
  * - Mode dev polos: identitas tak terdeteksi server-side, lanjut tanpa gate.
  * - Belum login: redirect ke /login. Plan tak ditemukan / bukan milik user: notFound().
+ * - Superuser admin (teguhends@gmail.com) bypass ownership.
  * Hanya panggil dari server component (pakai redirect/notFound).
  */
 export async function requirePlanForPage(planId: string): Promise<Plan> {
@@ -167,7 +173,11 @@ export async function requirePlanForPage(planId: string): Promise<Plan> {
     const user = await getAuthUser();
     if (!user) redirect("/login");
     const plan = await getPlan(planId);
-    if (!plan || !ownsPlan(plan, user)) notFound();
+    if (!plan) notFound();
+    if (!ownsPlan(plan, user)) {
+      const { isAdminEmail } = await import("@/lib/billing");
+      if (!isAdminEmail(user.email)) notFound();
+    }
     return plan;
   }
   const plan = await getPlan(planId);
