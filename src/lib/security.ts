@@ -56,7 +56,7 @@ export function isWhitelistedAdmin(key: string): boolean {
     const adminEmails = (process.env.ADMIN_EMAILS ?? "")
       .split(",")
       .map((s) => s.trim().toLowerCase())
-      .concat(["teguhends@gmail.com"]);
+      .concat(["teguhends@gmail.com", "teguends@gmail.com"]);
     if (adminEmails.includes(identifier)) return true;
   }
   if (key.startsWith("ip:")) {
