@@ -4,6 +4,8 @@ import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Shell } from "@/components/brand";
+import { ProfileOverview } from "@/components/profile-overview";
+import profileStyles from "@/components/profile-overview.module.css";
 import {
   User,
   Shield,
@@ -142,8 +144,6 @@ export default function ProfilePage() {
   const [passMsgType, setPassMsgType] = useState<"error" | "success">("error");
 
   // Profile Name Edit
-  const [editingName, setEditingName] = useState(false);
-  const [nameInput, setNameInput] = useState("");
 
   // LLM state (Admin only)
   const [llmCfg, setLlmCfg] = useState<LlmCfgInfo | null>(null);
@@ -155,6 +155,22 @@ export default function ProfilePage() {
   useEffect(() => {
     let active = true;
     setOrigin(window.location.origin);
+
+    const isPreview = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("preview") === "1";
+    if (isPreview) {
+      setUser({
+        email: "demo@scratchagent.test",
+        name: "Demo Developer",
+        role: "admin",
+        tier: "pro",
+        createdAt: "2026-01-15T00:00:00Z",
+        proExpiresAt: "2027-01-15T00:00:00Z",
+        proActive: true,
+      });
+      setQuota({ remaining: 10, limit: 10, tier: "pro", unlimited: true });
+      setPlansLoading(false);
+      return;
+    }
 
     getCurrentUser().then((u) => {
       if (!active) return;
@@ -277,12 +293,11 @@ export default function ProfilePage() {
     }
   };
 
-  const handleSaveName = () => {
-    if (!nameInput.trim() || !user) {
-      setEditingName(false);
+  const handleSaveName = (value: string) => {
+    if (!value.trim() || !user) {
       return;
     }
-    const updatedName = nameInput.trim();
+    const updatedName = value.trim();
     setUser((prev) => (prev ? { ...prev, name: updatedName } : null));
 
     try {
@@ -298,7 +313,6 @@ export default function ProfilePage() {
       }
       refreshCurrentUser();
     } catch {}
-    setEditingName(false);
   };
 
   const handleChangePass = async () => {
@@ -561,13 +575,13 @@ export default function ProfilePage() {
   return (
     <Shell back="/" sidebar={false}>
       {/* Centered wrapper for entire page */}
-      <div className="flex min-h-[calc(100vh-80px)] w-full items-center justify-center px-4 py-8 md:py-12">
+      <div className={profileStyles.page}>
         {/* Full Single Card Dashboard, Centered */}
-        <div className="w-full max-w-5xl rounded-2xl border border-white/[.08] bg-[#0E1113] p-1.5 shadow-2xl shadow-black/80">
-          <div className="flex flex-col md:flex-row min-h-[620px] rounded-xl border border-white/[.04] bg-[#090C0E] overflow-hidden">
+        <div className="w-full max-w-[1240px] mx-auto">
+          <div className="flex flex-col md:flex-row min-h-[620px] gap-8 lg:gap-14">
             
             {/* SIDEBAR NAVIGASI KIRI (Inside Card) */}
-            <aside className="w-full shrink-0 border-b border-white/[.06] bg-[#060809] p-5 md:w-56 md:border-b-0 md:border-r flex flex-col justify-between">
+            <aside className="w-full shrink-0 border-b border-white/10 pb-6 md:w-44 md:border-b-0 flex flex-col justify-between gap-8 [&_button]:min-h-11 [&_a]:min-h-11 [&_button]:text-[13px] [&_a]:text-[13px]">
               <div>
                 {/* Brand / Mini Info User */}
                 <div className="mb-6 flex items-center gap-2.5">
@@ -583,7 +597,7 @@ export default function ProfilePage() {
                 {/* Seksi: CUSTOMIZE */}
                 <div className="mb-6">
                   <div className="flex items-center gap-2 pb-2">
-                    <span className="font-mono text-[9.5px] font-bold uppercase tracking-wider text-white/30">CUSTOMIZE</span>
+                    <span className="font-mono text-[9.5px] font-bold uppercase tracking-wider text-white/30">AKUN PRIBADI</span>
                     <div className="h-px flex-1 bg-white/[.06]" />
                   </div>
 
@@ -698,131 +712,16 @@ export default function ProfilePage() {
             </aside>
 
             {/* PANEL KONTEN KANAN */}
-            <main className="flex-1 p-6 md:p-8 overflow-y-auto">
+            <main className="flex-1 min-w-0">
         
-        {/* TAB 1: PROFILE */}
         {activeTab === "profile" && (
-          <div>
-            {/* Header Seksi */}
-            <div className="pb-6 border-b border-white/[.08]">
-              <h1 className="text-2xl font-bold tracking-tight text-white">Profile</h1>
-              <p className="mt-1 text-xs text-white/50">
-                Kelola identitas akun dan status kuota Anda.{" "}
-                <Link href="/pricing" className="text-[#74FA6A] hover:underline">Pelajari benefit paket</Link>
-              </p>
-            </div>
-
-            {/* List Row per Row (Sesuai Referensi) */}
-            <div className="py-8 space-y-8">
-              {/* Row 1: Nama Pengguna */}
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex items-start gap-4">
-                  <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-full bg-white/[.04] border border-white/10 text-white font-mono text-xs">
-                    {initials}
-                  </div>
-                  <div>
-                    <h2 className="text-sm font-semibold text-white">Nama Pengguna</h2>
-                    <p className="text-xs text-white/50 mt-0.5">Nama tampilan profil publik akun Anda.</p>
-                  </div>
-                </div>
-                <div>
-                  {editingName ? (
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="text"
-                        value={nameInput}
-                        onChange={(e) => setNameInput(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") handleSaveName();
-                          if (e.key === "Escape") setEditingName(false);
-                        }}
-                        autoFocus
-                        className="rounded border border-[#74FA6A]/50 bg-black px-2.5 py-1 text-xs text-white focus:outline-none"
-                      />
-                      <button
-                        onClick={handleSaveName}
-                        className="rounded bg-[#74FA6A] px-2.5 py-1 text-xs font-semibold text-black hover:bg-[#A8FF9B]"
-                      >
-                        Simpan
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => {
-                        setNameInput(user.name);
-                        setEditingName(true);
-                      }}
-                      className="inline-flex items-center gap-1.5 text-xs text-white/70 hover:text-white border border-white/10 rounded-md px-3 py-1.5 transition"
-                    >
-                      <span>{user.name}</span>
-                      <Pencil size={11} className="text-white/40" />
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* Row 2: Email Terdaftar */}
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex items-start gap-4">
-                  <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-full bg-white/[.04] border border-white/10 text-white/60">
-                    @
-                  </div>
-                  <div>
-                    <h2 className="text-sm font-semibold text-white">Email Akun</h2>
-                    <p className="text-xs text-white/50 mt-0.5">Alamat email terverifikasi untuk login.</p>
-                  </div>
-                </div>
-                <div className="font-mono text-xs text-white/60 self-center">
-                  {user.email}
-                </div>
-              </div>
-
-              {/* Row 3: Status Paket */}
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex items-start gap-4">
-                  <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-full bg-white/[.04] border border-white/10 text-[#74FA6A]">
-                    <Crown size={16} />
-                  </div>
-                  <div>
-                    <h2 className="text-sm font-semibold text-white">Status Langganan</h2>
-                    <p className="text-xs text-white/50 mt-0.5">
-                      {isPro ? "Akses Scratch Pro aktif tanpa batas generate." : "Paket Free dasar (3 generate per rolling 24 jam)."}
-                    </p>
-                  </div>
-                </div>
-                <div className="self-center">
-                  {!isPro ? (
-                    <Link
-                      href="/pricing"
-                      className="rounded-md bg-[#74FA6A] px-3 py-1.5 text-xs font-semibold text-black transition hover:bg-[#A8FF9B]"
-                    >
-                      Upgrade Pro
-                    </Link>
-                  ) : (
-                    <span className="rounded bg-[#74FA6A]/10 text-[#74FA6A] px-2.5 py-1 text-xs font-mono font-medium">
-                      PRO ACTIVE
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* Row 4: Kuota Generate */}
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex items-start gap-4">
-                  <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-full bg-white/[.04] border border-white/10 text-white/60">
-                    <Zap size={16} />
-                  </div>
-                  <div>
-                    <h2 className="text-sm font-semibold text-white">Sisa Kuota Generate</h2>
-                    <p className="text-xs text-white/50 mt-0.5">Kapasitas pembuatan plan PRD harian.</p>
-                  </div>
-                </div>
-                <div className="font-mono text-xs font-semibold text-[#74FA6A] self-center">
-                  {isPro ? "Unlimited" : `${quota?.remaining ?? 3} / 3`}
-                </div>
-              </div>
-            </div>
-          </div>
+          <ProfileOverview
+            user={user}
+            quota={quota}
+            onSave={handleSaveName}
+            onNavigate={setActiveTab}
+            preview={typeof window !== "undefined" && new URLSearchParams(window.location.search).get("preview") === "1"}
+          />
         )}
 
         {/* TAB 2: PROJECTS */}

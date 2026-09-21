@@ -1,0 +1,32 @@
+.art { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.art i, .art b { position: absolute; display: block; }
+.art i { border-style: solid; }
+.art b { width: 10px; height: 10px; border-radius: 50%; background: #eaffd2; box-shadow: 0 0 0 7px rgba(255,255,255,.18); }
+
+/* PRD: nested contours converge toward the specification window. */
+.variant0 .shapeA { width: 430px; height: 360px; left: -260px; top: -210px; border-width: 48px; border-color: #43d05d; border-radius: 50%; transform: rotate(25deg); }
+.variant0 .shapeB { width: 390px; height: 260px; right: -210px; bottom: -155px; border-width: 38px; border-color: #07875f; border-radius: 50%; transform: rotate(-18deg); }
+.variant0 .shapeC { width: 170px; height: 170px; right: 3%; top: -105px; border-width: 25px; border-color: #f0bc63; border-radius: 50%; }
+.variant0 .nodeA { left: 8%; bottom: 18%; }.variant0 .nodeB { right: 7%; top: 42%; background: #d8ef78; }.variant0 .nodeC { left: 44%; top: 7%; background: #2bb8b1; }
+
+/* Runtime: two crossing lanes hand work from the plan to the agent. */
+.variant1 .shapeA { width: 760px; height: 70px; left: -120px; top: 32px; border-width: 0; background: #07875f; border-radius: 999px; transform: rotate(18deg); }
+.variant1 .shapeB { width: 650px; height: 52px; left: -30px; bottom: 25px; border-width: 0; background: #2bb8b1; border-radius: 999px; transform: rotate(-14deg); }
+.variant1 .shapeC { width: 210px; height: 210px; right: -70px; top: -120px; border-width: 30px; border-color: #d8ef78; border-radius: 50%; }
+.variant1 .nodeA { left: 10%; top: 27%; background: #f0bc63; }.variant1 .nodeB { right: 10%; bottom: 16%; }.variant1 .nodeC { left: 48%; bottom: 7%; background: #43d05d; }
+
+/* Dependency graph: offset rings show ordered layers around one queue. */
+.variant2 .shapeA { width: 390px; height: 390px; left: -210px; top: -195px; border-width: 56px; border-color: #2bb8b1; border-radius: 50%; }
+.variant2 .shapeB { width: 390px; height: 390px; right: -240px; bottom: -240px; border-width: 54px; border-color: #43d05d; border-radius: 50%; }
+.variant2 .shapeC { width: 520px; height: 34px; left: 30px; top: 118px; border-width: 0; background: #07875f; border-radius: 999px; transform: rotate(-9deg); }
+.variant2 .nodeA { left: 7%; bottom: 12%; }.variant2 .nodeB { right: 8%; top: 15%; background: #f0bc63; }.variant2 .nodeC { right: 39%; bottom: 8%; background: #d8ef78; }
+
+/* Telemetry: an asymmetric pulse expands behind the live chart. */
+.variant3 .shapeA { width: 620px; height: 190px; left: -70px; top: -112px; border-width: 36px; border-color: #d8ef78; border-radius: 50%; transform: rotate(-7deg); }
+.variant3 .shapeB { width: 580px; height: 230px; left: -120px; bottom: -155px; border-width: 48px; border-color: #07875f; border-radius: 50%; transform: rotate(8deg); }
+.variant3 .shapeC { width: 520px; height: 32px; right: -160px; top: 114px; border-width: 0; background: #2bb8b1; border-radius: 999px; transform: rotate(27deg); }
+.variant3 .nodeA { left: 8%; top: 44%; background: #f0bc63; }.variant3 .nodeB { right: 6%; top: 12%; }.variant3 .nodeC { right: 11%; bottom: 11%; background: #43d05d; }
+
+@media (max-width: 640px) {
+  .art { transform: scale(.88); transform-origin: center; }
+}
