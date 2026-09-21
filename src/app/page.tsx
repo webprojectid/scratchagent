@@ -15,6 +15,8 @@ import { TestimonialsSection } from "@/components/testimonials-section";
 import { useLang } from "@/lib/lang";
 import { t } from "@/lib/i18n";
 import { homeCopy } from "@/lib/copy-home";
+import { LandingWorkspace } from "@/components/landing-workspace";
+import featureArt from "./feature-art.module.css";
 
 function Magnetic({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -33,22 +35,6 @@ function DoubleBezel({ children, className = "" }: { children: React.ReactNode; 
   return <div className={`rounded-[24px] border border-[#1E252F] bg-[#0F1317] p-1.5 shadow-[0_18px_60px_#000A] ${className}`}><div className="rounded-[calc(24px-6px)] border border-[#1E252F] bg-[#141A22] shadow-[inset_0_1px_0_rgba(255,255,255,.06)]">{children}</div></div>;
 }
 
-function BentoMock({ eyebrow, title, name, meta, ok = false, list, pulse = false, typing = false }: { eyebrow?: string; title?: string; name?: string; meta?: string; ok?: boolean; list?: string[]; pulse?: boolean; typing?: boolean }) {
-  return (
-    <div className={`w-44 rounded-xl border p-3 shadow-xl ${ok ? "border-[#74FA6A]/30 bg-[#121A14]" : "border-white/10 bg-[#171D25]"} ${pulse ? "relative overflow-hidden" : ""}`}>
-      {pulse && <motion.div animate={{ x: ["-40%", "120%"] }} transition={{ repeat: Infinity, duration: 2.2, ease: "easeInOut" }} className="pointer-events-none absolute inset-y-0 w-[38%] bg-gradient-to-r from-transparent via-white/[.07] to-transparent" />}
-      {eyebrow && <p className="font-mono text-[8px] font-bold uppercase tracking-[.16em] text-white/40">{eyebrow}</p>}
-      {title && <p className="font-mono text-[8px] font-bold uppercase tracking-[.16em] text-white/30">{title}</p>}
-      {name && <p className="mt-2 truncate text-[11px] font-semibold text-white">{name}</p>}
-      {meta && <p className="mt-2 font-mono text-[8px] text-white/35">{meta}</p>}
-      {list && <div className="mt-2 space-y-1.5">{list.map((item, i) => (<div key={item} className="flex items-center gap-1.5 truncate rounded border border-white/10 bg-[#11151B] px-2 py-1.5 font-mono text-[8px] text-white/60"><span className="size-1 rounded-full bg-current" /><span className="truncate">{item}</span>{typing && i === 0 && <motion.span animate={{ opacity: [0, 1, 0] }} transition={{ repeat: Infinity, duration: 1 }} className="ml-auto h-2 w-1 bg-white/60" />}</div>))}</div>}
-    </div>
-  );
-}
-
-function Connector() {
-  return <div className="relative h-px w-10 bg-white/15"><i className="absolute -right-1 -top-1 size-2 rounded-full border border-white/15 bg-[#151A21]" /></div>;
-}
 
 const stackRows = [
   [{ name: "Next.js", slug: "nextdotjs" }, { name: "React", slug: "react" }, { name: "TypeScript", slug: "typescript" }, { name: "Tailwind CSS", slug: "tailwindcss" }, { name: "Supabase", slug: "supabase" }, { name: "Motion", slug: "framer" }],
@@ -139,60 +125,15 @@ export default function Home() {
       </section>
 
        <StackMarquee />
-       <motion.section initial={{ opacity: 0, y: 28 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .2 }} transition={{ duration: .7, ease: [0.16, 1, 0.3, 1] }} className="relative mx-auto mt-24 w-[min(1220px,calc(100%-32px))] overflow-hidden rounded-[26px] border border-white/10 bg-[#0E0E0E] p-2 shadow-[0_28px_90px_#000C] md:mt-32 md:p-3">
-         <div className="rounded-[18px] border border-white/10 bg-[#151A21]">
-           <div className="flex h-11 items-center justify-between border-b border-white/10 px-4 font-mono text-[10px] text-white/40"><span className="flex items-center gap-1.5"><i className="size-2.5 rounded-full bg-[#FF5F56]" /><i className="size-2.5 rounded-full bg-[#FFBD2E]" /><i className="size-2.5 rounded-full bg-[#74FA6A]" /></span><span className="tracking-[.08em]">Scratch Agent · mission control</span><span className="inline-flex items-center gap-1.5 text-emerald-300/80"><span className="size-1.5 rounded-full bg-emerald-400 shadow-[0_0_10px_#34d399]" /> live • 5s</span></div>
-           <div className="grid min-h-[420px] md:grid-cols-[176px_1fr_296px]">
-             <aside className="hidden border-r border-white/10 p-4 md:block"><p className="font-mono text-[9px] uppercase tracking-[.18em] text-white/30">{hc.mockPlanLabel}</p>{hc.mockPlanItems.map((item, index) => (<div key={item} className={`mt-2 flex items-center gap-2 rounded-[10px] px-2.5 py-2 font-mono text-[11px] ${index === 0 ? "bg-[#74FA6A]/10 text-[#74FA6A] border border-[#74FA6A]/20" : "text-white/44"}`}><span className="size-1.5 rounded-full bg-current" />{item}</div>))}</aside>
-             <div className="relative overflow-x-auto p-5 md:p-6"><div className="absolute inset-0 opacity-[.14] [background-image:radial-gradient(#9AA5B366_1px,transparent_1px)] [background-size:18px_18px]" /><div className="relative flex min-w-[640px] items-center gap-10 py-16"><BentoMock ok title={hc.mockProjectTitle} name={hc.mockProjectName} meta="0 / 120 task" /><Connector /><div className="space-y-5"><BentoMock eyebrow={`${hc.mockPhase} 1`} name={hc.mockPhaseOrder[0]} meta="20 task" pulse /><BentoMock eyebrow={`${hc.mockPhase} 2`} name={hc.mockPhaseOrder[1]} meta="14 task" /><BentoMock eyebrow={`${hc.mockPhase} 3`} name={hc.mockPhaseOrder[2]} meta="16 task" /></div><Connector /><div className="space-y-5"><BentoMock title={hc.mockSubFeatureTitle} list={hc.mockSubFeatures} /><BentoMock title={hc.mockTaskTitle} list={hc.mockTasks} typing /></div></div></div>
-             <aside className="hidden border-l border-white/10 bg-[#0E1115] p-5 lg:block">
-               <Eyebrow>{hc.mockAgentLabel}</Eyebrow>
-               <h3 className="mt-3 text-[15px] font-semibold tracking-[-.02em] text-white">F01-S01-T02</h3>
-               <p className="mt-2 text-xs leading-5 text-white/48">{hc.mockAgentTask}</p>
-               
-               {/* Terminal Interaktif Realistis Sesuai CLI Scratch Agent */}
-               <div className="mt-4 overflow-hidden rounded-xl border border-white/10 bg-black/60 shadow-inner">
-                 <div className="flex items-center justify-between border-b border-white/[.08] bg-white/[.02] px-3 py-1.5 font-mono text-[9px] text-white/40">
-                   <span className="flex items-center gap-1.5">
-                     <span className="size-1.5 rounded-full bg-[#74FA6A] animate-pulse" />
-                     cli runtime
-                   </span>
-                   <span>antigravity</span>
-                 </div>
-                 <div className="p-3 font-mono text-[10px] leading-5 text-white/70 space-y-1.5">
-                   <div className="flex items-center gap-1.5 text-white/40">
-                     <span className="text-[#74FA6A]">$</span>
-                     <span className="text-white/80">scratch-agent task next</span>
-                   </div>
-                   <div className="rounded border border-white/[.06] bg-white/[.02] p-2 text-[9.5px] leading-4 text-white/60">
-                     <p className="text-white/90 font-semibold text-[10px]">› ref: <span className="text-[#74FA6A]">F01-S01-T02</span></p>
-                     <p className="text-white/50">status: in_progress</p>
-                     <p className="text-white/50">checkpoint: <span className="text-[#74FA6A]">false</span></p>
-                     <p className="text-white/50">blocked: <span className="text-white/40">false</span></p>
-                   </div>
-                   <div className="pt-1 flex items-center gap-1.5 text-[9px] text-emerald-400/90 font-mono">
-                     <span className="size-1 rounded-full bg-[#74FA6A]" />
-                     <span>uipro skill v2.4 active</span>
-                   </div>
-                 </div>
-               </div>
-
-               <div className="mt-4 flex items-center justify-between font-mono text-[10px] text-white/30 border-t border-white/[.06] pt-3">
-                 <span className="flex items-center gap-1.5"><Zap size={11} className="text-[#74FA6A]" /> polling 5s</span>
-                 <span className="text-[#74FA6A]/80">FutsalGo (12/120)</span>
-               </div>
-             </aside>
-           </div>
-         </div>
-       </motion.section>
+       <LandingWorkspace lang={lang} />
 
       <section id="product" className="mx-auto max-w-[1360px] px-5 pb-24 pt-24 md:px-10 md:pb-32 md:pt-28">
         <div className="flex flex-wrap items-end justify-between gap-6"><div><Eyebrow>{hc.productEyebrow}</Eyebrow><h2 className="mt-5 max-w-[18ch] text-balance text-[clamp(2.35rem,4.2vw,3.75rem)] font-medium leading-[.98] tracking-[-.055em] text-[#F0F3F5]">{hc.productTitle}</h2></div></div>
         <div className="mt-12 grid gap-5 md:grid-cols-2">
-          <FeatureCard label={hc.features[0].label} title={hc.features[0].title} copy={hc.features[0].copy} terminal={<AnimatedTerminalPRD />} />
-          <FeatureCard label={hc.features[1].label} title={hc.features[1].title} copy={hc.features[1].copy} terminal={<AnimatedTerminalRuntime />} />
-          <FeatureCard label={hc.features[2].label} title={hc.features[2].title} copy={hc.features[2].copy} terminal={<AnimatedTerminalQueue />} />
-          <FeatureCard label={hc.features[3].label} title={hc.features[3].title} copy={hc.features[3].copy} terminal={<><div className="flex items-center justify-between"><span>LIVE TELEMETRY</span><span className="text-[#74FA6A]">5s poll</span></div><div className="relative mt-6 h-[96px] overflow-hidden rounded border border-white/10 bg-[#111312] p-3"><motion.svg viewBox="0 0 330 100" preserveAspectRatio="none" className="h-full w-full"><motion.polyline points="0,70 28,35 55,72 88,65 118,82 148,45 175,58 208,29 235,66 260,51 290,76 315,42 330,48" fill="none" stroke="#74FA6A" strokeWidth="2" strokeLinecap="round" animate={{ pathLength: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 2.8, ease: "easeInOut" }} /></motion.svg></div><p className="mt-3 text-[10px] text-white/35">{hc.termActiveLine}</p></>} />
+          <FeatureCard artwork={0} label={hc.features[0].label} title={hc.features[0].title} copy={hc.features[0].copy} terminal={<AnimatedTerminalPRD />} />
+          <FeatureCard artwork={1} label={hc.features[1].label} title={hc.features[1].title} copy={hc.features[1].copy} terminal={<AnimatedTerminalRuntime />} />
+          <FeatureCard artwork={2} label={hc.features[2].label} title={hc.features[2].title} copy={hc.features[2].copy} terminal={<AnimatedTerminalQueue />} />
+          <FeatureCard artwork={3} label={hc.features[3].label} title={hc.features[3].title} copy={hc.features[3].copy} terminal={<><div className="flex items-center justify-between"><span>LIVE TELEMETRY</span><span className="text-[#74FA6A]">5s poll</span></div><div className="relative mt-6 h-[96px] overflow-hidden rounded border border-white/10 bg-[#111312] p-3"><motion.svg viewBox="0 0 330 100" preserveAspectRatio="none" className="h-full w-full"><motion.polyline points="0,70 28,35 55,72 88,65 118,82 148,45 175,58 208,29 235,66 260,51 290,76 315,42 330,48" fill="none" stroke="#74FA6A" strokeWidth="2" strokeLinecap="round" animate={{ pathLength: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 2.8, ease: "easeInOut" }} /></motion.svg></div><p className="mt-3 text-[10px] text-white/35">{hc.termActiveLine}</p></>} />
         </div>
       </section>
 
@@ -434,11 +375,19 @@ function PromptShowcase() {
   );
 }
 
-function FeatureCard({ label, title, copy, terminal }: { label: string; title: string; copy: string; terminal: React.ReactNode }) {
+function FeatureArtwork({ variant }: { variant: 0 | 1 | 2 | 3 }) {
+  return <div className={`${featureArt.art} ${featureArt[`variant${variant}`]}`} aria-hidden="true">
+    <i className={featureArt.shapeA} /><i className={featureArt.shapeB} /><i className={featureArt.shapeC} />
+    <b className={featureArt.nodeA} /><b className={featureArt.nodeB} /><b className={featureArt.nodeC} />
+  </div>;
+}
+
+function FeatureCard({ artwork, label, title, copy, terminal }: { artwork: 0 | 1 | 2 | 3; label: string; title: string; copy: string; terminal: React.ReactNode }) {
   return (
     <motion.article initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .2 }} transition={{ duration: .65, ease: [0.16, 1, 0.3, 1] }} className="group flex w-full flex-col overflow-hidden rounded-[16px] border border-white/15 bg-[#111413] transition-colors duration-300 hover:border-[#74FA6A]/45">
-      <div className="relative flex min-h-[272px] items-center justify-center overflow-hidden border-b border-white/10 bg-[radial-gradient(circle_at_30%_35%,rgba(116,250,106,.14),transparent_45%)] p-5">
-        <div className="mx-auto flex min-h-[168px] w-full max-w-[408px] flex-col rounded-[14px] border-[6px] border-[#2B3539] bg-[#171918] p-4 font-mono text-[12px] leading-5 text-[#AAB3AE] shadow-[0_14px_36px_#0008]">
+      <div className="relative flex min-h-[272px] items-center justify-center overflow-hidden border-b border-white/10 bg-[#A7D6A1] p-5">
+        <FeatureArtwork variant={artwork} />
+        <div className="relative z-10 mx-auto flex min-h-[168px] w-full max-w-[408px] flex-col rounded-[14px] border-[6px] border-[#2B3539] bg-[#171918] p-4 font-mono text-[12px] leading-5 text-[#AAB3AE] shadow-[0_14px_36px_#0008]">
           <div className="mb-2.5 flex gap-1.5"><i className="size-2 rounded-full bg-[#FF5F56]" /><i className="size-2 rounded-full bg-[#FFBD2E]" /><i className="size-2 rounded-full bg-[#74FA6A]" /></div>
           <div className="flex flex-1 flex-col justify-center">{terminal}</div>
         </div>
@@ -1126,4 +1075,3 @@ const KriptoPreview = memo(function KriptoPreview() {
 });
 
 // Semua device auto-animasi tanpa hover.
-
