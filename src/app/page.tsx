@@ -12,6 +12,7 @@ import { UserNav } from "@/components/user-nav";
 import { SupportedAiTools } from "@/components/supported-ai-tools";
 import { BorderBeamPanel } from "@/components/ui/border-beam-panel";
 import { TestimonialsSection } from "@/components/testimonials-section";
+import { CreatorSection } from "@/components/creator-section";
 import { useLang } from "@/lib/lang";
 import { t } from "@/lib/i18n";
 import { homeCopy } from "@/lib/copy-home";

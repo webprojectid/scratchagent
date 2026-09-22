@@ -72,7 +72,7 @@ export function TestimonialsSection({ lang = "id" }: { lang?: "id" | "en" }) {
   const en = lang === "en";
   
   // Bilingual quotes
-  const quotes: Record<string, { en: string; id: string }> = {
+  const quotes: Record<string, string> = {
     reza: en 
       ? "Bugfixing the tricky multi-service architecture left Cursor and Claude Code stuck. Scratch Agent broke down tasks with a strict dependency DAG—we shipped a complete MVP in one night."
       : "Bugfix arsitektur multi-service yang tricky bikin Cursor dan Claude Code mentok. Scratch Agent nge-breakdown task-nya dengan dependency DAG ketat, tim kami rilis MVP utuh dalam satu malam.",
@@ -97,7 +97,7 @@ export function TestimonialsSection({ lang = "id" }: { lang?: "id" | "en" }) {
       ? "I love the anti-circular dependency validation DAG most. When AI agents ran 100+ tasks, the execution order was logically sorted and never got stuck halfway."
       : "Paling suka bagian validasi DAG anti-circular dependencies-nya. Waktu agent AI jalanin 100+ task, urutan eksekusinya urut logis dan gak pernah nyangkut di tengah jalan.",
     
-    aryas: en
+    arya: en
       ? "Exporting master prompts to Cline, Cursor, and Aider CLI works immediately without missing context. From auth flow to Cloud synchronization, everything's clearly defined without guessing."
       : "Export master prompt ke Cline, Cursor, dan Aider CLI langsung jalan tanpa missing context. Dari alur auth sampai sinkronisasi Cloud terdefinisi jelas tanpa tebak-tebakan.",
     
@@ -149,7 +149,7 @@ export function TestimonialsSection({ lang = "id" }: { lang?: "id" | "en" }) {
 
               {/* Quote Text */}
               <p className="text-[14px] sm:text-[14.5px] leading-[1.65] text-[#D1D5DB] transition-colors group-hover:text-white">
-                &ldquo;{quotes[item.quoteId]?.[en ? 'en' : 'id']}&rdquo;
+                &ldquo;{quotes[item.quoteId]}&rdquo;
               </p>
 
               {/* Author Row with Indonesian Portrait Photo */}
