@@ -15,11 +15,11 @@ let cache: Lang | null = null;
 
 function read(): Lang {
   if (cache) return cache;
-  if (typeof window === "undefined") return "id";
+  if (typeof window === "undefined") return "en"; // Default to English!
   try {
     cache = window.localStorage.getItem(STORAGE_KEY) === "en" ? "en" : "id";
   } catch {
-    cache = "id";
+    cache = "en"; // Fallback to English!
   }
   return cache;
 }
