@@ -4,6 +4,7 @@ import { useEffect, useId, useReducer, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowUpRight, Check, ChevronRight, Circle, FileText, Folder, GitBranch, ListChecks, Map, Minus, Pause, Play, RotateCcw, Search, Terminal, X } from "lucide-react";
 import demo from "@/lib/demo-futsalgo.json";
+import { workspaceCopy } from "@/lib/copy-workspace";
 import styles from "./landing-workspace.module.css";
 
 type Tab = "roadmap" | "prd" | "tasks";
@@ -45,6 +46,7 @@ function reducer(state: State, action: Action): State {
 
 export function LandingWorkspace({ lang = "id" }: { lang?: "id" | "en" }) {
   const en = lang === "en";
+  const w = workspaceCopy(lang);
   const [state, dispatch] = useReducer(reducer, initial);
   const [tab, setTab] = useState<Tab>("roadmap");
   const [query, setQuery] = useState("");
@@ -120,13 +122,13 @@ export function LandingWorkspace({ lang = "id" }: { lang?: "id" | "en" }) {
             </nav>
             <aside className={styles.sidebar}>
               <div className={styles.sidebarTitle}><strong>{label("Fitur project", "Project features")}</strong><span>{sessions.length}</span></div>
-              <label className={styles.search}><Search size={13} /><input aria-label={label("Cari fitur", "Search features")} placeholder={label("Cari fitur…", "Search features…")} value={query} onChange={e => setQuery(e.target.value)} />{query && <button aria-label={label("Hapus pencarian", "Clear search")} onClick={() => setQuery("")}><X size={12} /></button>}</label>
-              <p className={styles.folder}><Folder size={12} /> FutsalGo / {label("Rencana kerja", "Work plan")}</p>
+              <label className={styles.search}><Search size={13} /><input aria-label={w.searchPlaceholder} placeholder={w.searchPlaceholder} value={query} onChange={e => setQuery(e.target.value)} />{query && <button aria-label={label("Hapus pencarian", "Clear search")} onClick={() => setQuery("")}><X size={12} /></button>}</label>
+              <p className={styles.folder}><Folder size={12} /> FutsalGo / {w.breadcrumbWorkPlan}</p>
               <div className={styles.sessionList}>
                 {matching.map(({ item, index }) => <button key={item.slug} className={styles.session} aria-pressed={state.feature === index} onClick={() => dispatch({ type: "feature", index })}>
-                  <span className={styles.sessionMeta}>{label("Fase", "Phase")} {index + 1}<span>{item.subFeatures.length} {label("sub-fitur", "sub-features")}</span></span>
+                  <span className={styles.sessionMeta}>{w.phaseLabel} {index + 1}<span>{item.subFeatures.length} {w.tasksCount}</span></span>
                   <strong>{item.title}</strong>
-                  <span className={styles.sessionMeta}>{state.feature === index ? <><span className={styles.activeDot} /> {label("Sesi dipilih", "Selected session")}</> : label("Lihat rencana", "View plan")}</span>
+                  <span className={styles.sessionMeta}>{state.feature === index ? <><span className={styles.activeDot} /> {w.sessionSelected}</> : w.viewPlan}</span>
                 </button>)}
                 {matching.length === 0 && <p className={styles.empty}>{label("Fitur tidak ditemukan. Coba kata lain.", "No features found. Try another search.")}</p>}
               </div>
@@ -142,8 +144,8 @@ export function LandingWorkspace({ lang = "id" }: { lang?: "id" | "en" }) {
               <div id={`${id}-panel`} role="tabpanel" aria-labelledby={`${id}-${tab}`} tabIndex={0} className={styles.editor}>
                 <div className={styles.breadcrumb}>FutsalGo <ChevronRight size={12} /> {tab === "roadmap" ? "roadmap.md" : tab === "prd" ? "requirements.md" : "tasks.md"}</div>
                 {tab === "roadmap" && <>
-                  <p className={styles.overline}>{label("ROADMAP & STRUKTUR", "ROADMAP & STRUCTURE")}</p><h3>{session.title}</h3>
-                  <p className={styles.note}>{label("Roadmap fitur → PRD sub-fitur → task terurut yang dikerjakan agent.", "Feature roadmap → sub-feature PRD → ordered agent tasks.")}</p>
+                  <p className={styles.overline}>{w.roadspaceTabTitle}</p><h3>{session.title}</h3>
+                  <p className={styles.note}>{en ? "Feature roadmap → sub-feature PRD → ordered agent tasks." : "Rintisan fitur → PRD sub-fitur → task terurut buat agent."}</p>
                   <div className={styles.tree}><div className={styles.treeRoot}><Folder size={15} />FutsalGo</div><div className={styles.treeBranch}><strong>{session.title}</strong>{session.subFeatures.map((sub, index) => <details key={sub.title} open={index === 0}><summary>{sub.title}<span>{sub.tasks.length} tasks</span></summary><ul>{sub.tasks.map(item => <li key={item.ref}><code>{item.ref}</code>{item.title.replace("[BLOCKER] ", "")}</li>)}</ul></details>)}</div></div>
                 </>}
                 {tab === "prd" && <>
