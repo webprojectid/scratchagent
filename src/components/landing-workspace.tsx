@@ -144,7 +144,7 @@ export function LandingWorkspace({ lang = "id" }: { lang?: "id" | "en" }) {
               <div id={`${id}-panel`} role="tabpanel" aria-labelledby={`${id}-${tab}`} tabIndex={0} className={styles.editor}>
                 <div className={styles.breadcrumb}>FutsalGo <ChevronRight size={12} /> {tab === "roadmap" ? "roadmap.md" : tab === "prd" ? "requirements.md" : "tasks.md"}</div>
                 {tab === "roadmap" && <>
-                  <p className={styles.overline}>{w.roadspaceTabTitle}</p><h3>{session.title}</h3>
+                  <p className={styles.overline}>{w.roadmapTabTitle}</p><h3>{session.title}</h3>
                   <p className={styles.note}>{en ? "Feature roadmap → sub-feature PRD → ordered agent tasks." : "Rintisan fitur → PRD sub-fitur → task terurut buat agent."}</p>
                   <div className={styles.tree}><div className={styles.treeRoot}><Folder size={15} />FutsalGo</div><div className={styles.treeBranch}><strong>{session.title}</strong>{session.subFeatures.map((sub, index) => <details key={sub.title} open={index === 0}><summary>{sub.title}<span>{sub.tasks.length} tasks</span></summary><ul>{sub.tasks.map(item => <li key={item.ref}><code>{item.ref}</code>{item.title.replace("[BLOCKER] ", "")}</li>)}</ul></details>)}</div></div>
                 </>}
