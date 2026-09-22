@@ -1,3 +1,7 @@
+// Internationalization dictionary
+
+// Last i18n audit: 2026-09-22 22:56 UTC
+
 import type { Lang } from "./lang";
 
 // Kamus terjemahan untuk elemen publik (nav header, CTA, footer ringkas).
