@@ -38,34 +38,34 @@ export function homeCopy(lang: Lang) {
     productTitle: en ? "Full context for your agent, in one flow." : "Konteks penuh untuk agent dalam satu flow.",
     features: en
       ? [
-          { label: "PRD ENGINE", title: "Brief \u2192 ordered graph.", copy: "Assumptions enriched. Features, sub-features, tasks, deps." },
+          { label: "PRD ENGINE", title: "Brief → ordered graph.", copy: "Assumptions enriched. Features, sub-features, tasks, deps." },
           { label: "AGENT-NATIVE RUNTIME", title: "Built for focused execution.", copy: "One active task. Status, layer, checkpoint all readable." },
           { label: "TASK GRAPH", title: "Deterministic ordering.", copy: "Frontend, backend, QA. The server decides the order." },
           { label: "LIVE PROGRESS", title: "Watch the agent move.", copy: "Five second polling. Telemetry stays visible." },
         ]
       : [
-          { label: "PRD ENGINE", title: "Brief \u2192 graph terurut.", copy: "Asumsi diperkaya. Feature, sub-fitur, task, deps." },
-          { label: "AGENT-NATIVE RUNTIME", title: "Built untuk eksekusi fokus.", copy: "Satu task aktif. Status, layer, checkpoint terbaca." },
-          { label: "TASK GRAPH", title: "Ordering deterministik.", copy: "Frontend, backend, QA. Server menentukan urutan." },
-          { label: "LIVE PROGRESS", title: "Lihat agent bergerak.", copy: "Polling lima detik. Telemetry tetap terlihat." },
+          { label: "PRD ENGINE", title: "Brief → ordered graph.", copy: "Assumptions diperkaya. Features, sub-features, tasks, deps." },
+          { label: "AGENT-NATIVE RUNTIME", title: "Built for focused execution.", copy: "Satu task aktif. Status, layer, checkpoint terbaca." },
+          { label: "TASK GRAPH", title: "Deterministic ordering.", copy: "Frontend, backend, QA. Server yang putusin urutan." },
+          { label: "LIVE PROGRESS", title: "Lihat agent gerak.", copy: "Polling 5 detik. Telemetry always terlihat." },
         ],
 
     // Terminal mini copy
-    termBrief: en ? "brief: \u201Cmusic studio booking\u201D" : "brief: \u201Cbooking studio musik\u201D",
-    termPhases: en ? "\u2713 03 phases \u00b7 09 sub-features" : "\u2713 03 fase \u00b7 09 sub-fitur",
-    termReadingPrd: en ? "Reading the PRD" : "Membaca PRD",
-    termBuildingGraph: en ? "Building the graph" : "Menyusun graph",
-    termWaitingAgent: en ? "Waiting for the agent" : "Menunggu agent",
+    termBrief: en ? "brief: 'music studio booking'" : "brief: 'booking studio musik'",
+    termPhases: en ? "✓ 03 phases · 09 sub-features" : "✓ 03 phase · 09 sub-feature",
+    termReadingPrd: en ? "Reading the PRD" : "Maca PRD",
+    termBuildingGraph: en ? "Building the graph" : "Ngarsain graph",
+    termWaitingAgent: en ? "Waiting for the agent" : "Nunggu agent",
     termNext: "next",
     termDone: "done",
-    termActiveLine: en ? "active \u00b7 03 \u00a0 done today \u00b7 08 \u00a0 checkpoint false" : "active \u00b7 03 \u00a0 done today \u00b7 08 \u00a0 checkpoint false",
+    termActiveLine: en ? "active · 03   done today · 08   checkpoint false" : "active · 03   done hari ini · 08   checkpoint false",
 
     // Solutions section
     solutionsEyebrow: "solutions",
-    solutionsTitle: en ? "One flow, many ways of working." : "Satu flow, berbagai cara kerja.",
+    solutionsTitle: en ? "One flow, many ways of working." : "Satu flow, banyak cara kerja.",
     solutionsSub: en
       ? "From side projects to client briefs, Scratch Agent turns ideas into plans your agent can run right away."
-      : "Dari side project sampai brief klien, Scratch Agent ubah ide jadi rencana yang bisa langsung dijalankan agent.",
+      : "Dari side project sampe brief klien, Scratch Agent ubah ide jadi plan yang bisa langsung dijalanin agent.",
     solutions: en
       ? [
           { label: "SOLO DEV", title: "Side projects never stall.", copy: "Write a short brief, get a complete plan. The agent works through the tasks one by one, you just review the results.", points: ["A 5 minute brief becomes an execution-ready plan", "Agent progress is visible live on the web", "Resume anytime without losing context"] },
@@ -73,9 +73,9 @@ export function homeCopy(lang: Lang) {
           { label: "AGENT OPERATOR", title: "A coding agent that never gets confused.", copy: "Using OpenCode, Claude Code, or Cursor? Give them an ordered plan with dependencies and checkpoints, not guesses.", points: ["Deterministic task order from the server", "Checkpoints for manual verification", "Automatic retry when a task fails"] },
         ]
       : [
-          { label: "SOLO DEV", title: "Side project gak mangkrak.", copy: "Tulis brief singkat, dapatkan rencana lengkap. Agent mengerjakan task satu per satu, kamu tinggal review hasilnya.", points: ["Brief 5 menit jadi plan siap eksekusi", "Progress agent kelihatan live di web", "Lanjut kapan saja tanpa kehilangan konteks"] },
-          { label: "FREELANCER / AGENCY", title: "Brief klien jadi PRD profesional.", copy: "Ubah brief klien menjadi PRD terstruktur dengan feature, kriteria selesai, dan scope yang jelas sebelum coding dimulai.", points: ["PRD + task graph siap dipresentasikan", "Scope terukur dari feature & sub-fitur", "Eksekusi bisa diserahkan ke agent coding"] },
-          { label: "AGENT OPERATOR", title: "Agent coding yang gak bingung.", copy: "Pakai OpenCode, Claude Code, atau Cursor? Beri mereka plan terurut dengan dependensi dan checkpoint, bukan tebakan.", points: ["Urutan task deterministik dari server", "Checkpoint untuk verifikasi manual", "Retry otomatis saat task gagal"] },
+          { label: "SOLO DEV", title: "Side project gak mangkrak.", copy: "Tulis brief singkat, dapat plan lengkap. Agent kerjain task satu per satu, kamu tinggal review hasilnya.", points: ["Brief 5 menit jadi plan siap eksekusi", "Progress agent kelihatan live di web", "Lanjut kapan aja tanpa loss konteks"] },
+          { label: "FREELANCER / AGENCY", title: "Brief klien jadi PRD profesional.", copy: "Ubah brief klien jadi PRD terstruktur dengan features, acceptance criteria, scope jelas sebelum coding dimulai.", points: ["PRD + task graph siap dipresentasi", "Scope terukur dari features & sub-features", "Eksekusi bisa diserahkan ke coding agent"] },
+          { label: "AGENT OPERATOR", title: "Coding agent gak bingung.", copy: "Pakai OpenCode, Claude Code, atau Cursor? Kasih mereka ordered plan dengan dependencies & checkpoint, bukan tebak-tebakan.", points: ["Task order deterministik dari server", "Checkpoint buat verifikasi manual", "Auto retry kalo task gagal"] },
         ],
 
     // Agents section
@@ -84,11 +84,11 @@ export function homeCopy(lang: Lang) {
     agentsTitleB: en ? "Send the mission." : "Kirim misinya.",
     agentsSub: en
       ? "Copy one prompt, paste it into your favorite AI agent. The agent connects to the plan automatically, reads the PRD, and works through tasks one by one. Order, dependencies, and checkpoints are managed by the server."
-      : "Copy satu prompt, paste ke AI agent favoritmu. Agent otomatis terhubung ke plan, membaca PRD, dan mengerjakan task satu per satu. Urutan, dependensi, dan checkpoint diatur server.",
+      : "Copy satu prompt, paste ke AI agent favoritmu. Agent auto connect ke plan, baca PRD, kerjain task satu per satu. Order, dependencies, checkpoint diatur server.",
 
     // Prompt showcase
     promptReadyBadge: "ready to paste",
-    promptAgentAny: en ? "agent: any" : "agent: apa saja",
+    promptAgentAny: en ? "agent: any" : "agent: apa aja",
     promptSteps: en
       ? [
           { label: "Connect to the plan & read the PRD" },
@@ -97,16 +97,16 @@ export function homeCopy(lang: Lang) {
           { label: "Repeat until every task is done" },
         ]
       : [
-          { label: "Terhubung ke plan & membaca PRD" },
-          { label: "Ambil task berikutnya, urutan diatur server" },
-          { label: "Kerjakan task, lalu tandai selesai" },
-          { label: "Ulangi sampai semua task done" },
+          { label: "Connect ke plan & baca PRD" },
+          { label: "Ambil task berikutnya, order diatur server" },
+          { label: "Kerjain task, tandai done" },
+          { label: "Repeat sampe semua task done" },
         ],
     promptFoot: en
-      ? "Stop & report when a task fails or hits a checkpoint. Copy the prompt from the \u201CStart implementation\u201D button, paste it into OpenCode, Claude Code, Cursor, etc."
-      : "Berhenti & lapor jika ada task gagal atau checkpoint. Copy prompt dari tombol \u201CStart implementation\u201D, paste ke OpenCode, Claude Code, Cursor, dll.",
+      ? "Stop & report when a task fails or hits a checkpoint. Copy the prompt from the 'Start implementation' button, paste it into OpenCode, Claude Code, Cursor, etc."
+      : "Stop & lapor kalo ada task gagal atau checkpoint. Copy prompt dari tombol 'Start implementation', paste ke OpenCode, Claude Code, Cursor, dll.",
 
-    footerTagline: en ? "Hire your AI agent. Start with the Free plan." : "Hire your AI agent. Mulai dari paket Free.",
+    footerTagline: en ? "Hire your AI agent. Start with the Free plan." : "Hire AI agent kamu. Mulai dari paket Free.",
     footerCreate: en ? "create plan" : "buat plan",
   };
 }
