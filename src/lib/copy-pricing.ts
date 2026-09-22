@@ -1,145 +1,61 @@
 import type { Lang } from "./lang";
 
-/** Semua copy halaman /pricing dalam dua bahasa. */
+/** Copy halaman pricing. Semua angka di sini mengikuti quota.ts dan plan-limits.ts. */
 export function pricingCopy(lang: Lang) {
   const en = lang === "en";
   return {
-    heroTitle: en
-      ? "Start on the Free plan. Upgrade when you need more."
-      : "Mulai dari paket Free. Upgrade saat butuh lebih.",
-    heroSub: en
-      ? "One generate turns your brief into a complete plan: structure, PRD, architecture, ordered tasks. Pick the plan that fits how you work."
-      : "Satu generate memproses brief kamu jadi plan lengkap: struktur, PRD, arsitektur, task terurut. Pilih paket yang pas buat cara kerjamu.",
-    heroCta: en ? "Start with the Free plan" : "Mulai dari paket Free",
-    compareLink: en ? "compare all features" : "bandingkan semua fitur",
-    trust: en
-      ? ["no credit card", "cancel anytime", "plans stay yours"]
-      : ["tanpa kartu kredit", "batal kapan saja", "plan tetap milikmu"],
-
-    tiersTitle: en ? "Two plans, one identical pipeline." : "Dua paket, satu pipeline yang sama.",
-    tiersNote: en
-      ? "every plan produces structure, PRD, architecture, and tasks with the same quality"
-      : "semua paket menghasilkan struktur, PRD, arsitektur, dan task dengan kualitas yang sama",
-
-    compareTitle: en ? "Every feature, at a glance." : "Semua fitur, dilihat sekilas.",
-    compareSub: en
-      ? "Plans differ only in quota, speed, and premium features. The base quality of every generate is the same across all plans."
-      : "Perbedaan paket hanya di kuota, kecepatan, dan fitur premium. Kualitas dasar hasil generate sama di semua paket.",
-    colFeature: en ? "Feature" : "Fitur",
-    yesLabel: en ? "Yes" : "Ya",
-    noLabel: en ? "No" : "Tidak",
+    eyebrow: en ? "Plans for every build pace" : "Paket untuk setiap ritme build",
+    heroTitle: en ? "Pick the plan that fits your build." : "Pilih paket sesuai ritme build kamu.",
+    heroSub: en ? "Both plans turn a brief into a structured plan, PRD, architecture, and ordered tasks. The limits and editing tools are different." : "Kedua paket mengubah brief menjadi struktur plan, PRD, arsitektur, dan task terurut. Batas penggunaan dan alat editnya yang berbeda.",
+    pipeline: en ? ["Brief", "Plan structure", "PRD", "Architecture", "Ordered tasks"] : ["Brief", "Struktur plan", "PRD", "Arsitektur", "Task terurut"],
+    currencyNote: en ? "Prices in IDR" : "Harga dalam Rupiah",
+    plansTitle: en ? "Plans" : "Paket",
+    freeDescription: en ? "For trying the full planning flow." : "Untuk mencoba seluruh alur planning.",
+    proDescription: en ? "For frequent builds and deeper plans." : "Untuk build rutin dan plan yang lebih dalam.",
+    chooseFree: en ? "Choose Free" : "Pilih Free",
+    choosePro: en ? "Choose Pro" : "Pilih Pro",
+    freeWhy: en ? "Why choose Free?" : "Kenapa pilih Free?",
+    proWhy: en ? "Why choose Pro?" : "Kenapa pilih Pro?",
+    included: en ? "Includes:" : "Termasuk:",
+    freeReasons: en ? ["3 successful plan generations in a rolling 24-hour window", "4 to 8 phases per plan", "3 to 5 sub-features per phase", "8 to 12 tasks per phase"] : ["3 generate plan yang berhasil dalam rolling 24 jam", "4 sampai 8 fase per plan", "3 sampai 5 sub-fitur per fase", "8 sampai 12 task per fase"],
+    proReasons: en ? ["Unlimited successful plan generations", "10 to 15 phases per plan", "12 to 20 sub-features per phase", "15 to 25 tasks per phase", "Add up to 2 ideas to each project", "Delete phases, sub-features, and idle tasks"] : ["Generate plan berhasil tanpa batas kuota", "10 sampai 15 fase per plan", "12 sampai 20 sub-fitur per fase", "15 sampai 25 task per fase", "Tambahkan maksimal 2 ide ke setiap project", "Hapus fase, sub-fitur, dan task yang tidak sedang berjalan"],
+    monthly: en ? "Monthly" : "Bulanan",
+    quarterly: en ? "3 months" : "3 bulan",
+    save: en ? "Save 20%" : "Hemat 20%",
+    perMonth: en ? "/month" : "/bulan",
+    perQuarter: en ? "/3 months" : "/3 bulan",
+    freePrice: "Rp 0",
+    monthlyPrice: "Rp 39rb",
+    quarterlyPrice: "Rp 93,6rb",
+    quarterlyOriginal: "Rp 117rb",
+    compareTitle: en ? "Compare every plan detail" : "Bandingkan detail tiap paket",
+    compareSub: en ? "The limits below are enforced by ScratchAgent when it generates or edits a plan." : "Batas di bawah ini diterapkan langsung oleh ScratchAgent saat membuat atau mengedit plan.",
+    featureLabel: en ? "Feature" : "Fitur",
     comparison: [
-      { label: en ? "Plan generates per 24 hours" : "Generate plan per 24 jam", free: "3", pro: en ? "Unlimited" : "Unlimited" },
-      { label: en ? "PRD phases per plan" : "Fase PRD per plan", free: "4-8", pro: "10-15" },
+      { label: en ? "Successful generations per rolling 24 hours" : "Generate berhasil per rolling 24 jam", free: "3", pro: en ? "Unlimited" : "Tanpa batas" },
+      { label: en ? "Phases per plan" : "Fase per plan", free: "4-8", pro: "10-15" },
       { label: en ? "Sub-features per phase" : "Sub-fitur per fase", free: "3-5", pro: "12-20" },
       { label: en ? "Tasks per phase" : "Task per fase", free: "8-12", pro: "15-25" },
-      { label: "Premium AI model", free: true, pro: true },
-      { label: "Priority queue", free: false, pro: true },
-      { label: en ? "Edit and delete plan structure" : "Edit dan delete struktur plan", free: false, pro: true },
-      { label: en ? "Add ideas via chat" : "Tambah ide via kolom chat", free: false, pro: true },
-      { label: en ? "Private plans in the cloud" : "Plan privat di cloud", free: en ? "Forever" : "Selamanya", pro: en ? "Forever" : "Selamanya" },
-      { label: "Support", free: en ? "Community" : "Komunitas", pro: "Private" },
-    ] as { label: string; free: string | boolean; pro: string | boolean }[],
-
-    faqTitle: en ? "Plans and billing, answered." : "Seputar paket dan pembayaran.",
-    faqSub: en
-      ? "If your question is not here, start from the home page."
-      : "Kalau pertanyaanmu belum terjawab, mulai dari halaman utama.",
-    faqs: en
-      ? [
-          {
-            q: "What counts as one generate?",
-            a: "One brief you submit until it becomes a complete plan: structure, PRD, architecture, database schema, all the way to ordered tasks. Prompt revisions for the agent do not reduce your quota.",
-          },
-          {
-            q: "When does the Free quota reset?",
-            a: "The quota runs on a rolling 24 hour window. Every generate has its own expiry, so once one generate passes 24 hours, that slot opens up again without waiting for a new day.",
-          },
-          {
-            q: "Can I cancel my subscription anytime?",
-            a: "Yes. Plans you have created stay yours and remain accessible on the Free plan, only the speed and premium features stop.",
-          },
-          {
-            q: "Which payment methods are supported?",
-            a: "Right now, PayPal and bank transfer. Other options are coming, let us know if you need a specific method.",
-          },
-          {
-            q: "What is the premium AI model?",
-            a: "Every plan, including Free, uses a top tier AI model with deeper context understanding and more precise output. The structure, PRD, and tasks it produces hold up even for complex briefs. The difference with Pro is only the number of generates and the premium features.",
-          },
-        ]
-      : [
-          {
-            q: "Apa yang dihitung sebagai satu generate?",
-            a: "Satu brief yang kamu kirim sampai jadi plan lengkap: struktur, PRD, arsitektur, database schema, sampai task terurut. Revisi prompt agent tidak mengurangi kuota.",
-          },
-          {
-            q: "Kapan kuota Free di-reset?",
-            a: "Kuota dihitung rolling 24 jam. Setiap generate punya masa aktif sendiri, jadi begitu satu generate lewat 24 jam, slotnya terbuka lagi tanpa menunggu hari baru.",
-          },
-          {
-            q: "Bisa berhenti langganan kapan saja?",
-            a: "Bisa. Plan yang sudah kamu buat tetap milikmu dan tetap bisa diakses lewat akun Free, hanya kecepatan dan fitur premiumnya yang berhenti.",
-          },
-          {
-            q: "Metode pembayaran apa yang didukung?",
-            a: "Untuk sekarang pembayaran lewat PayPal dan transfer bank. Opsi lain menyusul, kabari kami kalau kamu butuh metode tertentu.",
-          },
-          {
-            q: "Apa itu premium AI model?",
-            a: "Semua paket, termasuk Free, memakai model AI kelas atas dengan pemahaman konteks yang lebih dalam dan hasil yang lebih presisi. Struktur, PRD, dan task yang dihasilkan matang untuk brief yang kompleks. Bedanya dengan Pro hanya di jumlah generate dan fitur premiumnya.",
-          },
-        ],
-
-    finalTitle: en ? "Ready to build your first plan?" : "Siap bikin plan pertamamu?",
-    finalSub: en
-      ? "The Free plan gives you 3 generates per 24 hours, enough to try the whole pipeline before you decide anything."
-      : "Paket Free kasih 3 generate per 24 jam, cukup untuk ngerasain seluruh pipeline dulu sebelum mutusin apa pun.",
-    finalCta: en ? "Start with the Free plan" : "Mulai dari paket Free",
-    footer: en
-      ? "© 2026 Scratch Agent. Hire your AI agent, start with the Free plan."
-      : "© 2026 Scratch Agent. Hire your AI agent, mulai dari paket Free.",
-
-    // Kartu paket (pricing-cards.tsx)
-    billingLabel: en ? "Pick a billing cycle" : "Pilih siklus billing",
-    month1: en ? "1 month" : "1 bulan",
-    month3: en ? "3 months" : "3 bulan",
-    saveBadge: en ? "save 20%" : "hemat 20%",
-    popularBadge: en ? "most popular" : "paling populer",
-    freeTagline: en ? "Light and fast" : "Ringan dan cepat",
-    freeCta: en ? "Start with the Free plan" : "Mulai dengan paket Free",
-    freeFeatures: en
-      ? [
-          { text: "Premium AI model" },
-          { text: "3 plan generates per 24 hours" },
-          { text: "4-8 phases, 3-5 sub-features, 8-12 tasks per phase" },
-          { text: "Private plans in the cloud, forever" },
-        ]
-      : [
-          { text: "Premium AI model" },
-          { text: "3 generate plan per 24 jam" },
-          { text: "4-8 fase, 3-5 sub-fitur, 8-12 task per fase" },
-          { text: "Plan privat di cloud, selamanya" },
-        ],
-    proTagline: en ? "Deep research and takes a long time" : "Riset mendalam dan butuh waktu lama",
-    proCta: en ? "Upgrade to Pro" : "Upgrade ke Pro",
-    proFeatures: en
-      ? [
-          { text: "Everything in the Free plan included" },
-          { text: "Unlimited plan generates", highlight: true },
-          { text: "Deeper PRD research: 10-15 phases, 12-20 sub-features, 15-25 tasks per phase", highlight: true },
-          { text: "Add ideas via chat (up to 2), or delete structure", highlight: true },
-          { text: "Projects stored forever", highlight: true },
-        ]
-      : [
-          { text: "Semua fitur dalam Free sudah termasuk" },
-          { text: "Unlimited generate plan", highlight: true },
-          { text: "PRD riset lebih dalam: 10-15 fase, 12-20 sub-fitur, 15-25 task per fase", highlight: true },
-          { text: "Tambah ide chat (maks 2), atau delete struktur", highlight: true },
-          { text: "Project disimpan selamanya", highlight: true },
-        ],
-    periodForever: en ? "forever" : "selamanya",
-    periodMonth: en ? "per month" : "per bulan",
-    periodQuarter: en ? "per 3 months" : "per 3 bulan",
+      { label: en ? "Add ideas after generation" : "Tambah ide setelah generate", free: en ? "Not included" : "Tidak termasuk", pro: en ? "Up to 2 per project" : "Maks. 2 per project" },
+      { label: en ? "Delete plan structure" : "Hapus struktur plan", free: en ? "Not included" : "Tidak termasuk", pro: en ? "Included" : "Termasuk" },
+    ],
+    faqTitle: en ? "Pricing FAQs" : "FAQ pricing",
+    faqs: en ? [
+      { q: "What counts as one generation?", a: "A generation is counted after ScratchAgent successfully saves a complete plan. If generation fails, the quota slot is returned." },
+      { q: "When does the Free quota reset?", a: "Free uses a rolling 24-hour window. Each successful generation leaves the window 24 hours after it was created, which opens one slot again." },
+      { q: "What changes when I choose Pro?", a: "Pro removes the generation quota, raises the enforced plan structure limits, lets you add up to two ideas per project, and lets you delete phases, sub-features, or tasks that are not running." },
+      { q: "How does the 3-month price work?", a: "One month costs Rp 39,000. Three months cost Rp 93,600 instead of Rp 117,000, a 20% reduction for that billing period." },
+      { q: "Can a running task be deleted?", a: "No. ScratchAgent blocks deletion while a task is in progress so the plan does not conflict with the connected coding agent." },
+      { q: "Do Free and Pro use the same planning flow?", a: "Yes. Both run the same stages: plan structure, PRD, architecture, database schema, and ordered tasks. The enforced size limits and Pro editing tools differ." },
+    ] : [
+      { q: "Apa yang dihitung sebagai satu generate?", a: "Generate dihitung setelah ScratchAgent berhasil menyimpan plan lengkap. Kalau proses generate gagal, slot kuotanya dikembalikan." },
+      { q: "Kapan kuota Free kembali tersedia?", a: "Free memakai rolling 24 jam. Setiap generate yang berhasil keluar dari jendela hitung 24 jam setelah dibuat, lalu satu slot terbuka lagi." },
+      { q: "Apa yang berubah saat memilih Pro?", a: "Pro menghapus batas kuota generate, menaikkan batas struktur plan, membuka penambahan maksimal dua ide per project, serta mengizinkan penghapusan fase, sub-fitur, atau task yang tidak sedang berjalan." },
+      { q: "Bagaimana hitungan harga 3 bulan?", a: "Harga satu bulan Rp 39.000. Paket tiga bulan Rp 93.600 dari harga normal Rp 117.000, jadi potongannya 20% untuk periode tersebut." },
+      { q: "Apakah task yang sedang berjalan bisa dihapus?", a: "Tidak. ScratchAgent menolak penghapusan task yang sedang berjalan agar struktur plan tidak bentrok dengan coding agent yang terhubung." },
+      { q: "Apakah alur planning Free dan Pro sama?", a: "Ya. Keduanya menjalankan tahap struktur plan, PRD, arsitektur, database schema, dan task terurut. Batas ukuran plan dan alat edit Pro yang berbeda." },
+    ],
+    footnote: en ? "Generation limits count successful plans. Failed generations return their quota slot." : "Batas generate menghitung plan yang berhasil. Generate yang gagal mengembalikan slot kuota.",
+    footer: en ? "ScratchAgent turns a brief into work your coding agent can follow." : "ScratchAgent mengubah brief menjadi pekerjaan yang bisa diikuti coding agent.",
   };
 }
