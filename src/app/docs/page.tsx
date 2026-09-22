@@ -93,41 +93,6 @@ export default function DocsPage() {
               </div>
             </div>
 
-            {/* 04 · FAQ — full-bleed sage panel, mirrors Supported AI Tools & pricing FAQ */}
-            <div className="relative w-full overflow-hidden rounded-[2.5rem] bg-[#9EC5AB] px-6 py-14 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.35)] md:px-10 md:py-16">
-              {/* Subtle grid texture, same recipe as Supported AI Tools */}
-              <div
-                className="pointer-events-none absolute inset-0"
-                style={{
-                  backgroundImage:
-                    "linear-gradient(hsla(0,0%,100%,0.10) 1px, transparent 0), linear-gradient(90deg, hsla(0,0%,100%,0.10) 1px, transparent 0)",
-                  backgroundSize: "60px 60px",
-                  maskImage: "radial-gradient(ellipse 60% 80% at 50% 0%, #000 0%, transparent 100%)",
-                  WebkitMaskImage: "radial-gradient(ellipse 60% 80% at 50% 0%, #000 0%, transparent 100%)",
-                }}
-              />
-              <div className="relative">
-                <SectionHead id="faq" label={c.faqLabel} title={c.faqTitle} />
-                <div className="mt-12 space-y-3">
-                  {c.faqs.map((item, i) => (
-                    <details
-                      key={item.q}
-                      className="group rounded-[20px] border border-[#0F1A12]/10 bg-[#F6FAF7]/90 px-6 py-5 shadow-[0_2px_10px_-2px_rgba(15,26,18,0.12)] transition-all duration-300 hover:border-[#0F1A12]/25 hover:bg-white hover:shadow-[0_8px_24px_-6px_rgba(15,26,18,0.22)]"
-                    >
-                      <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-[15px] font-medium text-[#1A2B1F] [&::-webkit-details-marker]:hidden">
-                        <span className="flex items-baseline gap-3">
-                          <span className="font-mono text-[11px] tabular-nums text-[#33473A]/70">{String(i + 1).padStart(2, "0")}</span>
-                          {item.q}
-                        </span>
-                        <span className="grid size-7 shrink-0 place-items-center rounded-full bg-[#0F1A12] text-[16px] font-bold text-[#9EC5AB] transition-transform duration-300 group-open:rotate-45 leading-none select-none">+</span>
-                      </summary>
-                      <p className="mt-3 max-w-[68ch] text-[14px] leading-[1.7] text-[#33473A] animate-in fade-in-50 duration-200">{item.a}</p>
-                    </details>
-                  ))}
-                </div>
-              </div>
-            </div>
-
             {/* CTA */}
             <div className="mt-20 rounded-2xl border border-white/[.08] bg-[#141414] p-8 text-center">
               <p className="text-[18px] font-medium tracking-[-.01em] text-[#EDEDED]">{c.ctaTitle}</p>
