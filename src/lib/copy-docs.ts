@@ -60,62 +60,6 @@ export function docsCopy(lang: Lang) {
           { t: "Mekanisme aman", d: "Jika task gagal, plan terblokir dan agent berhenti lalu melapor. Saat checkpoint, agent menunggu verifikasi darimu sebelum lanjut." },
         ],
 
-    faqLabel: "04 · FAQ",
-    faqTitle: en ? "Frequently asked." : "Yang sering ditanyakan.",
-    faqs: en
-      ? [
-          {
-            q: "Is Scratch Agent paid?",
-            a: "There is a Free plan you can use without paying: 3 plan generates per 24 hours, no credit card. If you need more, the Pro plan offers unlimited generates, a priority queue, the premium AI model, and professional workflow features. The full comparison is on the Pricing page.",
-          },
-          {
-            q: "Which AI agents are supported?",
-            a: "OpenCode, Claude Code, Cursor, Codex, and any other agent that accepts text instructions. The easiest way: copy the prompt from the Start implementation button on the plan page, paste it into your agent, and let the agent run the rest.",
-          },
-          {
-            q: "How do I get an access token?",
-            a: "Log in to the website, open the Profile page, and create a new access token. The token is shown only once, so keep it safe.",
-          },
-          {
-            q: "What happens when a task fails?",
-            a: "The plan gets blocked and no further tasks are handed out until the issue is handled. The agent (or you) can read the failure reason, fix it, and retry that task to continue.",
-          },
-          {
-            q: "Do I need a complicated setup?",
-            a: "No. Just create a plan from a brief, copy the prompt, and paste it into your agent. There is no extra configuration. Everything runs from that one prompt.",
-          },
-          {
-            q: "Where is my plan data stored?",
-            a: "In the cloud (Supabase), tied to your account. Plans are private and can only be accessed with your login or your token.",
-          },
-        ]
-      : [
-          {
-            q: "Apakah Scratch Agent berbayar?",
-            a: "Ada paket Free yang bisa dipakai tanpa bayar: 3 generate plan per 24 jam, tanpa kartu kredit. Kalau butuh lebih, tersedia paket Pro dengan generate unlimited, priority queue, premium AI model, dan fitur kerja profesional. Perbandingan lengkapnya ada di halaman Pricing.",
-          },
-          {
-            q: "AI agent apa saja yang didukung?",
-            a: "OpenCode, Claude Code, Cursor, Codex, dan agent lain yang bisa menerima instruksi teks. Cara paling mudah: copy prompt dari tombol Start implementation di halaman plan, paste ke agent kamu, sisanya agent yang jalankan.",
-          },
-          {
-            q: "Bagaimana cara mendapatkan token akses?",
-            a: "Login ke website, buka halaman Profile, lalu buat token akses baru. Token hanya ditampilkan sekali, jadi simpan baik-baik.",
-          },
-          {
-            q: "Apa yang terjadi kalau task gagal?",
-            a: "Plan akan terblokir dan task berikutnya tidak diberikan sampai masalahnya ditangani. Agent (atau kamu) bisa membaca alasan gagalnya, memperbaiki, lalu mencoba ulang task tersebut untuk melanjutkan.",
-          },
-          {
-            q: "Apakah perlu setup yang rumit?",
-            a: "Tidak. Cukup buat plan dari brief, copy prompt, dan paste ke agent kamu. Tidak ada konfigurasi tambahan. Semuanya berjalan dari satu prompt itu.",
-          },
-          {
-            q: "Di mana data plan saya disimpan?",
-            a: "Di cloud (Supabase), terikat ke akun kamu. Plan bersifat privat dan hanya bisa diakses dengan login atau token milikmu.",
-          },
-        ],
-
     ctaTitle: en ? "Ready to turn a brief into a plan?" : "Siap mengubah brief jadi plan?",
     ctaSub: en
       ? "Create your first plan now with the Free plan: 3 generates per 24 hours, no credit card."
@@ -131,7 +75,6 @@ export function docsCopy(lang: Lang) {
       { id: "quickstart", label: "Quickstart" },
       { id: "konsep", label: en ? "Concepts" : "Konsep" },
       { id: "prompt", label: en ? "Prompt Agent" : "Prompt Agent" },
-      { id: "faq", label: "FAQ" },
     ],
 
     // Visuals: quickstart steps

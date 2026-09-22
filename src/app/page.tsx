@@ -12,6 +12,7 @@ import { UserNav } from "@/components/user-nav";
 import { SupportedAiTools } from "@/components/supported-ai-tools";
 import { BorderBeamPanel } from "@/components/ui/border-beam-panel";
 import { TestimonialsSection } from "@/components/testimonials-section";
+import { CreatorSection } from "@/components/creator-section";
 import { useLang } from "@/lib/lang";
 import { t } from "@/lib/i18n";
 import { homeCopy } from "@/lib/copy-home";
@@ -250,6 +251,7 @@ export default function Home() {
       </section>
       </div>
 
+      <CreatorSection />
       <TestimonialsSection />
 
       <section id="agents" className="mx-auto w-[calc(100%-32px)] max-w-[1280px] mb-8 mt-8 overflow-hidden rounded-[24px] border border-white/10 bg-[#111318] px-5 py-16 md:px-10 md:py-20">

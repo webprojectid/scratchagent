@@ -2,11 +2,11 @@
 
 import { useEffect, useId, useReducer, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowUpRight, Check, ChevronRight, Circle, FileText, Folder, GitBranch, ListChecks, Minus, Pause, Play, RotateCcw, Search, Terminal, X } from "lucide-react";
+import { ArrowUpRight, Check, ChevronRight, Circle, FileText, Folder, GitBranch, ListChecks, Map, Minus, Pause, Play, RotateCcw, Search, Terminal, X } from "lucide-react";
 import demo from "@/lib/demo-futsalgo.json";
 import styles from "./landing-workspace.module.css";
 
-type Tab = "prd" | "tasks" | "structure";
+type Tab = "roadmap" | "prd" | "tasks";
 type Stage = "ready" | "working" | "checkpoint" | "failed" | "finished";
 type State = { feature: number; cursor: number; stage: Stage; playing: boolean; inspected: number; command: string };
 type Action = { type: "step" | "play" | "reset" | "fail" | "retry" } | { type: "feature" | "inspect"; index: number };
@@ -16,36 +16,37 @@ const sessions = demo.features.map(feature => ({
   ...feature,
   tasks: [...feature.subFeatures[0].tasks].sort((a, b) => a.phase - b.phase || order[a.layer] - order[b.layer] || a.ref.localeCompare(b.ref)),
 }));
-const initial: State = { feature: 0, cursor: 0, stage: "ready", playing: false, inspected: 0, command: "scratch-agent task next --plan demo --json" };
+const initial: State = { feature: 0, cursor: 0, stage: "ready", playing: true, inspected: 0, command: "scratch-agent task next --plan demo --json" };
 
 function reducer(state: State, action: Action): State {
   const tasks = sessions[state.feature].tasks;
   const task = tasks[state.cursor];
-  if (action.type === "feature") return { ...initial, feature: action.index };
+  if (action.type === "feature") return { ...initial, feature: action.index, playing: state.playing };
   if (action.type === "inspect") return { ...state, inspected: action.index };
-  if (action.type === "reset") return { ...initial, feature: state.feature };
+  if (action.type === "reset") return { ...initial, feature: state.feature, playing: true };
   if (action.type === "play") {
     if (state.stage === "finished") return { ...initial, feature: state.feature, playing: true };
-    if (state.stage === "failed" || state.stage === "checkpoint") return state;
+    if (state.stage === "failed") return state;
     return { ...state, playing: !state.playing };
   }
   if (action.type === "fail" && state.stage === "working") return { ...state, stage: "failed", playing: false, command: `scratch-agent task fail ${task.ref} "Simulasi kegagalan"` };
-  if (action.type === "retry" && state.stage === "failed") return { ...state, stage: "ready", command: `scratch-agent task retry ${task.ref}` };
-  if (action.type !== "step" || state.stage === "finished" || state.stage === "failed") return state;
+  if (action.type === "retry" && state.stage === "failed") return { ...state, stage: "ready", playing: true, command: `scratch-agent task retry ${task.ref}` };
+  if (action.type !== "step") return state;
+  if (state.stage === "finished") return { ...initial, feature: state.feature, playing: true };
   if (state.stage === "checkpoint") return { ...state, stage: "ready", command: "scratch-agent task next --plan demo --json" };
   if (state.stage === "ready") return { ...state, stage: "working", inspected: state.cursor, command: `scratch-agent task start ${task.ref}` };
   const next = tasks[state.cursor + 1];
   const checkpoint = next && (next.layer !== task.layer || next.phase !== task.phase);
   return { ...state, cursor: state.cursor + 1, inspected: next ? state.cursor + 1 : state.cursor,
     stage: !next ? "finished" : checkpoint ? "checkpoint" : "ready",
-    playing: !!next && !checkpoint && state.playing,
+    playing: state.playing,
     command: `scratch-agent task complete ${task.ref}` };
 }
 
 export function LandingWorkspace({ lang = "id" }: { lang?: "id" | "en" }) {
   const en = lang === "en";
   const [state, dispatch] = useReducer(reducer, initial);
-  const [tab, setTab] = useState<Tab>("prd");
+  const [tab, setTab] = useState<Tab>("roadmap");
   const [query, setQuery] = useState("");
   const [collapsed, setCollapsed] = useState(false);
   const [visible, setVisible] = useState(true);
@@ -57,7 +58,7 @@ export function LandingWorkspace({ lang = "id" }: { lang?: "id" | "en" }) {
   const inspected = session.tasks[state.inspected];
   const done = Math.min(state.cursor, session.tasks.length);
   const matching = sessions.map((item, index) => ({ item, index })).filter(({ item }) => item.title.toLocaleLowerCase().includes(query.toLocaleLowerCase()));
-  const tabs = [{ id: "prd" as const, label: "PRD", icon: FileText }, { id: "tasks" as const, label: "Tasks", icon: ListChecks }, { id: "structure" as const, label: en ? "Structure" : "Struktur", icon: GitBranch }];
+  const tabs = [{ id: "roadmap" as const, label: "Roadmap", icon: Map }, { id: "prd" as const, label: "PRD", icon: FileText }, { id: "tasks" as const, label: "Tasks", icon: ListChecks }];
   const label = (id: string, english: string) => en ? english : id;
   const status = state.stage === "working" ? "in_progress" : state.stage === "failed" ? "failed" : state.stage === "finished" ? "done" : "pending";
 
@@ -74,7 +75,17 @@ export function LandingWorkspace({ lang = "id" }: { lang?: "id" | "en" }) {
   }, []);
   useEffect(() => {
     if (!state.playing || !visible || !pageVisible || collapsed) return;
-    const timer = window.setTimeout(() => dispatch({ type: "step" }), state.stage === "working" ? 2200 : 1200);
+    let delay = 1200;
+    if (state.stage === "working") delay = 2000;
+    else if (state.stage === "checkpoint") delay = 1800;
+    else if (state.stage === "finished") delay = 2800;
+    const timer = window.setTimeout(() => {
+      if (state.stage === "finished") {
+        dispatch({ type: "reset" });
+      } else {
+        dispatch({ type: "step" });
+      }
+    }, delay);
     return () => window.clearTimeout(timer);
   }, [state, visible, pageVisible, collapsed]);
 
@@ -129,7 +140,12 @@ export function LandingWorkspace({ lang = "id" }: { lang?: "id" | "en" }) {
                 }}><Icon size={13} />{title}</button>)}
               </div>
               <div id={`${id}-panel`} role="tabpanel" aria-labelledby={`${id}-${tab}`} tabIndex={0} className={styles.editor}>
-                <div className={styles.breadcrumb}>FutsalGo <ChevronRight size={12} /> {tab === "prd" ? "requirements.md" : tab === "tasks" ? "tasks.md" : "structure"}</div>
+                <div className={styles.breadcrumb}>FutsalGo <ChevronRight size={12} /> {tab === "roadmap" ? "roadmap.md" : tab === "prd" ? "requirements.md" : "tasks.md"}</div>
+                {tab === "roadmap" && <>
+                  <p className={styles.overline}>{label("ROADMAP & STRUKTUR", "ROADMAP & STRUCTURE")}</p><h3>{session.title}</h3>
+                  <p className={styles.note}>{label("Roadmap fitur → PRD sub-fitur → task terurut yang dikerjakan agent.", "Feature roadmap → sub-feature PRD → ordered agent tasks.")}</p>
+                  <div className={styles.tree}><div className={styles.treeRoot}><Folder size={15} />FutsalGo</div><div className={styles.treeBranch}><strong>{session.title}</strong>{session.subFeatures.map((sub, index) => <details key={sub.title} open={index === 0}><summary>{sub.title}<span>{sub.tasks.length} tasks</span></summary><ul>{sub.tasks.map(item => <li key={item.ref}><code>{item.ref}</code>{item.title.replace("[BLOCKER] ", "")}</li>)}</ul></details>)}</div></div>
+                </>}
                 {tab === "prd" && <>
                   <p className={styles.overline}>PRODUCT REQUIREMENTS</p>
                   <h3>{session.title}</h3>
@@ -151,15 +167,10 @@ export function LandingWorkspace({ lang = "id" }: { lang?: "id" | "en" }) {
                   </button>)}</div>
                   <div className={styles.inspector}><span>{inspected.ref} · {inspected.layer} · {label("Fase", "Phase")} {inspected.phase}</span><p>{inspected.title}</p><span>{label("Dependensi", "Dependencies")}: {inspected.deps.length ? inspected.deps.join(", ") : label("Tidak ada", "None")}</span></div>
                 </>}
-                {tab === "structure" && <>
-                  <p className={styles.overline}>{label("STRUKTUR PROJECT", "PROJECT STRUCTURE")}</p><h3>{session.title}</h3>
-                  <p className={styles.note}>{label("Fitur → sub-fitur → task yang bisa dikerjakan agent.", "Feature → sub-feature → executable agent task.")}</p>
-                  <div className={styles.tree}><div className={styles.treeRoot}><Folder size={15} />FutsalGo</div><div className={styles.treeBranch}><strong>{session.title}</strong>{session.subFeatures.map((sub, index) => <details key={sub.title} open={index === 0}><summary>{sub.title}<span>{sub.tasks.length} tasks</span></summary><ul>{sub.tasks.map(item => <li key={item.ref}><code>{item.ref}</code>{item.title.replace("[BLOCKER] ", "")}</li>)}</ul></details>)}</div></div>
-                </>}
               </div>
               <div className={styles.appStatus}><span><GitBranch size={11} /> FutsalGo</span><span>{done}/{session.tasks.length} {label("task sesi selesai", "session tasks complete")}</span></div>
             </div>
-            <aside className={styles.planOutline}><div><GitBranch size={13} /> {label("Konteks agent", "Agent context")}</div><p>FutsalGo</p><span>PRD + task graph</span><hr /><span>{label("Sub-fitur aktif", "Active sub-feature")}</span><p>{session.subFeatures[0].title}</p><span>{label("Urutan layer", "Layer order")}</span><p>Frontend<br />Backend<br />QA</p></aside>
+            <aside className={styles.planOutline}><div><GitBranch size={13} /> {label("Konteks agent", "Agent context")}</div><p>FutsalGo</p><span>Roadmap › PRD › Task</span><hr /><span>{label("Sub-fitur aktif", "Active sub-feature")}</span><p>{session.subFeatures[0].title}</p><span>{label("Urutan layer", "Layer order")}</span><p>Frontend<br />Backend<br />QA</p></aside>
           </div>
         </div>
 
@@ -168,12 +179,17 @@ export function LandingWorkspace({ lang = "id" }: { lang?: "id" | "en" }) {
           <div id={`${id}-terminal-body`} hidden={collapsed}>
             <div className={styles.terminalBody} id={`${id}-terminal`} tabIndex={-1}>
               <p className={styles.terminalIntro}><span className={styles.prompt}>❯</span> scratch-agent <span className={styles.muted}>/ FutsalGo</span></p>
-              <p className={styles.muted}>{label("PRD dimuat. Satu task per siklus.", "PRD loaded. One task per cycle.")}</p>
+              <p className={styles.muted}>{label("Roadmap › PRD › Task aktif. Satu task per siklus.", "Roadmap › PRD › Tasks active. One task per cycle.")}</p>
               <div className={styles.command}><span>$</span><code>{state.command}</code></div>
               <div className={styles.output} aria-live="polite" aria-atomic="true">
                 <p><span>{state.stage === "finished" ? "✓" : "›"}</span> {state.stage === "finished" ? label("Semua task di sesi demo selesai.", "All demo session tasks completed.") : task.ref}</p>
                 {task && <p className={styles.taskTitle}>{task.title.replace("[BLOCKER] ", "")}</p>}
-                <dl><div><dt>status</dt><dd className={state.stage === "failed" ? styles.error : ""}>{status}</dd></div><div><dt>layer</dt><dd>{task?.layer ?? "qa"}</dd></div><div><dt>checkpoint</dt><dd>{String(state.stage === "checkpoint")}</dd></div></dl>
+                <dl>
+                  <div><dt>pipeline</dt><dd>Roadmap › PRD › Task</dd></div>
+                  <div><dt>status</dt><dd className={state.stage === "failed" ? styles.error : ""}>{status}</dd></div>
+                  <div><dt>layer</dt><dd>{task?.layer ?? "qa"}</dd></div>
+                  <div><dt>checkpoint</dt><dd>{String(state.stage === "checkpoint")}</dd></div>
+                </dl>
               </div>
               <div className={styles.progress}><span style={{ width: `${done / session.tasks.length * 100}%` }} /><strong>{session.tasks.length - done} {label("task tersisa di sesi demo", "tasks remaining in demo session")}</strong></div>
               <div className={styles.decision}>

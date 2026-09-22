@@ -1,0 +1,296 @@
+.page {
+  --ink: #ecf0eb;
+  --paper: #0a0a0a;
+  --soft: #121512;
+  --mint: #101a12;
+  --accent: #74fa6a;
+  min-height: 100vh;
+  overflow-x: clip;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-geist-sans, Arial), sans-serif;
+}
+
+.header {
+  position: sticky;
+  z-index: 40;
+  top: 0;
+  border-bottom: 1px solid #1f2420;
+  background: rgba(10, 10, 10, 0.92);
+  backdrop-filter: blur(12px);
+}
+
+.headerInner {
+  display: flex;
+  min-height: 60px;
+  max-width: 1100px;
+  margin: auto;
+  padding: 0 4%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: #ffffff;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -.03em;
+  text-decoration: none;
+}
+
+.brandMark { display: flex; gap: 2.5px; align-items: center; height: 18px; }
+.brandMark i { display: block; width: 6px; height: 15px; transform: skew(-18deg); border-radius: 2px; background: #4ddc62; }
+.brandMark i:nth-child(2) { height: 18px; background: var(--accent); }
+.brandMark i:nth-child(3) { height: 12px; }
+
+/* Styling header nav in pricing page to match the exact reference */
+.headerInner :global(a[href*="/solutions"]),
+.headerInner :global(a[href*="/docs"]) {
+  color: #d4d4d8 !important;
+  font-size: 13.5px !important;
+  font-weight: 500 !important;
+  font-family: var(--font-geist-mono, Consolas), monospace !important;
+  transition: color 0.15s ease;
+}
+.headerInner :global(a[href*="/solutions"]):hover,
+.headerInner :global(a[href*="/docs"]):hover {
+  color: var(--accent) !important;
+}
+
+.headerInner :global(a[href*="scratchagent.store"]) {
+  color: #d4d4d8 !important;
+  font-size: 13.5px !important;
+  font-weight: 500 !important;
+  font-family: var(--font-geist-mono, Consolas), monospace !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: color 0.15s ease;
+}
+.headerInner :global(a[href*="scratchagent.store"] svg) {
+  color: #d4d4d8 !important;
+}
+.headerInner :global(a[href*="scratchagent.store"]):hover,
+.headerInner :global(a[href*="scratchagent.store"]):hover svg {
+  color: var(--accent) !important;
+}
+
+.headerInner :global(a[href="/login"]),
+.headerInner :global(a[href="/new"]) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 38px;
+  min-height: 38px;
+  padding: 0 18px;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #000000 !important;
+  font-family: var(--font-geist-mono, Consolas), monospace !important;
+  font-weight: 700 !important;
+  font-size: 13.5px !important;
+  letter-spacing: normal;
+  text-decoration: none;
+  transition: background 0.15s ease;
+}
+.headerInner :global(a[href="/login"]):hover,
+.headerInner :global(a[href="/new"]):hover {
+  background: #9aff91 !important;
+}
+
+.hero {
+  max-width: 1100px;
+  margin: auto;
+  padding: 56px 4% 32px;
+}
+
+.eyebrow {
+  display: inline-block;
+  margin: 0 0 18px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  background: var(--mint);
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--accent);
+}
+
+.hero h1 {
+  max-width: 720px;
+  margin: 0;
+  font-size: clamp(2rem, 3.4vw, 2.75rem);
+  font-weight: 600;
+  letter-spacing: -.04em;
+  line-height: 1.15;
+}
+
+.heroCopy {
+  max-width: 620px;
+  margin: 18px 0 0;
+  font-size: 14.5px;
+  line-height: 1.65;
+  color: #a3ada5;
+}
+
+.pipeline {
+  display: flex;
+  margin-top: 32px;
+  padding: 12px 18px;
+  flex-wrap: wrap;
+  border: 1px solid #252b26;
+  border-radius: 10px;
+  background: var(--soft);
+  align-items: center;
+  gap: 10px;
+}
+
+.pipeline span { display: inline-flex; white-space: nowrap; align-items: center; gap: 10px; font-size: 13px; color: #c4cdc6; }
+.pipeline b { color: #647066; font-size: 16px; font-weight: 400; }
+
+.plansSection, .compare {
+  max-width: 1100px;
+  margin: auto;
+  padding: 32px 4% 64px;
+}
+
+.sectionHeading {
+  display: flex;
+  padding-bottom: 18px;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.sectionHeading h2, .compare h2, .faq h2 { margin: 0; font-size: clamp(1.4rem, 2.2vw, 1.85rem); font-weight: 600; letter-spacing: -.035em; line-height: 1.2; }
+.sectionHeading p { margin: 0; font-size: 13px; color: #8c978e; }
+
+.planGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border-top: 1px solid #29312b;
+  border-bottom: 1px solid #29312b;
+}
+
+.plan {
+  display: grid;
+  min-width: 0;
+  grid-template-rows: auto 1fr;
+  border-left: 1px solid #29312b;
+}
+.plan:last-child { border-right: 1px solid #29312b; }
+.planPurchase, .planDetails { padding: 24px 28px; }
+.planPurchase { min-height: 240px; border-bottom: 1px solid #29312b; }
+.plan h3, .plan h4 { margin: 0; font-weight: 600; letter-spacing: -.03em; }
+.plan h3 { font-size: 20px; }
+.plan h4 { font-size: 15px; }
+.planPurchase > p { max-width: 38ch; min-height: 38px; margin: 10px 0 18px; color: #9aa49c; font-size: 13.5px; line-height: 1.5; }
+
+.planHeading { display: flex; min-height: 36px; justify-content: space-between; gap: 14px; align-items: flex-start; }
+.billingToggle { display: inline-flex; padding: 2px; border-radius: 8px; background: #191e1a; }
+.billingToggle button {
+  min-height: 32px;
+  padding: 0 11px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #abb5ad;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.billingToggle button[aria-pressed="true"] { background: #303b32; color: #e6f6e7; }
+
+.priceLine { display: flex; min-height: 48px; margin-top: 16px; align-items: baseline; gap: 6px; }
+.priceLine strong { font-size: clamp(1.8rem, 2.6vw, 2.4rem); font-weight: 700; letter-spacing: -.04em; line-height: 1; }
+.priceLine span { color: #8c978e; font-size: 13.5px; }
+.planPurchase .saving { min-height: auto; margin: -4px 0 8px; color: #74fa6a; font-size: 12px; }
+.saving s { margin-right: 6px; color: #768078; }
+
+.primaryButton, .secondaryButton {
+  display: inline-flex;
+  min-height: 42px;
+  padding: 0 20px;
+  border: 1px solid #4a574e;
+  border-radius: 8px;
+  align-items: center;
+  justify-content: center;
+  color: #ecf0eb;
+  font-size: 13.5px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: transform .15s ease, background .15s ease, color .15s ease;
+}
+.primaryButton { background: var(--accent); border-color: var(--accent); color: #0a0a0a; font-weight: 700; }
+.primaryButton:hover, .primaryButton:focus-visible { background: #9aff91; }
+.secondaryButton:hover, .secondaryButton:focus-visible { background: var(--mint); }
+.primaryButton:active, .secondaryButton:active { transform: translateY(1px); }
+
+.planDetails > p { margin: 18px 0 10px; font-size: 13px; color: #8c978e; }
+.planDetails ul { margin: 0; padding-left: 18px; }
+.planDetails li { margin: 7px 0; padding-left: 3px; font-size: 13px; line-height: 1.5; color: #c0c9c2; }
+.planDetails li::marker { color: #74fa6a; }
+.footnote { margin: 18px 0 0; color: #8c978e; font-size: 12.5px; }
+
+.compare { display: grid; grid-template-columns: minmax(0, .6fr) minmax(0, 1.4fr); gap: 40px; padding-top: 32px; }
+.compareIntro { position: sticky; top: 96px; align-self: start; }
+.compareIntro p { max-width: 36ch; margin: 14px 0 0; font-size: 13.5px; line-height: 1.65; color: #9aa49c; }
+.tableWrap { overflow-x: auto; outline: none; }
+.tableWrap:focus-visible { box-shadow: 0 0 0 3px rgba(39,122,37,.35); }
+.tableWrap table { width: 100%; min-width: 0; border-collapse: collapse; }
+.tableWrap th, .tableWrap td { padding: 14px 14px; border-bottom: 1px solid #29312b; text-align: left; vertical-align: top; font-size: 13px; }
+.tableWrap thead th { border-top: 1px solid #29312b; font-size: 13.5px; font-weight: 600; color: #e2e8e3; }
+.tableWrap tbody th { width: 48%; font-weight: 400; color: #b8c3ba; }
+.tableWrap td { color: #c2ccc4; }
+
+.faq { background: #0d120e; border-top: 1px solid #29312b; }
+.faqInner { display: grid; max-width: 1100px; margin: auto; padding: 56px 4% 72px; grid-template-columns: .5fr 1.5fr; gap: 48px; }
+.faqIntro { position: sticky; top: 96px; align-self: start; }
+.faqList details { border-top: 1px solid #1c241e; }
+.faqList details:last-child { border-bottom: 1px solid #29312b; }
+.faqList summary { display: flex; min-height: 54px; padding: 14px 0; align-items: center; justify-content: space-between; gap: 18px; cursor: pointer; list-style: none; font-size: 15px; font-weight: 500; line-height: 1.4; color: #dce4de; }
+.faqList summary::-webkit-details-marker { display: none; }
+.faqIcon { flex: none; font-size: 16px; transition: transform .2s ease; color: var(--accent); }
+.faqList details[open] .faqIcon { transform: rotate(90deg); }
+.faqList details p { max-width: 65ch; margin: 0 0 18px; font-size: 13.5px; line-height: 1.6; color: #9aa49c; }
+
+.page :is(a, button, summary):focus-visible { outline: 3px solid #74fa6a; outline-offset: 3px; }
+
+@media (max-width: 780px) {
+  .hero { padding: 40px 16px 24px; }
+  .hero h1 { font-size: 1.85rem; }
+  .pipeline { margin-top: 24px; padding: 12px; border-radius: 10px; overflow-x: auto; }
+  .plansSection, .compare { padding: 24px 16px 48px; }
+  .sectionHeading { align-items: flex-start; flex-direction: column; gap: 10px; }
+  .planGrid { grid-template-columns: 1fr; border-bottom: 0; }
+  .plan, .plan:last-child { border-right: 1px solid #29312b; border-bottom: 1px solid #29312b; }
+  .planPurchase, .planDetails { padding: 20px 16px; }
+  .planPurchase { min-height: 0; }
+  .planHeading { flex-direction: column; }
+  .billingToggle { width: 100%; }
+  .billingToggle button { flex: 1; }
+  .primaryButton, .secondaryButton { width: 100%; }
+  .compare { display: block; padding-top: 40px; }
+  .compareIntro, .faqIntro { position: static; }
+  .tableWrap { margin-top: 24px; }
+  .faqInner { display: block; padding: 44px 16px 56px; }
+  .faqList { margin-top: 24px; }
+  .faqList summary { min-height: 48px; font-size: 14px; }
+  .faqList details p { font-size: 13px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page *, .page *::before, .page *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+}
+.plan:last-child { background: #0e150f; }
+.plan:last-child h3, .tableWrap thead th:last-child { color: var(--accent); }
+.planPurchase { display: flex; flex-direction: column; }
+.planPurchase > a { margin-top: auto; }
+.priceLine { flex-wrap: wrap; }
+.faqList summary:hover { color: var(--accent); }
+@media (max-width: 780px) {
+  .tableWrap th, .tableWrap td { padding: 12px 6px; font-size: 12px; overflow-wrap: anywhere; }
+  .tableWrap tbody th { width: 44%; }
+}
