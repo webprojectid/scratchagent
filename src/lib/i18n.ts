@@ -8,17 +8,17 @@ export const dict = {
   nav: {
     pricing: { id: "Harga", en: "Pricing" },
     solutions: { id: "Solusi", en: "Solutions" },
-    docs: { id: "Docs", en: "Docs" },
+    docs: { id: "Dokumentasi", en: "Docs" }, // "Docs" tetap Inggris (tech term)
     profile: { id: "Profil", en: "Profile" },
-    login: { id: "Masuk", en: "Login" },
+    login: { id: "Masuk", en: "Login" }, // "Login" tetap Inggris
   },
   cta: {
     login: { id: "Masuk", en: "Login" },
-    createPlan: { id: "Buat plan", en: "Create plan" },
-    startFree: { id: "mulai dari paket Free", en: "start with the Free plan" },
+    createPlan: { id: "Buat plan", en: "Create plan" }, // "plan" tetap Inggris
+    startFree: { id: "Mulai paket Free", en: "Start with the Free plan" },
     start: { id: "Mulai", en: "Start" },
     seeDemo: { id: "Lihat demo", en: "Watch demo" },
-    examplePlan: { id: "contoh plan", en: "example plan" },
+    examplePlan: { id: "Contoh plan", en: "Example plan" },
   },
 } as const;
 
