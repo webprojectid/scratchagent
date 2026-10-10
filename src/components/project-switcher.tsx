@@ -3,8 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
-import { Check, ChevronDown, Circle, Folder, Plus } from "lucide-react";
+import { Check, ChevronDown, Folder, Plus } from "lucide-react";
 import { getCurrentUser } from "@/lib/current-user";
+import { ProjectIcon } from "./project-icon";
 
 interface PlanItem {
   id: string;
@@ -13,13 +14,6 @@ interface PlanItem {
   createdAt: string;
   taskCount: number;
 }
-
-const statusColor: Record<string, string> = {
-  generating: "text-amber-400",
-  ready: "text-[#74FA6A]",
-  implementing: "text-blue-400",
-  done: "text-emerald-400",
-};
 
 const statusLabel: Record<string, string> = {
   generating: "menyusun",
@@ -74,7 +68,7 @@ export function ProjectSwitcher({ currentId, fallbackTitle }: { currentId?: stri
         aria-haspopup="listbox"
         aria-expanded={open}
       >
-        <Folder size={13} className="shrink-0 text-white/40" />
+        {currentId ? <ProjectIcon project={{ id: currentId, title: current?.title ?? fallbackTitle ?? "" }} className="!size-6 !rounded-md" size={14}/> : <Folder size={13} className="shrink-0 text-white/40" />}
         <span className="max-w-[200px] truncate">{current?.title ?? fallbackTitle ?? "Project"}</span>
         <ChevronDown size={13} className={`shrink-0 text-white/40 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
       </button>
@@ -115,11 +109,7 @@ export function ProjectSwitcher({ currentId, fallbackTitle }: { currentId?: stri
                         active ? "bg-[#74FA6A]/[.06]" : "hover:bg-white/[.04]"
                       }`}
                     >
-                      <Circle
-                        size={6}
-                        className={`shrink-0 ${statusColor[p.status] ?? "text-white/25"}`}
-                        fill="currentColor"
-                      />
+                      <ProjectIcon project={p} className="!size-8 !rounded-lg" size={18}/>
                       <span className="min-w-0 flex-1">
                         <span className={`block truncate text-[12px] font-medium leading-tight ${active ? "text-white" : "text-slate-300"}`}>
                           {p.title}
