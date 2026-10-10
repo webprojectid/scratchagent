@@ -1,7 +1,7 @@
 import { apiText } from "@/lib/ui-messages";
 import { NextResponse } from "next/server";
 import { getRequestUser, unauthorized } from "@/lib/api-auth";
-import { getAccountDetail, isAdminEmail } from "@/lib/billing";
+import { getAccountSummary, isAdminEmail } from "@/lib/billing";
 import { formatDisplayName } from "@/lib/user-utils";
 import { updateAccountName, validateDisplayName } from "@/lib/account-profile";
 import { memoryGetOrCreateUser } from "@/lib/memory-store";
@@ -22,7 +22,7 @@ async function accountUser(request: Request) {
 export async function GET(request: Request) {
   const user = await accountUser(request);
   if (!user) return unauthorized();
-  const detail = await getAccountDetail(user.userId);
+  const detail = await getAccountSummary(user.userId);
   const safeEmail = user.email ?? "";
   return NextResponse.json({
     userId: user.userId,
@@ -65,7 +65,7 @@ export async function PATCH(request: Request) {
   }
   if (!name) return NextResponse.json({ error: apiText("Nama harus berisi 1 sampai 80 karakter tanpa baris baru.") }, { status: 400 });
   try {
-    const detail = await getAccountDetail(user.userId);
+    const detail = await getAccountSummary(user.userId);
     if (detail?.bannedAt) return NextResponse.json({ error: apiText("Akun dinonaktifkan.") }, { status: 403 });
     if (!await updateAccountName(user.userId, name)) return NextResponse.json({ error: apiText("Akun tidak ditemukan.") }, { status: 404 });
     return NextResponse.json({ name });

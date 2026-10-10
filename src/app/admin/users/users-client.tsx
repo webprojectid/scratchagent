@@ -1,7 +1,7 @@
 "use client";
 import { uiText as ui, useUiLanguage, uiLocale } from "@/lib/ui-text";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search, Ban, Undo2, Sparkles, CircleOff, RefreshCw, Check, Crown } from "lucide-react";
 import { Shell } from "@/components/brand";
@@ -59,7 +59,7 @@ const PRO_DURATIONS = [
 ];
 
 function durationLabel(days: number): string {
-  return PRO_DURATIONS.find((d) => d.days === days)?.label ?? ui("{0} hari", days);
+  return ui(PRO_DURATIONS.find((d) => d.days === days)?.label ?? "{0} hari", days);
 }
 
 function fmtDate(iso: string | null): string {
@@ -95,6 +95,8 @@ export default function AdminUsersPage({ preview = false }: { preview?: boolean 
   const [allowed, setAllowed] = useState<boolean | null>(preview ? true : null);
   const [accounts, setAccounts] = useState<AccountRow[] | null>(preview ? DEMO_ACCOUNTS : null);
   const [q, setQ] = useState("");
+  const [accountPage, setAccountPage] = useState(1);
+  const requestRef = useRef<AbortController | null>(null);
   const [selected, setSelected] = useState<AccountDetail | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
@@ -106,12 +108,16 @@ export default function AdminUsersPage({ preview = false }: { preview?: boolean 
 
   const loadAccounts = useCallback(async (search?: string) => {
     if (preview) { setAccounts(demoAccounts.filter(a => `${a.name} ${a.email}`.toLowerCase().includes((search || "").toLowerCase()))); return; }
+    requestRef.current?.abort();
+    const controller = new AbortController();
+    requestRef.current = controller;
     const u = await getCurrentUser();
+    if (controller.signal.aborted) return;
     const userQs = u?.email ? `userId=${encodeURIComponent(u.email)}` : "";
     const searchQs = search?.trim() ? `q=${encodeURIComponent(search.trim())}` : "";
     const params = [userQs, searchQs].filter(Boolean).join("&");
     const url = params ? `/api/admin/users?${params}` : "/api/admin/users";
-    const res = await fetch(url);
+    const res = await fetch(url, { signal: controller.signal });
     if (res.status === 401 || res.status === 403) {
       setAllowed(false);
       router.replace("/profile");
@@ -119,6 +125,8 @@ export default function AdminUsersPage({ preview = false }: { preview?: boolean 
     }
     if (!res.ok) throw new Error(ui("Gagal memuat daftar akun"));
     const data = await res.json();
+    if (controller.signal.aborted) return;
+    setAccountPage(1);
     setAccounts(Array.isArray(data.accounts) ? data.accounts : []);
     setAllowed(true);
   }, [preview, demoAccounts, router]);
@@ -136,17 +144,19 @@ export default function AdminUsersPage({ preview = false }: { preview?: boolean 
         router.replace("/profile");
         return;
       }
+      setAllowed(true);
       try {
         await loadAccounts();
       } catch {
         if (active) {
-          setAllowed(false);
-          router.replace("/profile");
+          setAccounts([]);
+          setToast({ text: ui("Gagal memuat daftar akun"), ok: false });
         }
       }
     });
     return () => {
       active = false;
+      requestRef.current?.abort();
     };
   }, [router, loadAccounts, preview]);
 
@@ -269,9 +279,13 @@ export default function AdminUsersPage({ preview = false }: { preview?: boolean 
 
   const visibleAccounts = accounts?.filter(a => filter === "all" || (filter === "banned" ? !!a.bannedAt : filter === "pro" ? a.proActive || a.tier === "pro" : !a.proActive && a.tier !== "pro")) ?? [];
 
+  const pageCount = Math.max(1, Math.ceil(visibleAccounts.length / 25));
+  const currentPage = Math.min(accountPage, pageCount);
+  const pageAccounts = visibleAccounts.slice((currentPage - 1) * 25, currentPage * 25);
+
   const onSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    loadAccounts(q).catch(() => setToast({ text: ui("Pencarian gagal, coba lagi"), ok: false }));
+    loadAccounts(q).catch(error => { if (error.name !== "AbortError") setToast({ text: ui("Pencarian gagal, coba lagi"), ok: false }); });
   };
 
   if (allowed === null || !allowed) return null;
@@ -279,11 +293,11 @@ export default function AdminUsersPage({ preview = false }: { preview?: boolean 
   return (
     <Shell back={preview ? "/preview/profile" : "/profile"} sidebar={false}>
       <AccountWorkbench active="users" title={ui("Pengguna")} description={ui("Temukan akun, tinjau pemakaian, lalu kelola aksesnya. Satu daftar untuk seluruh pengguna.")} preview={preview} admin>
-        <div className={adminStyles.metrics} aria-label="Ringkasan hasil pencarian">
-          <div><span>Akun ditampilkan</span><strong>{accounts?.length ?? "—"}</strong></div>
+        <div className={adminStyles.metrics} aria-label={ui("Ringkasan hasil pencarian")}>
+          <div><span>{ui("Akun ditampilkan")}</span><strong>{accounts?.length ?? "—"}</strong></div>
           <div><span>{ui("Paket Free")}</span><strong>{freeList.length}</strong></div>
           <div><span>{ui("Paket Pro")}</span><strong>{proList.length}</strong></div>
-          <div><span>Diblokir</span><strong>{bannedCount}</strong></div>
+          <div><span>{ui("Diblokir")}</span><strong>{bannedCount}</strong></div>
         </div>
         {/* Pencarian */}
         <form onSubmit={onSearch} className="mt-6 flex gap-2.5">
@@ -309,7 +323,7 @@ export default function AdminUsersPage({ preview = false }: { preview?: boolean 
                   <Sparkles size={17} />
                 </div>
                 <div>
-                  <p className="text-[14.5px] font-semibold text-white">Berikan akses Pro</p>
+                  <p className="text-[14.5px] font-semibold text-white">{ui("Berikan akses Pro")}</p>
                   <p className="mt-0.5 text-[12px] text-[#8C97A5]">{grantTarget.name || grantTarget.email} · {grantTarget.email}</p>
                 </div>
               </div>
@@ -328,8 +342,8 @@ export default function AdminUsersPage({ preview = false }: { preview?: boolean 
                       : "border-white/12 hover:border-white/25"
                   }`}
                 >
-                  <span className={`block text-[13px] font-semibold ${grantDays === d.days ? "text-[#74FA6A]" : "text-white"}`}>{d.label}</span>
-                  <span className="mt-0.5 block font-mono text-[10px] tabular-nums text-white/35">{d.days} hari</span>
+                  <span className={`block text-[13px] font-semibold ${grantDays === d.days ? "text-[#74FA6A]" : "text-white"}`}>{ui(d.label)}</span>
+                  <span className="mt-0.5 block font-mono text-[10px] tabular-nums text-white/35">{ui("{0} hari", d.days)}</span>
                 </button>
               ))}
             </div>
@@ -339,7 +353,7 @@ export default function AdminUsersPage({ preview = false }: { preview?: boolean 
                 disabled={busy !== null}
                 className="inline-flex items-center gap-1.5 rounded-full bg-[#74FA6A] px-5 py-2.5 text-[13px] font-semibold text-black transition hover:bg-[#A8FF9B] active:scale-[.985] disabled:opacity-50"
               >
-                <Check size={14} /> {busy === `${grantTarget.id}:grant-pro` ? "Memproses…" : `Confirm · ${durationLabel(grantDays)}`}
+                <Check size={14} /> {busy === `${grantTarget.id}:grant-pro` ? ui("Memproses…") : `Confirm · ${durationLabel(grantDays)}`}
               </button>
               <p className="font-mono text-[10.5px] tabular-nums text-white/30">{grantDays}{ui("hari sejak sekarang")}</p>
             </div>
@@ -353,7 +367,7 @@ export default function AdminUsersPage({ preview = false }: { preview?: boolean 
         )}
 
         <div className={adminStyles.filters} aria-label={ui("Filter akun")}>
-          {[["all",ui("Semua")],["free",ui("Free")],["pro","Pro"],["banned","Diblokir"]].map(([value,label]) => <button key={value} aria-pressed={filter === value} onClick={() => setFilter(value)}>{label}</button>)}
+          {[["all",ui("Semua")],["free",ui("Free")],["pro","Pro"],["banned",ui("Diblokir")]].map(([value,label]) => <button key={value} aria-pressed={filter === value} onClick={() => { setFilter(value); setAccountPage(1); }}>{label}</button>)}
         </div>
         {/* Detail akun terpilih */}
         {loadingDetail && (
@@ -373,31 +387,30 @@ export default function AdminUsersPage({ preview = false }: { preview?: boolean 
                   )}
                 </div>
                 <p className="mt-1 text-[12.5px] text-[#8C97A5]">{selected.email}</p>
-                <p className="mt-0.5 font-mono text-[10.5px] text-white/30">terdaftar {fmtDate(selected.createdAt)}</p>
+                <p className="mt-0.5 font-mono text-[10.5px] text-white/30">{ui("Joined {0}", fmtDate(selected.createdAt))}</p>
                 {selected.proActive && (
                   <p className="mt-0.5 font-mono text-[10.5px] tabular-nums text-sky-300/80">
-                    masa aktif pro sampai {selected.proExpiresAt ? fmtDate(selected.proExpiresAt) : ui("tidak terbatas")}
+                    {ui("Pro valid until {0}", selected.proExpiresAt ? fmtDate(selected.proExpiresAt) : ui("tidak terbatas"))}
                   </p>
                 )}
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 {!selected.proActive && !selected.bannedAt && (
                   <button onClick={() => openGrantConfirm({ id: selected.id, email: selected.email, name: selected.name })} disabled={busy !== null} className="inline-flex items-center gap-1.5 rounded-full bg-[#74FA6A] px-4 py-2 text-[12.5px] font-semibold text-black transition hover:bg-[#A8FF9B] active:scale-[.985] disabled:opacity-50">
-                    <Sparkles size={13} /> Berikan akses Pro
-                  </button>
+                    <Sparkles size={13} />{ui("Berikan akses Pro")}</button>
                 )}
                 {selected.proActive && (
                   <button onClick={() => runAction("end-pro")} disabled={busy !== null} className="inline-flex items-center gap-1.5 rounded-full border border-white/15 px-4 py-2 text-[12.5px] font-medium text-white/80 transition hover:border-amber-400/50 hover:text-amber-300 disabled:opacity-50">
-                    <CircleOff size={13} /> {busy === "end-pro" ? "Memproses…" : "Akhiri Pro"}
+                    <CircleOff size={13} /> {busy === "end-pro" ? ui("Memproses…") : ui("Akhiri Pro")}
                   </button>
                 )}
                 {!selected.bannedAt ? (
                   <button onClick={() => runAction("ban")} disabled={busy !== null} className="inline-flex items-center gap-1.5 rounded-full border border-red-500/30 px-4 py-2 text-[12.5px] font-medium text-red-400 transition hover:border-red-500/60 hover:bg-red-500/[.06] disabled:opacity-50">
-                    <Ban size={13} /> {busy === "ban" ? "Memproses…" : ui("Blokir akun")}
+                    <Ban size={13} /> {busy === "ban" ? ui("Memproses…") : ui("Blokir akun")}
                   </button>
                 ) : (
                   <button onClick={() => runAction("unban")} disabled={busy !== null} className="inline-flex items-center gap-1.5 rounded-full border border-[#74FA6A]/30 px-4 py-2 text-[12.5px] font-medium text-[#74FA6A] transition hover:bg-[#74FA6A]/[.08] disabled:opacity-50">
-                    <Undo2 size={13} /> {busy === "unban" ? "Memproses…" : "Buka blokir"}
+                    <Undo2 size={13} /> {busy === "unban" ? ui("Memproses…") : ui("Buka blokir")}
                   </button>
                 )}
                 <button onClick={() => setSelected(null)} className="inline-flex items-center rounded-full border border-white/10 px-3 py-2 text-[12px] text-white/50 transition hover:text-white">{ui("Tutup")}</button>
@@ -408,11 +421,11 @@ export default function AdminUsersPage({ preview = false }: { preview?: boolean 
             <div className="mt-5 grid grid-cols-2 gap-px overflow-hidden rounded-[12px] border border-white/[.08] bg-white/[.06] md:grid-cols-4">
               <div className="bg-[#0C0E10] px-4 py-3.5">
                 <p className="font-mono text-[20px] font-semibold tabular-nums text-white">{selected.planCount}</p>
-                <p className="mt-1.5 font-mono text-[9.5px] uppercase tracking-[.14em] text-white/35">plan dibuat</p>
+                <p className="mt-1.5 font-mono text-[9.5px] uppercase tracking-[.14em] text-white/35">{ui("plan dibuat")}</p>
               </div>
               <div className="bg-[#0C0E10] px-4 py-3.5">
                 <p className="font-mono text-[20px] font-semibold tabular-nums text-sky-300">{selected.proGenerateCount}</p>
-                <p className="mt-1.5 font-mono text-[9.5px] uppercase tracking-[.14em] text-white/35">generate saat pro</p>
+                <p className="mt-1.5 font-mono text-[9.5px] uppercase tracking-[.14em] text-white/35">{ui("generate saat pro")}</p>
               </div>
               <div className="bg-[#0C0E10] px-4 py-3.5">
                 <p className="font-mono text-[20px] font-semibold tabular-nums text-[#74FA6A]">{selected.freeGenerate24h}<span className="text-[13px] text-white/30"> / {selected.freeLimit}</span></p>
@@ -455,7 +468,7 @@ export default function AdminUsersPage({ preview = false }: { preview?: boolean 
                           <span className="rounded-full border border-sky-400/25 bg-sky-400/[.07] px-2 py-0.5 font-mono text-[10px] tabular-nums text-sky-300">kedaluwarsa {fmtDate(s.expiresAt)}</span>
                         )}
                         {s.endedAt && !s.expiresAt && s.endedBy && (
-                          <span className="rounded-full border border-white/10 px-2 py-0.5 font-mono text-[10px] text-white/40">ditarik admin</span>
+                          <span className="rounded-full border border-white/10 px-2 py-0.5 font-mono text-[10px] text-white/40">{ui("ditarik admin")}</span>
                         )}
                       </li>
                     ))}
@@ -487,7 +500,7 @@ export default function AdminUsersPage({ preview = false }: { preview?: boolean 
           )}
           {accounts !== null && visibleAccounts.length > 0 && (
             <ul className="divide-y divide-white/[.05]">
-              {visibleAccounts.map((a) => {
+              {pageAccounts.map((a) => {
                 const busyKey = `${a.id}:grant-pro`;
                 const endKey = `${a.id}:end-pro`;
                 return (
@@ -496,13 +509,13 @@ export default function AdminUsersPage({ preview = false }: { preview?: boolean 
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-[13.5px] font-medium text-white">{a.email}</p>
                         <p className="mt-0.5 truncate font-mono text-[10.5px] text-white/30">
-                          {a.name || "tanpa nama"} · daftar {fmtDate(a.createdAt)}
+                          {a.name || ui("tanpa nama")} · {ui("Joined {0}", fmtDate(a.createdAt))}
                         </p>
                       </div>
                       <TierChip tier={a.tier} />
                       {a.proActive && (
                         <span className="hidden rounded-full border border-sky-400/30 bg-sky-400/[.08] px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-[.12em] tabular-nums text-sky-300 sm:inline-flex">
-                          {a.proExpiresAt ? `pro s.d. ${fmtDate(a.proExpiresAt)}` : "subs aktif"}
+                          {a.proExpiresAt ? ui("Pro valid until {0}", fmtDate(a.proExpiresAt)) : ui("subs aktif")}
                         </span>
                       )}
                       {a.bannedAt && (
@@ -523,16 +536,16 @@ export default function AdminUsersPage({ preview = false }: { preview?: boolean 
                             className="inline-flex items-center gap-1.5 rounded-full border border-white/15 px-3 py-1.5 text-[11.5px] font-medium text-white/70 transition hover:border-amber-400/50 hover:text-amber-300 disabled:opacity-50"
                             title={ui("Tarik akses Pro, akun kembali ke Free")}
                           >
-                            <CircleOff size={12} /> {busy === endKey ? "…" : "Tarik Pro"}
+                            <CircleOff size={12} /> {busy === endKey ? "…" : ui("Tarik Pro")}
                           </button>
                         ) : (
                           <button
                             onClick={() => openGrantConfirm(a)}
                             disabled={busy !== null}
                             className="inline-flex items-center gap-1.5 rounded-full border border-[#74FA6A]/35 bg-[#74FA6A]/[.08] px-3 py-1.5 text-[11.5px] font-semibold text-[#74FA6A] transition hover:bg-[#74FA6A]/[.14] disabled:opacity-50"
-                            title="Berikan akses Pro: pilih masa aktif lalu confirm"
+                            title={ui("Berikan akses Pro: pilih masa aktif lalu confirm")}
                           >
-                            <Sparkles size={12} /> {busy === busyKey ? "…" : "Berikan Pro"}
+                            <Sparkles size={12} /> {busy === busyKey ? "…" : ui("Berikan Pro")}
                           </button>
                         )}
                       </div>
@@ -542,6 +555,7 @@ export default function AdminUsersPage({ preview = false }: { preview?: boolean 
               })}
             </ul>
           )}
+          {pageCount > 1 && <nav aria-label={ui("User list pages")} className="flex items-center justify-between gap-4 border-t border-white/10 px-4 py-4 text-xs"><span>{ui("Page {0} of {1}", currentPage, pageCount)}</span><div className="flex gap-3"><button className="min-h-10 px-3 disabled:opacity-40" disabled={currentPage === 1} onClick={() => setAccountPage(currentPage - 1)}>{ui("Previous")}</button><button className="min-h-10 px-3 disabled:opacity-40" disabled={currentPage === pageCount} onClick={() => setAccountPage(currentPage + 1)}>{ui("Next")}</button></div></nav>}
         </section>
       </AccountWorkbench>
     </Shell>

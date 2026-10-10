@@ -11,6 +11,7 @@ export interface CurrentUser {
   proActive?: boolean;
   createdAt?: string | null;
   proExpiresAt?: string | null;
+  emailVerified?: boolean;
 }
 
 /** Supabase dianggap aktif kalau env-nya terisi (bukan placeholder). */
@@ -76,7 +77,7 @@ async function resolveUser(): Promise<CurrentUser | null> {
     const response = await fetch(`/api/me?userId=${encodeURIComponent(identity.email)}`, { cache: "no-store" });
     if (response.ok) {
       const account = await response.json();
-      return { ...identity, name: account.name || identity.name, role: account.role === "admin" ? "admin" : "user", tier: effectiveAccountTier(account), proActive: typeof account.proActive === "boolean" ? account.proActive : undefined, createdAt: account.createdAt ?? null, proExpiresAt: account.proExpiresAt ?? null };
+      return { ...identity, name: account.name || identity.name, role: account.role === "admin" ? "admin" : "user", tier: effectiveAccountTier(account), proActive: typeof account.proActive === "boolean" ? account.proActive : undefined, emailVerified: account.emailVerified, createdAt: account.createdAt ?? null, proExpiresAt: account.proExpiresAt ?? null };
     }
   } catch { /* Keep the signed-in identity when the account service is unavailable. */ }
   return identity;
@@ -127,8 +128,8 @@ export function useCurrentUser(): { user: CurrentUser | null; loading: boolean }
     if (supabaseConfigured()) {
       try {
         const supabase = createClient();
-        const { data } = supabase.auth.onAuthStateChange(() => {
-          syncUser();
+        const { data } = supabase.auth.onAuthStateChange((event) => {
+          if (event !== "INITIAL_SESSION") syncUser();
         });
         authSubscription = data.subscription;
       } catch {}

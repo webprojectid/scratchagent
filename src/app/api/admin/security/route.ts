@@ -1,4 +1,5 @@
 import { apiText } from "@/lib/ui-messages";
+import { after } from "next/server";
 import { NextResponse } from "next/server";
 import { desc, eq, gte, sql } from "drizzle-orm";
 import { getRequestUser, requireAdmin } from "@/lib/api-auth";
@@ -13,6 +14,7 @@ import {
   isPrivateIp,
   logSecurity,
   lookupIpGeo,
+  cachedIpGeo,
   normalizeIp,
   parseUserAgent,
   rateLimit,
@@ -41,7 +43,7 @@ export async function GET(request: Request) {
   if (retryIn !== null) return rateLimitedResponse(clientKey(user!.userId, ip), retryIn, { ip, userId: user!.userId, route: "/api/admin/security" });
 
   const typeFilter = searchParams.get("type") || undefined;
-  const limit = Math.min(Number(searchParams.get("limit") ?? 100) || 100, 500);
+  const limit = Math.max(1, Math.min(Math.trunc(Number(searchParams.get("limit") ?? 100)) || 100, 500));
 
   if (!process.env.DATABASE_URL) {
     return NextResponse.json({ events: [], stats: null, blockedIps: [], note: "Mode memory: log keamanan hanya tersedia dengan DATABASE_URL." });
@@ -50,50 +52,24 @@ export async function GET(request: Request) {
   const db = getDb();
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
-  const events = typeFilter
-    ? await db.select().from(securityEvents).where(sql`${securityEvents.type} = ${typeFilter}`).orderBy(desc(securityEvents.createdAt)).limit(limit)
-    : await db.select().from(securityEvents).orderBy(desc(securityEvents.createdAt)).limit(limit);
-
+  const recent = sql`${gte(securityEvents.createdAt, since)} and ${securityEvents.dismissed} = false`;
+  const [events, byType, topIps, topUsers, blockedRows] = await Promise.all([
+    db.select().from(securityEvents).where(typeFilter ? eq(securityEvents.type, typeFilter) : undefined).orderBy(desc(securityEvents.createdAt)).limit(limit),
+    db.select({ type: securityEvents.type, count: sql<number>`count(*)::int` }).from(securityEvents).where(recent).groupBy(securityEvents.type),
+    db.select({ ip: securityEvents.ip, count: sql<number>`count(*)::int` }).from(securityEvents).where(sql`${recent} and ${securityEvents.ip} is not null`).groupBy(securityEvents.ip).orderBy(desc(sql`count(*)`)).limit(10),
+    db.select({ userId: securityEvents.userId, count: sql<number>`count(*)::int` }).from(securityEvents).where(sql`${recent} and ${securityEvents.userId} is not null`).groupBy(securityEvents.userId).orderBy(desc(sql`count(*)`)).limit(10),
+    db.select().from(blockedIps).orderBy(desc(blockedIps.createdAt)).limit(100),
+  ]);
   const emails = new Map<string, string>();
-  const uniqIds = [...new Set(events.map((e) => e.userId).filter((x): x is string => !!x))];
+  const uniqIds = [...new Set([...events.map(e => e.userId), ...topUsers.map(e => e.userId)].filter((x): x is string => !!x))];
   if (uniqIds.length) {
-    const rows = await db.select({ id: users.id, email: users.email }).from(users).where(sql`${users.id} in (${sql.join(uniqIds.map((x) => sql`${x}`), sql`, `)})`);
+    const rows = await db.select({ id: users.id, email: users.email }).from(users).where(sql`${users.id} in (${sql.join(uniqIds.map(x => sql`${x}`), sql`, `)})`);
     for (const r of rows) emails.set(r.id, r.email);
   }
-
-  const byType = await db
-    .select({ type: securityEvents.type, count: sql<number>`count(*)::int` })
-    .from(securityEvents)
-    .where(sql`${gte(securityEvents.createdAt, since)} and ${securityEvents.dismissed} = false`)
-    .groupBy(securityEvents.type);
-
-  const topIps = await db
-    .select({ ip: securityEvents.ip, count: sql<number>`count(*)::int` })
-    .from(securityEvents)
-    .where(sql`${gte(securityEvents.createdAt, since)} and ${securityEvents.ip} is not null and ${securityEvents.dismissed} = false`)
-    .groupBy(securityEvents.ip)
-    .orderBy(desc(sql`count(*)`))
-    .limit(10);
-
-  const topUsers = await db
-    .select({ userId: securityEvents.userId, count: sql<number>`count(*)::int` })
-    .from(securityEvents)
-    .where(sql`${gte(securityEvents.createdAt, since)} and ${securityEvents.userId} is not null and ${securityEvents.dismissed} = false`)
-    .groupBy(securityEvents.userId)
-    .orderBy(desc(sql`count(*)`))
-    .limit(10);
-
-  const totals = await db
-    .select({ total: sql<number>`count(*)::int` })
-    .from(securityEvents)
-    .where(sql`${gte(securityEvents.createdAt, since)} and ${securityEvents.dismissed} = false`);
-
-  // Geolocation IP publik (best-effort, paralel, dibatasi supaya GET tetap cepat).
-  const publicIps = [...new Set([...topIps.map((r) => r.ip), ...events.map((e) => e.ip)].filter((x): x is string => !!x && !isPrivateIp(x)))].slice(0, 8);
-  const geoRows = await Promise.all(publicIps.map(async (x) => ({ ip: x, geo: await lookupIpGeo(x) })));
-  const geoMap = new Map(geoRows.map((r) => [r.ip, formatGeo(r.geo)]));
-
-  const blockedRows = await db.select().from(blockedIps).orderBy(desc(blockedIps.createdAt)).limit(100);
+  const publicIps = [...new Set([...topIps.map(r => r.ip), ...events.map(e => e.ip)].filter((x): x is string => !!x && !isPrivateIp(x)))].slice(0, 8);
+  const geoMap = new Map(publicIps.map(ip => [ip, formatGeo(cachedIpGeo(ip))]));
+  // Optional enrichment must not hold up the log and security controls.
+  after(async () => { await Promise.all(publicIps.map(ip => lookupIpGeo(ip))); });
 
   const localNote =
     "IP `::1` / `127.0.0.1` artinya koneksi dari mesin sendiri (localhost/dev), bukan pengunjung nyata. " +
@@ -134,7 +110,7 @@ export async function GET(request: Request) {
       expiresAt: b.expiresAt,
     })),
     stats: {
-      window24h: { total: totals[0]?.total ?? 0 },
+      window24h: { total: byType.reduce((sum, row) => sum + row.count, 0) },
       byType: byType.map((r) => ({ type: r.type, count: r.count })),
       topIps: topIps.map((r) => {
         const n = normalizeIp(r.ip);

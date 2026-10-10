@@ -1,17 +1,24 @@
 "use client";
 import { uiText as ui, useUiLanguage, uiLocale } from "@/lib/ui-text";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Shell } from "@/components/brand";
+import dynamic from "next/dynamic";
 import { useAccountSettings } from "@/components/account-settings-state";
-import { AccountLanguage, AccountActivity, AccountLibrary, HandoffPreferences, NotificationPreferences, AccountPrivacy, AccountSessions, UsageHistory } from "@/components/account-panels";
+const AccountLanguage = dynamic(() => import("./account-panels").then(module => module.AccountLanguage));
+const AccountActivity = dynamic(() => import("./account-panels").then(module => module.AccountActivity));
+const AccountLibrary = dynamic(() => import("./account-panels").then(module => module.AccountLibrary));
+const HandoffPreferences = dynamic(() => import("./account-panels").then(module => module.HandoffPreferences));
+const NotificationPreferences = dynamic(() => import("./account-panels").then(module => module.NotificationPreferences));
+const AccountPrivacy = dynamic(() => import("./account-panels").then(module => module.AccountPrivacy));
+const AccountSessions = dynamic(() => import("./account-panels").then(module => module.AccountSessions));
+const UsageHistory = dynamic(() => import("./account-panels").then(module => module.UsageHistory));
 import { defaultDisplay, type DisplaySettings, type ProfileSettings } from "@/lib/account-preferences";
 import panelStyles from "@/components/account-panels.module.css";
 import { Activity, BookOpen, FileText, Bell, LockKeyhole } from "lucide-react";
-import { ProfileOverview } from "@/components/profile-overview";
-import { ProjectLedger } from "@/components/project-ledger";
+const ProfileOverview = dynamic(() => import("./profile-overview").then(module => module.ProfileOverview));
+const ProjectLedger = dynamic(() => import("./project-ledger").then(module => module.ProjectLedger));
 import { AccountBadges } from "@/components/account-badges";
 import { effectiveAccountTier } from "@/lib/account-membership";
 import accountStyles from "@/app/profile/account-ledger.module.css";
@@ -181,6 +188,10 @@ export function AccountWorkspace({ area, initialTab }: { area: AccountArea; init
   const [showApiKeys, setShowApiKeys] = useState<Record<number, boolean>>({});
   const [testResults, setTestResults] = useState<Record<number, TestResult>>({});
   const [llmSaving, setLlmSaving] = useState(false);
+  const [llmLoading, setLlmLoading] = useState(true);
+  const [llmError, setLlmError] = useState("");
+  const [llmRevision, setLlmRevision] = useState(0);
+  const loadedResources = useRef({ plans: false, tokens: false, llm: false });
 
   useEffect(() => {
     let active = true;
@@ -237,41 +248,12 @@ export function AccountWorkspace({ area, initialTab }: { area: AccountArea; init
       setUser((prev) => ({ ...prev, ...u }));
     });
 
-    fetch("/api/me")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => {
-        if (!active || !d) return;
-        setUser((prev) =>
-          prev
-            ? {
-                ...prev,
-                email: d.email || prev.email,
-                name: d.name || prev.name,
-                role: d.role ?? prev.role,
-                tier: d.tier ?? prev.tier,
-                createdAt: d.createdAt ?? prev.createdAt,
-                proExpiresAt: d.proExpiresAt ?? prev.proExpiresAt,
-                proActive: d.proActive ?? prev.proActive,
-                emailVerified: d.emailVerified,
-              }
-            : d,
-        );
-      })
-      .catch(() => {});
-
     if (isProfileArea) fetch("/api/generate")
       .then((r) => { if (!r.ok) throw new Error("Gagal memuat kuota"); return r.json(); })
       .then((q) => {
         if (active) { setQuota(q); setQuotaError(false); setQuotaLoading(false); }
       })
       .catch(() => { if (active) { setQuotaError(true); setQuotaLoading(false); } });
-
-    if (!isProfileArea) fetch("/api/tokens")
-      .then((r) => { if (!r.ok) throw new Error("Gagal memuat token"); return r.json(); })
-      .then((tList) => {
-        if (active) { if (Array.isArray(tList)) setTokens(tList); setTokensError(false); setTokensLoading(false); }
-      })
-      .catch(() => { if (active) { setTokensError(true); setTokensLoading(false); } });
 
     return () => {
       active = false;
@@ -288,60 +270,39 @@ export function AccountWorkspace({ area, initialTab }: { area: AccountArea; init
   }, [area]);
 
   useEffect(() => {
-    if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("preview") === "1") return;
-    let active = true;
-    getCurrentUser().then((u) => {
-      if (!active || !u) return;
-      fetch(`/api/plans/list?userId=${encodeURIComponent(u.email ?? "shared")}`)
-        .then((r) => { if (!r.ok) throw new Error(ui("Gagal memuat proyek")); return r.json(); })
-        .then((d) => {
-          if (active) {
-            setPlans(d.plans || []);
-            setPlansError(false);
-            setPlansLoading(false);
-          }
-        })
-        .catch(() => {
-          if (active) { setPlansError(true); setPlansLoading(false); }
-        });
+    if (previewMode() || !user?.email || loadedResources.current.plans || !(isProfileArea || activeTab === "tokens")) return;
+    const controller = new AbortController();
+    fetch(`/api/plans/list?userId=${encodeURIComponent(user.email)}`, { signal: controller.signal })
+      .then(r => { if (!r.ok) throw new Error(ui("Gagal memuat proyek")); return r.json(); })
+      .then(data => { if (controller.signal.aborted) return; loadedResources.current.plans = true; setPlans(data.plans || []); setPlansError(false); setPlansLoading(false); })
+      .catch(() => { if (!controller.signal.aborted) { setPlansError(true); setPlansLoading(false); } });
+    return () => controller.abort();
+  }, [user?.email, activeTab, isProfileArea]);
 
-      const isAdminUser = u.role === "admin";
-      if (isAdminUser && !isProfileArea) {
-        const qs = u.email ? `?userId=${encodeURIComponent(u.email)}` : "";
-        fetch(`/api/llm-config${qs}`)
-          .then((r) => (r.ok ? r.json() : null))
-          .then((d: LlmCfgInfo | null) => {
-            if (!active || !d) return;
-            setLlmCfg(d);
-            const fromApi = (d.providers ?? []).map((p) => ({
-              baseUrl: p.baseUrl,
-              apiKey: "",
-              models: p.models.join(", "),
-              apiKeySet: p.apiKeySet,
-              apiKeyMasked: p.apiKeyMasked,
-            }));
-            setProviders(
-              fromApi.length > 0
-                ? fromApi
-                : [
-                    {
-                      baseUrl: d.baseUrl ?? "",
-                      apiKey: "",
-                      models: d.model ?? "",
-                      apiKeySet: d.apiKeySet,
-                      apiKeyMasked: d.apiKeyMasked,
-                    },
-                  ],
-            );
-          })
-          .catch(() => {});
-      }
-    });
+  useEffect(() => {
+    if (previewMode() || !user?.email || activeTab !== "tokens" || loadedResources.current.tokens) return;
+    const controller = new AbortController();
+    fetch("/api/tokens", { signal: controller.signal })
+      .then(r => { if (!r.ok) throw new Error(ui("Gagal memuat token")); return r.json(); })
+      .then(data => { if (controller.signal.aborted) return; loadedResources.current.tokens = true; setTokens(Array.isArray(data) ? data : []); setTokensError(false); setTokensLoading(false); })
+      .catch(() => { if (!controller.signal.aborted) { setTokensError(true); setTokensLoading(false); } });
+    return () => controller.abort();
+  }, [user?.email, activeTab]);
 
-    return () => {
-      active = false;
-    };
-  }, [isProfileArea]);
+  useEffect(() => {
+    if (previewMode() || !user?.email || user.role !== "admin" || activeTab !== "llm" || loadedResources.current.llm) return;
+    const controller = new AbortController();
+    fetch(`/api/llm-config?userId=${encodeURIComponent(user.email)}`, { signal: controller.signal, cache: "no-store" })
+      .then(r => { if (!r.ok) throw new Error(ui("LLM configuration could not be loaded.")); return r.json(); })
+      .then((d: LlmCfgInfo) => {
+        if (controller.signal.aborted) return;
+        loadedResources.current.llm = true; setLlmCfg(d); setLlmLoading(false); setLlmError("");
+        const fromApi = (d.providers ?? []).map(p => ({ baseUrl: p.baseUrl, apiKey: "", models: p.models.join(", "), apiKeySet: p.apiKeySet, apiKeyMasked: p.apiKeyMasked }));
+        setProviders(fromApi.length ? fromApi : [{ baseUrl: d.baseUrl ?? "", apiKey: "", models: d.model ?? "", apiKeySet: d.apiKeySet, apiKeyMasked: d.apiKeyMasked }]);
+      })
+      .catch(() => { if (!controller.signal.aborted) { setLlmLoading(false); setLlmError(ui("LLM configuration could not be loaded.")); } });
+    return () => controller.abort();
+  }, [user?.email, user?.role, activeTab, llmRevision]);
 
   const handleLogout = () => {
     localStorage.removeItem("scratch_user");
@@ -661,7 +622,7 @@ export function AccountWorkspace({ area, initialTab }: { area: AccountArea; init
   const accountPlanLabel = membershipTier ? `Scratch ${isPro ? "Pro" : ui("Free")}` : ui("Paket belum terverifikasi");
   const isAdmin = user.role === "admin";
   return (
-    <Shell sidebar={false} brand={false}>
+    <div className="relative min-h-screen">
       <div className={accountStyles.page} data-motion={preferences.motion}>
         <div className={accountStyles.frame}>
           <aside className={accountStyles.sidebar} aria-label={isProfileArea ? ui("Navigasi profil") : ui("Navigasi pengaturan")}>
@@ -788,24 +749,27 @@ export function AccountWorkspace({ area, initialTab }: { area: AccountArea; init
                 <p className="mt-1 text-xs text-white/50">{ui("Atur provider failover generator AI plan.")}</p>
               </div>
               <button
+                disabled={!previewMode() && (llmLoading || !!llmError)}
                 onClick={addProvider}
                 className="flex items-center gap-1 rounded border border-white/10 px-2.5 py-1 text-xs text-white/70 hover:text-white"
               >
                 <Plus size={12} />{ui("Tambah Backup")}</button>
             </div>
 
+            {!previewMode() && llmLoading && <p className="py-6 text-sm text-white/60" role="status">{ui("Loading LLM configuration…")}</p>}
+            {llmError && <div className="py-6 text-sm" role="alert"><p>{ui(llmError)}</p><button className="mt-3 underline" onClick={() => { setLlmLoading(true); setLlmError(""); setLlmRevision(value => value + 1); }}>{ui("Coba lagi")}</button></div>}
             <div className="py-6 space-y-4">
               {providers.map((p, i) => {
                 const test = testResults[i];
                 return (
                   <div key={i} className="p-4 rounded-lg border border-white/[.06] bg-black/30 space-y-3">
                     <div className="flex items-center justify-between text-xs font-mono">
-                      <span className="text-[#74FA6A] font-semibold">{i === 0 ? "1. Provider Utama" : `${i + 1}. Backup ${i}`}</span>
+                      <span className="text-[#74FA6A] font-semibold">{i === 0 ? "1. " + ui("Primary provider") : `${i + 1}. Backup ${i}`}</span>
                       <div className="flex items-center gap-1">
-                        <button onClick={() => moveProvider(i, -1)} disabled={i === 0} className="p-1 text-white/30 hover:text-white disabled:opacity-20"><ArrowUp size={12} /></button>
-                        <button onClick={() => moveProvider(i, 1)} disabled={i === providers.length - 1} className="p-1 text-white/30 hover:text-white disabled:opacity-20"><ArrowDown size={12} /></button>
+                        <button aria-label={ui("Move provider up")} onClick={() => moveProvider(i, -1)} disabled={i === 0} className="p-1 text-white/30 hover:text-white disabled:opacity-20"><ArrowUp size={12} /></button>
+                        <button aria-label={ui("Move provider down")} onClick={() => moveProvider(i, 1)} disabled={i === providers.length - 1} className="p-1 text-white/30 hover:text-white disabled:opacity-20"><ArrowDown size={12} /></button>
                         {providers.length > 1 && (
-                          <button onClick={() => removeProvider(i)} className="p-1 text-white/30 hover:text-red-400"><Trash2 size={12} /></button>
+                          <button aria-label={ui("Remove provider")} onClick={() => removeProvider(i)} className="p-1 text-white/30 hover:text-red-400"><Trash2 size={12} /></button>
                         )}
                       </div>
                     </div>
@@ -815,6 +779,7 @@ export function AccountWorkspace({ area, initialTab }: { area: AccountArea; init
                         <label className="block text-[10.5px] font-mono text-white/40">Base URL</label>
                         <input
                           type="text"
+                          aria-label={`Base URL · ${i + 1}`}
                           value={p.baseUrl}
                           onChange={(e) => updateProvider(i, { baseUrl: e.target.value })}
                           className="mt-1 w-full rounded border border-white/10 bg-black px-2 py-1 text-xs text-white font-mono focus:border-[#74FA6A]/50 focus:outline-none"
@@ -825,6 +790,7 @@ export function AccountWorkspace({ area, initialTab }: { area: AccountArea; init
                         <div className="relative mt-1">
                           <input
                             type={showApiKeys[i] ? "text" : "password"}
+                            aria-label={`API Key · ${i + 1}`}
                             value={p.apiKey}
                             onChange={(e) => updateProvider(i, { apiKey: e.target.value })}
                             placeholder={p.apiKeySet ? ui("Tersimpan") : "sk-..."}
@@ -832,6 +798,7 @@ export function AccountWorkspace({ area, initialTab }: { area: AccountArea; init
                           />
                           <button
                             type="button"
+                            aria-label={showApiKeys[i] ? ui("Hide API key") : ui("Show API key")}
                             onClick={() => setShowApiKeys((prev) => ({ ...prev, [i]: !prev[i] }))}
                             className="absolute right-2 top-1/2 -translate-y-1/2 text-white/30 hover:text-white"
                           >
@@ -842,9 +809,10 @@ export function AccountWorkspace({ area, initialTab }: { area: AccountArea; init
                     </div>
 
                     <div>
-                      <label className="block text-[10.5px] font-mono text-white/40">Daftar Model</label>
+                      <label className="block text-[10.5px] font-mono text-white/40">{ui("Models")}</label>
                       <input
                         type="text"
+                        aria-label={`${ui("Models")} · ${i + 1}`}
                         value={p.models}
                         onChange={(e) => updateProvider(i, { models: e.target.value })}
                         className="mt-1 w-full rounded border border-white/10 bg-black px-2 py-1 text-xs text-white font-mono focus:border-[#74FA6A]/50 focus:outline-none"
@@ -858,7 +826,7 @@ export function AccountWorkspace({ area, initialTab }: { area: AccountArea; init
                         className="flex items-center gap-1 rounded border border-white/10 px-2 py-0.5 text-xs text-white/60 hover:text-white font-mono"
                       >
                         <Play size={10} className={test?.testing ? "animate-spin" : ""} />
-                        <span>{test?.testing ? "Menguji…" : "Tes Koneksi"}</span>
+                        <span>{test?.testing ? ui("Testing…") : ui("Test connection")}</span>
                       </button>
                       {test && (
                         <span className={`font-mono text-xs ${test.ok ? "text-[#74FA6A]" : "text-red-400"}`}>
@@ -872,7 +840,7 @@ export function AccountWorkspace({ area, initialTab }: { area: AccountArea; init
 
               <button
                 onClick={saveLlm}
-                disabled={llmSaving}
+                disabled={llmSaving || (!previewMode() && (llmLoading || !!llmError))}
                 className="rounded-md bg-[#74FA6A] px-4 py-1.5 text-xs font-semibold text-black transition hover:bg-[#A8FF9B]"
               >
                 {llmSaving ? ui("Menyimpan…") : ui("Simpan Konfigurasi")}
@@ -903,6 +871,6 @@ export function AccountWorkspace({ area, initialTab }: { area: AccountArea; init
             {toast}
           </div>
         )}
-    </Shell>
+    </div>
   );
 }

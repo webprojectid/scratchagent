@@ -1,7 +1,7 @@
 "use client";
 import { uiText as ui, useUiLanguage, uiLocale } from "@/lib/ui-text";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Ban, Bot, Globe2, RefreshCw, ShieldAlert, UserX, Undo2 } from "lucide-react";
 import { Shell } from "@/components/brand";
@@ -115,9 +115,13 @@ export default function AdminSecurityPage({ preview = false }: { preview?: boole
   const [busy, setBusy] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 10;
+  const requestRef = useRef<AbortController | null>(null);
 
   const load = useCallback(async () => {
     if (preview) { setEvents(demoEvents.filter(e => !typeFilter || e.type === typeFilter)); setLoading(false); return; }
+    requestRef.current?.abort();
+    const controller = new AbortController();
+    requestRef.current = controller;
     setLoading(true);
     try {
       const u = await getCurrentUser();
@@ -125,13 +129,15 @@ export default function AdminSecurityPage({ preview = false }: { preview?: boole
       const typeQs = typeFilter ? `type=${encodeURIComponent(typeFilter)}` : "";
       const limitQs = "limit=120";
       const params = [userQs, typeQs, limitQs].filter(Boolean).join("&");
-      const res = await fetch(`/api/admin/security?${params}`, { credentials: "include" });
+      const res = await fetch(`/api/admin/security?${params}`, { credentials: "include", signal: controller.signal });
+      if (controller.signal.aborted) return;
       if (res.status === 401 || res.status === 403) {
         setAllowed(false);
         router.replace("/profile");
         return;
       }
       const d = await res.json().catch(() => null);
+      if (controller.signal.aborted) return;
       if (res.ok && d) {
         setEvents(d.events ?? []);
         setStats(d.stats ?? null);
@@ -143,9 +149,9 @@ export default function AdminSecurityPage({ preview = false }: { preview?: boole
         setStats(null);
       }
     } catch {
-      setEvents([]);
+      if (!controller.signal.aborted) setEvents([]);
     } finally {
-      setLoading(false);
+      if (!controller.signal.aborted) setLoading(false);
     }
   }, [typeFilter, preview, demoEvents, router]);
 
@@ -168,6 +174,7 @@ export default function AdminSecurityPage({ preview = false }: { preview?: boole
     });
     return () => {
       active = false;
+      requestRef.current?.abort();
     };
   }, [router, load, preview]);
 
@@ -222,7 +229,7 @@ export default function AdminSecurityPage({ preview = false }: { preview?: boole
   return (
     <Shell sidebar={false}>
       <AccountWorkbench active="security" title={ui("Keamanan")} description={ui("Tinjau aktivitas 24 jam terakhir. Periksa konteks kejadian sebelum memblokir IP atau mencabut akses.")} preview={preview} admin>
-        <div className="flex justify-end mb-6"><button onClick={() => void load()} disabled={loading} className="inline-flex items-center gap-2 border border-white/15 px-4 py-2 text-xs"><RefreshCw size={14} className={loading ? "animate-spin" : ""}/>{loading ? ui("Memuat…") : "Perbarui log"}</button></div>
+        <div className="flex justify-end mb-6"><button onClick={() => void load()} disabled={loading} className="inline-flex items-center gap-2 border border-white/15 px-4 py-2 text-xs"><RefreshCw size={14} className={loading ? "animate-spin" : ""}/>{loading ? ui("Memuat…") : ui("Refresh logs")}</button></div>
         {note && <p role="status" className="mb-4 rounded-lg border border-amber-400/30 bg-amber-400/[.06] px-3 py-2 text-xs text-amber-200">{note}</p>}
 
         {/* IP terblokir (hasil aksi) — tampil bila ada */}
@@ -252,15 +259,15 @@ export default function AdminSecurityPage({ preview = false }: { preview?: boole
         {stats && (
           <div className={adminStyles.metrics}>
             <div className="">
-              <p className="text-[10px] uppercase tracking-wider text-white/35">Kejadian 24 jam</p>
+              <p className="text-[10px] uppercase tracking-wider text-white/35">{ui("Kejadian 24 jam")}</p>
               <p className="mt-1 font-bold text-white" style={{ fontSize: "18px" }}>{stats.window24h.total}</p>
             </div>
             <div className="">
-              <p className="text-[10px] uppercase tracking-wider text-white/35">Perlu ditinjau</p>
+              <p className="text-[10px] uppercase tracking-wider text-white/35">{ui("Perlu ditinjau")}</p>
               <p className={`mt-1 font-bold ${signs24h > 0 ? "text-amber-300" : "text-white"}`} style={{ fontSize: "18px" }}>{signs24h}</p>
             </div>
             <div className="">
-              <p className="text-[10px] uppercase tracking-wider text-white/35">IP paling aktif</p>
+              <p className="text-[10px] uppercase tracking-wider text-white/35">{ui("IP paling aktif")}</p>
               {stats.topIps[0] ? (
                 <>
                   <p className="mt-1 truncate text-sm font-medium text-white">
@@ -276,11 +283,11 @@ export default function AdminSecurityPage({ preview = false }: { preview?: boole
               )}
             </div>
             <div className="">
-              <p className="text-[10px] uppercase tracking-wider text-white/35">Akun paling aktif</p>
+              <p className="text-[10px] uppercase tracking-wider text-white/35">{ui("Akun paling aktif")}</p>
               {stats.topUsers[0] ? (
                 <>
                   <p className="mt-1 truncate text-sm font-medium text-white">{stats.topUsers[0].email}</p>
-                  <p className="text-[10px] text-white/35">{stats.topUsers[0].count} kejadian</p>
+                  <p className="text-[10px] text-white/35">{stats.topUsers[0].count} {ui("kejadian")}</p>
                 </>
               ) : (
                 <p className="mt-1 text-sm text-white/30">—</p>
@@ -297,7 +304,7 @@ export default function AdminSecurityPage({ preview = false }: { preview?: boole
         {/* Breakdown per jenis */}
         {stats && stats.byType.length > 0 && (
           <div className="mb-6">
-            <div className="font-semibold text-white/70" style={{ fontSize: "13px" }}>Filter kejadian</div>
+            <div className="font-semibold text-white/70" style={{ fontSize: "13px" }}>{ui("Filter kejadian")}</div>
             <div className="mt-2 flex flex-wrap gap-2">
               {stats.byType.map((r) => (
                 <button
@@ -330,13 +337,11 @@ export default function AdminSecurityPage({ preview = false }: { preview?: boole
         {/* Log kejadian dengan kolom client (UA/geo) + tombol aksi */}
         <div>
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="font-semibold text-white/70" style={{ fontSize: "13px" }}>
-              Kejadian terbaru {typeFilter ? `(filter: ${ui(TYPE_LABEL[typeFilter] ?? typeFilter)})` : ""}
+            <div className="font-semibold text-white/70" style={{ fontSize: "13px" }}>{ui("Kejadian terbaru")} {typeFilter ? `(filter: ${ui(TYPE_LABEL[typeFilter] ?? typeFilter)})` : ""}
             </div>
             {visibleEvents.length > 0 && (
               <span className="font-mono text-[11px] text-white/35">
-                Total {visibleEvents.length} kejadian tercatat
-              </span>
+                Total {visibleEvents.length} {ui("kejadian tercatat")}</span>
             )}
           </div>
 
@@ -351,11 +356,11 @@ export default function AdminSecurityPage({ preview = false }: { preview?: boole
                   <thead className="sticky top-0 z-10 border-b border-white/[.08] bg-[#0E1210] text-[10px] uppercase tracking-wider text-white/35 backdrop-blur-md">
                     <tr>
                       <th className="px-3 py-2.5">{ui("Waktu")}</th>
-                      <th className="px-3 py-2.5">Jenis</th>
+                      <th className="px-3 py-2.5">{ui("Jenis")}</th>
                       <th className="px-3 py-2.5">Client</th>
-                      <th className="px-3 py-2.5">IP / lokasi</th>
-                      <th className="px-3 py-2.5">Akun</th>
-                      <th className="px-3 py-2.5 text-right">Aksi</th>
+                      <th className="px-3 py-2.5">{ui("IP / Lokasi")}</th>
+                      <th className="px-3 py-2.5">{ui("Akun")}</th>
+                      <th className="px-3 py-2.5 text-right">{ui("Aksi")}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/[.04]">
@@ -396,10 +401,10 @@ export default function AdminSecurityPage({ preview = false }: { preview?: boole
                               {/* Blokir IP: hanya IP publik yang belum diblokir */}
                               {e.ip && !e.ipIsLocal && !blocked.some((b) => b.ip === e.ip) && (
                                 <button
-                                  title={`Blokir IP ${e.ip}`}
+                                  title={ui("Blokir IP {0}", e.ip)}
                                   disabled={busy !== null}
                                   onClick={() => {
-                                    if (preview || window.confirm(`Blokir IP ${e.ip}? Semua request dari IP ini akan ditolak 403.`)) {
+                                    if (preview || window.confirm(ui("Blokir IP {0}? Semua request dari IP ini akan ditolak 403.", e.ip))) {
                                       void act("block_ip", { ip: e.ip, reason: `Dari event ${e.id.slice(0, 8)} (${e.type})` }, `IP ${e.ip} diblokir`);
                                     }
                                   }}
@@ -447,7 +452,7 @@ export default function AdminSecurityPage({ preview = false }: { preview?: boole
               {visibleEvents.length > PAGE_SIZE && (
                 <div className="mt-3 flex items-center justify-between text-[11.5px] text-white/40">
                   <span>
-                    Menampilkan {(page - 1) * PAGE_SIZE + 1} - {Math.min(page * PAGE_SIZE, visibleEvents.length)} dari {visibleEvents.length}
+                    {ui("Showing {0}–{1} of {2}", (page - 1) * PAGE_SIZE + 1, Math.min(page * PAGE_SIZE, visibleEvents.length), visibleEvents.length)}
                   </span>
                   <div className="flex items-center gap-1.5">
                     <button
@@ -455,7 +460,7 @@ export default function AdminSecurityPage({ preview = false }: { preview?: boole
                       onClick={() => setPage((p) => Math.max(1, p - 1))}
                       className="rounded-lg border border-white/10 px-3 py-1 font-mono text-[11px] text-white/70 hover:border-white/25 hover:text-white disabled:opacity-30 disabled:pointer-events-none"
                     >
-                      ← Prev
+                      ← {ui("Previous")}
                     </button>
                     <span className="px-2 font-mono text-[11px] text-white/80">
                       {page} / {Math.max(1, Math.ceil(visibleEvents.length / PAGE_SIZE))}
@@ -465,7 +470,7 @@ export default function AdminSecurityPage({ preview = false }: { preview?: boole
                       onClick={() => setPage((p) => Math.min(Math.ceil(visibleEvents.length / PAGE_SIZE), p + 1))}
                       className="rounded-lg border border-white/10 px-3 py-1 font-mono text-[11px] text-white/70 hover:border-white/25 hover:text-white disabled:opacity-30 disabled:pointer-events-none"
                     >
-                      Next →
+                      {ui("Next")} →
                     </button>
                   </div>
                 </div>
@@ -475,9 +480,7 @@ export default function AdminSecurityPage({ preview = false }: { preview?: boole
         </div>
 
         <div className="mt-10 flex items-center gap-2 border-t border-white/[.06] pt-6 text-[11px] text-white/30">
-          <ShieldAlert size={13} />
-          Semua aksi di halaman ini tercatat di audit log (ip_blocked, user_reset, event_dismissed) beserta email pelakunya.
-        </div>
+          <ShieldAlert size={13} />{ui("Semua aksi di halaman ini tercatat di audit log (ip_blocked, user_reset, event_dismissed) beserta email pelakunya.")}</div>
       </AccountWorkbench>
     </Shell>
   );

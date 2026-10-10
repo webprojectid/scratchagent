@@ -2,7 +2,8 @@
 import { uiText as ui, useUiLanguage } from "@/lib/ui-text";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { Sidebar } from "@/components/sidebar";
+import dynamic from "next/dynamic";
+const Sidebar = dynamic(() => import("./sidebar").then(module => module.Sidebar));
 
 export function Brand() {
   return (
