@@ -6,3 +6,64 @@
 :root[data-color-style]{--primary:var(--style-accent);--ring:var(--style-accent);--accent:var(--style-accent);--primary-foreground:var(--style-ink);--accent-ink:var(--style-ink)}
 .account-color-choices{display:flex;flex-wrap:wrap;gap:10px;margin:18px 0}.account-color-choices button{min-height:44px!important;border:1px solid #465054!important;background:#182022!important;color:#e9eded!important;border-radius:7px;padding:11px 14px!important;display:flex;align-items:center;gap:9px;cursor:pointer}.account-color-choices i{display:block;width:15px;height:15px;border-radius:50%;border:1px solid #ffffff44}.account-color-choices button[aria-pressed=true]{border-color:var(--style-accent)!important;box-shadow:0 0 0 1px var(--style-accent)}.account-color-choices button:focus-visible{outline:2px solid var(--style-accent);outline-offset:4px}
 .btn:hover{background:var(--style-soft);box-shadow:0 0 26px color-mix(in srgb,var(--style-accent) 18%,transparent)}.rv2-outline{border-color:var(--style-accent);color:var(--style-accent)}.rv2-outline:hover{background:var(--style-accent);color:var(--style-ink)}
+/* Older utility classes share the selected accent until their components adopt theme tokens. */
+:root[data-color-style]:not([data-color-style=scratch]) [class~="bg-[#74FA6A]"]{background-color:var(--style-accent)}
+:root[data-color-style]:not([data-color-style=scratch]) [class~="hover:bg-[#74FA6A]"]:hover{background-color:var(--style-accent)}
+:root[data-color-style]:not([data-color-style=scratch]) [class~="bg-[#74FA6A]/10"]{background-color:color-mix(in srgb,var(--style-accent) 10%,transparent)}
+:root[data-color-style]:not([data-color-style=scratch]) [class~="hover:bg-[#74FA6A]/10"]:hover{background-color:color-mix(in srgb,var(--style-accent) 10%,transparent)}
+:root[data-color-style]:not([data-color-style=scratch]) [class~="bg-[#74FA6A]/12"]{background-color:color-mix(in srgb,var(--style-accent) 12%,transparent)}
+:root[data-color-style]:not([data-color-style=scratch]) [class~="hover:bg-[#74FA6A]/12"]:hover{background-color:color-mix(in srgb,var(--style-accent) 12%,transparent)}
+:root[data-color-style]:not([data-color-style=scratch]) [class~="bg-[#74FA6A]/15"]{background-color:color-mix(in srgb,var(--style-accent) 15%,transparent)}
+:root[data-color-style]:not([data-color-style=scratch]) [class~="hover:bg-[#74FA6A]/15"]:hover{background-color:color-mix(in srgb,var(--style-accent) 15%,transparent)}
+:root[data-color-style]:not([data-color-style=scratch]) [class~="bg-[#74FA6A]/25"]{background-color:color-mix(in srgb,var(--style-accent) 25%,transparent)}
+:root[data-color-style]:not([data-color-style=scratch]) [class~="hover:bg-[#74FA6A]/25"]:hover{background-color:color-mix(in srgb,var(--style-accent) 25%,transparent)}
+:root[data-color-style]:not([data-color-style=scratch]) [class~="bg-[#74FA6A]/30"]{background-color:color-mix(in srgb,var(--style-accent) 30%,transparent)}
+:root[data-color-style]:not([data-color-style=scratch]) [class~="hover:bg-[#74FA6A]/30"]:hover{background-color:color-mix(in srgb,var(--style-accent) 30%,transparent)}
+:root[data-color-style]:not([data-color-style=scratch]) [class~="bg-[#74FA6A]/40"]{background-color:color-mix(in srgb,var(--style-accent) 40%,transparent)}
+:root[data-color-style]:not([data-color-style=scratch]) [class~="hover:bg-[#74FA6A]/40"]:hover{background-color:color-mix(in srgb,var(--style-accent) 40%,transparent)}
+:root[data-color-style]:not([data-color-style=scratch]) [class~="bg-[#74FA6A]/45"]{background-color:color-mix(in srgb,var(--style-accent) 45%,transparent)}
+:root[data-color-style]:not([data-color-style=scratch]) [class~="hover:bg-[#74FA6A]/45"]:hover{background-color:color-mix(in srgb,var(--style-accent) 45%,transparent)}
+:root[data-color-style]:not([data-color-style=scratch]) [class~="bg-[#74FA6A]/50"]{background-color:color-mix(in srgb,var(--style-accent) 50%,transparent)}
+:root[data-color-style]:not([data-color-style=scratch]) [class~="hover:bg-[#74FA6A]/50"]:hover{background-color:color-mix(in srgb,var(--style-accent) 50%,transparent)}
+:root[data-color-style]:not([data-color-style=scratch]) [class~="bg-[#74FA6A]/55"]{background-color:color-mix(in srgb,var(--style-accent) 55%,transparent)}
+:root[data-color-style]:not([data-color-style=scratch]) [class~="hover:bg-[#74FA6A]/55"]:hover{background-color:color-mix(in srgb,var(--style-accent) 55%,transparent)}
+:root[data-color-style]:not([data-color-style=scratch]) [class~="bg-[#74FA6A]/60"]{background-color:color-mix(in srgb,var(--style-accent) 60%,transparent)}
+:root[data-color-style]:not([data-color-style=scratch]) [class~="hover:bg-[#74FA6A]/60"]:hover{background-color:color-mix(in srgb,var(--style-accent) 60%,transparent)}
+:root[data-color-style]:not([data-color-style=scratch]) [class~="bg-[#74FA6A]/65"]{background-color:color-mix(in srgb,var(--style-accent) 65%,transparent)}
+:root[data-color-style]:not([data-color-style=scratch]) [class~="hover:bg-[#74FA6A]/65"]:hover{background-color:color-mix(in srgb,var(--style-accent) 65%,transparent)}
+:root[data-color-style]:not([data-color-style=scratch]) [class~="bg-[#74FA6A]/70"]{background-color:color-mix(in srgb,var(--style-accent) 70%,transparent)}
+:root[data-color-style]:not([data-color-style=scratch]) [class~="hover:bg-[#74FA6A]/70"]:hover{background-color:color-mix(in srgb,var(--style-accent) 70%,transparent)}
+:root[data-color-style]:not([data-color-style=scratch]) [class~="bg-[#74FA6A]/80"]{background-color:color-mix(in srgb,var(--style-accent) 80%,transparent)}
+:root[data-color-style]:not([data-color-style=scratch]) [class~="hover:bg-[#74FA6A]/80"]:hover{background-color:color-mix(in srgb,var(--style-accent) 80%,transparent)}
+:root[data-color-style]:not([data-color-style=scratch]) [class~="text-[#74FA6A]"]{color:var(--style-accent)}
+:root[data-color-style]:not([data-color-style=scratch]) [class~="hover:text-[#74FA6A]"]:hover{color:var(--style-accent)}
+:root[data-color-style]:not([data-color-style=scratch]) [class~="text-[#74FA6A]/60"]{color:color-mix(in srgb,var(--style-accent) 60%,transparent)}
+:root[data-color-style]:not([data-color-style=scratch]) [class~="hover:text-[#74FA6A]/60"]:hover{color:color-mix(in srgb,var(--style-accent) 60%,transparent)}
+:root[data-color-style]:not([data-color-style=scratch]) [class~="text-[#74FA6A]/70"]{color:color-mix(in srgb,var(--style-accent) 70%,transparent)}
+:root[data-color-style]:not([data-color-style=scratch]) [class~="hover:text-[#74FA6A]/70"]:hover{color:color-mix(in srgb,var(--style-accent) 70%,transparent)}
+:root[data-color-style]:not([data-color-style=scratch]) [class~="text-[#74FA6A]/80"]{color:color-mix(in srgb,var(--style-accent) 80%,transparent)}
+:root[data-color-style]:not([data-color-style=scratch]) [class~="hover:text-[#74FA6A]/80"]:hover{color:color-mix(in srgb,var(--style-accent) 80%,transparent)}
+:root[data-color-style]:not([data-color-style=scratch]) [class~="border-[#74FA6A]"]{border-color:var(--style-accent)}
+:root[data-color-style]:not([data-color-style=scratch]) [class~="hover:border-[#74FA6A]"]:hover{border-color:var(--style-accent)}
+:root[data-color-style]:not([data-color-style=scratch]) [class~="border-[#74FA6A]/15"]{border-color:color-mix(in srgb,var(--style-accent) 15%,transparent)}
+:root[data-color-style]:not([data-color-style=scratch]) [class~="hover:border-[#74FA6A]/15"]:hover{border-color:color-mix(in srgb,var(--style-accent) 15%,transparent)}
+:root[data-color-style]:not([data-color-style=scratch]) [class~="border-[#74FA6A]/20"]{border-color:color-mix(in srgb,var(--style-accent) 20%,transparent)}
+:root[data-color-style]:not([data-color-style=scratch]) [class~="hover:border-[#74FA6A]/20"]:hover{border-color:color-mix(in srgb,var(--style-accent) 20%,transparent)}
+:root[data-color-style]:not([data-color-style=scratch]) [class~="border-[#74FA6A]/25"]{border-color:color-mix(in srgb,var(--style-accent) 25%,transparent)}
+:root[data-color-style]:not([data-color-style=scratch]) [class~="hover:border-[#74FA6A]/25"]:hover{border-color:color-mix(in srgb,var(--style-accent) 25%,transparent)}
+:root[data-color-style]:not([data-color-style=scratch]) [class~="border-[#74FA6A]/30"]{border-color:color-mix(in srgb,var(--style-accent) 30%,transparent)}
+:root[data-color-style]:not([data-color-style=scratch]) [class~="hover:border-[#74FA6A]/30"]:hover{border-color:color-mix(in srgb,var(--style-accent) 30%,transparent)}
+:root[data-color-style]:not([data-color-style=scratch]) [class~="border-[#74FA6A]/35"]{border-color:color-mix(in srgb,var(--style-accent) 35%,transparent)}
+:root[data-color-style]:not([data-color-style=scratch]) [class~="hover:border-[#74FA6A]/35"]:hover{border-color:color-mix(in srgb,var(--style-accent) 35%,transparent)}
+:root[data-color-style]:not([data-color-style=scratch]) [class~="border-[#74FA6A]/40"]{border-color:color-mix(in srgb,var(--style-accent) 40%,transparent)}
+:root[data-color-style]:not([data-color-style=scratch]) [class~="hover:border-[#74FA6A]/40"]:hover{border-color:color-mix(in srgb,var(--style-accent) 40%,transparent)}
+:root[data-color-style]:not([data-color-style=scratch]) [class~="border-[#74FA6A]/45"]{border-color:color-mix(in srgb,var(--style-accent) 45%,transparent)}
+:root[data-color-style]:not([data-color-style=scratch]) [class~="hover:border-[#74FA6A]/45"]:hover{border-color:color-mix(in srgb,var(--style-accent) 45%,transparent)}
+:root[data-color-style]:not([data-color-style=scratch]) [class~="border-[#74FA6A]/50"]{border-color:color-mix(in srgb,var(--style-accent) 50%,transparent)}
+:root[data-color-style]:not([data-color-style=scratch]) [class~="hover:border-[#74FA6A]/50"]:hover{border-color:color-mix(in srgb,var(--style-accent) 50%,transparent)}
+:root[data-color-style]:not([data-color-style=scratch]) [class~="border-[#74FA6A]/60"]{border-color:color-mix(in srgb,var(--style-accent) 60%,transparent)}
+:root[data-color-style]:not([data-color-style=scratch]) [class~="hover:border-[#74FA6A]/60"]:hover{border-color:color-mix(in srgb,var(--style-accent) 60%,transparent)}
+:root[data-color-style]:not([data-color-style=scratch]) [class~="border-[#74FA6A]/70"]{border-color:color-mix(in srgb,var(--style-accent) 70%,transparent)}
+:root[data-color-style]:not([data-color-style=scratch]) [class~="hover:border-[#74FA6A]/70"]:hover{border-color:color-mix(in srgb,var(--style-accent) 70%,transparent)}
+:root[data-color-style]:not([data-color-style=scratch]) [class~="focus-visible:outline-[#a5ef7d]"]:focus-visible{outline-color:var(--style-soft)}
+:root[data-color-style]:not([data-color-style=scratch]) [class~="data-[highlighted]:text-[#74FA6A]"][data-highlighted]{color:var(--style-accent)}
