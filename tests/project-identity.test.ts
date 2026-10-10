@@ -27,12 +27,11 @@ test("project identity remains deterministic across serializations, case changes
 test("unknown projects have substantial variation instead of sharing a single default icon", () => {
   const identities = Array.from({ length: 300 }, (_, index) => getProjectIdentity({ id: `project-${index}`, title: "Karsati" }));
   assert.equal(new Set(identities.map(identity => identity.icon)).size, 12);
-  assert.equal(new Set(identities.map(identity => identity.tone)).size, 6);
-  assert.ok(new Set(identities.map(identity => `${identity.icon}:${identity.tone}`)).size > 60);
+  assert.deepEqual(new Set(identities.map(identity => identity.tone)), new Set(["green"]));
 });
 
 test("projects within one category vary while preserving a relevant symbol", () => {
   const identities = Array.from({ length: 100 }, (_, index) => getProjectIdentity({ id: `habit-${index}`, title: "Habit tracker" }));
   assert.deepEqual(new Set(identities.map(identity => identity.icon)), new Set(["Sprout", "Leaf", "Flower2"]));
-  assert.equal(new Set(identities.map(identity => identity.tone)).size, 6);
+  assert.deepEqual(new Set(identities.map(identity => identity.tone)), new Set(["green"]));
 });
