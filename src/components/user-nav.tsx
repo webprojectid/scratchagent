@@ -6,7 +6,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { AccountBadges } from "@/components/account-badges";
-import { User, Settings, LogOut, BookOpen } from "lucide-react";
+import { User, Settings, LogOut, BookOpen, Cpu } from "lucide-react";
+import { isDeveloperAdmin } from "@/lib/admin-access";
 import { accountMenuLinks } from "@/lib/account-navigation";
 import { createClient } from "@/lib/supabase/client";
 import { getCurrentUser, refreshCurrentUser, supabaseConfigured, type CurrentUser } from "@/lib/current-user";
@@ -76,7 +77,7 @@ export function UserNav() {
       <DropdownMenu.Trigger asChild>
         <button
           type="button"
-          aria-label="Menu Akun"
+          aria-label={ui("Menu Akun")}
           className="group relative flex size-8 items-center justify-center rounded-full border border-white/15 bg-white/[.06] text-white/80 transition hover:border-[#74FA6A]/50 hover:bg-[#74FA6A]/10 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#a5ef7d]"
         >
           {initials ? (
@@ -101,6 +102,7 @@ export function UserNav() {
           </div>
 
           <div className="py-1">
+            {user.role === "admin" && isDeveloperAdmin(user.email) && <DropdownMenu.Item asChild><Link href="/developer-settings" className="flex min-h-11 items-center gap-2 rounded-lg px-2.5 py-2 text-[12.5px] text-white/80 outline-none data-[highlighted]:bg-white/[.07] data-[highlighted]:text-[#74FA6A]"><Cpu size={14}/>Developer Setting</Link></DropdownMenu.Item>}
             {accountMenuLinks.map(({ label, href, icon }) => {
               const Icon = menuIcons[icon];
               return <DropdownMenu.Item key={href} asChild>

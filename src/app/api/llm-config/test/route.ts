@@ -9,6 +9,7 @@ import { getLlmConfig } from "@/lib/llm-config";
 const bodySchema = z.object({
   baseUrl: z.string().trim().min(1),
   apiKey: z.string().trim().default(""),
+  sourceIndex: z.number().int().min(0).max(7).nullable().optional(),
   model: z.string().trim().min(1),
 });
 
@@ -230,7 +231,15 @@ export async function POST(request: Request) {
   let apiKey = parsed.data.apiKey;
   if (!apiKey) {
     const cfg = await getLlmConfig();
-    apiKey = cfg?.providers.find((p) => p.baseUrl.replace(/\/$/, "") === baseUrl.replace(/\/$/, ""))?.apiKey ?? "";
+    const source = parsed.data.sourceIndex;
+    const candidate = source === undefined
+      ? cfg?.providers.find(p => p.baseUrl.replace(/\/$/, "") === baseUrl.replace(/\/$/, ""))
+      : source === null ? undefined : cfg?.providers[source];
+    if (candidate?.baseUrl.replace(/\/$/, "") === baseUrl.replace(/\/$/, "")) apiKey = candidate.apiKey;
+    if (!apiKey && source === 0 && !(cfg?.providers.length)) {
+      const storedUrl = cfg?.baseUrl || process.env.LLM_BASE_URL || "";
+      if (storedUrl.replace(/\/$/, "") === baseUrl.replace(/\/$/, "")) apiKey = cfg?.apiKey || process.env.LLM_API_KEY || "";
+    }
   }
   if (!apiKey) {
     return NextResponse.json({ ok: false, error: apiText("API key belum ada (kosong di form dan belum tersimpan).") });

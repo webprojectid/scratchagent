@@ -3,7 +3,7 @@
 import { useEffect, useId, useReducer, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowUpRight, Check, ChevronRight, Circle, FileText, Folder, GitBranch, ListChecks, Map, Minus, Pause, Play, RotateCcw, Search, Terminal, X } from "lucide-react";
-import demo from "@/lib/demo-futsalgo.json";
+import { landingSessions } from "@/lib/landing-demo";
 import { workspaceCopy } from "@/lib/copy-workspace";
 import styles from "./landing-workspace.module.css";
 
@@ -11,12 +11,7 @@ type Tab = "roadmap" | "prd" | "tasks";
 type Stage = "ready" | "working" | "checkpoint" | "failed" | "finished";
 type State = { feature: number; cursor: number; stage: Stage; playing: boolean; inspected: number; command: string };
 type Action = { type: "step" | "play" | "reset" | "fail" | "retry" } | { type: "feature" | "inspect"; index: number };
-const order: Record<string, number> = { frontend: 0, backend: 1, qa: 2 };
-// Use one real sub-feature per session to keep the landing-page demo short.
-const sessions = demo.features.map(feature => ({
-  ...feature,
-  tasks: [...feature.subFeatures[0].tasks].sort((a, b) => a.phase - b.phase || order[a.layer] - order[b.layer] || a.ref.localeCompare(b.ref)),
-}));
+const sessions = landingSessions();
 const initial: State = { feature: 0, cursor: 0, stage: "ready", playing: true, inspected: 0, command: "scratch-agent task next --plan demo --json" };
 
 function reducer(state: State, action: Action): State {
@@ -30,7 +25,7 @@ function reducer(state: State, action: Action): State {
     if (state.stage === "failed") return state;
     return { ...state, playing: !state.playing };
   }
-  if (action.type === "fail" && state.stage === "working") return { ...state, stage: "failed", playing: false, command: `scratch-agent task fail ${task.ref} "Simulasi kegagalan"` };
+  if (action.type === "fail" && state.stage === "working") return { ...state, stage: "failed", playing: false, command: `scratch-agent task fail ${task.ref} "Simulated failure"` };
   if (action.type === "retry" && state.stage === "failed") return { ...state, stage: "ready", playing: true, command: `scratch-agent task retry ${task.ref}` };
   if (action.type !== "step") return state;
   if (state.stage === "finished") return { ...initial, feature: state.feature, playing: true };
@@ -44,7 +39,8 @@ function reducer(state: State, action: Action): State {
     command: `scratch-agent task complete ${task.ref}` };
 }
 
-export function LandingWorkspace({ lang = "id" }: { lang?: "id" | "en" }) {
+export function LandingWorkspace({ lang = "en" }: { lang?: "id" | "en" }) {
+  const sessions = landingSessions(lang);
   const en = lang === "en";
   const w = workspaceCopy(lang);
   const [state, dispatch] = useReducer(reducer, initial);
@@ -126,7 +122,7 @@ export function LandingWorkspace({ lang = "id" }: { lang?: "id" | "en" }) {
               <p className={styles.folder}><Folder size={12} /> FutsalGo / {w.breadcrumbWorkPlan}</p>
               <div className={styles.sessionList}>
                 {matching.map(({ item, index }) => <button key={item.slug} className={styles.session} aria-pressed={state.feature === index} onClick={() => dispatch({ type: "feature", index })}>
-                  <span className={styles.sessionMeta}>{w.phaseLabel} {index + 1}<span>{item.subFeatures.length} {w.tasksCount}</span></span>
+                  <span className={styles.sessionMeta}>{w.phaseLabel} {index + 1}<span>{item.tasks.length} {w.tasksCount}</span></span>
                   <strong>{item.title}</strong>
                   <span className={styles.sessionMeta}>{state.feature === index ? <><span className={styles.activeDot} /> {w.sessionSelected}</> : w.viewPlan}</span>
                 </button>)}
@@ -149,7 +145,7 @@ export function LandingWorkspace({ lang = "id" }: { lang?: "id" | "en" }) {
                   <div className={styles.tree}><div className={styles.treeRoot}><Folder size={15} />FutsalGo</div><div className={styles.treeBranch}><strong>{session.title}</strong>{session.subFeatures.map((sub, index) => <details key={sub.title} open={index === 0}><summary>{sub.title}<span>{sub.tasks.length} tasks</span></summary><ul>{sub.tasks.map(item => <li key={item.ref}><code>{item.ref}</code>{item.title.replace("[BLOCKER] ", "")}</li>)}</ul></details>)}</div></div>
                 </>}
                 {tab === "prd" && <>
-                  <p className={styles.overline}>PRODUCT REQUIREMENTS</p>
+                  <p className={styles.overline}>{label("KEBUTUHAN PRODUK", "PRODUCT REQUIREMENTS")}</p>
                   <h3>{session.title}</h3>
                   <p className={styles.description}>{session.description}</p>
                   <div className={styles.divider} />

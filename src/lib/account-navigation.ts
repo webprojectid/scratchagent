@@ -1,5 +1,5 @@
 export const profileTabs = ["profile", "plans", "billing", "activity", "library"] as const;
-export const settingsTabs = ["preferences", "language", "handoff", "security", "tokens", "notifications", "privacy", "llm"] as const;
+export const settingsTabs = ["preferences", "language", "handoff", "security", "tokens", "notifications", "privacy"] as const;
 export type AccountTab = typeof profileTabs[number] | typeof settingsTabs[number];
 export type AccountArea = "profile" | "settings";
 export type AccountSearchParams = Record<string, string | string[] | undefined>;
@@ -33,6 +33,7 @@ export function accountTabHref(tab: AccountTab, search = ""): string {
 
 export function resolveAccountRoute(area: AccountArea, search: AccountSearchParams) {
   const rawTab = Array.isArray(search.tab) ? search.tab[0] : search.tab;
+  if (rawTab === "llm") return { tab: defaultAccountTab(area), redirectTo: "/developer-settings?tab=llm" };
   const tab = isAccountTab(rawTab) ? rawTab : defaultAccountTab(area);
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries(search)) {

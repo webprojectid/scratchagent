@@ -4,3 +4,5 @@
 .metrics>div span{display:inline}.metrics>div>span{display:block}.body button:has(>svg:only-child){min-width:38px}.body button[aria-selected]{min-height:44px}
 .settingsGrid>div{min-width:0}.panel{overflow-wrap:anywhere}.panel>div{min-width:0}.body [class*="truncate"]{min-width:0}.body [class*="bg-[#74FA6A]"][class*="text-[#74FA6A]"]{color:#223018}
 @media(max-width:760px){.panel{max-width:100%;overflow:hidden}.panel [class*="flex"]{min-width:0}.panel [class*="truncate"]{white-space:normal;overflow-wrap:anywhere}.panel code{word-break:break-word}.body form{min-width:0}.body form>div{min-width:0}}
+
+.nav button{flex-shrink:0;white-space:nowrap;min-height:44px;text-align:left}

@@ -1,5 +1,5 @@
 "use client";
-import { uiText as ui, useUiLanguage } from "@/lib/ui-text";
+import { uiText as ui, useUiLanguage, uiLocale } from "@/lib/ui-text";
 
 import Link from "next/link";
 import { animate, AnimatePresence, motion, useMotionValue, useSpring, useScroll } from "motion/react";
@@ -8,7 +8,6 @@ import { memo, useEffect, useRef, useState } from "react";
 import DottedDemo from "@/components/ui/dotted-demo";
 import { IPhone17ShopDemo } from "@/components/ui/iphone17-shop-demo";
 import { getCurrentUser, refreshCurrentUser } from "@/lib/current-user";
-import { LanguageToggle } from "@/components/lang-toggle";
 import { UserNav } from "@/components/user-nav";
 import { SupportedAiTools } from "@/components/supported-ai-tools";
 import { BorderBeamPanel } from "@/components/ui/border-beam-panel";
@@ -88,14 +87,14 @@ function Navbar() {
           <div className="hidden items-center gap-9 md:flex"><Link href="/pricing" className="font-mono text-[12px] tracking-[0.02em] text-white/70 transition-colors duration-200 hover:text-[#74FA6A]">{t("nav", "pricing", lang)}</Link><Link href="/solutions" className="font-mono text-[12px] tracking-[0.02em] text-white/70 transition-colors duration-200 hover:text-[#74FA6A]">{t("nav", "solutions", lang)}</Link><Link href="/docs" className="font-mono text-[12px] tracking-[0.02em] text-white/70 transition-colors duration-200 hover:text-[#74FA6A]">{t("nav", "docs", lang)}</Link><a href="https://scratchagent.store/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 font-mono text-[12px] tracking-[0.02em] text-[#74FA6A] transition-colors duration-200 hover:text-[#A8FF9B]"><KeyRound size={13} strokeWidth={2.2} aria-hidden="true" />Api Key</a></div>
         </div>
         <div className="hidden items-center gap-6 md:flex">
-          <LanguageToggle />
+
           <UserNav />
           <Link href={loggedIn ? "/new" : "/login"} className="grid size-8 place-items-center rounded-full bg-[#74FA6A] text-black transition hover:scale-105 hover:bg-[#A8FF9B]" aria-label={ui("Mulai sekarang")}><ArrowUpRight size={16} /></Link>
         </div>
         <button className="grid size-8 place-items-center text-white md:hidden" onClick={() => setMobileNav((v) => !v)} aria-label="Navigasi"><span className="relative block h-3.5 w-5"><span className={`absolute left-0 top-0 block h-px w-full bg-white transition-all duration-300 ${mobileNav ? "translate-y-[7px] rotate-45" : ""}`} /><span className={`absolute left-0 top-[7px] block h-px w-full bg-white transition-opacity duration-200 ${mobileNav ? "opacity-0" : "opacity-100"}`} /><span className={`absolute left-0 top-[14px] block h-px w-full bg-white transition-all duration-300 ${mobileNav ? "translate-y-[-7px] -rotate-45" : ""}`} /></span></button>
       </motion.nav>
       <motion.div className="fixed inset-0 z-[60] flex flex-col bg-[#0A0A0A] md:hidden" initial={false} animate={mobileNav ? { opacity: 1, pointerEvents: "auto" } : { opacity: 0, pointerEvents: "none" }} transition={{ duration: .35, ease: [0.16, 1, 0.3, 1] }}>
-        <div className="flex h-[64px] items-center justify-between px-5"><span className="flex items-center gap-2 text-[18px] font-semibold tracking-[-.04em] text-[#E8F0E8]"><span className="size-6 skew-x-[-28deg] bg-[#74FA6A]" />Scratch Agent</span><div className="flex items-center gap-3"><LanguageToggle /><button className="grid size-8 place-items-center text-white" onClick={() => setMobileNav(false)} aria-label={ui("Tutup")}><X size={18} /></button></div></div>
+        <div className="flex h-[64px] items-center justify-between px-5"><span className="flex items-center gap-2 text-[18px] font-semibold tracking-[-.04em] text-[#E8F0E8]"><span className="size-6 skew-x-[-28deg] bg-[#74FA6A]" />Scratch Agent</span><div className="flex items-center gap-3"><button className="grid size-8 place-items-center text-white" onClick={() => setMobileNav(false)} aria-label={ui("Tutup")}><X size={18} /></button></div></div>
         <div className="flex flex-1 flex-col justify-between px-5 py-12"><div className="space-y-1">{[{ href: "/pricing", label: t("nav", "pricing", lang) }, { href: "/solutions", label: t("nav", "solutions", lang) }, { href: "/docs", label: t("nav", "docs", lang) }, { href: "https://scratchagent.store/", label: "Api Key", external: true }, { href: "/project/demo", label: t("cta", "examplePlan", lang) }].map((link, i) => (<motion.a key={link.href} href={link.href} target={link.external ? "_blank" : undefined} rel={link.external ? "noopener noreferrer" : undefined} onClick={() => setMobileNav(false)} className={`block py-4 font-mono text-[14px] tracking-[0.08em] transition-colors hover:text-[#74FA6A] ${link.external ? "text-[#74FA6A]" : "text-white/70"}`} initial={{ opacity: 0, y: 16 }} animate={mobileNav ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }} transition={{ delay: 0.08 + i * 0.05, duration: .4, ease: [0.16, 1, 0.3, 1] }}>{link.label}</motion.a>))}</div><motion.div initial={{ opacity: 0, y: 16 }} animate={mobileNav ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }} transition={{ delay: 0.32, duration: .4, ease: [0.16, 1, 0.3, 1] }}><Link href={loggedIn ? "/new" : "/login"} onClick={() => setMobileNav(false)} className="flex w-full items-center justify-center rounded-full border border-[#74FA6A] px-6 py-3.5 font-mono text-[13px] tracking-[0.06em] text-[#74FA6A] transition-colors hover:bg-[#74FA6A] hover:text-black">{t("cta", "startFree", lang)}</Link><p className="mt-6 font-mono text-[11px] tracking-[.08em] text-white/30">{loggedIn ? <Link href="/profile" className="hover:text-[#74FA6A]">{t("nav", "profile", lang)}</Link> : t("cta", "login", lang)}</p></motion.div></div>
       </motion.div>
     </>
@@ -157,7 +156,7 @@ export default function Home() {
           </div>
           <div className="flex flex-col items-center gap-4">
             <div className="h-[480px] w-full max-w-[240px]"><PhoneFrame variant="android"><KriptoPreview /></PhoneFrame></div>
-            <div className="text-center"><p className="text-[15px] font-semibold text-[#E8F0E8]">Kripto Wallet</p><p className="mt-1 flex items-center justify-center"><img src="https://cdn.simpleicons.org/android/3DDC84" alt={ui("Android")} className="h-4 w-4" /></p></div>
+            <div className="text-center"><p className="text-[15px] font-semibold text-[#E8F0E8]">{ui("Kripto Wallet")}</p><p className="mt-1 flex items-center justify-center"><img src="https://cdn.simpleicons.org/android/3DDC84" alt={ui("Android")} className="h-4 w-4" /></p></div>
           </div>
           <div className="flex flex-col items-center gap-4">
             <div className="h-[480px] w-full max-w-[240px]"><PhoneFrame variant="ios"><IosFitnessPreview /></PhoneFrame></div>
@@ -969,6 +968,7 @@ function KriptoChart({ delay = 0.3 }: { delay?: number }) {
 
 function KriptoDashboard() {
   useUiLanguage();
+  const lang = useLang();
   return (
     <div className="flex h-full flex-col bg-white px-3">
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: [0.2, 0.8, 0.2, 1] }} className="flex items-center justify-between pt-1.5">
@@ -978,37 +978,37 @@ function KriptoDashboard() {
       </motion.div>
 
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.05, ease: [0.2, 0.8, 0.2, 1] }} className="pt-1">
-        <p className="text-[17px] font-extrabold tracking-tight text-[#111]">Rp 41.285.600</p>
-        <div className="flex items-center gap-1.5"><span className="text-[7px] text-[#888]">pada 21 Jan, 11:42</span><span className="text-[7px] font-semibold text-[#E53935]">▼ 3,04%</span></div>
+        <p className="text-[17px] font-extrabold tracking-tight text-[#111]">{new Intl.NumberFormat(uiLocale(), {style:"currency",currency:"IDR",maximumFractionDigits:0}).format(41285600)}</p>
+        <div className="flex items-center gap-1.5"><span className="text-[7px] text-[#888]">{ui("pada 21 Jan, 11:42")}</span><span className="text-[7px] font-semibold text-[#E53935]">▼ {(3.04).toLocaleString(uiLocale())}%</span></div>
       </motion.div>
 
       <KriptoChart delay={0.3} />
 
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4, delay: 0.4 }} className="flex justify-around pt-1">
-        {["1J", "1H", "1M", "1B", "1T"].map((t) => (
-          <span key={t} className={`rounded-full px-2 py-[2px] text-[7px] font-medium ${t === "1M" ? "bg-[#4CAF50] font-semibold text-white" : "text-[#999]"}`}>{t}</span>
+        {(lang === "en" ? ["1H", "1D", "1W", "1M", "1Y"] : ["1J", "1H", "1M", "1B", "1T"]).map((t, index) => (
+          <span key={t} className={`rounded-full px-2 py-[2px] text-[7px] font-medium ${index === 2 ? "bg-[#4CAF50] font-semibold text-white" : "text-[#999]"}`}>{t}</span>
         ))}
       </motion.div>
 
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.45, ease: [0.2, 0.8, 0.2, 1] }} className="flex gap-1.5 pt-1.5">
         <div className="flex-1 rounded-lg bg-[#F5F5F5] px-2 py-1.5">
-          <p className="text-[7px] font-medium text-[#999]">Saldo</p>
-          <div className="mt-0.5 flex items-center gap-1"><EthCoin size={13} fontSize={7} /><span className="text-[8px] font-bold text-[#111]">0,006714</span></div>
+          <p className="text-[7px] font-medium text-[#999]">{ui("Saldo")}</p>
+          <div className="mt-0.5 flex items-center gap-1"><EthCoin size={13} fontSize={7} /><span className="text-[8px] font-bold text-[#111]">{(0.006714).toLocaleString(uiLocale(), {maximumFractionDigits:6})}</span></div>
         </div>
         <div className="flex-1 rounded-lg bg-[#F5F5F5] px-2 py-1.5">
-          <p className="text-[7px] font-medium text-[#999]">Nilai</p>
-          <span className="mt-0.5 block text-[8px] font-bold text-[#111]">Rp 277.800</span>
+          <p className="text-[7px] font-medium text-[#999]">{ui("Nilai")}</p>
+          <span className="mt-0.5 block text-[8px] font-bold text-[#111]">{new Intl.NumberFormat(uiLocale(), {style:"currency",currency:"IDR",maximumFractionDigits:0}).format(277800)}</span>
         </div>
       </motion.div>
 
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.5, ease: [0.2, 0.8, 0.2, 1] }} className="pt-1.5">
-        <p className="text-[9px] font-bold text-[#111]">Deskripsi</p>
+        <p className="text-[9px] font-bold text-[#111]">{ui("Deskripsi")}</p>
         <p className="mt-0.5 text-[7px] leading-snug text-[#888]">{ui("Ethereum adalah platform global untuk aplikasi terdesentralisasi, bertujuan menghilangkan kebutuhan akan otoritas pusat.")}<span className="font-medium text-[#4CAF50]">{ui("Baca Selengkapnya")}</span></p>
       </motion.div>
 
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.55, ease: [0.2, 0.8, 0.2, 1] }} className="mt-auto flex gap-1.5 pb-2 pt-2">
-        <span className="flex-1 rounded-full bg-[#111] py-1.5 text-center text-[9px] font-semibold text-white">Tukar</span>
-        <span className="flex-1 rounded-full bg-[#4CAF50] py-1.5 text-center text-[9px] font-semibold text-white">Kirim</span>
+        <span className="flex-1 rounded-full bg-[#111] py-1.5 text-center text-[9px] font-semibold text-white">{ui("Tukar")}</span>
+        <span className="flex-1 rounded-full bg-[#4CAF50] py-1.5 text-center text-[9px] font-semibold text-white">{ui("Kirim")}</span>
       </motion.div>
     </div>
   );
@@ -1029,12 +1029,12 @@ function KriptoSendSelect() {
   return (
     <div className="flex h-full flex-col bg-white px-3">
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="flex items-center justify-between border-b border-[#F0F0F0] pb-1.5 pt-1.5">
-        <p className="text-[12px] font-bold text-[#111]">Kirim</p>
+        <p className="text-[12px] font-bold text-[#111]">{ui("Kirim")}</p>
         <X size={13} className="text-[#555]" />
       </motion.div>
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.05 }} className="mt-1.5 flex items-center rounded-lg bg-[#F5F5F5] px-2 py-1.5">
-        <span className="text-[8px] font-medium text-[#AAA]">Ke</span>
-        <span className="ml-1 flex-1 text-[8px] text-[#BBB]">ENS atau Alamat</span>
+        <span className="text-[8px] font-medium text-[#AAA]">{ui("Ke")}</span>
+        <span className="ml-1 flex-1 text-[8px] text-[#BBB]">{ui("ENS atau Alamat")}</span>
         <span className="rounded-md bg-[#111] px-1.5 py-[2px] text-[7px] font-semibold text-white">Paste</span>
       </motion.div>
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }} className="mt-1.5 flex items-center gap-1.5 rounded-lg bg-[#F5F5F5] px-2 py-1.5">
@@ -1042,10 +1042,10 @@ function KriptoSendSelect() {
         <div><p className="text-[8.5px] font-semibold text-[#111]">Scan QR Code</p><p className="text-[7px] text-[#999]">{ui("Ketuk untuk scan alamat")}</p></div>
       </motion.div>
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3, delay: 0.15 }} className="flex items-center gap-1 pt-1.5"><Clock size={9} className="text-[#888]" /><span className="text-[8px] font-semibold text-[#888]">{ui("Terbaru")}</span></motion.div>
-      <KriptoContact icon={<Star size={13} className="text-[#C9A227]" />} name="Stash" sub="1 Transaksi Sebelumnya" bg="#E8E8E8" delay={0.2} />
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3, delay: 0.25 }} className="flex items-center gap-1 pt-1.5"><Sparkles size={9} className="text-[#888]" /><span className="text-[8px] font-semibold text-[#888]">Disarankan</span></motion.div>
-      <KriptoContact icon={<CreditCard size={13} className="text-[#627EEA]" />} name="0xb249....9768" sub="1 Transaksi Sebelumnya" bg="#E8EEFF" delay={0.3} />
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3, delay: 0.35 }} className="flex items-center gap-1 pt-1.5"><User size={9} className="text-[#888]" /><span className="text-[8px] font-semibold text-[#888]">Buku Alamat</span></motion.div>
+      <KriptoContact icon={<Star size={13} className="text-[#C9A227]" />} name="Stash" sub={ui("1 Transaksi Sebelumnya")} bg="#E8E8E8" delay={0.2} />
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3, delay: 0.25 }} className="flex items-center gap-1 pt-1.5"><Sparkles size={9} className="text-[#888]" /><span className="text-[8px] font-semibold text-[#888]">{ui("Disarankan")}</span></motion.div>
+      <KriptoContact icon={<CreditCard size={13} className="text-[#627EEA]" />} name="0xb249....9768" sub={ui("1 Transaksi Sebelumnya")} bg="#E8EEFF" delay={0.3} />
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3, delay: 0.35 }} className="flex items-center gap-1 pt-1.5"><User size={9} className="text-[#888]" /><span className="text-[8px] font-semibold text-[#888]">{ui("Buku Alamat")}</span></motion.div>
       <KriptoContact icon={<CreditCard size={13} className="text-[#888]" />} name="vitalik.eth" sub={ui("Tidak Ada Transaksi Sebelumnya")} bg="#F0F0F0" delay={0.4} />
     </div>
   );
@@ -1056,21 +1056,21 @@ function KriptoSendAmount() {
   return (
     <div className="flex h-full flex-col bg-white px-3">
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="flex items-center justify-between border-b border-[#F0F0F0] pb-1.5 pt-1.5">
-        <p className="text-[12px] font-bold text-[#111]">Kirim</p>
+        <p className="text-[12px] font-bold text-[#111]">{ui("Kirim")}</p>
         <X size={13} className="text-[#555]" />
       </motion.div>
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.05 }} className="mt-1.5 flex items-center rounded-lg bg-[#F5F5F5] px-2 py-1.5">
-        <span className="text-[8px] font-medium text-[#AAA]">Ke</span>
+        <span className="text-[8px] font-medium text-[#AAA]">{ui("Ke")}</span>
         <span className="ml-1 text-[8px] font-medium text-[#111]">0xb249....9768</span>
       </motion.div>
       <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.45, delay: 0.1 }} className="pt-2 text-center">
-        <p className="text-[18px] font-extrabold tracking-tight text-[#111]">Rp 41.285.600</p>
-        <div className="mt-0.5 flex items-center justify-center gap-1"><EthCoin size={14} fontSize={8} /><span className="text-[8px] font-medium text-[#888]">0,00001902</span><ArrowUpDown size={9} className="text-[#555]" /></div>
+        <p className="text-[18px] font-extrabold tracking-tight text-[#111]">{new Intl.NumberFormat(uiLocale(), {style:"currency",currency:"IDR",maximumFractionDigits:0}).format(41285600)}</p>
+        <div className="mt-0.5 flex items-center justify-center gap-1"><EthCoin size={14} fontSize={8} /><span className="text-[8px] font-medium text-[#888]">{(0.00001902).toLocaleString(uiLocale(), {maximumFractionDigits:8})}</span><ArrowUpDown size={9} className="text-[#555]" /></div>
       </motion.div>
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.15 }} className="mt-1.5 flex items-center gap-1.5 rounded-lg bg-[#F5F5F5] px-2 py-1.5">
         <EthCoin size={24} fontSize={13} />
-        <div className="flex-1"><p className="text-[8.5px] font-semibold text-[#111]">Ethereum</p><p className="text-[7px] text-[#999]">0,006714</p></div>
-        <span className="rounded-md border border-[#DDD] px-1.5 py-[2px] text-[7px] font-semibold text-[#555]">Maks</span>
+        <div className="flex-1"><p className="text-[8.5px] font-semibold text-[#111]">Ethereum</p><p className="text-[7px] text-[#999]">{(0.006714).toLocaleString(uiLocale(), {maximumFractionDigits:6})}</p></div>
+        <span className="rounded-md border border-[#DDD] px-1.5 py-[2px] text-[7px] font-semibold text-[#555]">{ui("Maks")}</span>
       </motion.div>
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.2 }} className="grid grid-cols-3 gap-1 pt-1.5">
         {["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0"].map((k) => (
@@ -1078,7 +1078,7 @@ function KriptoSendAmount() {
         ))}
         <span className="grid place-items-center rounded-md bg-[#F0F0F0] py-1"><Delete size={11} className="text-[#555]" /></span>
       </motion.div>
-      <motion.span initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.25 }} className="mt-1.5 rounded-full bg-[#4CAF50] py-1.5 text-center text-[9px] font-bold text-white">Lanjutkan</motion.span>
+      <motion.span initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.25 }} className="mt-1.5 rounded-full bg-[#4CAF50] py-1.5 text-center text-[9px] font-bold text-white">{ui("Lanjutkan")}</motion.span>
     </div>
   );
 }

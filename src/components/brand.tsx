@@ -13,8 +13,9 @@ export function Brand() {
   );
 }
 
-export function Shell({ children, back, sidebar = true, brand = true }: { children: React.ReactNode; back?: string; sidebar?: boolean; brand?: boolean }) {
+export function Shell({ children, back, sidebar = true, brand = true, embedded = false }: { children: React.ReactNode; back?: string; sidebar?: boolean; brand?: boolean; embedded?: boolean }) {
   useUiLanguage();
+  if (embedded) return <>{children}</>;
   // Brand kiri-atas:
   // - Halaman tanpa sidebar: selalu tampil (di samping tombol back kalau ada).
   // - Halaman bersidebar: tampil hanya di mobile (md:hidden), karena di desktop

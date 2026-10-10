@@ -68,7 +68,7 @@ const TESTIMONIALS: Testimonial[] = [
   },
 ];
 
-export function TestimonialsSection({ lang = "id" }: { lang?: "id" | "en" }) {
+export function TestimonialsSection({ lang = "en" }: { lang?: "id" | "en" }) {
   const en = lang === "en";
   
   // Bilingual quotes

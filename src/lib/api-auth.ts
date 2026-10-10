@@ -207,13 +207,10 @@ export function devOnlyGate(): NextResponse | null {
   return null;
 }
 
-/**
- * Gate admin berbasis daftar email: env ADMIN_EMAILS (dipisah koma)
- * ditambah email admin bawaan (teguhends@gmail.com) dari lib/billing.
- */
+/** Admin access belongs to the designated owner and requires a browser session. */
 export async function requireAdmin(user: AuthUser | null): Promise<NextResponse | null> {
   if (!user?.email) return unauthorized();
-  if (user.via === "token") return forbidden("Akses admin membutuhkan sesi browser.");
+  if (user.via !== "session") return forbidden("Akses admin membutuhkan sesi browser.");
   const { isAdminEmail } = await import("@/lib/billing");
   if (!isAdminEmail(user.email)) {
     return forbidden("Akses admin ditolak. Hanya email admin yang terdaftar.");

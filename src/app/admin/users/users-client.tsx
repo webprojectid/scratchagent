@@ -4,6 +4,7 @@ import { uiText as ui, useUiLanguage, uiLocale } from "@/lib/ui-text";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search, Ban, Undo2, Sparkles, CircleOff, RefreshCw, Check, Crown } from "lucide-react";
+import { isDeveloperAdmin } from "@/lib/admin-access";
 import { Shell } from "@/components/brand";
 import { AccountWorkbench } from "@/components/account-workbench";
 import adminStyles from "@/components/account-workbench.module.css";
@@ -87,7 +88,7 @@ const DEMO_ACCOUNTS: AccountRow[] = [
   {id:"demo-3",name:"Citra Workspace",email:"citra@example.test",tier:"free",bannedAt:"2026-09-20T08:00:00Z",createdAt:"2026-09-12T08:00:00Z",proActive:false,proExpiresAt:null,isAdmin:false},
   {id:"demo-4",name:"Workspace Admin",email:"admin@example.test",tier:"free",bannedAt:null,createdAt:"2026-09-01T08:00:00Z",proActive:false,proExpiresAt:null,isAdmin:true},
 ];
-export default function AdminUsersPage({ preview = false }: { preview?: boolean }) {
+export default function AdminUsersPage({ preview = false, embedded = false }: { preview?: boolean; embedded?: boolean }) {
   useUiLanguage();
   const [filter, setFilter] = useState("all");
   const [demoAccounts, setDemoAccounts] = useState(DEMO_ACCOUNTS);
@@ -140,7 +141,7 @@ export default function AdminUsersPage({ preview = false }: { preview?: boolean 
         router.replace("/login");
         return;
       }
-      if (u.role !== "admin") {
+      if (u.role !== "admin" || !isDeveloperAdmin(u.email)) {
         router.replace("/profile");
         return;
       }
@@ -291,8 +292,8 @@ export default function AdminUsersPage({ preview = false }: { preview?: boolean 
   if (allowed === null || !allowed) return null;
 
   return (
-    <Shell back={preview ? "/preview/profile" : "/profile"} sidebar={false}>
-      <AccountWorkbench active="users" title={ui("Pengguna")} description={ui("Temukan akun, tinjau pemakaian, lalu kelola aksesnya. Satu daftar untuk seluruh pengguna.")} preview={preview} admin>
+    <Shell embedded={embedded} back={preview ? "/preview/profile" : "/profile"} sidebar={false}>
+      <AccountWorkbench embedded={embedded} active="users" title={ui("Pengguna")} description={ui("Temukan akun, tinjau pemakaian, lalu kelola aksesnya. Satu daftar untuk seluruh pengguna.")} preview={preview} admin>
         <div className={adminStyles.metrics} aria-label={ui("Ringkasan hasil pencarian")}>
           <div><span>{ui("Akun ditampilkan")}</span><strong>{accounts?.length ?? "—"}</strong></div>
           <div><span>{ui("Paket Free")}</span><strong>{freeList.length}</strong></div>

@@ -5,18 +5,19 @@ import { ArrowUpRight } from "lucide-react";
 import type { ReactNode } from "react";
 import s from "./account-workbench.module.css";
 
-export function AccountWorkbench({ active, title, description, preview = false, admin = false, children }: {
+export function AccountWorkbench({ active, title, description, preview = false, admin = false, embedded = false, children }: {
   active: "settings" | "users" | "security"; title: string; description: string;
-  preview?: boolean; admin?: boolean; children: ReactNode;
+  preview?: boolean; admin?: boolean; embedded?: boolean; children: ReactNode;
 }) {
   useUiLanguage();
+  if (embedded) return <>{children}</>;
   const href = (path: string) => preview ? `/preview${path}` : path;
   return <div className={s.page}><div className={s.frame}>
     <nav className={s.nav} aria-label={ui("Navigasi akun")}>
       <p>WORKSPACE</p>
       <Link href={href("/profile")}>{ui("Profil")}</Link>
       <Link href={href("/settings")} aria-current={active === "settings" ? "page" : undefined}>{ui("Pengaturan")}</Link>
-      {admin && <><p>{ui("ADMINISTRASI")}</p><Link href={href("/admin/users")} aria-current={active === "users" ? "page" : undefined}>{ui("Pengguna")}</Link><Link href={href("/admin/security")} aria-current={active === "security" ? "page" : undefined}>{ui("Keamanan")}</Link></>}
+      {admin && <Link href="/developer-settings">Developer Setting</Link>}
       <Link className={s.docs} href="/docs">{ui("Dokumentasi")}<ArrowUpRight size={14}/></Link>
     </nav>
     <div className={s.content}>

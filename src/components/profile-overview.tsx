@@ -64,11 +64,11 @@ export function ProfileOverview({ user, quota, onSave, onNavigate, preview = fal
           <div className={s.usageTop}><span className={s.eyebrow}>{ui("PAKET SAAT INI")}</span><span className={s.dot} /></div>
           <h2 id="plan-title">{tier ? `Scratch ${pro ? "Pro" : ui("Free")}` : ui("Paket belum terverifikasi")}<span>{tier ? pro ? ui("Untuk alur kerja lebih luas.") : ui("Dari ide ke rencana pertama.") : ui("Status langganan belum tersedia.")}</span></h2>
           <div className={s.quota}><span>{ui("Generate tersedia")}</span><strong>{unlimited ? ui("Tanpa batas") : quota ? <>{remaining}<small> / {quota.limit}</small></> : "…"}</strong></div>
-          {quota && !unlimited && <progress aria-label="Kuota generate tersisa" value={remaining} max={Math.max(1, quota.limit)} />}
+          {quota && !unlimited && <progress aria-label={ui("Kuota generate tersisa")} value={remaining} max={Math.max(1, quota.limit)} />}
           <p className={s.help}>{!quota ? ui("Kuota belum tersedia.") : unlimited ? user.role === "admin" && !pro ? ui("Akses admin bebas kuota generate harian.") : ui("Paket Anda tidak memiliki batas generate.") : quota.resetAt && !Number.isNaN(Date.parse(quota.resetAt)) ? `Reset ${new Date(quota.resetAt).toLocaleString(uiLocale(), {day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}.` : ui("Kuota mengikuti periode pemakaian akun.")}</p>
           <button type="button" onClick={() => onNavigate("billing")} className={s.planLink}>{ui("Kelola paket &amp; pemakaian")}<ArrowUpRight size={16}/></button>
         </section>
-        <div className={s.shortcuts}><button onClick={() => onNavigate("plans")}><FolderOpen size={18}/><span>{ui("Proyek Anda")}<small>{ui("Lihat plan dan progres pengerjaan")}</small></span><ArrowRight size={16}/></button><button onClick={() => onNavigate("billing")}><CreditCard size={18}/><span>Billing &amp; pemakaian<small>{ui("Periksa paket dan kuota akun")}</small></span><ArrowRight size={16}/></button></div>
+        <div className={s.shortcuts}><button onClick={() => onNavigate("plans")}><FolderOpen size={18}/><span>{ui("Proyek Anda")}<small>{ui("Lihat plan dan progres pengerjaan")}</small></span><ArrowRight size={16}/></button><button onClick={() => onNavigate("billing")}><CreditCard size={18}/><span>{ui("Billing &amp; Pemakaian")}<small>{ui("Periksa paket dan kuota akun")}</small></span><ArrowRight size={16}/></button></div>
       </aside>
     </div>
     <footer className={s.footer}><span>Scratch Agent <span>/</span> Build with a plan.</span><Link href="/docs">{ui("Butuh bantuan? Buka dokumentasi")}<ArrowUpRight size={13}/></Link></footer>
