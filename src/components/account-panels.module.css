@@ -76,3 +76,4 @@
 :global([data-account-motion=reduced]) .panel { animation:none; }
 :global([data-account-motion=reduced]) .panel * { transition:none; }
 :global([data-account-text-size=large]) .panel :is(p,label,button,input,textarea,select,td) { font-size:16px; }
+:global(html[data-color-style]) .primary{background:var(--style-accent)!important;color:var(--style-ink)!important;border-color:var(--style-accent)!important}:global(html[data-color-style]) .check input{accent-color:var(--style-accent)}:global(html[data-color-style]) .avatarChoices button[aria-pressed=true]{border-color:var(--style-accent);color:var(--style-soft);background:var(--style-tint)}

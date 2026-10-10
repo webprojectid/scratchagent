@@ -15,3 +15,4 @@
 .membershipSlot{margin-left:auto;max-width:100%}
 @media(max-width:470px){.membershipSlot{margin-left:64px;flex-basis:calc(100% - 64px)}}
 .page::before{content:"";position:fixed;inset:0 0 auto;height:72px;background:#10130f;z-index:30;border-bottom:1px solid #232a20;pointer-events:none}
+:global(html[data-color-style]) .primary{background:var(--style-accent)!important;color:var(--style-ink)!important;border-color:var(--style-accent)}:global(html[data-color-style]) .primary:hover{background:var(--style-soft)!important}:global(html[data-color-style]) .avatar{color:var(--style-ink);background:var(--style-soft)}:global(html[data-color-style]) .dot{background:var(--style-accent)}:global(html[data-color-style]) .usage progress::-webkit-progress-value{background:var(--style-accent)}:global(html[data-color-style]) .usage progress::-moz-progress-bar{background:var(--style-accent)}:global(html[data-color-style]) .planLink{color:var(--style-soft)!important}

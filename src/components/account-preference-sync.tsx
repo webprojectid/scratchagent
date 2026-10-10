@@ -10,6 +10,28 @@ export function AccountPreferenceSync() {
   const pathname = usePathname();
   const email = user?.email;
   useEffect(() => {
+    const sync = () => {
+      try { const parsed = displaySettingsSchema.safeParse(JSON.parse(localStorage.getItem("scratch_account_preferences") || "{}")); if (parsed.success) document.documentElement.dataset.colorStyle = parsed.data.colorStyle; } catch {}
+    };
+    sync(); window.addEventListener("storage", sync);
+    return () => window.removeEventListener("storage", sync);
+  }, []);
+  useEffect(() => {
+    if (!email || new URLSearchParams(location.search).has("preview")) return;
+    let lastBucket: number | null = null;
+    const visit = () => {
+      if (document.visibilityState !== "visible") return;
+      const bucket = Math.floor(Date.now() / 1800_000);
+      if (lastBucket === bucket) return;
+      lastBucket = bucket;
+      void fetch("/api/account/dashboard", { method: "POST" }).then(response => { if (!response.ok) lastBucket = null; }).catch(() => { lastBucket = null; });
+    };
+    visit();
+    const interval = window.setInterval(visit, 1800_000);
+    document.addEventListener("visibilitychange", visit);
+    return () => { clearInterval(interval); document.removeEventListener("visibilitychange", visit); };
+  }, [email]);
+  useEffect(() => {
     if (!email || pathname === "/settings" || pathname === "/profile" || new URLSearchParams(location.search).has("preview")) return;
     const controller = new AbortController();
     fetch("/api/account/settings", { cache: "no-store", signal: controller.signal })
