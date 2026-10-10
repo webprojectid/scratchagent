@@ -2,6 +2,7 @@ import { apiText } from "@/lib/ui-messages";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getRequestUser, requireAdmin } from "@/lib/api-auth";
+import { resolveProviderKeys } from "@/lib/llm-provider-input";
 import { getLlmConfig, normalizeProviders, saveLlmConfig } from "@/lib/llm-config";
 
 function maskKey(k: string): string {
@@ -38,18 +39,18 @@ export async function GET(request: Request) {
 
 const providerInput = z.object({
   baseUrl: z.string().trim().min(1),
-  // Kosong = pertahankan API key lama di posisi provider yang sama.
+  sourceIndex: z.number().int().min(0).max(7).nullable().optional(),
   apiKey: z.string().trim().default(""),
   models: z.union([z.string(), z.array(z.string())]).transform((v) =>
     Array.isArray(v) ? v : v.split(/[\n,;]+/)),
-}).transform((p) => ({ baseUrl: p.baseUrl.replace(/\/$/, ""), apiKey: p.apiKey, models: p.models.map((m) => m.trim()).filter(Boolean) }));
+}).transform((p) => ({ sourceIndex: p.sourceIndex, baseUrl: p.baseUrl.replace(/\/$/, ""), apiKey: p.apiKey, models: p.models.map((m) => m.trim()).filter(Boolean) }));
 
 const bodySchema = z.object({
   providers: z.array(providerInput).min(1).max(8),
 });
 
 // POST: simpan daftar provider (admin-only).
-// - apiKey kosong pada satu provider = pertahankan key lama di posisi itu.
+// Empty keys retain the saved provider selected by sourceIndex.
 // - Kolom legacy (baseUrl/apiKey/model) ikut disinkronkan dari provider #1
 //   supaya tampilan lama & fallback env tetap konsisten.
 export async function POST(request: Request) {
@@ -65,17 +66,9 @@ export async function POST(request: Request) {
   }
 
   const existing = await getLlmConfig();
-  const providers = parsed.data.providers.map((p, i) => ({
-    baseUrl: p.baseUrl,
-    // Key kosong = pertahankan key lama: dari provider di posisi yang sama,
-    // atau (khusus provider #1 pada config lama tanpa providers) kolom legacy/env.
-    apiKey: p.apiKey
-      || existing?.providers[i]?.apiKey
-      || (i === 0 ? existing?.apiKey || process.env.LLM_API_KEY || "" : ""),
-    models: p.models,
-  }));
+  const providers = resolveProviderKeys(parsed.data.providers, existing, process.env.LLM_API_KEY);
   const valid = normalizeProviders(providers);
-  if (valid.length === 0) {
+  if (valid.length !== providers.length) {
     return NextResponse.json({ error: apiText("Tidak ada provider yang valid (baseUrl, apiKey, dan minimal 1 model wajib terisi).") }, { status: 400 });
   }
 

@@ -1,11 +1,2 @@
-import AdminSecurityPage from "./security-client";
-
-export default async function Page({
-  searchParams,
-}: {
-  searchParams?: Promise<{ preview?: string; demo?: string }>;
-}) {
-  const sp = searchParams ? await searchParams : {};
-  const isPreview = sp?.preview === "1" || sp?.preview === "true" || sp?.demo === "1";
-  return <AdminSecurityPage preview={isPreview} />;
-}
+import { redirect } from "next/navigation";
+export default function Page() { redirect("/developer-settings?tab=security"); }

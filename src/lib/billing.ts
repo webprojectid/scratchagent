@@ -14,6 +14,8 @@ import {
   memorySetUserTier,
 } from "@/lib/memory-store";
 
+import { DEVELOPER_ADMIN_EMAIL, isDeveloperAdmin } from "./admin-access";
+
 const DAY_MS = 24 * 60 * 60 * 1000;
 const GENERATE_STAGE = "generate";
 
@@ -101,23 +103,9 @@ function normalizeSub(row: {
   };
 }
 
-/** Email admin: gabungan env ADMIN_EMAILS + daftar bawaan (teguhends@gmail.com / teguends@gmail.com). */
-export function adminEmails(): string[] {
-  const fromEnv = (process.env.ADMIN_EMAILS ?? "")
-    .split(",")
-    .map((s) => s.trim().toLowerCase())
-    .filter(Boolean);
-  return Array.from(new Set(["teguhends@gmail.com", "teguends@gmail.com", ...fromEnv]));
-}
-
-export function isAdminEmail(email: string | null | undefined): boolean {
-  if (!email) return false;
-  const lower = email.toLowerCase();
-  // Hanya allowlist eksplisit (env ADMIN_EMAILS + bawaan) yang dianggap admin.
-  // Pattern "admin@*" sebelumnya membuat SIAPA PUN bisa jadi admin hanya dengan
-  // memakai email berawalan admin@ (mis. admin@evil.tld) -> privilege escalation.
-  return adminEmails().includes(lower);
-}
+/** The owner is the sole administrator, regardless of subscription tier. */
+export function adminEmails(): string[] { return [DEVELOPER_ADMIN_EMAIL]; }
+export const isAdminEmail = isDeveloperAdmin;
 
 /** Langganan Pro yang benar-benar aktif: belum ditutup dan belum lewat masa berlakunya. */
 export function isSubActive(sub: SubscriptionRecord, now: Date = new Date()): boolean {

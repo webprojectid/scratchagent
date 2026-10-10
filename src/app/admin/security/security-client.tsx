@@ -4,6 +4,7 @@ import { uiText as ui, useUiLanguage, uiLocale } from "@/lib/ui-text";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Ban, Bot, Globe2, RefreshCw, ShieldAlert, UserX, Undo2 } from "lucide-react";
+import { isDeveloperAdmin } from "@/lib/admin-access";
 import { Shell } from "@/components/brand";
 import { AccountWorkbench } from "@/components/account-workbench";
 import adminStyles from "@/components/account-workbench.module.css";
@@ -100,7 +101,7 @@ const DEMO_EVENTS: SecurityEvent[] = Array.from({length:14}, (_,i) => ({
 }));
 const DEMO_STATS: Stats = {window24h:{total:14},byType:[{type:"auth_failed",count:4},{type:"generate",count:4},{type:"access_denied",count:3},{type:"rate_limited",count:3}],topIps:[{ip:"192.0.2.10",label:"IP contoh",isLocal:false,geo:null,count:5}],topUsers:[{userId:"demo-2",email:"bima@example.test",count:14}]};
 
-export default function AdminSecurityPage({ preview = false }: { preview?: boolean }) {
+export default function AdminSecurityPage({ preview = false, embedded = false }: { preview?: boolean; embedded?: boolean }) {
   useUiLanguage();
   const [demoEvents, setDemoEvents] = useState(DEMO_EVENTS);
   const router = useRouter();
@@ -164,7 +165,7 @@ export default function AdminSecurityPage({ preview = false }: { preview?: boole
         router.replace("/login");
         return;
       }
-      if (u.role !== "admin") {
+      if (u.role !== "admin" || !isDeveloperAdmin(u.email)) {
         setAllowed(false);
         router.replace("/profile");
         return;
@@ -214,7 +215,7 @@ export default function AdminSecurityPage({ preview = false }: { preview?: boole
 
   if (allowed === null) {
     return (
-      <Shell sidebar={false}>
+      <Shell embedded={embedded} sidebar={false}>
         <div className="flex min-h-[40vh] items-center justify-center">
           <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/10 border-t-[#74FA6A]" />
         </div>
@@ -227,8 +228,8 @@ export default function AdminSecurityPage({ preview = false }: { preview?: boole
   const signs24h = stats ? stats.byType.filter((r) => r.type === "auth_failed" || r.type === "rate_limited" || r.type === "access_denied").reduce((a, r) => a + r.count, 0) : 0;
 
   return (
-    <Shell sidebar={false}>
-      <AccountWorkbench active="security" title={ui("Keamanan")} description={ui("Tinjau aktivitas 24 jam terakhir. Periksa konteks kejadian sebelum memblokir IP atau mencabut akses.")} preview={preview} admin>
+    <Shell embedded={embedded} sidebar={false}>
+      <AccountWorkbench embedded={embedded} active="security" title={ui("Keamanan")} description={ui("Tinjau aktivitas 24 jam terakhir. Periksa konteks kejadian sebelum memblokir IP atau mencabut akses.")} preview={preview} admin>
         <div className="flex justify-end mb-6"><button onClick={() => void load()} disabled={loading} className="inline-flex items-center gap-2 border border-white/15 px-4 py-2 text-xs"><RefreshCw size={14} className={loading ? "animate-spin" : ""}/>{loading ? ui("Memuat…") : ui("Refresh logs")}</button></div>
         {note && <p role="status" className="mb-4 rounded-lg border border-amber-400/30 bg-amber-400/[.06] px-3 py-2 text-xs text-amber-200">{note}</p>}
 
