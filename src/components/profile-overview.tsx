@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowUpRight, Check, ArrowRight, Terminal, Shield, Loader2 } from "lucide-react";
+import { ArrowUpRight, Check, ArrowRight, FolderOpen, CreditCard, Loader2 } from "lucide-react";
 import s from "./profile-overview.module.css";
 import { AccountBadges } from "@/components/account-badges";
 import { effectiveAccountTier } from "@/lib/account-membership";
@@ -11,7 +11,7 @@ type Props = {
   user: { name: string; email: string; role?: string; tier?: string; proActive?: boolean; createdAt?: string | null };
   quota: { remaining: number; limit: number; unlimited?: boolean; resetAt?: string } | null;
   onSave: (name: string) => Promise<void>;
-  onNavigate: (tab: "plans" | "security" | "tokens" | "billing") => void;
+  onNavigate: (tab: "plans" | "billing") => void;
   preview?: boolean;
   reducedMotion?: boolean;
 };
@@ -57,7 +57,7 @@ export function ProfileOverview({ user, quota, onSave, onNavigate, preview = fal
           <p className={s.help}>{!quota ? "Kuota belum tersedia." : unlimited ? user.role === "admin" && !pro ? "Akses admin bebas kuota generate harian." : "Paket Anda tidak memiliki batas generate." : quota.resetAt && !Number.isNaN(Date.parse(quota.resetAt)) ? `Reset ${new Date(quota.resetAt).toLocaleString("id-ID", {day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}.` : "Kuota mengikuti periode pemakaian akun."}</p>
           <button type="button" onClick={() => onNavigate("billing")} className={s.planLink}>Kelola paket &amp; pemakaian <ArrowUpRight size={16}/></button>
         </section>
-        <div className={s.shortcuts}><button onClick={() => onNavigate("security")}><Shield size={18}/><span>Keamanan akun<small>Kelola kata sandi Anda</small></span><ArrowRight size={16}/></button><button onClick={() => onNavigate("tokens")}><Terminal size={18}/><span>Hubungkan CLI<small>Kelola token untuk agent</small></span><ArrowRight size={16}/></button></div>
+        <div className={s.shortcuts}><button onClick={() => onNavigate("plans")}><FolderOpen size={18}/><span>Proyek Anda<small>Lihat plan dan progres pengerjaan</small></span><ArrowRight size={16}/></button><button onClick={() => onNavigate("billing")}><CreditCard size={18}/><span>Billing &amp; pemakaian<small>Periksa paket dan kuota akun</small></span><ArrowRight size={16}/></button></div>
       </aside>
     </div>
     <footer className={s.footer}><span>Scratch Agent <span>/</span> Build with a plan.</span><Link href="/docs">Butuh bantuan? Buka dokumentasi <ArrowUpRight size={13}/></Link></footer>
