@@ -70,6 +70,8 @@ export interface Plan {
   features: Feature[];
   createdAt?: string;
   userId?: string;
+  accountNotes?: string;
+  accountNotesUpdatedAt?: string;
   /** Bagian yang memakai template fallback karena LLM gagal; ditampilkan sebagai banner di UI. */
   warnings?: string[];
   /** Tier akun saat plan digenerate; menentukan batas struktur PRD yang dipaksakan. */

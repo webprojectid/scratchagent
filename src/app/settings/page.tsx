@@ -1,4 +1,4 @@
-import Settings from "./settings-client";
+import { redirect } from "next/navigation";
 
 export default async function Page({
   searchParams,
@@ -6,6 +6,6 @@ export default async function Page({
   searchParams?: Promise<{ preview?: string; demo?: string }>;
 }) {
   const sp = searchParams ? await searchParams : {};
-  const isPreview = sp?.preview === "1" || sp?.preview === "true" || sp?.demo === "1";
-  return <Settings preview={isPreview} />;
+  const preview = sp?.preview === "1" || sp?.preview === "true" || sp?.demo === "1";
+  redirect(`/profile?tab=preferences${preview ? "&preview=1" : ""}`);
 }

@@ -115,7 +115,7 @@ export async function savePlan(plan: Plan, userId: string): Promise<void> {
     // onConflict update tech_prefs: metadata dinamis (ideas, tier, warnings)
     // hidup di tech_prefs dan HARUS ikut ter-update saat plan disimpan ulang
     // (contoh: submit ide dari kolom chat "Ide Kamu").
-    .onConflictDoUpdate({ target: plans.id, set: { techPrefs: { stack: plan.stack ?? [], techStack: plan.techStack ?? [], architecture: plan.architecture ?? "", databaseSchema: plan.databaseSchema ?? "", requirements: plan.requirements ?? { fungsional: [], nonFungsional: [] }, userFlow: plan.userFlow ?? [], warnings: plan.warnings ?? [], tier: plan.tier ?? "free", ideas: plan.ideas ?? [] } } });
+    .onConflictDoUpdate({ target: plans.id, set: { techPrefs: sql`${JSON.stringify({ stack: plan.stack ?? [], techStack: plan.techStack ?? [], architecture: plan.architecture ?? "", databaseSchema: plan.databaseSchema ?? "", requirements: plan.requirements ?? { fungsional: [], nonFungsional: [] }, userFlow: plan.userFlow ?? [], warnings: plan.warnings ?? [], tier: plan.tier ?? "free", ideas: plan.ideas ?? [] })}::jsonb || jsonb_strip_nulls(jsonb_build_object('accountNotes', ${plans.techPrefs}->'accountNotes', 'accountNotesUpdatedAt', ${plans.techPrefs}->'accountNotesUpdatedAt'))` } });
 
   // BATCH INSERT: fitur, sub-fitur, dan task dikumpulkan lalu ditulis masing-
   // masing SATU statement. Dulu tiap baris INSERT sendiri-sendiri — plan 90
@@ -326,6 +326,8 @@ export async function getPlan(planId: string): Promise<Plan | undefined> {
     warnings: Array.isArray(savedMeta.warnings) ? savedMeta.warnings : undefined,
     tier: savedMeta.tier === "pro" ? "pro" : "free",
     ideas: Array.isArray(savedMeta.ideas) ? savedMeta.ideas : undefined,
+    accountNotes: typeof savedMeta.accountNotes === "string" ? savedMeta.accountNotes : "",
+    accountNotesUpdatedAt: typeof savedMeta.accountNotesUpdatedAt === "string" ? savedMeta.accountNotesUpdatedAt : undefined,
   } as Plan;
 
   return withDiagrams(built);
@@ -345,6 +347,7 @@ export async function listPlans(userId: string): Promise<Plan[]> {
 export type PlanSummary = {
   id: string;
   title: string;
+  brief?: string;
   status: string;
   createdAt: string | undefined;
   userId: string | null;
@@ -361,6 +364,7 @@ function summaryFromPlan(p: Plan): PlanSummary {
   return {
     id: p.id,
     title: p.title,
+    brief: p.brief.slice(0, 220),
     status: p.status,
     createdAt: p.createdAt,
     userId: p.userId ?? null,
@@ -385,7 +389,7 @@ export async function listPlanSummaries(userId: string): Promise<PlanSummary[]> 
   if (!dbUserId) return [];
   const db = getDb();
   const rows = await db
-    .select({ id: plans.id, title: plans.title, status: plans.status, createdAt: plans.createdAt, techPrefs: plans.techPrefs })
+    .select({ id: plans.id, title: plans.title, brief: sql<string>`left(${plans.brief}, 220)`, status: plans.status, createdAt: plans.createdAt, techPrefs: plans.techPrefs })
     .from(plans)
     .where(eq(plans.userId, dbUserId))
     .orderBy(sql`${plans.createdAt} desc`);
@@ -423,6 +427,7 @@ export async function listPlanSummaries(userId: string): Promise<PlanSummary[]> 
     return {
       id: r.id,
       title: r.title,
+      brief: r.brief,
       status: r.status,
       createdAt: r.createdAt?.toISOString(),
       userId: dbUserId,

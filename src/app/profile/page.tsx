@@ -1,39 +1,35 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Shell } from "@/components/brand";
 import { ProfileOverview } from "@/components/profile-overview";
-import profileStyles from "@/components/profile-overview.module.css";
+import { ProjectLedger } from "@/components/project-ledger";
+import { AccountBadges } from "@/components/account-badges";
+import { effectiveAccountTier } from "@/lib/account-membership";
+import accountStyles from "./account-ledger.module.css";
 import {
   User,
   Shield,
-  KeyRound,
   FolderOpen,
   Terminal,
   Cpu,
   LogOut,
   Plus,
   Crown,
-  Zap,
-  Search,
+  ChartNoAxesColumn,
   Copy,
   Check,
   Trash2,
-  Calendar,
-  Pencil,
   AlertTriangle,
   Loader2,
   Eye,
   EyeOff,
-  Sparkles,
   ArrowLeft,
-  RefreshCw,
   Play,
   ArrowUp,
   ArrowDown,
-  ExternalLink,
   Settings,
 } from "lucide-react";
 import { getCurrentUser, refreshCurrentUser, supabaseConfigured } from "@/lib/current-user";
@@ -52,6 +48,7 @@ type UserData = {
 type PlanSummary = {
   id: string;
   title: string;
+  brief?: string;
   status: string;
   createdAt: string | undefined;
   stack: string[];
@@ -107,27 +104,40 @@ type LlmCfgInfo = {
   }[];
 };
 
-type NavTab = "profile" | "plans" | "tokens" | "security" | "settings" | "llm";
+type NavTab = "profile" | "plans" | "tokens" | "security" | "billing" | "preferences" | "llm";
+type AccountPreferences = { density: "comfortable" | "compact"; motion: "system" | "reduced"; badgeMotion: "system" | "animated" | "reduced"; defaultFilter: "all" | "active" | "done" };
+const initialPreferences: AccountPreferences = { density: "comfortable", motion: "system", badgeMotion: "system", defaultFilter: "all" };
+const previewMode = () => typeof window !== "undefined" && new URLSearchParams(window.location.search).get("preview") === "1";
 
 export default function ProfilePage() {
   const router = useRouter();
 
   const [activeTab, setActiveTab] = useState<NavTab>("profile");
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [preferences, setPreferences] = useState<AccountPreferences>(initialPreferences);
+  const [savedPreferences, setSavedPreferences] = useState<AccountPreferences>(initialPreferences);
+  const preferencesDirty = JSON.stringify(preferences) !== JSON.stringify(savedPreferences);
+  const [preferencesSaved, setPreferencesSaved] = useState(false);
+  const [preferencesError, setPreferencesError] = useState("");
   const [user, setUser] = useState<UserData | null>(null);
-  const [origin, setOrigin] = useState("");
 
   // Plans state
   const [plans, setPlans] = useState<PlanSummary[]>([]);
   const [plansLoading, setPlansLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "done">("all");
+  const [plansError, setPlansError] = useState(false);
+  const projectDraftState = useState<Record<string, string>>({});
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [planToDelete, setPlanToDelete] = useState<PlanSummary | null>(null);
   const [toast, setToast] = useState<string | null>(null);
 
   // Quota & Tokens state
   const [quota, setQuota] = useState<QuotaData | null>(null);
+  const [quotaLoading, setQuotaLoading] = useState(true);
+  const [quotaError, setQuotaError] = useState(false);
   const [tokens, setTokens] = useState<TokenItem[]>([]);
+  const [tokensLoading, setTokensLoading] = useState(true);
+  const [tokensError, setTokensError] = useState(false);
+  const [tokenToRevoke, setTokenToRevoke] = useState<TokenItem | null>(null);
   const [creatingToken, setCreatingToken] = useState(false);
   const [newToken, setNewToken] = useState<string | null>(null);
   const [copiedToken, setCopiedToken] = useState<string | null>(null);
@@ -146,7 +156,7 @@ export default function ProfilePage() {
   // Profile Name Edit
 
   // LLM state (Admin only)
-  const [llmCfg, setLlmCfg] = useState<LlmCfgInfo | null>(null);
+  const [, setLlmCfg] = useState<LlmCfgInfo | null>(null);
   const [providers, setProviders] = useState<ProviderForm[]>([]);
   const [showApiKeys, setShowApiKeys] = useState<Record<number, boolean>>({});
   const [testResults, setTestResults] = useState<Record<number, TestResult>>({});
@@ -154,36 +164,56 @@ export default function ProfilePage() {
 
   useEffect(() => {
     let active = true;
-    setOrigin(window.location.origin);
+    const requestedTab = new URLSearchParams(window.location.search).get("tab");
+    if (requestedTab === "profile" || requestedTab === "plans" || requestedTab === "tokens" || requestedTab === "security" || requestedTab === "billing" || requestedTab === "preferences" || requestedTab === "llm") setActiveTab(requestedTab);
+    try {
+      const stored = JSON.parse(localStorage.getItem("scratch_account_preferences") || "{}");
+      const loadedPreferences: AccountPreferences = {
+        density: stored.density === "compact" ? "compact" : "comfortable",
+        motion: stored.motion === "reduced" ? "reduced" : "system",
+        badgeMotion: stored.badgeMotion === "animated" || stored.badgeMotion === "reduced" ? stored.badgeMotion : "system",
+        defaultFilter: stored.defaultFilter === "active" || stored.defaultFilter === "done" ? stored.defaultFilter : "all",
+      };
+      setPreferences(loadedPreferences);
+      setSavedPreferences(loadedPreferences);
+    } catch { /* The saved preference can be reset from this screen. */ }
 
     const isPreview = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("preview") === "1";
     if (isPreview) {
+      const previewAccount = new URLSearchParams(window.location.search).get("previewAccount") || "pro";
+      const previewAdmin = previewAccount === "admin" || previewAccount === "admin-pro";
+      const previewPro = previewAccount === "pro" || previewAccount === "admin-pro";
       setUser({
         email: "demo@scratchagent.test",
         name: "Demo Developer",
-        role: "admin",
-        tier: "pro",
+        role: previewAdmin ? "admin" : "user",
+        tier: previewPro ? "pro" : "free",
         createdAt: "2026-01-15T00:00:00Z",
-        proExpiresAt: "2027-01-15T00:00:00Z",
-        proActive: true,
+        proExpiresAt: previewPro ? "2027-01-15T00:00:00Z" : null,
+        proActive: previewPro,
       });
-      setQuota({ remaining: 10, limit: 10, tier: "pro", unlimited: true });
+      setQuota({ remaining: previewPro || previewAdmin ? 10 : 3, limit: previewPro || previewAdmin ? 10 : 3, tier: previewPro ? "pro" : "free", unlimited: previewPro || previewAdmin });
+      setQuotaLoading(false);
+      setPlans([
+        { id: "demo", title: "Aplikasi HabitKu", brief: "Aplikasi pelacak kebiasaan harian dengan insight AI dan gamifikasi.", status: "implementing", createdAt: "2025-03-12T07:32:00Z", stack: ["Next.js", "PostgreSQL"], featureCount: 5, taskCount: 20, tasksDone: 12, tasksActive: 2, tasksFailed: 0 },
+        { id: "demo-2", title: "TokoOnline Pro", brief: "Platform e-commerce untuk UMKM dengan manajemen stok otomatis.", status: "implementing", createdAt: "2025-03-10T02:15:00Z", stack: ["React", "Node.js"], featureCount: 5, taskCount: 20, tasksDone: 16, tasksActive: 1, tasksFailed: 0 },
+        { id: "demo-3", title: "Platform Belajar", brief: "MVP platform pembelajaran online dengan konten interaktif.", status: "implementing", createdAt: "2025-03-08T09:20:00Z", stack: ["Next.js"], featureCount: 5, taskCount: 24, tasksDone: 16, tasksActive: 2, tasksFailed: 0 },
+        { id: "demo-4", title: "Sistem Manajemen Tim", brief: "Alat kolaborasi tim dengan task, timeline, dan laporan otomatis.", status: "done", createdAt: "2025-03-05T04:08:00Z", stack: ["Next.js"], featureCount: 5, taskCount: 28, tasksDone: 28, tasksActive: 0, tasksFailed: 0 },
+        { id: "demo-5", title: "Landing Page Marketing", brief: "Landing page untuk kampanye produk dengan optimasi SEO.", status: "ready", createdAt: "2025-03-01T03:45:00Z", stack: ["React"], featureCount: 4, taskCount: 12, tasksDone: 3, tasksActive: 0, tasksFailed: 0 },
+      ]);
       setPlansLoading(false);
+      setTokensLoading(false);
       return;
     }
 
+    refreshCurrentUser();
     getCurrentUser().then((u) => {
       if (!active) return;
       if (!u) {
         router.push("/login");
         return;
       }
-      setUser((prev) => ({
-        email: u.email,
-        name: u.name,
-        role: u.role || prev?.role,
-        tier: prev?.tier,
-      }));
+      setUser((prev) => ({ ...prev, ...u }));
     });
 
     fetch("/api/me")
@@ -208,18 +238,18 @@ export default function ProfilePage() {
       .catch(() => {});
 
     fetch("/api/generate")
-      .then((r) => (r.ok ? r.json() : null))
+      .then((r) => { if (!r.ok) throw new Error("Gagal memuat kuota"); return r.json(); })
       .then((q) => {
-        if (active && q) setQuota(q);
+        if (active) { setQuota(q); setQuotaError(false); setQuotaLoading(false); }
       })
-      .catch(() => {});
+      .catch(() => { if (active) { setQuotaError(true); setQuotaLoading(false); } });
 
     fetch("/api/tokens")
-      .then((r) => (r.ok ? r.json() : null))
+      .then((r) => { if (!r.ok) throw new Error("Gagal memuat token"); return r.json(); })
       .then((tList) => {
-        if (active && Array.isArray(tList)) setTokens(tList);
+        if (active) { if (Array.isArray(tList)) setTokens(tList); setTokensError(false); setTokensLoading(false); }
       })
-      .catch(() => {});
+      .catch(() => { if (active) { setTokensError(true); setTokensLoading(false); } });
 
     return () => {
       active = false;
@@ -227,22 +257,34 @@ export default function ProfilePage() {
   }, [router]);
 
   useEffect(() => {
+    const syncTab = () => {
+      const tab = new URLSearchParams(window.location.search).get("tab");
+      if (tab === "plans" || tab === "tokens" || tab === "security" || tab === "billing" || tab === "preferences" || tab === "llm") setActiveTab(tab);
+      else setActiveTab("profile");
+    };
+    window.addEventListener("popstate", syncTab);
+    return () => window.removeEventListener("popstate", syncTab);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("preview") === "1") return;
     let active = true;
     getCurrentUser().then((u) => {
       if (!active || !u) return;
       fetch(`/api/plans/list?userId=${encodeURIComponent(u.email ?? "shared")}`)
-        .then((r) => r.json())
+        .then((r) => { if (!r.ok) throw new Error("Gagal memuat proyek"); return r.json(); })
         .then((d) => {
           if (active) {
             setPlans(d.plans || []);
+            setPlansError(false);
             setPlansLoading(false);
           }
         })
         .catch(() => {
-          if (active) setPlansLoading(false);
+          if (active) { setPlansError(true); setPlansLoading(false); }
         });
 
-      const isAdminUser = u.role === "admin" || u.email === "teguhends@gmail.com" || u.email?.startsWith("admin");
+      const isAdminUser = u.role === "admin";
       if (isAdminUser) {
         const qs = u.email ? `?userId=${encodeURIComponent(u.email)}` : "";
         fetch(`/api/llm-config${qs}`)
@@ -293,12 +335,20 @@ export default function ProfilePage() {
     }
   };
 
-  const handleSaveName = (value: string) => {
+  const handleSaveName = async (value: string) => {
     if (!value.trim() || !user) {
       return;
     }
     const updatedName = value.trim();
-    setUser((prev) => (prev ? { ...prev, name: updatedName } : null));
+    if (previewMode()) { setUser((prev) => prev ? { ...prev, name: updatedName } : null); return; }
+    const response = await fetch(`/api/me?userId=${encodeURIComponent(user.email)}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: updatedName }),
+    });
+    const result = await response.json().catch(() => null);
+    if (!response.ok) throw new Error(result?.error || "Profil belum bisa disimpan. Coba lagi.");
+    setUser((prev) => (prev ? { ...prev, name: result.name } : null));
 
     try {
       const stored = JSON.parse(localStorage.getItem("scratch_user") || "{}");
@@ -311,11 +361,32 @@ export default function ProfilePage() {
         storedUsers[userKey].name = updatedName;
         localStorage.setItem("scratch_users", JSON.stringify(storedUsers));
       }
-      refreshCurrentUser();
     } catch {}
+    refreshCurrentUser();
+  };
+
+  const savePreferences = () => {
+    try {
+      localStorage.setItem("scratch_account_preferences", JSON.stringify(preferences));
+      window.dispatchEvent(new Event("scratch:preferences"));
+      setSavedPreferences(preferences);
+      setPreferencesSaved(true);
+      setPreferencesError("");
+    } catch {
+      setPreferencesSaved(false);
+      setPreferencesError("Browser tidak mengizinkan penyimpanan. Perubahan hanya berlaku selama halaman ini terbuka.");
+    }
+  };
+
+  const navigateTab = (tab: NavTab) => {
+    setActiveTab(tab);
+    const url = new URL(window.location.href);
+    url.searchParams.set("tab", tab);
+    window.history.pushState(null, "", `${url.pathname}${url.search}${url.hash}`);
   };
 
   const handleChangePass = async () => {
+    if (previewMode()) { setPassMsg("Pratinjau: kata sandi akun asli tidak diubah."); setPassMsgType("success"); return; }
     if (!user) return;
     if (!oldPass) {
       setPassMsg("Masukkan password lama.");
@@ -408,6 +479,7 @@ export default function ProfilePage() {
   };
 
   const createToken = async () => {
+    if (previewMode()) { setToast("Pratinjau: token tidak dibuat."); return; }
     setCreatingToken(true);
     try {
       const u = await getCurrentUser();
@@ -421,23 +493,34 @@ export default function ProfilePage() {
         setNewToken(data.token);
         const tList = await fetch("/api/tokens").then((r) => r.json());
         if (Array.isArray(tList)) setTokens(tList);
+      } else {
+        setToast(data.error || "Token gagal dibuat.");
       }
+    } catch {
+      setToast("Gagal menghubungi server token.");
     } finally {
       setCreatingToken(false);
     }
   };
 
   const revokeToken = async (hash: string) => {
-    const u = await getCurrentUser();
-    await fetch("/api/tokens", {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ hash, userId: u?.email }),
-    });
-    setTokens((prev) => prev.map((t) => (t.hash === hash ? { ...t, revoked: true } : t)));
+    if (previewMode()) { setToast("Pratinjau: token tidak dicabut."); return; }
+    try {
+      const u = await getCurrentUser();
+      const result = await fetch("/api/tokens", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ hash, userId: u?.email }),
+      });
+      if (!result.ok) { setToast("Token gagal dicabut. Coba lagi."); return; }
+      setTokens((prev) => prev.map((t) => (t.hash === hash ? { ...t, revoked: true } : t)));
+      setToast("Token berhasil dicabut.");
+      setTokenToRevoke(null);
+    } catch { setToast("Gagal menghubungi server token."); }
   };
 
   const confirmDeletePlan = async () => {
+    if (previewMode()) { setPlanToDelete(null); return; }
     if (!planToDelete) return;
     const planId = planToDelete.id;
     const title = planToDelete.title;
@@ -487,6 +570,7 @@ export default function ProfilePage() {
   };
 
   const testProvider = async (index: number) => {
+    if (previewMode()) { setTestResults((prev) => ({ ...prev, [index]: { testing: false, ok: false, error: "Tes koneksi tidak tersedia di pratinjau." } })); return; }
     const p = providers[index];
     setTestResults((prev) => ({ ...prev, [index]: { ok: false, testing: true } }));
     try {
@@ -508,15 +592,16 @@ export default function ProfilePage() {
           error: data.error,
         },
       }));
-    } catch (e: any) {
+    } catch (e: unknown) {
       setTestResults((prev) => ({
         ...prev,
-        [index]: { testing: false, ok: false, error: e?.message || "Koneksi gagal" },
+        [index]: { testing: false, ok: false, error: e instanceof Error ? e.message : "Koneksi gagal" },
       }));
     }
   };
 
   const saveLlm = async () => {
+    if (previewMode()) { setToast("Pratinjau: konfigurasi server tidak diubah."); return; }
     setLlmSaving(true);
     try {
       const u = await getCurrentUser();
@@ -545,17 +630,7 @@ export default function ProfilePage() {
     }
   };
 
-  const filteredPlans = useMemo(() => {
-    return plans.filter((p) => {
-      const matchesSearch = p.title.toLowerCase().includes(searchQuery.toLowerCase());
-      if (!matchesSearch) return false;
-      if (statusFilter === "done") return p.status === "done";
-      if (statusFilter === "active") return p.status !== "done";
-      return true;
-    });
-  }, [plans, searchQuery, statusFilter]);
-
-  if (!user) return null;
+  if (!user) return <div className={accountStyles.accountLoading} role="status"><Loader2 size={22} className="animate-spin"/><span>Memuat akun…</span></div>;
 
   const initials = (user.name || user.email || "?")
     .split(/\s+/)
@@ -565,553 +640,107 @@ export default function ProfilePage() {
     .join("")
     .toUpperCase();
 
-  const isPro = user.tier === "pro";
-  const isAdmin = user.role === "admin" || user.email === "teguhends@gmail.com" || user.email?.startsWith("admin");
-  const totalTasks = plans.reduce((a, p) => a + p.taskCount, 0);
-  const doneTasks = plans.reduce((a, p) => a + p.tasksDone, 0);
-  const donePlansCount = plans.filter((p) => p.status === "done").length;
-  const completionRate = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
-
+  const membershipTier = effectiveAccountTier(user);
+  const isPro = membershipTier === "pro";
+  const accountPlanLabel = membershipTier ? `Scratch ${isPro ? "Pro" : "Free"}` : "Paket belum terverifikasi";
+  const isAdmin = user.role === "admin";
   return (
-    <Shell back="/" sidebar={false}>
-      {/* Centered wrapper for entire page */}
-      <div className={profileStyles.page}>
-        {/* Full Single Card Dashboard, Centered */}
-        <div className="w-full max-w-[1240px] mx-auto">
-          <div className="flex flex-col md:flex-row min-h-[620px] gap-8 lg:gap-14">
-            
-            {/* SIDEBAR NAVIGASI KIRI (Inside Card) */}
-            <aside className="w-full shrink-0 border-b border-white/10 pb-6 md:w-44 md:border-b-0 flex flex-col justify-between gap-8 [&_button]:min-h-11 [&_a]:min-h-11 [&_button]:text-[13px] [&_a]:text-[13px]">
-              <div>
-                {/* Brand / Mini Info User */}
-                <div className="mb-6 flex items-center gap-2.5">
-                  <div className="flex size-8 items-center justify-center rounded-lg bg-[#74FA6A]/10 font-mono text-xs font-bold text-[#74FA6A] border border-[#74FA6A]/20">
-                    {initials}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="truncate text-xs font-semibold text-white leading-tight">{user.name}</p>
-                    <p className="truncate font-mono text-[10px] text-white/40">{isPro ? "Pro Member" : "Free Tier"}</p>
-                  </div>
-                </div>
-
-                {/* Seksi: CUSTOMIZE */}
-                <div className="mb-6">
-                  <div className="flex items-center gap-2 pb-2">
-                    <span className="font-mono text-[9.5px] font-bold uppercase tracking-wider text-white/30">AKUN PRIBADI</span>
-                    <div className="h-px flex-1 bg-white/[.06]" />
-                  </div>
-
-                  <div className="space-y-1 mt-1">
-                    <button
-                      onClick={() => setActiveTab("profile")}
-                      className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left text-xs font-medium transition ${
-                        activeTab === "profile"
-                          ? "bg-[#181B1D] text-[#74FA6A] font-semibold"
-                          : "text-white/60 hover:bg-white/[.04] hover:text-white"
-                      }`}
-                    >
-                      <User size={15} className={activeTab === "profile" ? "text-[#74FA6A]" : "text-white/40"} />
-                      <span>Profile</span>
-                    </button>
-
-                    <button
-                      onClick={() => setActiveTab("plans")}
-                      className={`flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-left text-xs font-medium transition ${
-                        activeTab === "plans"
-                          ? "bg-[#181B1D] text-[#74FA6A] font-semibold"
-                          : "text-white/60 hover:bg-white/[.04] hover:text-white"
-                      }`}
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <FolderOpen size={15} className={activeTab === "plans" ? "text-[#74FA6A]" : "text-white/40"} />
-                        <span>Projects</span>
-                      </div>
-                      <span className="font-mono text-[10px] text-white/30">{plans.length}</span>
-                    </button>
-
-                    <button
-                      onClick={() => setActiveTab("security")}
-                      className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left text-xs font-medium transition ${
-                        activeTab === "security"
-                          ? "bg-[#181B1D] text-[#74FA6A] font-semibold"
-                          : "text-white/60 hover:bg-white/[.04] hover:text-white"
-                      }`}
-                    >
-                      <Shield size={15} className={activeTab === "security" ? "text-[#74FA6A]" : "text-white/40"} />
-                      <span>Security</span>
-                    </button>
-
-                    <Link
-                      href="/pricing"
-                      className="flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-left text-xs font-medium text-white/60 hover:bg-white/[.04] hover:text-white transition"
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <Crown size={15} className="text-white/40" />
-                        <span>Billing</span>
-                      </div>
-                      <span className="font-mono text-[9px] uppercase px-1.5 py-0.2 rounded bg-[#74FA6A]/10 text-[#74FA6A]">
-                        {isPro ? "Pro" : "Free"}
-                      </span>
-                    </Link>
-
-                    {isAdmin && (
-                      <>
-                        <button
-                          onClick={() => setActiveTab("llm")}
-                          className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left text-xs font-medium transition ${
-                            activeTab === "llm"
-                              ? "bg-[#181B1D] text-[#74FA6A] font-semibold"
-                              : "text-white/60 hover:bg-white/[.04] hover:text-white"
-                          }`}
-                        >
-                          <Cpu size={15} className={activeTab === "llm" ? "text-[#74FA6A]" : "text-white/40"} />
-                          <span>LLM Engine</span>
-                        </button>
-
-                        <Link
-                          href="/admin/users"
-                          className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left text-xs font-medium text-white/60 hover:bg-white/[.04] hover:text-white transition"
-                        >
-                          <Shield size={15} className="text-white/40" />
-                          <span>Admin Setting</span>
-                        </Link>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Footer Nav Kiri */}
-              <div className="border-t border-white/[.06] pt-3 space-y-0.5">
-                <button
-                  onClick={() => setActiveTab("settings")}
-                  className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left text-xs font-medium transition ${
-                    activeTab === "settings"
-                      ? "bg-[#181B1D] text-[#74FA6A] font-semibold"
-                      : "text-white/60 hover:bg-white/[.04] hover:text-white"
-                  }`}
-                >
-                  <Settings size={15} className={activeTab === "settings" ? "text-[#74FA6A]" : "text-white/40"} />
-                  <span>Settings</span>
-                </button>
-                <Link
-                  href="/docs"
-                  className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left text-xs font-medium text-white/60 hover:bg-white/[.04] hover:text-white transition"
-                >
-                  <ExternalLink size={15} className="text-white/40" />
-                  <span>Dokumentasi</span>
-                </Link>
-                <button
-                  onClick={handleLogout}
-                  className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left text-xs font-medium text-red-400/80 hover:bg-red-500/10 hover:text-red-400 transition"
-                >
-                  <LogOut size={15} />
-                  <span>Keluar</span>
-                </button>
-              </div>
-            </aside>
-
-            {/* PANEL KONTEN KANAN */}
-            <main className="flex-1 min-w-0">
-        
+    <Shell sidebar={false} brand={false}>
+      <div className={accountStyles.page} data-motion={preferences.motion}>
+        <div className={accountStyles.frame}>
+          <aside className={accountStyles.sidebar} aria-label="Navigasi akun">
+            <div className={accountStyles.sidebarBrand}><span className={accountStyles.brandMark}><svg width="26" height="26" viewBox="0 0 28 28" aria-hidden="true"><path d="M6 21 16 6" stroke="#a5ef7d" strokeWidth="8" strokeLinecap="round"/><path d="m17 15 5 7" stroke="#7fac64" strokeWidth="8" strokeLinecap="round"/><circle cx="19" cy="21" r="3" fill="#385838"/></svg></span><strong>ScratchAgent</strong></div>
+            <button type="button" className={accountStyles.mobileNavToggle} aria-expanded={mobileNavOpen} aria-controls="account-navigation" onClick={() => setMobileNavOpen(!mobileNavOpen)}><span>Menu akun <AccountBadges account={user} compact reducedMotion={preferences.motion === "reduced"}/></span><span>{mobileNavOpen ? "Tutup" : "Buka"}</span></button>
+            <nav id="account-navigation" className={mobileNavOpen ? accountStyles.navOpen : undefined} onClick={(event) => { if ((event.target as HTMLElement).closest("button,a")) setMobileNavOpen(false); }}>
+              <p className={accountStyles.navLabel}>Workspace</p>
+              <Link className={accountStyles.navItem} href="/"><ChartNoAxesColumn size={19}/> Ringkasan</Link>
+              <button className={activeTab === "plans" ? accountStyles.navActive : accountStyles.navItem} aria-current={activeTab === "plans" ? "page" : undefined} onClick={() => navigateTab("plans")}><FolderOpen size={17}/> Proyek <span className={accountStyles.navCount}>{plans.length}</span></button>
+              <p className={accountStyles.navLabel}>Akun</p>
+              <button className={activeTab === "profile" ? accountStyles.navActive : accountStyles.navItem} aria-current={activeTab === "profile" ? "page" : undefined} onClick={() => navigateTab("profile")}><User size={17}/> Profil</button>
+              <button className={activeTab === "billing" ? accountStyles.navActive : accountStyles.navItem} aria-current={activeTab === "billing" ? "page" : undefined} onClick={() => navigateTab("billing")}><Crown size={17}/> Billing &amp; Pemakaian</button>
+              <button className={activeTab === "security" ? accountStyles.navActive : accountStyles.navItem} aria-current={activeTab === "security" ? "page" : undefined} onClick={() => navigateTab("security")}><Shield size={17}/> Keamanan</button>
+              <p className={accountStyles.navLabel}>Developer</p>
+              <button className={activeTab === "tokens" ? accountStyles.navActive : accountStyles.navItem} aria-current={activeTab === "tokens" ? "page" : undefined} onClick={() => navigateTab("tokens")}><Terminal size={17}/> CLI &amp; API</button>
+              <p className={accountStyles.navLabel}>Preferensi</p>
+              <button className={activeTab === "preferences" ? accountStyles.navActive : accountStyles.navItem} aria-current={activeTab === "preferences" ? "page" : undefined} onClick={() => navigateTab("preferences")}><Settings size={17}/> Pengaturan</button>
+              {isAdmin && <><p className={accountStyles.navLabel}>Admin</p><button className={activeTab === "llm" ? accountStyles.navActive : accountStyles.navItem} aria-current={activeTab === "llm" ? "page" : undefined} onClick={() => navigateTab("llm")}><Cpu size={17}/> LLM Engine</button><Link className={accountStyles.navItem} href="/admin/users"><User size={17}/> Pengguna</Link></>}
+            </nav>
+            <div className={accountStyles.sidebarFooter}><div className={accountStyles.avatar}>{initials}</div><div><strong>{user.name}</strong><AccountBadges account={user} compact reducedMotion={preferences.motion === "reduced"}/></div><button type="button" onClick={handleLogout} aria-label="Keluar"><LogOut size={17}/></button></div>
+          </aside>
+          <main className={accountStyles.content}>
         {activeTab === "profile" && (
           <ProfileOverview
             user={user}
             quota={quota}
             onSave={handleSaveName}
-            onNavigate={setActiveTab}
+            onNavigate={navigateTab}
+            reducedMotion={preferences.motion === "reduced"}
             preview={typeof window !== "undefined" && new URLSearchParams(window.location.search).get("preview") === "1"}
           />
         )}
 
-        {/* TAB 2: PROJECTS */}
-        {activeTab === "plans" && (
-          <div>
-            {/* Header Seksi */}
-            <div className="pb-6 border-b border-white/[.08] flex flex-wrap items-center justify-between gap-4">
-              <div>
-                <h1 className="text-2xl font-bold tracking-tight text-white">Projects</h1>
-                <p className="mt-1 text-xs text-white/50">Daftar riwayat plan produk yang pernah dibuat.</p>
+        {activeTab === "plans" && <ProjectLedger draftState={projectDraftState} reducedMotion={preferences.motion === "reduced"} plans={plans} loading={plansLoading} error={plansError} onRetry={() => window.location.reload()} compact={preferences.density === "compact"} defaultFilter={preferences.defaultFilter} userEmail={user.email} userName={user.name} preview={typeof window !== "undefined" && new URLSearchParams(window.location.search).get("preview") === "1"} onDelete={setPlanToDelete} />}
+        {activeTab === "tokens" && <section className={accountStyles.tokens} aria-labelledby="tokens-title">
+          <div className={accountStyles.tokenHeader}><div><p className={accountStyles.eyebrow}>DEVELOPER / CLI &amp; API</p><h1 id="tokens-title">CLI &amp; API</h1><p>Kelola token akses untuk ScratchAgent CLI dan agent di terminal Anda.</p></div><button type="button" onClick={createToken} disabled={creatingToken}><Plus size={17}/> {creatingToken ? "Membuat…" : "Buat token"}</button></div>
+          <div className={accountStyles.tokenOverview}><div><Terminal size={22}/><strong>{tokensLoading || tokensError ? "…" : tokens.filter((token) => !token.revoked).length}</strong><span>Token aktif</span></div><p>Token baru hanya ditampilkan satu kali. Simpan dengan aman sebelum Anda menutup halaman ini. Token lama tidak bisa ditampilkan kembali.</p></div>
+          {newToken && <div className={accountStyles.newToken} role="status"><div><strong>Token baru siap digunakan</strong><p>Salin sekarang. Nilai ini tidak akan ditampilkan lagi setelah halaman ditutup.</p></div><code>{newToken}</code><button type="button" onClick={() => handleCopy(newToken, "new-token")}>{copiedToken === "new-token" ? <Check size={16}/> : <Copy size={16}/>} {copiedToken === "new-token" ? "Tersalin" : "Salin token"}</button></div>}
+          <div className={accountStyles.tokenListHeading}><h2>Daftar token</h2><span>{tokensLoading || tokensError ? "…" : `${tokens.length} token`}</span></div>
+          {tokensLoading ? <div className={accountStyles.tokenEmpty} role="status"><Loader2 size={25} className="animate-spin"/><strong>Memuat token…</strong></div> : tokensError ? <div className={accountStyles.tokenEmpty} role="alert"><Terminal size={25}/><strong>Token belum bisa dimuat</strong><p>Periksa koneksi lalu coba lagi.</p><button type="button" onClick={() => window.location.reload()}>Coba lagi</button></div> : tokens.length === 0 ? <div className={accountStyles.tokenEmpty}><Terminal size={25}/><strong>Belum ada token</strong><p>Buat token untuk menghubungkan CLI Anda.</p></div> : <div className={accountStyles.tokenList}>{tokens.map((token) => <div className={accountStyles.tokenRow} key={token.hash}><div className={accountStyles.tokenIcon}><Terminal size={19}/></div><div className={accountStyles.tokenIdentity}><div><strong>{token.label}</strong><span className={token.revoked ? accountStyles.tokenRevoked : accountStyles.tokenActive}>{token.revoked ? "Dicabut" : "Aktif"}</span></div><p>ID {token.hash.slice(0, 12)}… · {token.createdAt && !Number.isNaN(Date.parse(token.createdAt)) ? new Date(token.createdAt).toLocaleDateString("id-ID") : "Tanggal tidak tersedia"}</p></div>{!token.revoked && <button type="button" onClick={() => setTokenToRevoke(token)} aria-label={`Cabut token ${token.label}`}><Trash2 size={16}/> Cabut</button>}</div>)}</div>}
+        </section>}
+        {activeTab === "security" && <section className={accountStyles.security} aria-labelledby="security-title">
+          <p className={accountStyles.eyebrow}>AKUN / KEAMANAN</p>
+          <h1 id="security-title">Keamanan akun</h1>
+          <p className={accountStyles.intro}>Kelola kata sandi dan akses CLI dari satu tempat.</p>
+          <div className={accountStyles.securityGrid}>
+            <div className={accountStyles.passwordPanel}>
+              <div className={accountStyles.panelHeading}><span><Shield size={20}/></span><div><h2>Ubah kata sandi</h2><p>Gunakan kata sandi baru yang tidak dipakai di layanan lain.</p></div></div>
+              <div className={accountStyles.passwordFields}>
+                <div><label htmlFor="current-password">Kata sandi saat ini</label><div className={accountStyles.passwordInput}><input id="current-password" autoComplete="current-password" type={showOldPass ? "text" : "password"} value={oldPass} onChange={(e) => setOldPass(e.target.value)} placeholder="Masukkan kata sandi saat ini"/><button type="button" aria-label={showOldPass ? "Sembunyikan kata sandi saat ini" : "Tampilkan kata sandi saat ini"} onClick={() => setShowOldPass(!showOldPass)}>{showOldPass ? <EyeOff size={17}/> : <Eye size={17}/>}</button></div></div>
+                <div><label htmlFor="new-password">Kata sandi baru</label><div className={accountStyles.passwordInput}><input id="new-password" autoComplete="new-password" type={showNewPass ? "text" : "password"} value={newPass} onChange={(e) => setNewPass(e.target.value)} placeholder="Minimal 6 karakter"/><button type="button" aria-label={showNewPass ? "Sembunyikan kata sandi baru" : "Tampilkan kata sandi baru"} onClick={() => setShowNewPass(!showNewPass)}>{showNewPass ? <EyeOff size={17}/> : <Eye size={17}/>}</button></div></div>
+                <div><label htmlFor="confirm-password">Ulangi kata sandi baru</label><div className={accountStyles.passwordInput}><input id="confirm-password" autoComplete="new-password" type={showConfirmPass ? "text" : "password"} value={confirmPass} onChange={(e) => setConfirmPass(e.target.value)} placeholder="Ulangi kata sandi baru"/><button type="button" aria-label={showConfirmPass ? "Sembunyikan konfirmasi kata sandi" : "Tampilkan konfirmasi kata sandi"} onClick={() => setShowConfirmPass(!showConfirmPass)}>{showConfirmPass ? <EyeOff size={17}/> : <Eye size={17}/>}</button></div></div>
               </div>
-              <Link
-                href="/new"
-                className="flex items-center gap-1.5 rounded-md bg-[#74FA6A] px-3 py-1.5 text-xs font-semibold text-black transition hover:bg-[#A8FF9B]"
-              >
-                <Plus size={13} /> Buat Plan
-              </Link>
+              {passMsg && <p className={passMsgType === "success" ? accountStyles.successMessage : accountStyles.errorMessage} role="status">{passMsg}</p>}
+              <div className={accountStyles.securityFooter}><span>Kata sandi baru minimal 6 karakter.</span><button type="button" onClick={handleChangePass} disabled={passLoading}>{passLoading ? <Loader2 size={15} className="animate-spin"/> : <Check size={15}/>} {passLoading ? "Menyimpan…" : "Simpan kata sandi"}</button></div>
             </div>
-
-            {/* Filter & Search Toolbar */}
-            <div className="py-6 flex flex-wrap items-center justify-between gap-3">
-              <div className="relative">
-                <Search size={13} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
-                <input
-                  type="text"
-                  placeholder="Cari project…"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-56 rounded-md border border-white/10 bg-black/40 py-1.5 pl-8 pr-3 text-xs text-white placeholder:text-white/30 focus:border-[#74FA6A]/50 focus:outline-none"
-                />
-              </div>
-
-              <div className="flex items-center gap-1 font-mono text-xs">
-                <button
-                  onClick={() => setStatusFilter("all")}
-                  className={`rounded px-2.5 py-1 ${statusFilter === "all" ? "bg-white/10 text-white" : "text-white/40 hover:text-white"}`}
-                >
-                  Semua ({plans.length})
-                </button>
-                <button
-                  onClick={() => setStatusFilter("active")}
-                  className={`rounded px-2.5 py-1 ${statusFilter === "active" ? "bg-white/10 text-white" : "text-white/40 hover:text-white"}`}
-                >
-                  Berjalan
-                </button>
-                <button
-                  onClick={() => setStatusFilter("done")}
-                  className={`rounded px-2.5 py-1 ${statusFilter === "done" ? "bg-white/10 text-white" : "text-white/40 hover:text-white"}`}
-                >
-                  Selesai
-                </button>
-              </div>
-            </div>
-
-            {/* Flat List Projects */}
-            {plansLoading ? (
-              <div className="flex items-center justify-center py-16 text-white/30">
-                <Loader2 size={16} className="animate-spin mr-2" />
-                <span className="text-xs font-mono">Memuat project…</span>
-              </div>
-            ) : filteredPlans.length === 0 ? (
-              <div className="py-12 text-center text-xs text-white/40 border-t border-white/[.06]">
-                Belum ada project yang cocok.
-              </div>
-            ) : (
-              <div className="divide-y divide-white/[.06]">
-                {filteredPlans.map((plan) => {
-                  const pct = plan.taskCount > 0 ? Math.round((plan.tasksDone / plan.taskCount) * 100) : 0;
-                  return (
-                    <div key={plan.id} className="py-4 flex items-center justify-between gap-4">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <Link href={`/project/${plan.id}`} className="text-xs font-semibold text-white hover:text-[#74FA6A] truncate">
-                            {plan.title}
-                          </Link>
-                          <span className={`rounded px-1.5 py-0.2 font-mono text-[9px] uppercase ${
-                            plan.status === "done" ? "bg-[#74FA6A]/10 text-[#74FA6A]" : "bg-white/10 text-white/50"
-                          }`}>
-                            {plan.status}
-                          </span>
-                        </div>
-                        <p className="font-mono text-[10.5px] text-white/40 mt-1">
-                          {plan.featureCount} Fase • {plan.tasksDone}/{plan.taskCount} Task ({pct}%)
-                        </p>
-                      </div>
-
-                      <div className="flex items-center gap-2 shrink-0">
-                        <Link
-                          href={`/project/${plan.id}`}
-                          className="rounded border border-white/10 px-2.5 py-1 text-xs text-white/70 hover:text-white"
-                        >
-                          Buka
-                        </Link>
-                        <button
-                          onClick={() => setPlanToDelete(plan)}
-                          className="p-1 text-white/30 hover:text-red-400"
-                        >
-                          <Trash2 size={13} />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+            <aside className={accountStyles.accessPanel}>
+              <div className={accountStyles.panelHeading}><span><Terminal size={20}/></span><div><h2>Akses developer</h2><p>Token untuk agent dan perangkat CLI.</p></div></div>
+              <div className={accountStyles.accessStat}><span>Token aktif</span><strong>{tokensLoading || tokensError ? "…" : tokens.filter((token) => !token.revoked).length}</strong></div>
+              <p>Cabut token yang sudah tidak digunakan. Nilai token hanya ditampilkan ketika baru dibuat.</p>
+              <button type="button" onClick={() => navigateTab("tokens")}>Kelola token CLI <ArrowLeft size={16}/></button>
+              <div className={accountStyles.accessDivider}/>
+              <h3>Identitas akun</h3>
+              <dl><div><dt>Email</dt><dd>{user.email}</dd></div><div><dt>Paket</dt><dd>{accountPlanLabel}</dd></div></dl>
+            </aside>
           </div>
-        )}
-
-        {/* TAB 3: CLI TOKENS */}
-        {activeTab === "tokens" && (
-          <div>
-            {/* Header Seksi */}
-            <div className="pb-6 border-b border-white/[.08] flex items-center justify-between gap-4">
-              <div>
-                <h1 className="text-2xl font-bold tracking-tight text-white">CLI Tokens</h1>
-                <p className="mt-1 text-xs text-white/50">Token auth untuk agent CLI di terminal Anda.</p>
-              </div>
-              <button
-                onClick={createToken}
-                disabled={creatingToken}
-                className="flex items-center gap-1.5 rounded-md bg-[#74FA6A] px-3 py-1.5 text-xs font-semibold text-black transition hover:bg-[#A8FF9B]"
-              >
-                <Plus size={13} /> Buat Token
-              </button>
-            </div>
-
-            {newToken && (
-              <div className="my-6 rounded-lg border border-[#74FA6A]/30 bg-[#74FA6A]/[0.05] p-3">
-                <div className="flex items-center justify-between text-xs text-[#74FA6A] font-mono">
-                  <span>Token Baru Dibuat:</span>
-                  <button
-                    onClick={() => handleCopy(newToken, "new-token")}
-                    className="flex items-center gap-1 rounded bg-[#74FA6A] px-2 py-0.5 text-black font-bold"
-                  >
-                    {copiedToken === "new-token" ? <Check size={11} /> : <Copy size={11} />}
-                    {copiedToken === "new-token" ? "Copied" : "Copy"}
-                  </button>
-                </div>
-                <code className="mt-1 block break-all text-xs font-mono text-white/90 bg-black/60 p-2 rounded">
-                  {newToken}
-                </code>
-              </div>
-            )}
-
-            {/* Flat List Tokens */}
-            <div className="py-6 divide-y divide-white/[.06]">
-              {tokens.length === 0 ? (
-                <p className="py-8 text-center text-xs text-white/40">Belum ada CLI token.</p>
-              ) : (
-                tokens.map((t) => (
-                  <div key={t.hash} className="py-3.5 flex items-center justify-between gap-4">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-medium text-white">{t.label}</span>
-                        <span className={`rounded px-1.5 py-0.2 font-mono text-[9px] uppercase ${
-                          t.revoked ? "bg-red-500/10 text-red-400" : "bg-[#74FA6A]/10 text-[#74FA6A]"
-                        }`}>
-                          {t.revoked ? "Dicabut" : "Aktif"}
-                        </span>
-                      </div>
-                      <p className="font-mono text-[10px] text-white/30 mt-0.5">{t.hash.slice(0, 16)}…</p>
-                    </div>
-
-                    {!t.revoked && (
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleCopy(`scratch-agent login --token ${t.hash} --url ${origin || "https://www.scratchagent.web.id"}`, t.hash)}
-                          className="rounded border border-white/10 px-2.5 py-1 text-xs text-white/70 hover:text-white flex items-center gap-1"
-                        >
-                          {copiedToken === t.hash ? <Check size={11} className="text-[#74FA6A]" /> : <Copy size={11} />}
-                          <span>Copy Login</span>
-                        </button>
-                        <button
-                          onClick={() => revokeToken(t.hash)}
-                          className="p-1 text-white/30 hover:text-red-400"
-                        >
-                          <Trash2 size={13} />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                ))
-              )}
-            </div>
+        </section>}
+        {activeTab === "billing" && <section className={accountStyles.billing}>
+          <p className={accountStyles.eyebrow}>AKUN / BILLING</p>
+          <h1>Billing &amp; Pemakaian</h1>
+          <p className={accountStyles.intro}>Lihat paket dan sisa kuota generate akun Anda.</p>
+          <div className={accountStyles.billingPanel}>
+            <div><span className={accountStyles.muted}>Paket saat ini</span><h2>{accountPlanLabel}</h2><AccountBadges account={user} reducedMotion={preferences.motion === "reduced"}/><p>{membershipTier ? isPro ? "Akses paket Pro aktif di akun ini." : "Paket Free aktif di akun ini." : "Status paket belum bisa diverifikasi."}</p></div>
+            <div><span className={accountStyles.muted}>Generate tersedia</span><strong>{quotaLoading || quotaError ? "…" : quota?.unlimited ? "Tanpa batas" : quota ? Math.max(0, quota.remaining) + " / " + quota.limit : "Belum ada data"}</strong><p>{quotaLoading ? "Memuat pemakaian…" : quotaError ? "Pemakaian belum bisa dimuat." : quota?.resetAt && !Number.isNaN(Date.parse(quota.resetAt)) ? "Reset " + new Date(quota.resetAt).toLocaleDateString("id-ID") : quota ? isAdmin && !isPro && quota.unlimited ? "Akses admin bebas kuota generate harian." : "Mengikuti periode pemakaian akun." : "Data pemakaian belum tersedia."}</p></div>
           </div>
-        )}
-
-        {/* TAB 4: SECURITY */}
-        {activeTab === "security" && (
-          <div className="animate-in fade-in-50 duration-200">
-            {/* Header Seksi */}
-            <div className="pb-6 border-b border-white/[.08]">
-              <h1 className="text-2xl font-bold tracking-tight text-white">Security</h1>
-              <p className="mt-1 text-xs text-white/50">Pengaturan credentials dan password akun Anda.</p>
-            </div>
-
-            <div className="py-8 max-w-sm space-y-4">
-              {/* Field 1: Current Password */}
-              <div>
-                <label className="block text-xs font-medium text-white/70">Current Password</label>
-                <div className="relative mt-1.5">
-                  <input
-                    type={showOldPass ? "text" : "password"}
-                    value={oldPass}
-                    onChange={(e) => setOldPass(e.target.value)}
-                    placeholder="Masukkan password saat ini…"
-                    className="w-full rounded-md border border-white/10 bg-black/40 px-3 py-2 pr-9 text-xs text-white focus:border-[#74FA6A]/50 focus:outline-none transition-colors"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowOldPass(!showOldPass)}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/30 hover:text-white"
-                  >
-                    {showOldPass ? <EyeOff size={13} /> : <Eye size={13} />}
-                  </button>
-                </div>
-              </div>
-
-              {/* Field 2: New Password */}
-              <div>
-                <label className="block text-xs font-medium text-white/70">New Password</label>
-                <div className="relative mt-1.5">
-                  <input
-                    type={showNewPass ? "text" : "password"}
-                    value={newPass}
-                    onChange={(e) => setNewPass(e.target.value)}
-                    placeholder="Minimal 6 karakter…"
-                    className="w-full rounded-md border border-white/10 bg-black/40 px-3 py-2 pr-9 text-xs text-white focus:border-[#74FA6A]/50 focus:outline-none transition-colors"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowNewPass(!showNewPass)}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/30 hover:text-white"
-                  >
-                    {showNewPass ? <EyeOff size={13} /> : <Eye size={13} />}
-                  </button>
-                </div>
-              </div>
-
-              {/* Field 3: Confirm Password */}
-              <div>
-                <label className="block text-xs font-medium text-white/70">Confirm Password</label>
-                <div className="relative mt-1.5">
-                  <input
-                    type={showConfirmPass ? "text" : "password"}
-                    value={confirmPass}
-                    onChange={(e) => setConfirmPass(e.target.value)}
-                    placeholder="Ulangi password baru…"
-                    className="w-full rounded-md border border-white/10 bg-black/40 px-3 py-2 pr-9 text-xs text-white focus:border-[#74FA6A]/50 focus:outline-none transition-colors"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPass(!showConfirmPass)}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/30 hover:text-white"
-                  >
-                    {showConfirmPass ? <EyeOff size={13} /> : <Eye size={13} />}
-                  </button>
-                </div>
-              </div>
-
-              {passMsg && (
-                <div
-                  className={`rounded-md p-2.5 text-xs transition-all animate-in fade-in duration-200 ${
-                    passMsgType === "success"
-                      ? "bg-[#74FA6A]/10 text-[#74FA6A] border border-[#74FA6A]/30"
-                      : "bg-red-500/10 text-red-400 border border-red-500/30"
-                  }`}
-                >
-                  {passMsg}
-                </div>
-              )}
-
-              <button
-                onClick={handleChangePass}
-                disabled={passLoading}
-                className="flex items-center justify-center gap-1.5 rounded-md bg-[#74FA6A] px-4 py-2 text-xs font-semibold text-black transition hover:bg-[#A8FF9B] active:scale-[.98] disabled:opacity-50"
-              >
-                {passLoading ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
-                <span>{passLoading ? "Menyimpan…" : "Simpan Password"}</span>
-              </button>
-            </div>
+          {quota && !quota.unlimited && <div className={accountStyles.usageTrack} role="progressbar" aria-label="Sisa kuota generate" aria-valuenow={Math.max(0, quota.remaining)} aria-valuemax={Math.max(1, quota.limit)} aria-valuemin={0}><span style={{width: `${Math.min(100, Math.max(0, quota.remaining / Math.max(1, quota.limit) * 100))}%`}}/></div>}
+          {quotaError && <button className={accountStyles.retry} type="button" onClick={() => window.location.reload()}>Coba muat ulang pemakaian</button>}
+          <div className={accountStyles.billingActions}><Link href="/pricing">Lihat pilihan paket <ArrowLeft size={15}/></Link><p>Pilihan paket dibuka hanya saat Anda ingin membandingkan atau mengganti paket.</p></div>
+        </section>}
+        {activeTab === "preferences" && <section className={accountStyles.preferences} aria-labelledby="preferences-title">
+          <p className={accountStyles.eyebrow}>AKUN / PENGATURAN</p>
+          <h1 id="preferences-title">Pengaturan</h1>
+          <p className={accountStyles.intro}>Atur cara daftar proyek tampil di browser ini. Pengaturan tersimpan di perangkat Anda.</p>
+          <div className={accountStyles.preferenceGroup}>
+            <div className={accountStyles.preferenceRow}><div><h2>Kepadatan daftar</h2><p>Pilih jarak antarproyek yang nyaman dibaca.</p></div><div className={accountStyles.segmented} role="group" aria-label="Kepadatan daftar proyek"><button type="button" aria-pressed={preferences.density === "comfortable"} onClick={() => { setPreferences({ ...preferences, density: "comfortable" }); setPreferencesSaved(false); }}>Nyaman</button><button type="button" aria-pressed={preferences.density === "compact"} onClick={() => { setPreferences({ ...preferences, density: "compact" }); setPreferencesSaved(false); }}>Ringkas</button></div></div>
+            <div className={accountStyles.preferenceRow}><div><h2>Gerakan antarmuka</h2><p>Kurangi transisi dan animasi pada halaman akun.</p></div><div className={accountStyles.segmented} role="group" aria-label="Animasi antarmuka"><button type="button" aria-pressed={preferences.motion === "system"} onClick={() => { setPreferences({ ...preferences, motion: "system" }); setPreferencesSaved(false); }}>Ikuti sistem</button><button type="button" aria-pressed={preferences.motion === "reduced"} onClick={() => { setPreferences({ ...preferences, motion: "reduced" }); setPreferencesSaved(false); }}>Kurangi</button></div></div>
+            <div className={accountStyles.preferenceRow}><div><h2>Animasi badge</h2><p>Ikon Free, Pro, dan Admin bergerak singkat saat muncul atau disentuh. Aktif mengizinkan animasi saat sistem mengurangi gerakan. Mode Kurangi tetap menghentikannya.</p></div><div className={accountStyles.segmented} role="group" aria-label="Animasi badge akun">{(["system", "animated", "reduced"] as const).map(mode => <button key={mode} type="button" aria-pressed={preferences.badgeMotion === mode} onClick={() => { setPreferences({ ...preferences, badgeMotion: mode }); setPreferencesSaved(false); }}>{mode === "system" ? "Ikuti sistem" : mode === "animated" ? "Aktif" : "Diam"}</button>)}</div></div>
+            <div className={accountStyles.preferenceRow}><div><h2>Filter proyek saat dibuka</h2><p>Filter awal saat Anda masuk ke daftar proyek.</p></div><select aria-label="Filter proyek saat dibuka" value={preferences.defaultFilter} onChange={(event) => { setPreferences({ ...preferences, defaultFilter: event.target.value as AccountPreferences["defaultFilter"] }); setPreferencesSaved(false); }}><option value="all">Semua proyek</option><option value="active">Dikerjakan</option><option value="done">Selesai</option></select></div>
           </div>
-        )}
-
-        {/* TAB 5: SETTINGS */}
-        {activeTab === "settings" && (
-          <div className="animate-in fade-in-50 duration-200">
-            {/* Header Seksi */}
-            <div className="pb-6 border-b border-white/[.08] flex items-center justify-between gap-4">
-              <div>
-                <h1 className="text-2xl font-bold tracking-tight text-white">CLI Tokens</h1>
-                <p className="mt-1 text-xs text-white/50">Token auth untuk agent CLI di terminal Anda.</p>
-              </div>
-              <button
-                onClick={createToken}
-                disabled={creatingToken}
-                className="flex items-center gap-1.5 rounded-md bg-[#74FA6A] px-3 py-1.5 text-xs font-semibold text-black transition hover:bg-[#A8FF9B]"
-              >
-                <Plus size={13} /> Buat Token
-              </button>
-            </div>
-
-            {newToken && (
-              <div className="my-6 rounded-lg border border-[#74FA6A]/30 bg-[#74FA6A]/[0.05] p-3">
-                <div className="flex items-center justify-between text-xs text-[#74FA6A] font-mono">
-                  <span>Token Baru Dibuat:</span>
-                  <button
-                    onClick={() => handleCopy(newToken, "new-token")}
-                    className="flex items-center gap-1 rounded bg-[#74FA6A] px-2 py-0.5 text-black font-bold"
-                  >
-                    {copiedToken === "new-token" ? <Check size={11} /> : <Copy size={11} />}
-                    {copiedToken === "new-token" ? "Copied" : "Copy"}
-                  </button>
-                </div>
-                <code className="mt-1 block break-all text-xs font-mono text-white/90 bg-black/60 p-2 rounded">
-                  {newToken}
-                </code>
-              </div>
-            )}
-
-            {/* Flat List Tokens */}
-            <div className="py-6 divide-y divide-white/[.06]">
-              {tokens.length === 0 ? (
-                <p className="py-8 text-center text-xs text-white/40">Belum ada CLI token.</p>
-              ) : (
-                tokens.map((t) => (
-                  <div key={t.hash} className="py-3.5 flex items-center justify-between gap-4">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-medium text-white">{t.label}</span>
-                        <span className={`rounded px-1.5 py-0.2 font-mono text-[9px] uppercase ${
-                          t.revoked ? "bg-red-500/10 text-red-400" : "bg-[#74FA6A]/10 text-[#74FA6A]"
-                        }`}>
-                          {t.revoked ? "Dicabut" : "Aktif"}
-                        </span>
-                      </div>
-                      <p className="font-mono text-[10px] text-white/30 mt-0.5">{t.hash.slice(0, 16)}…</p>
-                    </div>
-
-                    {!t.revoked && (
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleCopy(`scratch-agent login --token ${t.hash} --url ${origin || "https://www.scratchagent.web.id"}`, t.hash)}
-                          className="rounded border border-white/10 px-2.5 py-1 text-xs text-white/70 hover:text-white flex items-center gap-1"
-                        >
-                          {copiedToken === t.hash ? <Check size={11} className="text-[#74FA6A]" /> : <Copy size={11} />}
-                          <span>Copy Login</span>
-                        </button>
-                        <button
-                          onClick={() => revokeToken(t.hash)}
-                          className="p-1 text-white/30 hover:text-red-400"
-                        >
-                          <Trash2 size={13} />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                ))
-              )}
-            </div>
-
-            {/* Admin shortcut jika admin */}
-            {isAdmin && (
-              <div className="pt-6 mt-4 border-t border-white/[.06] flex items-start justify-between gap-4">
-                <div>
-                  <h2 className="text-sm font-semibold text-white">Developer &amp; Engine Hub</h2>
-                  <p className="text-xs text-white/50 mt-0.5">Akses panel khusus pengelolaan user, keamanan sistem, dan model LLM.</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setActiveTab("llm")}
-                    className="rounded-md border border-[#74FA6A]/30 bg-[#74FA6A]/10 px-3 py-1.5 text-xs text-[#74FA6A] hover:bg-[#74FA6A]/20 transition"
-                  >
-                    Konfigurasi LLM
-                  </button>
-                  <Link
-                    href="/admin/users"
-                    className="rounded-md border border-white/10 px-3 py-1.5 text-xs text-white/80 hover:text-white transition"
-                  >
-                    Admin Users
-                  </Link>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
+          <div className={accountStyles.preferenceFooter}><span role={preferencesError ? "alert" : "status"}>{preferencesError || (preferencesSaved ? "Pengaturan tersimpan di browser ini." : preferencesDirty ? "Perubahan belum disimpan." : "Tidak ada perubahan.")}</span><button type="button" onClick={savePreferences} disabled={!preferencesDirty}>Simpan pengaturan</button></div>
+          <div className={accountStyles.preferenceLinks}><h2>Pengaturan lain</h2><button type="button" onClick={() => navigateTab("security")}><Shield size={17}/> Kata sandi &amp; keamanan <ArrowLeft size={15}/></button><button type="button" onClick={() => navigateTab("tokens")}><Terminal size={17}/> Token CLI &amp; API <ArrowLeft size={15}/></button><button type="button" onClick={() => navigateTab("billing")}><Crown size={17}/> Billing &amp; pemakaian <ArrowLeft size={15}/></button></div>
+        </section>}
         {/* TAB 5: LLM (Admin only) */}
         {activeTab === "llm" && isAdmin && (
-          <div>
+          <div className={accountStyles.accountSection}>
             {/* Header Seksi */}
             <div className="pb-6 border-b border-white/[.08] flex items-center justify-between gap-4">
               <div>
@@ -1218,28 +847,13 @@ export default function ProfilePage() {
         </div>
 
         {/* Modal Hapus */}
+        {tokenToRevoke && <div className={accountStyles.modalBackdrop} role="presentation"><div className={accountStyles.modal} role="dialog" aria-modal="true" aria-labelledby="revoke-token-title" onKeyDown={(event) => { if (event.key === "Escape") setTokenToRevoke(null); if (event.key === "Tab") { const buttons = event.currentTarget.querySelectorAll("button"); if (event.shiftKey && document.activeElement === buttons[0]) { event.preventDefault(); buttons[buttons.length - 1].focus(); } else if (!event.shiftKey && document.activeElement === buttons[buttons.length - 1]) { event.preventDefault(); buttons[0].focus(); } } }}><h2 id="revoke-token-title">Cabut token?</h2><p>Token “{tokenToRevoke.label}” akan berhenti memberi akses CLI. Tindakan ini tidak dapat dibatalkan.</p><div><button type="button" autoFocus onClick={() => setTokenToRevoke(null)}>Batal</button><button type="button" onClick={() => revokeToken(tokenToRevoke.hash)}>Cabut token</button></div></div></div>}
         {planToDelete && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-            <div className="w-full max-w-sm rounded-xl border border-white/10 bg-[#121517] p-4">
-              <div className="flex items-center gap-2 text-red-400 text-xs font-semibold">
-                <AlertTriangle size={15} />
-                <span>Hapus Project?</span>
-              </div>
-              <p className="mt-1.5 text-xs text-white/60">
-                Project &quot;{planToDelete.title}&quot; akan dihapus permanen.
-              </p>
-              <div className="mt-4 flex items-center justify-end gap-2 text-xs">
-                <button onClick={() => setPlanToDelete(null)} className="px-2.5 py-1 text-white/60 hover:text-white">
-                  Batal
-                </button>
-                <button
-                  onClick={confirmDeletePlan}
-                  disabled={deletingId !== null}
-                  className="rounded bg-red-500 px-3 py-1 font-semibold text-white hover:bg-red-600"
-                >
-                  {deletingId ? "Menghapus…" : "Hapus"}
-                </button>
-              </div>
+          <div className={accountStyles.modalBackdrop} role="presentation">
+            <div className={accountStyles.modal} role="dialog" aria-modal="true" aria-labelledby="delete-project-title" onKeyDown={(event) => { if (event.key === "Escape") setPlanToDelete(null); if (event.key === "Tab") { const buttons = event.currentTarget.querySelectorAll("button"); if (event.shiftKey && document.activeElement === buttons[0]) { event.preventDefault(); buttons[buttons.length - 1].focus(); } else if (!event.shiftKey && document.activeElement === buttons[buttons.length - 1]) { event.preventDefault(); buttons[0].focus(); } } }}>
+              <h2 id="delete-project-title"><AlertTriangle size={18}/> Hapus proyek?</h2>
+              <p>Proyek “{planToDelete.title}” akan dihapus permanen.</p>
+              <div><button type="button" autoFocus onClick={() => setPlanToDelete(null)}>Batal</button><button type="button" onClick={confirmDeletePlan} disabled={deletingId !== null}>{deletingId ? "Menghapus…" : "Hapus proyek"}</button></div>
             </div>
           </div>
         )}
@@ -1250,7 +864,6 @@ export default function ProfilePage() {
             {toast}
           </div>
         )}
-      </div>
     </Shell>
   );
 }
