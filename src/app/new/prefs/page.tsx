@@ -1,9 +1,12 @@
 "use client";
+import { uiText as ui, useUiLanguage } from "@/lib/ui-text";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
 import { ArrowRight, Check } from "lucide-react";
+import { ProjectGenerationPreferences } from "@/components/account-panels";
+import { defaultHandoff, type HandoffSettings } from "@/lib/account-preferences";
 import { SetupFrame } from "../_components/setup-frame";
 import styles from "../_components/setup.module.css";
 
@@ -19,7 +22,9 @@ const defaults: Record<StackKey, string> = { Frontend: "Next.js", Backend: "Node
 const descriptions: Record<StackKey, string> = { Frontend: "Tampilan dan interaksi pengguna", Backend: "Logika dan layanan aplikasi", Database: "Penyimpanan data proyek", Deployment: "Tempat aplikasi dijalankan" };
 
 export default function Prefs() {
+  useUiLanguage();
   const router = useRouter();
+  const [handoff, setHandoff] = useState<HandoffSettings>(defaultHandoff);
   const [custom, setCustom] = useState(false);
   const [prefs, setPrefs] = useState(defaults);
   const [error, setError] = useState("");
@@ -43,10 +48,11 @@ export default function Prefs() {
         ? { mode: "custom" as const, frontend: prefs.Frontend, backend: prefs.Backend, database: prefs.Database, deployment: prefs.Deployment }
         : { mode: "auto" as const };
       sessionStorage.setItem("rv_prefs", JSON.stringify(techPrefs));
+      sessionStorage.setItem("rv_handoff", JSON.stringify(handoff));
       setLeaving(true);
       router.push("/new/questions");
     } catch {
-      setError("Pilihan belum tersimpan. Izinkan penyimpanan browser, lalu coba lagi.");
+      setError(ui("Pilihan belum tersimpan. Izinkan penyimpanan browser, lalu coba lagi."));
     }
   }
 
@@ -54,12 +60,12 @@ export default function Prefs() {
     <SetupFrame stage="prefs">
       <div className={styles.prefsLayout}>
         <section aria-labelledby="prefs-title">
-          <p className={styles.eyebrow}>02 / Teknologi</p>
-          <h1 id="prefs-title" className={styles.title}>Tentukan fondasinya.</h1>
-          <p className={styles.intro}>Pakai teknologi pilihanmu, atau biarkan Scratch Agent menyesuaikannya dengan brief.</p>
+          <p className={styles.eyebrow}>{ui("02 / Teknologi")}</p>
+          <h1 id="prefs-title" className={styles.title}>{ui("Tentukan fondasinya.")}</h1>
+          <p className={styles.intro}>{ui("Pakai teknologi pilihanmu, atau biarkan Scratch Agent menyesuaikannya dengan brief.")}</p>
           <fieldset className={styles.modeChoices}>
-            <legend className={styles.srOnly}>Cara memilih teknologi</legend>
-            {[{ mode: false, title: "Otomatis", description: "Scratch Agent memilih stack berdasarkan kebutuhan proyek." }, { mode: true, title: "Pilih sendiri", description: "Tentukan teknologi yang ingin kamu gunakan." }].map((item, index) => (
+            <legend className={styles.srOnly}>{ui("Cara memilih teknologi")}</legend>
+            {[{ mode: false, title: ui("Otomatis"), description: ui("Scratch Agent memilih stack berdasarkan kebutuhan proyek.") }, { mode: true, title: ui("Pilih sendiri"), description: ui("Tentukan teknologi yang ingin kamu gunakan.") }].map((item, index) => (
               <label key={item.title} className={styles.modeChoice} data-selected={custom === item.mode}>
                 <input className={styles.nativeChoice} type="radio" name="stack-mode" checked={custom === item.mode} onChange={() => setCustom(item.mode)} />
                 <span className={styles.choiceNumber} aria-hidden="true">0{index + 1}</span>
@@ -70,11 +76,12 @@ export default function Prefs() {
           </fieldset>
           <AnimatePresence mode="wait" initial={false}>
             <motion.div key={custom ? "custom" : "auto"} initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} transition={{ duration: .18 }} className={styles.modeDetail}>
-              {custom ? <div className={styles.fields}>{stackKeys.map((key) => <label key={key} className={styles.fieldLabel}><span>{key}<small>{descriptions[key]}</small></span><select className={styles.select} value={prefs[key]} onChange={(event) => setPrefs((previous) => ({ ...previous, [key]: event.target.value }))}>{opts[key].map((option) => <option key={option} value={option}>{option}</option>)}</select></label>)}</div> : <p className={styles.autoDetail}>Frontend, backend, database, dan deployment akan ditentukan dari brief. Pilihan otomatis mengutamakan opsi free tier.</p>}
+              {custom ? <div className={styles.fields}>{stackKeys.map((key) => <label key={key} className={styles.fieldLabel}><span>{key}<small>{descriptions[key]}</small></span><select className={styles.select} value={prefs[key]} onChange={(event) => setPrefs((previous) => ({ ...previous, [key]: event.target.value }))}>{opts[key].map((option) => <option key={option} value={option}>{option}</option>)}</select></label>)}</div> : <p className={styles.autoDetail}>{ui("Frontend, backend, database, dan deployment akan ditentukan dari brief. Pilihan otomatis mengutamakan opsi free tier.")}</p>}
             </motion.div>
           </AnimatePresence>
+          <ProjectGenerationPreferences onChange={setHandoff}/>
           {error && <p role="alert" className={styles.error}>{error}</p>}
-          <div className={styles.actions}><span className={styles.actionHint}>Berikutnya: detail proyek</span><button type="button" className={styles.primary} onClick={start} disabled={leaving}>{leaving ? "Membuka detail…" : "Lanjut ke detail"}<ArrowRight size={16} aria-hidden="true" /></button></div>
+          <div className={styles.actions}><span className={styles.actionHint}>{ui("Berikutnya: detail proyek")}</span><button type="button" className={styles.primary} onClick={start} disabled={leaving}>{leaving ? ui("Membuka detail…") : ui("Lanjut ke detail")}<ArrowRight size={16} aria-hidden="true" /></button></div>
         </section>
       </div>
     </SetupFrame>

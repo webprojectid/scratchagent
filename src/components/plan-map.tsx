@@ -1,6 +1,7 @@
 "use client";
+import { uiText as ui, useUiLanguage } from "@/lib/ui-text";
 
-import { memo, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
 import {
   Background,
   BackgroundVariant,
@@ -43,6 +44,7 @@ type MapNodeData = {
 };
 
 function MapNode({ data }: { data: MapNodeData }) {
+  useUiLanguage();
   // Bahasa visual peta versi Scratch Agent sendiri (sengaja menjauh dari
   // referensi awal): rel status di sisi kiri kartu (hijau=selesai, amber=berjalan,
   // abu=belum), angka fase besar transparan di pojok, dan trail cahaya di garis.
@@ -120,8 +122,7 @@ function MapNode({ data }: { data: MapNodeData }) {
           ))}
         </div>
       )}
-      <div className="mt-1.5 text-right text-[9px] text-slate-500">
-        Lihat semua ({data.total ?? 0})
+      <div className="mt-1.5 text-right text-[9px] text-slate-500">{ui("Lihat semua (")}{data.total ?? 0})
       </div>
     </div>
   );
@@ -150,6 +151,7 @@ const AnimatedFlowEdge = memo(function AnimatedFlowEdge({
   targetPosition,
   style,
 }: EdgeProps) {
+  useUiLanguage();
   const [path] = getBezierPath({ sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition });
   const gradId = `trail-grad-${id}`;
   let hash = 0;
@@ -197,6 +199,7 @@ const AnimatedFlowEdge = memo(function AnimatedFlowEdge({
 const edgeTypes = { flow: AnimatedFlowEdge };
 
 function FeaturePanel({ plan, index, onClose, onNav, isPro, onDeleteFeature, onDeleteSubFeature }: { plan: Plan; index: number; onClose: () => void; onNav: (direction: number) => void; isPro?: boolean; onDeleteFeature?: (slug: string, title: string) => void; onDeleteSubFeature?: (slug: string, title: string) => void }) {
+  useUiLanguage();
   const feature = plan.features[index];
 
   useEffect(() => {
@@ -233,12 +236,12 @@ function FeaturePanel({ plan, index, onClose, onNav, isPro, onDeleteFeature, onD
           <button
             disabled={!isPro}
             onClick={() => isPro && onDeleteFeature?.(feature.slug, feature.title)}
-            title={isPro ? "Hapus fase ini" : "Hapus struktur hanya untuk paket Pro"}
+            title={isPro ? ui("Hapus fase ini") : ui("Hapus struktur hanya untuk paket Pro")}
             className="grid size-8 place-items-center rounded transition hover:bg-white/5 hover:text-rose-400 disabled:opacity-40 disabled:hover:text-slate-500"
-            aria-label="Hapus fitur"
+            aria-label={ui("Hapus fitur")}
           ><Trash2 size={14} /></button>
           <button title="Perbesar panel" className="grid size-8 place-items-center rounded transition hover:bg-white/5 hover:text-[#74FA6A]" onClick={() => document.querySelector('[data-feature-panel]')?.classList.toggle('sm:w-[560px]')} aria-label="Perbesar panel"><Maximize2 size={14} /></button>
-          <button onClick={onClose} className="grid size-8 place-items-center rounded transition hover:bg-white/5 hover:text-[#74FA6A]" aria-label="Tutup"><X size={15} /></button>
+          <button onClick={onClose} className="grid size-8 place-items-center rounded transition hover:bg-white/5 hover:text-[#74FA6A]" aria-label={ui("Tutup")}><X size={15} /></button>
         </div>
       </div>
       <div data-feature-panel className="p-4 transition-[width]">
@@ -249,13 +252,13 @@ function FeaturePanel({ plan, index, onClose, onNav, isPro, onDeleteFeature, onD
         <p className="mt-2 text-[11px] leading-4 text-slate-400">{feature.description}</p>
         <div className="mt-2 flex items-center gap-2">
           <span className="rounded-full border border-white/15 px-1.5 py-0.5 text-[9px] text-slate-300">{statusLabel}</span>
-          <span className="text-[9px] text-slate-400">{done}/{tasks.length} tugas selesai</span>
+          <span className="text-[9px] text-slate-400">{done}/{tasks.length}{ui("tugas selesai")}</span>
         </div>
 
-        <h3 className="mt-5 text-[11px] font-bold text-white">Tujuan</h3>
+        <h3 className="mt-5 text-[11px] font-bold text-white">{ui("Tujuan")}</h3>
         <p className="mt-1.5 text-[11px] leading-4 text-slate-200">{feature.tujuan}</p>
 
-        <h3 className="mt-4 text-[11px] font-bold text-white">Selesai bila</h3>
+        <h3 className="mt-4 text-[11px] font-bold text-white">{ui("Selesai bila")}</h3>
         <ul className="mt-1.5 space-y-1.5">
           {feature.selesaiBila.map((item) => (
             <li key={item} className="flex gap-2 text-[11px] leading-4 text-slate-200">
@@ -265,7 +268,7 @@ function FeaturePanel({ plan, index, onClose, onNav, isPro, onDeleteFeature, onD
           ))}
         </ul>
 
-        <h3 className="mt-4 text-[11px] font-bold text-white">Sub fitur ({feature.subFeatures.length})</h3>
+        <h3 className="mt-4 text-[11px] font-bold text-white">{ui("Sub fitur")} ({feature.subFeatures.length})</h3>
         <div className="mt-1.5 space-y-1.5">
           {feature.subFeatures.map((subFeature) => {
             const subTasks = subFeature.tasks;
@@ -284,7 +287,7 @@ function FeaturePanel({ plan, index, onClose, onNav, isPro, onDeleteFeature, onD
                     <button
                       disabled={!isPro || subActive}
                       onClick={() => isPro && onDeleteSubFeature?.(feature.slug, subFeature.title)}
-                      title={!isPro ? "Hapus struktur hanya untuk paket Pro" : subActive ? "Sub-fitur sedang dikerjakan agent" : `Hapus sub-fitur "${subFeature.title}"`}
+                      title={!isPro ? ui("Hapus struktur hanya untuk paket Pro") : subActive ? "Sub-fitur sedang dikerjakan agent" : `Hapus sub-fitur "${subFeature.title}"`}
                       className="grid size-4 place-items-center rounded text-slate-600 transition hover:bg-rose-400/10 hover:text-rose-400 disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-slate-600"
                       aria-label={`Hapus sub-fitur ${subFeature.title}`}
                     ><Trash2 size={9} /></button>
@@ -305,7 +308,7 @@ function FeaturePanel({ plan, index, onClose, onNav, isPro, onDeleteFeature, onD
               <div key={task.ref} className="flex items-center gap-1.5 text-[9px]">
                 {task.status === "done" ? <Check size={9} className="shrink-0 text-emerald-400" /> : task.status === "in_progress" ? <span className="size-2 shrink-0 animate-spin rounded-full border border-amber-400 border-r-transparent" /> : <Circle size={8} className="shrink-0 text-slate-500" />}
                 <span className={`min-w-0 flex-1 truncate ${task.status === "done" ? "line-through text-slate-500" : "text-slate-200"}`}>{task.title}</span>
-                <span className={`shrink-0 ${task.status === "in_progress" ? "text-amber-400" : "text-slate-500"}`}>{task.status === "done" ? "Selesai" : task.status === "in_progress" ? "Sedang" : task.status === "failed" ? "Gagal" : "Belum"}</span>
+                <span className={`shrink-0 ${task.status === "in_progress" ? "text-amber-400" : "text-slate-500"}`}>{task.status === "done" ? ui("Selesai") : task.status === "in_progress" ? "Sedang" : task.status === "failed" ? ui("Gagal") : ui("Belum")}</span>
               </div>
             ))}
           </div>
@@ -324,6 +327,7 @@ function deriveFeatureStatus(feature: Feature): Feature["status"] {
 }
 
 export function PlanMap({ plan, liveTasks, isPro, onRemoveStructure }: { plan: Plan; liveTasks?: Record<string, Task["status"]>; isPro?: boolean; onRemoveStructure?: (type: "feature" | "subfeature" | "task", params: Record<string, string>, label: string) => void }) {
+  const language = useUiLanguage();
   const [selected, setSelected] = useState<number | null>(null);
   const mergedPlan: Plan = useMemo(() => liveTasks
     ? { ...plan, features: plan.features.map((feature) => ({ ...feature, subFeatures: feature.subFeatures.map((subFeature) => ({ ...subFeature, tasks: subFeature.tasks.map((task) => ({ ...task, status: liveTasks[task.ref] ?? task.status })) })) })) }
@@ -376,8 +380,8 @@ const { nodes, edges } = useMemo(() => {
 
       nextNodes.push(
         { id: featureId, type: "mapNode", position: { x: 440, y }, data: { kind: "feature", label: feature.title, feature, phase, done, total: tasks.length }, initialWidth: 240, initialHeight: 112 },
-        { id: subFeatureId, type: "mapNode", position: { x: 880, y: y - 8 }, initialWidth: 224, initialHeight: 132, data: { kind: "sub-features", label: "Sub fitur", feature, items: feature.subFeatures.map((subFeature) => ({ label: subFeature.title, status: isSubDone(subFeature) ? "done" : isSubActive(subFeature) ? "in_progress" : "pending" })), total: feature.subFeatures.length, done: subsDone } },
-        { id: taskId, type: "mapNode", position: { x: 1280, y: y - 8 }, initialWidth: 224, initialHeight: 132, data: { kind: "tasks", label: "Tasks", feature, items: tasks.map((task) => ({ label: task.title, status: task.status })), total: tasks.length, done, generating: plan.status === "generating" } },
+        { id: subFeatureId, type: "mapNode", position: { x: 880, y: y - 8 }, initialWidth: 224, initialHeight: 132, data: { kind: "sub-features", label: ui("Sub fitur"), feature, items: feature.subFeatures.map((subFeature) => ({ label: subFeature.title, status: isSubDone(subFeature) ? "done" : isSubActive(subFeature) ? "in_progress" : "pending" })), total: feature.subFeatures.length, done: subsDone } },
+        { id: taskId, type: "mapNode", position: { x: 1280, y: y - 8 }, initialWidth: 224, initialHeight: 132, data: { kind: "tasks", label: ui("Tasks"), feature, items: tasks.map((task) => ({ label: task.title, status: task.status })), total: tasks.length, done, generating: plan.status === "generating" } },
       );
       // Gaya konektor mengikuti referensi user: kelengkungan bezier (bukan siku
       // smoothstep yang kaku). Root -> fase garis halus penuh; lanjutan antar
@@ -391,7 +395,7 @@ const { nodes, edges } = useMemo(() => {
 
     return { nodes: nextNodes, edges: nextEdges };
   // eslint-disable-next-line react-hooks/exhaustive-deps -- structureKey mewakili seluruh dependensi isi; displayPlan sengaja gak masuk deps
-}, [structureKey, plan.status, plan.title]);
+}, [structureKey, plan.status, plan.title, language]);
 
   return (
     <div className="relative h-[calc(100vh-150px)] min-h-[620px] bg-[#14161A]">
@@ -421,11 +425,11 @@ const { nodes, edges } = useMemo(() => {
             onClose={() => setSelected(null)}
             isPro={isPro}
             onDeleteFeature={(slug, title) => {
-              onRemoveStructure?.("feature", { slug }, `fase "${title}"`);
+              onRemoveStructure?.("feature", { slug }, ui('Phase "{0}"', title));
               setSelected(null);
             }}
             onDeleteSubFeature={(slug, title) => {
-              onRemoveStructure?.("subfeature", { slug, title }, `sub-fitur "${title}"`);
+              onRemoveStructure?.("subfeature", { slug, title }, ui('Subfeature "{0}"', title));
             }}
             onNav={(direction) => setSelected((index) => index === null ? index : Math.max(0, Math.min(displayPlan.features.length - 1, index + direction)))}
           />

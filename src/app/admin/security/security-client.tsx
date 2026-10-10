@@ -1,11 +1,12 @@
 "use client";
+import { uiText as ui, useUiLanguage, uiLocale } from "@/lib/ui-text";
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Ban, Bot, Globe2, RefreshCw, ShieldAlert, UserX, Undo2 } from "lucide-react";
 import { Shell } from "@/components/brand";
 import { AccountWorkbench } from "@/components/account-workbench";
-import ui from "@/components/account-workbench.module.css";
+import adminStyles from "@/components/account-workbench.module.css";
 import { getCurrentUser } from "@/lib/current-user";
 
 type SecurityEvent = {
@@ -75,10 +76,11 @@ const KIND_LABEL: Record<string, string> = {
 
 function fmtTime(iso: string | Date): string {
   const d = typeof iso === "string" ? new Date(iso) : iso;
-  return d.toLocaleString("id-ID", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  return d.toLocaleString(uiLocale(), { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit" });
 }
 
 function TypeBadge({ type }: { type: string }) {
+  useUiLanguage();
   const danger = type === "auth_failed" || type === "rate_limited";
   const warn = type === "access_denied" || type === "quota_exhausted";
   const cls = danger
@@ -86,7 +88,7 @@ function TypeBadge({ type }: { type: string }) {
     : warn
       ? "border-amber-400/30 bg-amber-400/10 text-amber-200"
       : "border-white/10 bg-white/[.04] text-white/60";
-  return <span className={`inline-flex rounded px-1.5 py-0.5 text-[10px] font-medium border ${cls}`}>{TYPE_LABEL[type] ?? type}</span>;
+  return <span className={`inline-flex rounded px-1.5 py-0.5 text-[10px] font-medium border ${cls}`}>{ui(TYPE_LABEL[type] ?? type)}</span>;
 }
 
 const DEMO_EVENTS: SecurityEvent[] = Array.from({length:14}, (_,i) => ({
@@ -99,6 +101,7 @@ const DEMO_EVENTS: SecurityEvent[] = Array.from({length:14}, (_,i) => ({
 const DEMO_STATS: Stats = {window24h:{total:14},byType:[{type:"auth_failed",count:4},{type:"generate",count:4},{type:"access_denied",count:3},{type:"rate_limited",count:3}],topIps:[{ip:"192.0.2.10",label:"IP contoh",isLocal:false,geo:null,count:5}],topUsers:[{userId:"demo-2",email:"bima@example.test",count:14}]};
 
 export default function AdminSecurityPage({ preview = false }: { preview?: boolean }) {
+  useUiLanguage();
   const [demoEvents, setDemoEvents] = useState(DEMO_EVENTS);
   const router = useRouter();
   const [allowed, setAllowed] = useState<boolean | null>(preview ? true : null);
@@ -174,7 +177,7 @@ export default function AdminSecurityPage({ preview = false }: { preview?: boole
       if (action === "dismiss_event") setDemoEvents(list => list.map(e => e.id === payload.eventId ? {...e,dismissed:true} : e));
       if (action === "block_ip") setBlocked(list => [...list,{id:String(payload.ip),ip:String(payload.ip),reason:"Simulasi preview",blockedBy:"admin@example.test",createdAt:new Date().toISOString(),expiresAt:null}]);
       if (action === "unblock_ip") setBlocked(list => list.filter(b => b.ip !== payload.ip));
-      setNote("Simulasi: " + label + ". Tidak ada perubahan ke server.");
+      setNote("Simulasi: " + label + ui(". Tidak ada perubahan ke server."));
       return;
     }
     setBusy(label);
@@ -190,13 +193,13 @@ export default function AdminSecurityPage({ preview = false }: { preview?: boole
       });
       const d = await res.json().catch(() => null);
       if (!res.ok) {
-        setNote(d?.error ?? "Aksi gagal.");
+        setNote(d?.error ?? ui("Aksi gagal."));
         return;
       }
       setNote(`${label}: ${d?.blocked ?? d?.unblocked ?? d?.revokedTokens ?? ""} ✓`.replace(" :  ", ": ").trim());
       void load();
     } catch {
-      setNote("Aksi gagal diproses.");
+      setNote(ui("Aksi gagal diproses."));
     } finally {
       setBusy(null);
     }
@@ -218,8 +221,8 @@ export default function AdminSecurityPage({ preview = false }: { preview?: boole
 
   return (
     <Shell sidebar={false}>
-      <AccountWorkbench active="security" title="Keamanan" description="Tinjau aktivitas 24 jam terakhir. Periksa konteks kejadian sebelum memblokir IP atau mencabut akses." preview={preview} admin>
-        <div className="flex justify-end mb-6"><button onClick={() => void load()} disabled={loading} className="inline-flex items-center gap-2 border border-white/15 px-4 py-2 text-xs"><RefreshCw size={14} className={loading ? "animate-spin" : ""}/>{loading ? "Memuat…" : "Perbarui log"}</button></div>
+      <AccountWorkbench active="security" title={ui("Keamanan")} description={ui("Tinjau aktivitas 24 jam terakhir. Periksa konteks kejadian sebelum memblokir IP atau mencabut akses.")} preview={preview} admin>
+        <div className="flex justify-end mb-6"><button onClick={() => void load()} disabled={loading} className="inline-flex items-center gap-2 border border-white/15 px-4 py-2 text-xs"><RefreshCw size={14} className={loading ? "animate-spin" : ""}/>{loading ? ui("Memuat…") : "Perbarui log"}</button></div>
         {note && <p role="status" className="mb-4 rounded-lg border border-amber-400/30 bg-amber-400/[.06] px-3 py-2 text-xs text-amber-200">{note}</p>}
 
         {/* IP terblokir (hasil aksi) — tampil bila ada */}
@@ -234,12 +237,11 @@ export default function AdminSecurityPage({ preview = false }: { preview?: boole
                   <span className="font-mono text-white/80">{b.ip}</span>
                   <span className="text-white/35">{b.reason || "tanpa alasan"} · {fmtTime(b.createdAt)}{b.expiresAt ? ` · sampai ${fmtTime(b.expiresAt)}` : " · permanen"}</span>
                   <button
-                    onClick={() => void act("unblock_ip", { ip: b.ip }, "Blokir dicabut")}
+                    onClick={() => void act("unblock_ip", { ip: b.ip }, ui("Blokir dicabut"))}
                     disabled={busy !== null}
                     className="inline-flex items-center gap-1 rounded-full border border-white/15 px-2.5 py-1 text-[10px] text-white/60 hover:border-white/30 hover:text-white disabled:opacity-40"
                   >
-                    <Undo2 size={11} /> Cabut
-                  </button>
+                    <Undo2 size={11} />{ui("Cabut")}</button>
                 </div>
               ))}
             </div>
@@ -248,7 +250,7 @@ export default function AdminSecurityPage({ preview = false }: { preview?: boole
 
         {/* Statistik 24 jam */}
         {stats && (
-          <div className={ui.metrics}>
+          <div className={adminStyles.metrics}>
             <div className="">
               <p className="text-[10px] uppercase tracking-wider text-white/35">Kejadian 24 jam</p>
               <p className="mt-1 font-bold text-white" style={{ fontSize: "18px" }}>{stats.window24h.total}</p>
@@ -309,7 +311,7 @@ export default function AdminSecurityPage({ preview = false }: { preview?: boole
                     typeFilter === r.type ? "border-[#74FA6A]/60 bg-[#74FA6A]/10 text-[#74FA6A]" : "border-white/10 bg-white/[.03] text-white/60 hover:border-white/25"
                   }`}
                 >
-                  {TYPE_LABEL[r.type] ?? r.type} <span className="font-semibold">{r.count}</span>
+                  {ui(TYPE_LABEL[r.type] ?? r.type)} <span className="font-semibold">{r.count}</span>
                 </button>
               ))}
               {typeFilter && (
@@ -319,9 +321,7 @@ export default function AdminSecurityPage({ preview = false }: { preview?: boole
                     setPage(1);
                   }}
                   className="rounded-full border border-white/10 px-3 py-1.5 text-xs text-white/40 hover:text-white"
-                >
-                  Semua
-                </button>
+                >{ui("Semua")}</button>
               )}
             </div>
           </div>
@@ -331,7 +331,7 @@ export default function AdminSecurityPage({ preview = false }: { preview?: boole
         <div>
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="font-semibold text-white/70" style={{ fontSize: "13px" }}>
-              Kejadian terbaru {typeFilter ? `(filter: ${TYPE_LABEL[typeFilter] ?? typeFilter})` : ""}
+              Kejadian terbaru {typeFilter ? `(filter: ${ui(TYPE_LABEL[typeFilter] ?? typeFilter)})` : ""}
             </div>
             {visibleEvents.length > 0 && (
               <span className="font-mono text-[11px] text-white/35">
@@ -341,16 +341,16 @@ export default function AdminSecurityPage({ preview = false }: { preview?: boole
           </div>
 
           {loading ? (
-            <p className="mt-4 text-sm text-white/35">Memuat log…</p>
+            <p className="mt-4 text-sm text-white/35">{ui("Memuat log…")}</p>
           ) : visibleEvents.length === 0 ? (
-            <p className="mt-4 text-sm text-white/35">Belum ada kejadian tercatat.</p>
+            <p className="mt-4 text-sm text-white/35">{ui("Belum ada kejadian tercatat.")}</p>
           ) : (
             <>
-              <div role="region" aria-label="Log keamanan, geser untuk melihat semua kolom" tabIndex={0} className="mt-3 max-h-[380px] overflow-y-auto overflow-x-auto rounded-xl border border-white/[.06]">
+              <div role="region" aria-label={ui("Log keamanan, geser untuk melihat semua kolom")} tabIndex={0} className="mt-3 max-h-[380px] overflow-y-auto overflow-x-auto rounded-xl border border-white/[.06]">
                 <table className="w-full min-w-[860px] text-left text-xs">
                   <thead className="sticky top-0 z-10 border-b border-white/[.08] bg-[#0E1210] text-[10px] uppercase tracking-wider text-white/35 backdrop-blur-md">
                     <tr>
-                      <th className="px-3 py-2.5">Waktu</th>
+                      <th className="px-3 py-2.5">{ui("Waktu")}</th>
                       <th className="px-3 py-2.5">Jenis</th>
                       <th className="px-3 py-2.5">Client</th>
                       <th className="px-3 py-2.5">IP / lokasi</th>
@@ -372,7 +372,7 @@ export default function AdminSecurityPage({ preview = false }: { preview?: boole
                             <div className="flex flex-col gap-0.5">
                               <span className={`inline-flex w-fit items-center gap-1 rounded border px-1.5 py-0.5 text-[10px] ${KIND_STYLE[kind] ?? KIND_STYLE.unknown}`}>
                                 {kind === "bot" || kind === "cli" ? <Bot size={10} /> : null}
-                                {KIND_LABEL[kind] ?? "Unknown"}
+                                {ui(KIND_LABEL[kind] ?? "Unknown")}
                                 {e.uaBrowser ? ` · ${e.uaBrowser}` : ""}
                                 {e.uaOs ? ` · ${e.uaOs}` : ""}
                               </span>
@@ -411,10 +411,10 @@ export default function AdminSecurityPage({ preview = false }: { preview?: boole
                               {/* Reset user: cabut semua token user ini */}
                               {e.userId && (
                                 <button
-                                  title="Reset user: cabut semua token API milik akun ini"
+                                  title={ui("Reset user: cabut semua token API milik akun ini")}
                                   disabled={busy !== null}
                                   onClick={() => {
-                                    if (preview || window.confirm(`Reset user ${e.userEmail ?? e.userId}? Semua token API-nya dicabut (CLI harus login ulang).`)) {
+                                    if (preview || window.confirm(ui("Reset user {0}? Semua token API-nya dicabut (CLI harus login ulang).", e.userEmail ?? e.userId))) {
                                       void act("reset_user", { userId: e.userId }, `User ${e.userEmail ?? "tersebut"} direset`);
                                     }
                                   }}
@@ -426,7 +426,7 @@ export default function AdminSecurityPage({ preview = false }: { preview?: boole
                               {/* False positive: keluarkan dari hitungan serangan */}
                               {!e.dismissed && (
                                 <button
-                                  title="Tandai false positive (tidak dihitung sebagai serangan)"
+                                  title={ui("Tandai false positive (tidak dihitung sebagai serangan)")}
                                   disabled={busy !== null}
                                   onClick={() => void act("dismiss_event", { eventId: e.id }, "Ditandai false positive")}
                                   className="rounded p-1 text-white/30 transition hover:bg-white/10 hover:text-white disabled:opacity-40"

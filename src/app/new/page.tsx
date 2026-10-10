@@ -1,4 +1,5 @@
 "use client";
+import { uiText as ui, useUiLanguage } from "@/lib/ui-text";
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -8,6 +9,7 @@ import { Loader2 } from "lucide-react";
 import { getCurrentUser, supabaseConfigured } from "@/lib/current-user";
 
 export default function NewPlan() {
+  useUiLanguage();
   const router = useRouter();
   const [brief, setBrief] = useState("");
   const [quota, setQuota] = useState<number | null>(null);
@@ -19,6 +21,7 @@ export default function NewPlan() {
   const [mousePos, setMousePos] = useState({ left: '50%', top: '50%' });
 
   useEffect(() => {
+    try { if (new URLSearchParams(window.location.search).get("from") === "library") { setBrief(sessionStorage.getItem("rv_brief") || ""); } else { sessionStorage.removeItem("rv_handoff"); sessionStorage.removeItem("rv_library_source"); } } catch { /* Start with an empty brief. */ }
     const checkAuth = async () => {
       const user = await getCurrentUser();
       if (!user) {
@@ -84,7 +87,7 @@ export default function NewPlan() {
       {loading || !authed ? (
         <div className="flex h-screen items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-[#74FA6A]" />
-          <p className="ml-3 text-slate-400 text-sm">Memuat…</p>
+          <p className="ml-3 text-slate-400 text-sm">{ui("Memuat…")}</p>
         </div>
       ) : (
         <section
@@ -109,14 +112,12 @@ export default function NewPlan() {
                 <h1
                   className="mb-3 max-w-[9ch] font-semibold leading-[1.15] tracking-tight text-white px-2"
                   style={{ fontSize: "clamp(2.25rem, 4vw, 3rem)" }}
-                >
-                  Apa yang harus dibangun?
-                </h1>
+                >{ui("Apa yang harus dibangun?")}</h1>
 
                 <form
                   onSubmit={(e) => {
                     e.preventDefault();
-                    if (brief.length > 4000) { alert("Maksimal 4000 karakter"); return; }
+                    if (brief.length > 4000) { alert(ui("Maksimal 4000 karakter")); return; }
                     sessionStorage.setItem("rv_brief", brief);
                     router.push("/new/prefs");
                   }}
@@ -131,13 +132,11 @@ export default function NewPlan() {
                     onChange={(e) => setBrief(e.target.value)}
                     onInput={() => textareaRef.current && (textareaRef.current.style.height = 'auto') || null}
                     className="field w-full max-w-[580px] resize-none rounded-xl border border-white/12 bg-[#0D1011]/86 p-5 text-lg leading-relaxed shadow-lg backdrop-blur-md transition-all focus:border-emerald-400 focus:shadow-[0_0_0_2px_rgba(124,250,106,0.2)] placeholder:text-slate-600"
-                    placeholder="Contoh: Buat aplikasi booking studio musik..."
+                    placeholder={ui("Contoh: Buat aplikasi booking studio musik...")}
                     style={{ minHeight: "160px", maxHeight: "300px" }}
                   />
                   <div className="flex justify-end max-w-[580px]">
-                    <button className="btn group flex items-center gap-2 px-6 py-3 text-lg font-medium">
-                      Lanjut
-                      <span className="transition-transform group-hover:translate-x-1">→</span>
+                    <button className="btn group flex items-center gap-2 px-6 py-3 text-lg font-medium">{ui("Lanjut")}<span className="transition-transform group-hover:translate-x-1">→</span>
                     </button>
                   </div>
                 </form>

@@ -1,3 +1,4 @@
+import { apiText } from "@/lib/ui-messages";
 import { NextResponse } from "next/server";
 import { accessPlan, getRequestUser } from "@/lib/api-auth";
 import { getAccountState } from "@/lib/billing";
@@ -17,7 +18,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ p
   const account = user ? await getAccountState(user.userId) : null;
   if ((account?.tier ?? "free") !== "pro") {
     await logSecurity("access_denied", { route: "/api/plans/[id]", method: "DELETE", reason: "free tier" }, { ip, userId: user?.userId ?? null });
-    return NextResponse.json({ error: "Hapus plan hanya untuk paket Pro." }, { status: 403 });
+    return NextResponse.json({ error: apiText("Hapus plan hanya untuk paket Pro.") }, { status: 403 });
   }
 
   const deleted = await deletePlan(planId);

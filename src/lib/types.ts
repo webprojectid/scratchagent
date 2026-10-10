@@ -70,6 +70,7 @@ export interface Plan {
   features: Feature[];
   createdAt?: string;
   userId?: string;
+  generationSettings?: import("./account-preferences").HandoffSettings;
   accountNotes?: string;
   accountNotesUpdatedAt?: string;
   /** Bagian yang memakai template fallback karena LLM gagal; ditampilkan sebagai banner di UI. */

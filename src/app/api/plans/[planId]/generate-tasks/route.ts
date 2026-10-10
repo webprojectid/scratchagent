@@ -1,3 +1,4 @@
+import { apiText } from "@/lib/ui-messages";
 import { NextResponse } from "next/server";
 import { accessPlan, getRequestUser } from "@/lib/api-auth";
 import { generateTasksForFeature, buildTaskRef, sanitizeDeps, assignTasksToSubFeatures } from "@/lib/generate";
@@ -38,7 +39,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pla
     if (error || !plan) return error;
 
     const feature = (plan.features ?? [])[featureIndex];
-    if (!feature) return NextResponse.json({ error: "Feature tidak ditemukan" }, { status: 404 });
+    if (!feature) return NextResponse.json({ error: apiText("Feature tidak ditemukan") }, { status: 404 });
 
     if ((feature.subFeatures ?? []).some((sf: any) => (sf.tasks ?? []).length > 0)) {
       return NextResponse.json({ skipped: true, message: "Tasks sudah ada" });
@@ -63,7 +64,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pla
     } else {
       const subTitles = (feature.subFeatures ?? []).map((sf: any) => sf.title);
       // Ide user (Pro, maks 2/project) WAJIB ikut terbaca AI sebagai referensi tambahan.
-      const result = await generateTasksForFeature(plan.brief, feature.title, subTitles, featureIndex, plan.tier ?? "free", plan.features.length, plan.ideas);
+      const result = await generateTasksForFeature(plan.brief, feature.title, subTitles, featureIndex, plan.tier ?? "free", plan.features.length, plan.ideas, plan.generationSettings);
       tasks = result.tasks;
     }
 

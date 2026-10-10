@@ -92,6 +92,10 @@ export function memoryAddUsage(userId: string, stage: string, tier: "free" | "pr
   return ev;
 }
 
+export function memoryListUsage(userId: string) {
+  return usageStore.filter(row => row.userId === userId);
+}
+
 export function memorySetUsagePlan(eventId: string, planId: string): void {
   const ev = usageStore.find((e) => e.id === eventId);
   if (ev) ev.planId = planId;

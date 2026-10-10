@@ -1,11 +1,12 @@
 "use client";
+import { uiText as ui, useUiLanguage, uiLocale } from "@/lib/ui-text";
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search, Ban, Undo2, Sparkles, CircleOff, RefreshCw, Check, Crown } from "lucide-react";
 import { Shell } from "@/components/brand";
 import { AccountWorkbench } from "@/components/account-workbench";
-import ui from "@/components/account-workbench.module.css";
+import adminStyles from "@/components/account-workbench.module.css";
 import { getCurrentUser } from "@/lib/current-user";
 import { formatDisplayName } from "@/lib/user-utils";
 
@@ -58,17 +59,18 @@ const PRO_DURATIONS = [
 ];
 
 function durationLabel(days: number): string {
-  return PRO_DURATIONS.find((d) => d.days === days)?.label ?? `${days} hari`;
+  return PRO_DURATIONS.find((d) => d.days === days)?.label ?? ui("{0} hari", days);
 }
 
 function fmtDate(iso: string | null): string {
-  if (!iso) return "belum pernah";
+  if (!iso) return ui("belum pernah");
   const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "belum pernah";
-  return d.toLocaleString("id-ID", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  if (Number.isNaN(d.getTime())) return ui("belum pernah");
+  return d.toLocaleString(uiLocale(), { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
 }
 
 function TierChip({ tier }: { tier: string }) {
+  useUiLanguage();
   if (tier === "pro") {
     return (
       <span className="inline-flex items-center gap-1 rounded-full bg-[#74FA6A] px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-[.12em] text-black">
@@ -86,6 +88,7 @@ const DEMO_ACCOUNTS: AccountRow[] = [
   {id:"demo-4",name:"Workspace Admin",email:"admin@example.test",tier:"free",bannedAt:null,createdAt:"2026-09-01T08:00:00Z",proActive:false,proExpiresAt:null,isAdmin:true},
 ];
 export default function AdminUsersPage({ preview = false }: { preview?: boolean }) {
+  useUiLanguage();
   const [filter, setFilter] = useState("all");
   const [demoAccounts, setDemoAccounts] = useState(DEMO_ACCOUNTS);
   const router = useRouter();
@@ -114,7 +117,7 @@ export default function AdminUsersPage({ preview = false }: { preview?: boolean 
       router.replace("/profile");
       return;
     }
-    if (!res.ok) throw new Error("Gagal memuat daftar akun");
+    if (!res.ok) throw new Error(ui("Gagal memuat daftar akun"));
     const data = await res.json();
     setAccounts(Array.isArray(data.accounts) ? data.accounts : []);
     setAllowed(true);
@@ -155,7 +158,7 @@ export default function AdminUsersPage({ preview = false }: { preview?: boolean 
       const qs = u?.email ? `?userId=${encodeURIComponent(u.email)}` : "";
       const res = await fetch(`/api/admin/users/${id}${qs}`);
       if (!res.ok) {
-        setToast({ text: "Gagal memuat detail akun", ok: false });
+        setToast({ text: ui("Gagal memuat detail akun"), ok: false });
         return;
       }
       const data = await res.json();
@@ -171,7 +174,7 @@ export default function AdminUsersPage({ preview = false }: { preview?: boolean 
     setAccounts(list => list?.map(a => a.id === id ? {...a,...patch} : a) ?? []);
     setSelected(a => a?.id === id ? {...a,...patch} : a);
     setGrantTarget(null);
-    setToast({text:"Simulasi berhasil. Akun asli tidak berubah.",ok:true});
+    setToast({text:ui("Simulasi berhasil. Akun asli tidak berubah."),ok:true});
   }
 
   const runAction = async (action: string) => {
@@ -188,10 +191,10 @@ export default function AdminUsersPage({ preview = false }: { preview?: boolean 
       });
       const data = await res.json();
       if (!res.ok || !data.ok) {
-        setToast({ text: data.error ?? "Aksi gagal", ok: false });
+        setToast({ text: data.error ?? ui("Aksi gagal"), ok: false });
         return;
       }
-      setToast({ text: data.message ?? "Aksi berhasil", ok: true });
+      setToast({ text: data.message ?? ui("Aksi berhasil"), ok: true });
       await openDetail(selected.id);
       await loadAccounts(q);
     } finally {
@@ -202,7 +205,7 @@ export default function AdminUsersPage({ preview = false }: { preview?: boolean 
   /** Aksi cepat langsung dari daftar akun: tarik Pro. Berikan Pro lewat card konfirmasi. */
   const quickAction = async (id: string, action: "end-pro") => {
     if (preview) { simulateAction(id,action); return; }
-    if (!window.confirm("Akhiri akses Pro akun ini? Akun akan kembali ke Free.")) return;
+    if (!window.confirm(ui("Akhiri akses Pro akun ini? Akun akan kembali ke Free."))) return;
     const key = `${id}:${action}`;
     setBusy(key);
     setToast(null);
@@ -214,10 +217,10 @@ export default function AdminUsersPage({ preview = false }: { preview?: boolean 
       });
       const data = await res.json();
       if (!res.ok || !data.ok) {
-        setToast({ text: data.error ?? "Aksi gagal", ok: false });
+        setToast({ text: data.error ?? ui("Aksi gagal"), ok: false });
         return;
       }
-      setToast({ text: data.message ?? "Aksi berhasil", ok: true });
+      setToast({ text: data.message ?? ui("Aksi berhasil"), ok: true });
       await loadAccounts(q);
       if (selected?.id === id) await openDetail(id);
     } finally {
@@ -247,10 +250,10 @@ export default function AdminUsersPage({ preview = false }: { preview?: boolean 
       });
       const data = await res.json();
       if (!res.ok || !data.ok) {
-        setToast({ text: data.error ?? "Aksi gagal", ok: false });
+        setToast({ text: data.error ?? ui("Aksi gagal"), ok: false });
         return;
       }
-      setToast({ text: data.message ?? "Aksi berhasil", ok: true });
+      setToast({ text: data.message ?? ui("Aksi berhasil"), ok: true });
       setGrantTarget(null);
       await loadAccounts(q);
       if (selected?.id === id) await openDetail(id);
@@ -268,18 +271,18 @@ export default function AdminUsersPage({ preview = false }: { preview?: boolean 
 
   const onSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    loadAccounts(q).catch(() => setToast({ text: "Pencarian gagal, coba lagi", ok: false }));
+    loadAccounts(q).catch(() => setToast({ text: ui("Pencarian gagal, coba lagi"), ok: false }));
   };
 
   if (allowed === null || !allowed) return null;
 
   return (
     <Shell back={preview ? "/preview/profile" : "/profile"} sidebar={false}>
-      <AccountWorkbench active="users" title="Pengguna" description="Temukan akun, tinjau pemakaian, lalu kelola aksesnya. Satu daftar untuk seluruh pengguna." preview={preview} admin>
-        <div className={ui.metrics} aria-label="Ringkasan hasil pencarian">
+      <AccountWorkbench active="users" title={ui("Pengguna")} description={ui("Temukan akun, tinjau pemakaian, lalu kelola aksesnya. Satu daftar untuk seluruh pengguna.")} preview={preview} admin>
+        <div className={adminStyles.metrics} aria-label="Ringkasan hasil pencarian">
           <div><span>Akun ditampilkan</span><strong>{accounts?.length ?? "—"}</strong></div>
-          <div><span>Paket Free</span><strong>{freeList.length}</strong></div>
-          <div><span>Paket Pro</span><strong>{proList.length}</strong></div>
+          <div><span>{ui("Paket Free")}</span><strong>{freeList.length}</strong></div>
+          <div><span>{ui("Paket Pro")}</span><strong>{proList.length}</strong></div>
           <div><span>Diblokir</span><strong>{bannedCount}</strong></div>
         </div>
         {/* Pencarian */}
@@ -289,14 +292,12 @@ export default function AdminUsersPage({ preview = false }: { preview?: boolean 
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              aria-label="Cari pengguna" placeholder="Cari berdasarkan email atau nama"
+              aria-label={ui("Cari pengguna")} placeholder={ui("Cari berdasarkan email atau nama")}
               className="w-full rounded-[12px] border border-white/10 bg-[#101417] py-2.5 pl-10 pr-4 text-[13px] text-white placeholder:text-white/25 focus:border-[#74FA6A]/50 focus:outline-none"
             />
           </div>
-          <button type="submit" className="inline-flex items-center gap-1.5 rounded-[12px] bg-[#74FA6A] px-5 text-[13px] font-semibold text-black transition hover:bg-[#A8FF9B] active:scale-[.985]">
-            Cari
-          </button>
-          <button type="button" onClick={() => { setQ(""); setFilter("all"); setSelected(null); void loadAccounts("").catch(() => setToast({text:"Gagal memuat akun.",ok:false})); }} className="border border-white/15 px-3 text-xs">Reset</button>
+          <button type="submit" className="inline-flex items-center gap-1.5 rounded-[12px] bg-[#74FA6A] px-5 text-[13px] font-semibold text-black transition hover:bg-[#A8FF9B] active:scale-[.985]">{ui("Cari")}</button>
+          <button type="button" onClick={() => { setQ(""); setFilter("all"); setSelected(null); void loadAccounts("").catch(() => setToast({text:ui("Gagal memuat akun."),ok:false})); }} className="border border-white/15 px-3 text-xs">{ui("Reset")}</button>
         </form>
 
         {/* Card konfirmasi durasi Pro: terbuka saat admin menekan Berikan Pro */}
@@ -312,11 +313,9 @@ export default function AdminUsersPage({ preview = false }: { preview?: boolean 
                   <p className="mt-0.5 text-[12px] text-[#8C97A5]">{grantTarget.name || grantTarget.email} · {grantTarget.email}</p>
                 </div>
               </div>
-              <button onClick={() => setGrantTarget(null)} className="rounded-full border border-white/10 px-3 py-1.5 text-[11.5px] text-white/50 transition hover:text-white">
-                Batal
-              </button>
+              <button onClick={() => setGrantTarget(null)} className="rounded-full border border-white/10 px-3 py-1.5 text-[11.5px] text-white/50 transition hover:text-white">{ui("Batal")}</button>
             </div>
-            <p className="mt-4 font-mono text-[10px] font-bold uppercase tracking-[.16em] text-white/35">pilih masa aktif</p>
+            <p className="mt-4 font-mono text-[10px] font-bold uppercase tracking-[.16em] text-white/35">{ui("pilih masa aktif")}</p>
             <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-5">
               {PRO_DURATIONS.map((d) => (
                 <button
@@ -342,7 +341,7 @@ export default function AdminUsersPage({ preview = false }: { preview?: boolean 
               >
                 <Check size={14} /> {busy === `${grantTarget.id}:grant-pro` ? "Memproses…" : `Confirm · ${durationLabel(grantDays)}`}
               </button>
-              <p className="font-mono text-[10.5px] tabular-nums text-white/30">{grantDays} hari sejak sekarang</p>
+              <p className="font-mono text-[10.5px] tabular-nums text-white/30">{grantDays}{ui("hari sejak sekarang")}</p>
             </div>
           </section>
         )}
@@ -353,14 +352,12 @@ export default function AdminUsersPage({ preview = false }: { preview?: boolean 
           </div>
         )}
 
-        <div className={ui.filters} aria-label="Filter akun">
-          {[["all","Semua"],["free","Free"],["pro","Pro"],["banned","Diblokir"]].map(([value,label]) => <button key={value} aria-pressed={filter === value} onClick={() => setFilter(value)}>{label}</button>)}
+        <div className={adminStyles.filters} aria-label={ui("Filter akun")}>
+          {[["all",ui("Semua")],["free",ui("Free")],["pro","Pro"],["banned","Diblokir"]].map(([value,label]) => <button key={value} aria-pressed={filter === value} onClick={() => setFilter(value)}>{label}</button>)}
         </div>
         {/* Detail akun terpilih */}
         {loadingDetail && (
-          <div className="mt-6 rounded-[16px] border border-white/[.08] bg-[#101417] p-6 text-[13px] text-white/40">
-            Memuat detail akun…
-          </div>
+          <div className="mt-6 rounded-[16px] border border-white/[.08] bg-[#101417] p-6 text-[13px] text-white/40">{ui("Memuat detail akun…")}</div>
         )}
         {!loadingDetail && selected && (
           <section className="mt-6 rounded-[16px] border border-[#74FA6A]/25 bg-[#101417] p-6">
@@ -379,7 +376,7 @@ export default function AdminUsersPage({ preview = false }: { preview?: boolean 
                 <p className="mt-0.5 font-mono text-[10.5px] text-white/30">terdaftar {fmtDate(selected.createdAt)}</p>
                 {selected.proActive && (
                   <p className="mt-0.5 font-mono text-[10.5px] tabular-nums text-sky-300/80">
-                    masa aktif pro sampai {selected.proExpiresAt ? fmtDate(selected.proExpiresAt) : "tidak terbatas"}
+                    masa aktif pro sampai {selected.proExpiresAt ? fmtDate(selected.proExpiresAt) : ui("tidak terbatas")}
                   </p>
                 )}
               </div>
@@ -396,16 +393,14 @@ export default function AdminUsersPage({ preview = false }: { preview?: boolean 
                 )}
                 {!selected.bannedAt ? (
                   <button onClick={() => runAction("ban")} disabled={busy !== null} className="inline-flex items-center gap-1.5 rounded-full border border-red-500/30 px-4 py-2 text-[12.5px] font-medium text-red-400 transition hover:border-red-500/60 hover:bg-red-500/[.06] disabled:opacity-50">
-                    <Ban size={13} /> {busy === "ban" ? "Memproses…" : "Blokir akun"}
+                    <Ban size={13} /> {busy === "ban" ? "Memproses…" : ui("Blokir akun")}
                   </button>
                 ) : (
                   <button onClick={() => runAction("unban")} disabled={busy !== null} className="inline-flex items-center gap-1.5 rounded-full border border-[#74FA6A]/30 px-4 py-2 text-[12.5px] font-medium text-[#74FA6A] transition hover:bg-[#74FA6A]/[.08] disabled:opacity-50">
                     <Undo2 size={13} /> {busy === "unban" ? "Memproses…" : "Buka blokir"}
                   </button>
                 )}
-                <button onClick={() => setSelected(null)} className="inline-flex items-center rounded-full border border-white/10 px-3 py-2 text-[12px] text-white/50 transition hover:text-white">
-                  Tutup
-                </button>
+                <button onClick={() => setSelected(null)} className="inline-flex items-center rounded-full border border-white/10 px-3 py-2 text-[12px] text-white/50 transition hover:text-white">{ui("Tutup")}</button>
               </div>
             </div>
 
@@ -440,14 +435,14 @@ export default function AdminUsersPage({ preview = false }: { preview?: boolean 
                   </p>
                   <p className="flex items-center justify-between gap-3">
                     <span className="text-[#8C97A5]">Pro berakhir terakhir</span>
-                    <span className="font-mono tabular-nums text-white">{selected.lastProEnd ? fmtDate(selected.lastProEnd) : selected.proActive ? "masih aktif" : "belum pernah"}</span>
+                    <span className="font-mono tabular-nums text-white">{selected.lastProEnd ? fmtDate(selected.lastProEnd) : selected.proActive ? "masih aktif" : ui("belum pernah")}</span>
                   </p>
                 </div>
               </div>
               <div className="rounded-[12px] border border-white/[.06] bg-[#0C0E10] p-4">
                 <p className="font-mono text-[10px] font-bold uppercase tracking-[.16em] text-white/35">riwayat periode pro</p>
                 {selected.subscriptions.length === 0 ? (
-                  <p className="mt-3 text-[12.5px] text-white/40">Akun ini belum pernah berlangganan Pro.</p>
+                  <p className="mt-3 text-[12.5px] text-white/40">{ui("Akun ini belum pernah berlangganan Pro.")}</p>
                 ) : (
                   <ul className="mt-3 space-y-2">
                     {selected.subscriptions.map((s, i) => (
@@ -474,9 +469,9 @@ export default function AdminUsersPage({ preview = false }: { preview?: boolean 
         {/* Tabel akun */}
         <section className="mt-6 overflow-hidden rounded-[16px] border border-white/[.08] bg-[#101417]">
           <div className="flex items-center justify-between border-b border-white/[.06] px-5 py-4">
-            <p className="font-mono text-[10px] font-bold uppercase tracking-[.18em] text-white/35">semua akun</p>
+            <p className="font-mono text-[10px] font-bold uppercase tracking-[.18em] text-white/35">{ui("semua akun")}</p>
             <div className="flex items-center gap-3">
-              {accounts !== null && <span className="font-mono text-[11px] tabular-nums text-white/40">{visibleAccounts.length} akun ditampilkan</span>}
+              {accounts !== null && <span className="font-mono text-[11px] tabular-nums text-white/40">{visibleAccounts.length}{ui("akun ditampilkan")}</span>}
               <button
                 onClick={() => loadAccounts(q).catch(() => setToast({ text: "Gagal me-refresh", ok: false }))}
                 className="inline-flex items-center gap-1.5 rounded-full border border-white/10 px-3 py-1.5 text-[11.5px] text-white/60 transition hover:border-[#74FA6A]/40 hover:text-[#74FA6A]"
@@ -486,9 +481,9 @@ export default function AdminUsersPage({ preview = false }: { preview?: boolean 
             </div>
           </div>
 
-          {accounts === null && <p className="px-5 py-8 text-[13px] text-white/40">Memuat akun…</p>}
+          {accounts === null && <p className="px-5 py-8 text-[13px] text-white/40">{ui("Memuat akun…")}</p>}
           {accounts !== null && visibleAccounts.length === 0 && (
-            <p className="px-5 py-8 text-[13px] text-white/40">Tidak ada akun yang cocok dengan pencarian ini.</p>
+            <p className="px-5 py-8 text-[13px] text-white/40">{ui("Tidak ada akun yang cocok dengan pencarian ini.")}</p>
           )}
           {accounts !== null && visibleAccounts.length > 0 && (
             <ul className="divide-y divide-white/[.05]">
@@ -496,7 +491,7 @@ export default function AdminUsersPage({ preview = false }: { preview?: boolean 
                 const busyKey = `${a.id}:grant-pro`;
                 const endKey = `${a.id}:end-pro`;
                 return (
-                  <li key={a.id} className={ui.userRow}>
+                  <li key={a.id} className={adminStyles.userRow}>
                     <button onClick={() => openDetail(a.id)} className="flex min-w-0 flex-1 items-center gap-4 text-left">
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-[13.5px] font-medium text-white">{a.email}</p>
@@ -526,7 +521,7 @@ export default function AdminUsersPage({ preview = false }: { preview?: boolean 
                             onClick={() => quickAction(a.id, "end-pro")}
                             disabled={busy !== null}
                             className="inline-flex items-center gap-1.5 rounded-full border border-white/15 px-3 py-1.5 text-[11.5px] font-medium text-white/70 transition hover:border-amber-400/50 hover:text-amber-300 disabled:opacity-50"
-                            title="Tarik akses Pro, akun kembali ke Free"
+                            title={ui("Tarik akses Pro, akun kembali ke Free")}
                           >
                             <CircleOff size={12} /> {busy === endKey ? "…" : "Tarik Pro"}
                           </button>

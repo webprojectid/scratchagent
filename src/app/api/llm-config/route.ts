@@ -1,3 +1,4 @@
+import { apiText } from "@/lib/ui-messages";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getRequestUser, requireAdmin } from "@/lib/api-auth";
@@ -60,7 +61,7 @@ export async function POST(request: Request) {
   const raw = await request.json().catch(() => null);
   const parsed = bodySchema.safeParse(raw);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Format providers tidak valid: butuh minimal 1 provider dengan baseUrl, apiKey, dan models." }, { status: 400 });
+    return NextResponse.json({ error: apiText("Format providers tidak valid: butuh minimal 1 provider dengan baseUrl, apiKey, dan models.") }, { status: 400 });
   }
 
   const existing = await getLlmConfig();
@@ -75,7 +76,7 @@ export async function POST(request: Request) {
   }));
   const valid = normalizeProviders(providers);
   if (valid.length === 0) {
-    return NextResponse.json({ error: "Tidak ada provider yang valid (baseUrl, apiKey, dan minimal 1 model wajib terisi)." }, { status: 400 });
+    return NextResponse.json({ error: apiText("Tidak ada provider yang valid (baseUrl, apiKey, dan minimal 1 model wajib terisi).") }, { status: 400 });
   }
 
   await saveLlmConfig({

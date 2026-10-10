@@ -1,4 +1,5 @@
 "use client";
+import { uiText as ui, useUiLanguage } from "@/lib/ui-text";
 
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
@@ -16,6 +17,7 @@ const IDEA_LIMIT = 2;
  * - Free melihat kartu terkunci + ajakan upgrade.
  */
 export function IdeaChatPanel({ planId, isPro, open, onClose }: { planId: string; isPro: boolean; open: boolean; onClose: () => void }) {
+  useUiLanguage();
   const [ideas, setIdeas] = useState<PlanIdea[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [text, setText] = useState("");
@@ -58,7 +60,7 @@ export function IdeaChatPanel({ planId, isPro, open, onClose }: { planId: string
       });
       const d = await res.json();
       if (!res.ok) {
-        setError(d.error ?? "Gagal mengirim ide.");
+        setError(d.error ?? ui("Gagal mengirim ide."));
         setSending(false);
         return;
       }
@@ -67,7 +69,7 @@ export function IdeaChatPanel({ planId, isPro, open, onClose }: { planId: string
       setSending(false);
       // Fase baru harus langsung terlihat di struktur. Reload ditunda sebentar
       // supaya user sempat lihat konfirmasi "fase baru dibuat".
-      setSuccess(`Fase baru "${d.idea?.featureTitle ?? "ide kamu"}" sudah ditambahkan ke struktur.`);
+      setSuccess(`Fase baru "${d.idea?.featureTitle ?? ui("ide kamu")}" sudah ditambahkan ke struktur.`);
       setTimeout(() => window.location.reload(), 1400);
     } catch {
       setError("Koneksi bermasalah, coba lagi.");
@@ -82,7 +84,7 @@ export function IdeaChatPanel({ planId, isPro, open, onClose }: { planId: string
 
   return (
     // Wrapper fixed full-width: motion y animasi box-nya tanpa nabrak transform tengah.
-    <div className="pointer-events-none fixed inset-x-0 bottom-4 z-50 flex justify-center px-3 md:bottom-6" role="dialog" aria-label="Kolom chat ide">
+    <div className="pointer-events-none fixed inset-x-0 bottom-4 z-50 flex justify-center px-3 md:bottom-6" role="dialog" aria-label={ui("Kolom chat ide")}>
       <motion.div
         initial={{ y: "112%", scale: 0.88, opacity: 0 }}
         animate={{ y: 0, scale: 1, opacity: 1 }}
@@ -96,14 +98,14 @@ export function IdeaChatPanel({ planId, isPro, open, onClose }: { planId: string
             <span className="grid size-6 place-items-center rounded-md bg-[#74FA6A]/15">
               <Lightbulb size={13} className="text-[#74FA6A]" />
             </span>
-            <h3 className="text-[13px] font-semibold text-white">Ide Kamu</h3>
+            <h3 className="text-[13px] font-semibold text-white">{ui("Ide Kamu")}</h3>
             {isPro && loaded && (
               <span className="rounded-full border border-white/10 bg-white/[.04] px-2 py-0.5 font-mono text-[10px] tabular-nums text-white/50">
                 sisa {left}/{IDEA_LIMIT}
               </span>
             )}
           </div>
-          <button onClick={onClose} className="grid size-7 place-items-center rounded-md text-white/40 transition hover:bg-white/5 hover:text-white" aria-label="Tutup panel ide">
+          <button onClick={onClose} className="grid size-7 place-items-center rounded-md text-white/40 transition hover:bg-white/5 hover:text-white" aria-label={ui("Tutup panel ide")}>
             <X size={14} />
           </button>
         </div>
@@ -115,9 +117,7 @@ export function IdeaChatPanel({ planId, isPro, open, onClose }: { planId: string
               <Lock size={16} className="mt-0.5 shrink-0 text-white/40" />
               <div>
                 <p className="text-[13px] font-semibold text-white/85">Fitur khusus Pro</p>
-                <p className="mt-1 text-[12px] leading-relaxed text-slate-400">
-                  Ceritakan ide tambahanmu, dan AI mengubahnya menjadi fase baru lengkap dengan sub-fitur dan task. Hanya bisa dipakai 2 kali per project.
-                </p>
+                <p className="mt-1 text-[12px] leading-relaxed text-slate-400">{ui("Ceritakan ide tambahanmu, dan AI mengubahnya menjadi fase baru lengkap dengan sub-fitur dan task. Hanya bisa dipakai 2 kali per project.")}</p>
                 <a href="/pricing" className="btn mt-3 inline-flex min-h-0 px-3.5 py-1.5 text-xs">Upgrade ke Pro</a>
               </div>
             </div>
@@ -130,8 +130,7 @@ export function IdeaChatPanel({ planId, isPro, open, onClose }: { planId: string
                 {ideas.map((idea, i) => (
                   <li key={i} className="rounded-lg border border-white/[.07] bg-white/[.02] px-3 py-2.5">
                     <p className="text-[12px] leading-relaxed text-slate-300">“{idea.text}”</p>
-                    <p className="mt-1 font-mono text-[10px] text-[#74FA6A]/70">
-                      → jadi fase {idea.phase ?? "?"}: {idea.featureTitle ?? "diproses AI"}
+                    <p className="mt-1 font-mono text-[10px] text-[#74FA6A]/70">{ui("→ jadi fase")}{idea.phase ?? "?"}: {idea.featureTitle ?? "diproses AI"}
                     </p>
                   </li>
                 ))}
@@ -141,7 +140,7 @@ export function IdeaChatPanel({ planId, isPro, open, onClose }: { planId: string
             {/* Form input ide */}
             {left > 0 ? (
               <div>
-                <label htmlFor="idea-input" className="sr-only">Ide tambahan untuk project ini</label>
+                <label htmlFor="idea-input" className="sr-only">{ui("Ide tambahan untuk project ini")}</label>
                 <div className="flex items-end gap-2 rounded-xl border border-white/[.1] bg-[#070A08] p-2 focus-within:border-[#74FA6A]/40">
                   <textarea
                     id="idea-input"
@@ -155,7 +154,7 @@ export function IdeaChatPanel({ planId, isPro, open, onClose }: { planId: string
                       }
                     }}
                     rows={2}
-                    placeholder="Tulis idemu di sini... AI akan mengubahnya jadi fase > sub-fitur > task. (Ctrl+Enter untuk kirim)"
+                    placeholder={ui("Tulis idemu di sini... AI akan mengubahnya jadi fase > sub-fitur > task. (Ctrl+Enter untuk kirim)")}
                     className="max-h-32 min-h-[52px] flex-1 resize-y bg-transparent px-2 py-1 text-[13px] text-white placeholder:text-white/25 focus:outline-none"
                     disabled={sending}
                     maxLength={2000}
@@ -164,24 +163,20 @@ export function IdeaChatPanel({ planId, isPro, open, onClose }: { planId: string
                     onClick={submit}
                     disabled={!text.trim() || sending}
                     className="grid size-9 shrink-0 place-items-center rounded-lg bg-[#74FA6A] text-[#07120A] transition hover:brightness-110 disabled:opacity-35"
-                    aria-label="Kirim ide"
+                    aria-label={ui("Kirim ide")}
                   >
                     <Send size={15} />
                   </button>
                 </div>
-                <p className="mt-1.5 text-[11px] text-white/30">
-                  Ide langsung diolah AI menjadi fase baru di struktur. {text.length > 0 && `${text.length}/2000 · `}Sisa {left} kali kirim untuk project ini.
-                </p>
+                <p className="mt-1.5 text-[11px] text-white/30">{ui("Ide langsung diolah AI menjadi fase baru di struktur.")}{text.length > 0 && `${text.length}/2000 · `}Sisa {left}{ui("kali kirim untuk project ini.")}</p>
               </div>
             ) : (
-              <p className="rounded-lg border border-amber-400/20 bg-amber-400/[.05] px-3 py-2.5 text-[12px] text-amber-200/85">
-                Kamu sudah memakai {IDEA_LIMIT} ide untuk project ini. Ide di atas tetap dibaca AI sebagai referensi di semua generasi berikutnya.
-              </p>
+              <p className="rounded-lg border border-amber-400/20 bg-amber-400/[.05] px-3 py-2.5 text-[12px] text-amber-200/85">{ui("Kamu sudah memakai")}{IDEA_LIMIT}{ui("ide untuk project ini. Ide di atas tetap dibaca AI sebagai referensi di semua generasi berikutnya.")}</p>
             )}
 
-            {success && <p className="text-[12px] text-[#74FA6A]">{success} Memuat ulang struktur…</p>}
+            {success && <p className="text-[12px] text-[#74FA6A]">{success}{ui("Memuat ulang struktur…")}</p>}
             {error && <p className="text-[12px] text-rose-300">{error}</p>}
-            {sending && <p className="animate-pulse text-[12px] text-[#74FA6A]/80">AI sedang mengubah idemu menjadi fase baru…</p>}
+            {sending && <p className="animate-pulse text-[12px] text-[#74FA6A]/80">{ui("AI sedang mengubah idemu menjadi fase baru…")}</p>}
           </div>
         )}
       </motion.div>

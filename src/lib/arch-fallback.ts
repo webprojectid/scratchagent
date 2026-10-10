@@ -81,11 +81,11 @@ export function containsTemplateErDiagram(text: string): boolean {
 
 /** Marker template SELURUH bagian (bukan cuma diagramnya). */
 export function isFullArchitectureTemplate(text: string): boolean {
-  return text.includes("## Ringkasan Arsitektur");
+  return text.includes("## Ringkasan Arsitektur") || text.includes("## Draft architecture");
 }
 
 export function isFullDatabaseTemplate(text: string): boolean {
-  return text.includes("## Catatan Performa") || text.includes("Catatan Performa");
+  return text.includes("## Catatan Performa") || text.includes("Catatan Performa") || text.includes("## Draft database schema");
 }
 
 /** Buang blok fence yang berisi sidik jari template; narasi asli dipertahankan. */
@@ -104,7 +104,7 @@ export function stripTemplateDiagrams(text: string, kind: "architecture" | "data
 
 // ---------- Generator template (tidak berubah) ----------
 
-export function buildFallbackArchitecture(title: string, stack: string[], featureTitles: string[]): string {
+export function buildFallbackArchitecture(title: string, stack: string[], featureTitles: string[], language: "en" | "id" = "id"): string {
   const frontend = stack.find((s) => /next|react|vue|svelte|nuxt/i.test(s)) ?? "Next.js";
   const backend = stack.find((s) => /node|express|nest|fastify|django|laravel|go|rust/i.test(s)) ?? "API Routes";
   const database = stack.find((s) => /postgre|mysql|mongo|sqlite|supabase|planetscale/i.test(s)) ?? "PostgreSQL";
@@ -113,6 +113,26 @@ export function buildFallbackArchitecture(title: string, stack: string[], featur
     .slice(0, 6)
     .map((f, i) => `    API --> F${i + 1}[${f.replace(/[[\]|]/g, "")}]`)
     .join("\n");
+
+  if (language === "en") return `## Draft architecture
+
+This is a generic fallback for ${title}, not a confirmed architecture decision. Review it against the brief before implementation.
+
+Separate the UI (${frontend}), application services (${backend}), and persistence (${database}). Validate inputs and permissions at the service boundary. Use secure sessions, bounded retries, structured logs, and database indexes on frequently queried fields.
+
+Consider a modular monolith first. Confirm the rendering strategy, cache invalidation rules, data relationships, backup requirements, and external dependencies with the project owner. Do not assume these choices have already been approved.
+
+\`\`\`mermaid
+flowchart TD
+    U[User] --> CDN[CDN / Edge Cache]
+    CDN --> FE[${frontend}]
+    FE --> API[${backend}]
+    API --> AUTH[Auth & Session]
+    API --> CACHE[Cache Layer]
+    API --> DB[(${database})]
+${featureNodes}
+    API --> LOG[Logging & Monitoring]
+\`\`\``;
 
   return `## Ringkasan Arsitektur
 
@@ -145,7 +165,7 @@ ${featureNodes}
 \`\`\``;
 }
 
-export function buildFallbackDatabaseSchema(featureTitles: string[]): string {
+export function buildFallbackDatabaseSchema(featureTitles: string[], language: "en" | "id" = "id"): string {
   const entities = featureTitles.slice(0, 5).map((f) => ({
     name: slugToEntity(f),
     label: f,
@@ -179,6 +199,38 @@ Menyimpan data untuk fitur "${e.label}".
     .join("\n");
 
   const erdRelations = entities.map((e) => `    USERS ||--o{ ${e.name} : owns`).join("\n");
+
+  if (language === "en") return `## Draft database schema
+
+This is a generic fallback. Confirm entities, ownership, constraints, and deletion rules against the actual requirements before implementation.
+
+### users
+- id: UUID primary key.
+- email: unique, required email address.
+- name: optional display name.
+- created_at: timestamp with time zone.
+
+${entities.map(entity => `### ${entity.name.toLowerCase()}
+Draft records for ${entity.label}.
+- id: UUID primary key.
+- user_id: indexed foreign key to users.id.
+- title: required string, up to 200 characters.
+- status: indexed string, up to 24 characters.
+- created_at and updated_at: timestamps with time zone.`).join("\n\n")}
+
+Use joins or batch loading to avoid N+1 queries. Evaluate a composite index on user_id and status for filtered lists. Confirm retention and deletion behavior rather than assuming cascading deletion.
+
+\`\`\`mermaid
+erDiagram
+    USERS {
+        uuid id PK
+        varchar email
+        varchar name
+        timestamptz created_at
+    }
+${erdEntities}
+${erdRelations}
+\`\`\``;
 
   return `### Tabel users
 
@@ -222,7 +274,7 @@ export function applyArchFallback(
   plan: Pick<Plan, "title" | "stack" | "features">,
   architecture: string,
   databaseSchema: string,
-  opts: { injectDiagrams?: boolean } = {},
+  opts: { injectDiagrams?: boolean; language?: "en" | "id" } = {},
 ): { architecture: string; databaseSchema: string; usedFallback: string[] } {
   const inject = opts.injectDiagrams ?? false;
   const usedFallback: string[] = [];
@@ -232,23 +284,23 @@ export function applyArchFallback(
   let db = normalizeMermaidFences(databaseSchema?.trim() ?? "");
 
   if (!arch) {
-    arch = buildFallbackArchitecture(plan.title, plan.stack ?? [], featureTitles);
+    arch = buildFallbackArchitecture(plan.title, plan.stack ?? [], featureTitles, opts.language);
     usedFallback.push("architecture");
   } else if (!hasMermaidDiagram(arch)) {
     if (inject) {
       // LLM kasih narasi tapi TANPA diagram → suntikkan diagram dari fallback.
-      const diagram = extractMermaidLoose(buildFallbackArchitecture(plan.title, plan.stack ?? [], featureTitles));
+      const diagram = extractMermaidLoose(buildFallbackArchitecture(plan.title, plan.stack ?? [], featureTitles, opts.language));
       if (diagram) arch = `${arch}\n\n${diagram}`;
     }
     usedFallback.push("architecture:diagram-missing");
   }
 
   if (!db) {
-    db = buildFallbackDatabaseSchema(featureTitles);
+    db = buildFallbackDatabaseSchema(featureTitles, opts.language);
     usedFallback.push("databaseSchema");
   } else if (!hasMermaidDiagram(db)) {
     if (inject) {
-      const diagram = extractMermaidLoose(buildFallbackDatabaseSchema(featureTitles));
+      const diagram = extractMermaidLoose(buildFallbackDatabaseSchema(featureTitles, opts.language));
       if (diagram) db = `${db}\n\n${diagram}`;
     }
     usedFallback.push("databaseSchema:diagram-missing");

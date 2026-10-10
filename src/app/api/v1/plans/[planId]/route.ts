@@ -18,6 +18,11 @@ export async function GET(_request: Request, { params }: { params: Promise<{ pla
     ideas: (plan.ideas ?? []).map((i) => ({ text: i.text, phase: i.phase ?? null, featureTitle: i.featureTitle ?? null })),
     stack: plan.stack,
     asumsi: plan.asumsi,
+    generationSettings: plan.generationSettings ?? null,
+    requirements: plan.requirements ?? null,
+    userFlow: plan.userFlow ?? [],
+    architecture: plan.architecture ?? "",
+    databaseSchema: plan.databaseSchema ?? "",
     features: (plan.features ?? []).map((f) => ({
       title: f.title,
       icon: f.icon,
@@ -26,7 +31,8 @@ export async function GET(_request: Request, { params }: { params: Promise<{ pla
       selesaiBila: f.selesaiBila,
       subFeatures: (f.subFeatures ?? []).map((s) => ({
         title: s.title,
-        tasks: (s.tasks ?? []).map((t) => ({ ref: t.ref, title: t.title, layer: t.layer, phase: t.phase, status: t.status })),
+        tujuan: s.tujuan ?? "", selesaiBila: s.selesaiBila ?? [],
+        tasks: (s.tasks ?? []).map((t) => ({ ref: t.ref, title: t.title, layer: t.layer, phase: t.phase, status: t.status, deps: t.deps, page: t.page })),
       })),
     })),
   });

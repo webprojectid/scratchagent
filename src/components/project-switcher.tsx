@@ -1,4 +1,5 @@
 "use client";
+import { uiText as ui, useUiLanguage } from "@/lib/ui-text";
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
@@ -23,6 +24,7 @@ const statusLabel: Record<string, string> = {
 };
 
 export function ProjectSwitcher({ currentId, fallbackTitle }: { currentId?: string; fallbackTitle?: string }) {
+  useUiLanguage();
   const [plans, setPlans] = useState<PlanItem[]>([]);
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -89,13 +91,12 @@ export function ProjectSwitcher({ currentId, fallbackTitle }: { currentId?: stri
                 href="/new"
                 className="flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] text-[#74FA6A] transition hover:bg-[#74FA6A]/10"
               >
-                <Plus size={11} /> baru
-              </Link>
+                <Plus size={11} />{ui("baru")}</Link>
             </div>
 
             <div className="max-h-[320px] overflow-y-auto p-1.5">
               {plans.length === 0 ? (
-                <p className="px-3 py-6 text-center text-[11px] text-white/25">Belum ada project</p>
+                <p className="px-3 py-6 text-center text-[11px] text-white/25">{ui("Belum ada project")}</p>
               ) : (
                 plans.map((p) => {
                   const active = p.id === currentId;
@@ -115,7 +116,7 @@ export function ProjectSwitcher({ currentId, fallbackTitle }: { currentId?: stri
                           {p.title}
                         </span>
                         <span className="mt-0.5 block font-mono text-[10px] text-white/25">
-                          {statusLabel[p.status] ?? p.status} · {p.taskCount} task
+                          {ui(statusLabel[p.status] ?? p.status)} · {p.taskCount} task
                         </span>
                       </span>
                       {active && <Check size={13} className="shrink-0 text-[#74FA6A]" />}

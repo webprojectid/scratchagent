@@ -1,3 +1,4 @@
+import { apiText } from "@/lib/ui-messages";
 import { NextResponse } from "next/server";
 import { getRequestUser, requireAdmin } from "@/lib/api-auth";
 import { banUser, endPro, getAccountDetail, grantPro, isAdminEmail, unbanUser } from "@/lib/billing";
@@ -13,7 +14,7 @@ export async function GET(_request: Request, { params }: Params) {
   try {
     const { id } = await params;
     const detail = await getAccountDetail(id);
-    if (!detail) return NextResponse.json({ error: "Akun tidak ditemukan" }, { status: 404 });
+    if (!detail) return NextResponse.json({ error: apiText("Akun tidak ditemukan") }, { status: 404 });
     return NextResponse.json({ account: detail });
   } catch (e: any) {
     return NextResponse.json({ error: e?.message ?? "Gagal memuat detail akun" }, { status: 500 });
@@ -43,13 +44,13 @@ export async function POST(request: Request, { params }: Params) {
     // Admin tidak boleh mem-banned dirinya sendiri, dan tidak boleh
     // mengubah langganan sesama admin.
     const target = await getAccountDetail(id);
-    if (!target) return NextResponse.json({ error: "Akun tidak ditemukan" }, { status: 404 });
+    if (!target) return NextResponse.json({ error: apiText("Akun tidak ditemukan") }, { status: 404 });
     if (isAdminEmail(target.email)) {
-      return NextResponse.json({ error: "Akun admin tidak bisa diubah lewat menu ini." }, { status: 400 });
+      return NextResponse.json({ error: apiText("Akun admin tidak bisa diubah lewat menu ini.") }, { status: 400 });
     }
 
     if (action === "grant-pro" && !Number.isFinite(Number(body?.days))) {
-      return NextResponse.json({ error: "Pilih durasi Pro: 7, 14, 28, 31, atau 93 hari." }, { status: 400 });
+      return NextResponse.json({ error: apiText("Pilih durasi Pro: 7, 14, 28, 31, atau 93 hari.") }, { status: 400 });
     }
 
     const actor = user!.email ?? "admin";

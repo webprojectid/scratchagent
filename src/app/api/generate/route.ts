@@ -1,9 +1,12 @@
+import { apiText } from "@/lib/ui-messages";
+import { getAccountSettings, saveProjectState } from "@/lib/account-store";
+import { handoffSettingsSchema, resolveHandoff, effectiveTechPrefs } from "@/lib/account-preferences";
 import { NextResponse } from "next/server";
 import { scheduleGeneration } from "@/lib/run-generation";
 import { z } from "zod";
 import { getRequestUser, planOwnerKey, unauthorized } from "@/lib/api-auth";
 import { savePlan, deletePlan, updatePlanTitle } from "@/lib/storage";
-import { consumeQuota, getQuota } from "@/lib/quota";
+import { refundQuota, consumeQuota, getQuota } from "@/lib/quota";
 import { getAccountState, isAdminEmail } from "@/lib/billing";
 import { RATE_LIMITS, blockedIpResponse, clientKey, getClientIp, logSecurity, rateLimit, rateLimitedResponse } from "@/lib/security";
 import { randomUUID } from "crypto";
@@ -17,6 +20,7 @@ const input = z.object({
     database: z.string().optional(),
     deployment: z.string().optional(),
   }),
+  handoff: handoffSettingsSchema.partial().optional(),
   userId: z.string().default("shared"),
   answers: z
     .array(
@@ -49,7 +53,10 @@ export async function POST(request: Request) {
       await logSecurity("auth_failed", { route: "/api/generate", reason: "no identity" }, { ip, request });
       return unauthorized();
     }
+    if (user.tokenPolicy && (user.tokenPolicy.access === "read" || user.tokenPolicy.projectIds.length)) return NextResponse.json({ error: apiText("Token ini tidak dapat membuat proyek baru.") }, { status: 403 });
     const ownerId = planOwnerKey(user);
+    const handoff = resolveHandoff((await getAccountSettings(user.userId)).handoff, data.handoff);
+    const techPrefs = effectiveTechPrefs(data.techPrefs, handoff);
 
     // Rem kedua selain kuota harian: maks 10 generate per 10 menit per akun.
     const rl = RATE_LIMITS.generate;
@@ -60,7 +67,7 @@ export async function POST(request: Request) {
     const account = await getAccountState(user.userId);
     if (account?.bannedAt) {
       await logSecurity("access_denied", { route: "/api/generate", reason: "banned" }, { ip, userId: user.userId, request });
-      return NextResponse.json({ error: "Akun ini telah diblokir secara permanen." }, { status: 403 });
+      return NextResponse.json({ error: apiText("Akun ini telah diblokir secara permanen.") }, { status: 403 });
     }
     const tier = account?.tier ?? "free";
     // Admin (ADMIN_EMAILS + daftar bawaan) bebas kuota harian: batas dilewati,
@@ -68,13 +75,13 @@ export async function POST(request: Request) {
     // audit. Batas struktur PRD (jumlah fase/sub-fitur/task) tetap tier akun.
 
     if (!process.env.LLM_BASE_URL || !process.env.LLM_API_KEY || !process.env.LLM_MODEL) {
-      return NextResponse.json({ error: "Konfigurasi LLM belum lengkap. Set LLM_BASE_URL, LLM_API_KEY, LLM_MODEL di .env" }, { status: 503 });
+      return NextResponse.json({ error: apiText("Konfigurasi LLM belum lengkap. Set LLM_BASE_URL, LLM_API_KEY, LLM_MODEL di .env") }, { status: 503 });
     }
 
     const receipt = await consumeQuota(ownerId, tier, { skipLimit: await isAdminEmail(user.email) });
     if (!receipt) {
       await logSecurity("quota_exhausted", { route: "/api/generate", tier }, { ip, userId: user.userId, request });
-      return NextResponse.json({ error: "Kuota generate harian habis. Coba besok." }, { status: 429 });
+      return NextResponse.json({ error: apiText("Kuota generate harian habis. Coba besok.") }, { status: 429 });
     }
 
     // ASINKRON: balas planId seketinda dengan plan kerangka (status generating),
@@ -82,6 +89,7 @@ export async function POST(request: Request) {
     // menit di satu function — di Vercel pasti kena batas waktu function dan
     // user menerima "Misi gagal: Unexpected token" berupa halaman error.
     const planId = randomUUID();
+    try {
     await savePlan(
       {
         id: planId,
@@ -97,11 +105,18 @@ export async function POST(request: Request) {
       ownerId,
     );
 
+    await saveProjectState(planId, { generationSettings: handoff, generationInput: { techPrefs, answers: data.answers } });
+    } catch (error) {
+      await refundQuota(receipt);
+      throw error;
+    }
+
     scheduleGeneration(
       {
         planId,
         brief: data.brief,
-        techPrefs: data.techPrefs,
+        techPrefs,
+        handoff,
         answers: data.answers,
         tier,
         ownerId,

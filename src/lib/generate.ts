@@ -1,3 +1,4 @@
+import { defaultHandoff, legacyHandoff, handoffInstructions, type HandoffSettings } from "./account-preferences";
 import { z } from "zod";
 import { jsonrepair } from "jsonrepair";
 import {
@@ -360,6 +361,7 @@ async function regenerateDiagram(
   context: { title: string; stack: string[]; featureTitles: string[] },
   narrative: string,
   usage: LlmUsage,
+  handoff: HandoffSettings = legacyHandoff,
 ): Promise<string | null> {
   try {
     const kindPrompt =
@@ -368,7 +370,7 @@ async function regenerateDiagram(
         : "Buat ERD: erDiagram mermaid dengan entitas nyata dari database schema di narasi, lengkap dengan tipe kolom, PK/FK, dan kardinalitas relasi antar entitas.";
     const result = await callLlm(
       diagramSchema,
-      `Produk: ${context.title}\nStack: ${JSON.stringify(context.stack)}\nFitur: ${JSON.stringify(context.featureTitles)}\n\nBerikut narasi ${kind === "architecture" ? "arsitektur" : "database schema"} yang sudah dibuat:\n---\n${narrative.slice(0, 6000)}\n---\n\n${kindPrompt}\nDiagram WAJIB spesifik untuk produk ini, dilarang memakai struktur generik (mis. node "CDN / Edge Cache" -> frontend -> backend -> database yang sama untuk semua project). HANYA isi JSON: {"mermaid":"flowchart TD\\n..."} atau {"mermaid":"erDiagram\\n..."}, teks mermaid TANPA pagar backtick.`,
+      `Produk: ${context.title}\nStack: ${JSON.stringify(context.stack)}\nFitur: ${JSON.stringify(context.featureTitles)}\n\nBerikut narasi ${kind === "architecture" ? "arsitektur" : "database schema"} yang sudah dibuat:\n---\n${narrative.slice(0, 6000)}\n---\n\n${kindPrompt}\n${handoffInstructions(handoff)}\nDiagram WAJIB spesifik untuk produk ini, dilarang memakai struktur generik (mis. node "CDN / Edge Cache" -> frontend -> backend -> database yang sama untuk semua project). HANYA isi JSON: {"mermaid":"flowchart TD\\n..."} atau {"mermaid":"erDiagram\\n..."}, teks mermaid TANPA pagar backtick.`,
       usage,
     );
     const clean = result.mermaid.trim();
@@ -473,7 +475,9 @@ export async function generatePlanStructure(
   techPrefs: { mode: "auto" | "custom"; frontend?: string; backend?: string; database?: string; deployment?: string },
   contextAnswers?: ContextAnswer[],
   tier: Tier | string | null | undefined = "free",
+  handoff: HandoffSettings = defaultHandoff,
 ): Promise<GenerateResult> {
+  const styleRule = STYLE_RULE + "\n" + handoffInstructions(handoff);
   const usage: LlmUsage = { tokensIn: 0, tokensOut: 0, models: [] };
   // Batas struktur per tier: fase (fitur), sub-fitur per fitur, total task.
   const limits = structureLimits(tier);
@@ -499,7 +503,7 @@ export async function generatePlanStructure(
 
   const one = await callLlm(
     stage1Schema,
-    `${enforcedBrief}\n${stackHint}${answersBlock}\n\nKamu adalah product manager senior. Buat PRD awal yang mendalam:\n${STYLE_RULE}\n1. Judul produk WAJIB nama brand yang catchy, modern, dan kreatif: gunakan gaya bahasa Indonesia mix English yang keren (satu kata, maksimal dua kata, misal FutsalGo, KedaiPay, AutoKopi, QuickKasir, CariLapangan, BotPintar, dll). Mudah diingat, ringkas, dan relevan dengan fungsi produk. DILARANG menempelkan deskripsi panjang atau tanda titik dua seperti "NamaBrand: Aplikasi Apa".\n2. Asumsi wajar (min 5): bisnis, teknis, perilaku pengguna. Jika ada jawaban klarifikasi dari user, gunakan itu dan JANGAN jadikan hal yang sudah dijawab sebagai asumsi.\n3. Stack teknologi yang cocok.\n4. Daftar fitur: buat maksimal ${limits.features[1]} fitur. CAKUPAN WAJIB: setiap subsistem, komponen, atau fungsi yang disebut di brief harus tercover; bila subsistem melebihi jumlah maksimum, gabungkan subsistem yang serumpun ke satu fitur dan jelaskan penggabungannya di field description. JANGAN menghapus, melewati, atau mengabaikan subsistem apa pun.\n5. Untuk tiap fitur: deskripsi 1-2 kalimat, tujuan bisnis yang terukur, dan 3-5 kriteria "selesai bila" yang spesifik dan bisa diuji.\n\nWAJIB gunakan field PERSIS: title, assumptions, stack, features (title, icon, description, tujuan, selesai_bila, priority). Format: {"title":"...","assumptions":[],"stack":[],"features":[{"title":"...","icon":"...","description":"...","tujuan":"...","selesai_bila":[],"priority":"high"}]}}`,
+    `${enforcedBrief}\n${stackHint}${answersBlock}\n\nKamu adalah product manager senior. Buat PRD awal yang mendalam:\n${styleRule}\n1. Judul produk WAJIB nama brand yang catchy, modern, dan kreatif: ikuti bahasa output yang dipilih dan pertahankan nama brand yang diberikan pengguna (satu kata, maksimal dua kata, misal FutsalGo, KedaiPay, AutoKopi, QuickKasir, CariLapangan, BotPintar, dll). Mudah diingat, ringkas, dan relevan dengan fungsi produk. DILARANG menempelkan deskripsi panjang atau tanda titik dua seperti "NamaBrand: Aplikasi Apa".\n2. Asumsi wajar (min 5): bisnis, teknis, perilaku pengguna. Jika ada jawaban klarifikasi dari user, gunakan itu dan JANGAN jadikan hal yang sudah dijawab sebagai asumsi.\n3. Stack teknologi yang cocok.\n4. Daftar fitur: buat maksimal ${limits.features[1]} fitur. CAKUPAN WAJIB: setiap subsistem, komponen, atau fungsi yang disebut di brief harus tercover; bila subsistem melebihi jumlah maksimum, gabungkan subsistem yang serumpun ke satu fitur dan jelaskan penggabungannya di field description. JANGAN menghapus, melewati, atau mengabaikan subsistem apa pun.\n5. Untuk tiap fitur: deskripsi 1-2 kalimat, tujuan bisnis yang terukur, dan 3-5 kriteria "selesai bila" yang spesifik dan bisa diuji.\n\nWAJIB gunakan field PERSIS: title, assumptions, stack, features (title, icon, description, tujuan, selesai_bila, priority). Format: {"title":"...","assumptions":[],"stack":[],"features":[{"title":"...","icon":"...","description":"...","tujuan":"...","selesai_bila":[],"priority":"high"}]}}`,
     usage,
   );
 
@@ -512,7 +516,7 @@ export async function generatePlanStructure(
   const brandTitle =
     one.title.split(/[:\u2013\u2014]|\s+-\s+/)[0].trim() || one.title;
   if (one.features.length > limits.features[1]) {
-    structureWarnings.push(`Prompt melebihi batas (${one.features.length} fitur). Dipotong jadi ${limits.features[1]} sesuai paket ${tier === "pro" ? "Pro" : "Free"}.`);
+    structureWarnings.push(handoff.language === "en" ? `The response exceeded the feature limit (${one.features.length}). It was limited to ${limits.features[1]} for the ${tier === "pro" ? "Pro" : "Free"} plan.` : `Prompt melebihi batas (${one.features.length} fitur). Dipotong jadi ${limits.features[1]} sesuai paket ${tier === "pro" ? "Pro" : "Free"}.`);
   }
   const featureTitles = stage1Features.map((f) => f.title);
 
@@ -523,12 +527,12 @@ export async function generatePlanStructure(
   const [two, archDataRaw, dbDataRaw, reqDataRaw] = await Promise.all([
     callLlm(
       stage2Schema,
-      `Brief: ${brief}\nFitur: ${JSON.stringify(featureTitles)}\n\nKamu adalah arsitek produk. Untuk setiap fitur, lakukan dekomposisi kritis:\n${STYLE_RULE}\n1. Untuk tiap fitur identifikasi ${limits.subFeatures[0]} sampai ${limits.subFeatures[1]} sub-fitur yang saling eksklusif namun collectively exhaustive, pilih aspek paling penting dari tiap fitur.\n2. Tiap sub-fitur pecahkan SATU masalah spesifik.\n3. Tujuan terukur.\n4. Selesai_bila berisi acceptance criteria konkret (min 2).\n5. Tandai sub-fitur risiko tinggi atau dependency eksternal.\n\nWAJIB field: title, sub_features (title, tujuan, selesai_bila). Format: {"features":[{"title":"...","sub_features":[{"title":"...","tujuan":"...","selesai_bila":["..."]}]}]}}`,
+      `Brief: ${brief}\nFitur: ${JSON.stringify(featureTitles)}\n\nKamu adalah arsitek produk. Untuk setiap fitur, lakukan dekomposisi kritis:\n${styleRule}\n1. Untuk tiap fitur identifikasi ${limits.subFeatures[0]} sampai ${limits.subFeatures[1]} sub-fitur yang saling eksklusif namun collectively exhaustive, pilih aspek paling penting dari tiap fitur.\n2. Tiap sub-fitur pecahkan SATU masalah spesifik.\n3. Tujuan terukur.\n4. Selesai_bila berisi acceptance criteria konkret (min 2).\n5. Tandai sub-fitur risiko tinggi atau dependency eksternal.\n\nWAJIB field: title, sub_features (title, tujuan, selesai_bila). Format: {"features":[{"title":"...","sub_features":[{"title":"...","tujuan":"...","selesai_bila":["..."]}]}]}}`,
       usage,
     ),
     callLlm(
       archSchema,
-      `Brief: ${brief}\nFitur: ${JSON.stringify(featureTitles)}\nStack: ${JSON.stringify(one.stack ?? [])}\n\nKamu adalah solution architect. Buat architecture detail untuk produk ini.\n${STYLE_RULE} Jelaskan komponen utama, alur data end-to-end, keputusan arsitektur, trade-off (monolith vs microservices, SSR vs CSR, SQL vs NoSQL), error handling, caching, auth, dan skalabilitas. Narasi 2-3 paragraf. WAJIB sertakan diagram mermaid flowchart TD di dalam triple backtick.\n\nFormat: {"architecture":"narasi detail lalu mermaid flowchart TD di triple backtick"}}`,
+      `Brief: ${brief}\nFitur: ${JSON.stringify(featureTitles)}\nStack: ${JSON.stringify(one.stack ?? [])}\n\nKamu adalah solution architect. Buat architecture detail untuk produk ini.\n${styleRule} Jelaskan komponen utama, alur data end-to-end, keputusan arsitektur, trade-off (monolith vs microservices, SSR vs CSR, SQL vs NoSQL), error handling, caching, auth, dan skalabilitas. Narasi 2-3 paragraf. WAJIB sertakan diagram mermaid flowchart TD di dalam triple backtick.\n\nFormat: {"architecture":"narasi detail lalu mermaid flowchart TD di triple backtick"}}`,
       usage,
     ).catch((error) => {
       console.warn("[generate] architecture gagal, pakai fallback:", error instanceof Error ? error.message : error);
@@ -536,7 +540,7 @@ export async function generatePlanStructure(
     }),
     callLlm(
       dbSchema,
-      `Brief: ${brief}\nFitur: ${JSON.stringify(featureTitles)}\nStack: ${JSON.stringify(one.stack ?? [])}\n\nKamu adalah database architect. Buat database schema lengkap untuk produk ini.\n${STYLE_RULE} Daftar SEMUA tabel utama. Untuk tiap tabel: nama kolom, tipe data, constraint (PK/FK/UNIQUE/INDEX), dan alasan pemilihan tipe. Identifikasi N+1 query risk dan hot path. WAJIB sertakan ERD mermaid di dalam triple backtick.\n\nFormat: {"database_schema":"### Tabel... lalu mermaid erDiagram di triple backtick"}}`,
+      `Brief: ${brief}\nFitur: ${JSON.stringify(featureTitles)}\nStack: ${JSON.stringify(one.stack ?? [])}\n\nKamu adalah database architect. Buat database schema lengkap untuk produk ini.\n${styleRule} Daftar SEMUA tabel utama. Untuk tiap tabel: nama kolom, tipe data, constraint (PK/FK/UNIQUE/INDEX), dan alasan pemilihan tipe. Identifikasi N+1 query risk dan hot path. WAJIB sertakan ERD mermaid di dalam triple backtick.\n\nFormat: {"database_schema":"### Tabel... lalu mermaid erDiagram di triple backtick"}}`,
       usage,
     ).catch((error) => {
       console.warn("[generate] database_schema gagal, pakai fallback:", error instanceof Error ? error.message : error);
@@ -544,7 +548,7 @@ export async function generatePlanStructure(
     }),
     callLlm(
       reqSchema,
-      `Brief: ${brief}\nFitur: ${JSON.stringify(featureTitles)}\n\nKamu adalah product manager. Buat user flow, requirements, dan tech stack untuk produk ini.\n${STYLE_RULE}\n1. User Flow: 2-4 alur utama (happy path + 1 unhappy path per fitur penting), tiap langkah actionable.\n2. Requirements: fungsional (min 6) dan non-fungsional (min 4: performance, security, reliability, scalability).\n3. Tech Stack: tiap teknologi ada alasan 1 kalimat dan alternatif yang dipertimbangkan.\n\nFormat: {"user_flow":[{"title":"...","steps":["..."]}],"requirements":{"fungsional":[],"non_fungsional":[]},"tech_stack":[{"name":"...","desc":"..."}]}}`,
+      `Brief: ${brief}\nFitur: ${JSON.stringify(featureTitles)}\n\nKamu adalah product manager. Buat user flow, requirements, dan tech stack untuk produk ini.\n${styleRule}\n1. User Flow: 2-4 alur utama (happy path + 1 unhappy path per fitur penting), tiap langkah actionable.\n2. Requirements: fungsional (min 6) dan non-fungsional (min 4: performance, security, reliability, scalability).\n3. Tech Stack: tiap teknologi ada alasan 1 kalimat dan alternatif yang dipertimbangkan.\n\nFormat: {"user_flow":[{"title":"...","steps":["..."]}],"requirements":{"fungsional":[],"non_fungsional":[]},"tech_stack":[{"name":"...","desc":"..."}]}}`,
       usage,
     ).catch((error) => {
       console.warn("[generate] requirements gagal, pakai default:", error instanceof Error ? error.message : error);
@@ -567,8 +571,8 @@ export async function generatePlanStructure(
     const rawSubs = (mapped?.sub_features && mapped.sub_features.length > 0)
       ? mapped.sub_features
       : [
-          { title: `${f.title} - Komponen Utama`, tujuan: `Implementasi arsitektur dan komponen utama untuk ${f.title}`, selesai_bila: ["Komponen terpasang dan berfungsi", "Integrasi antar modul berhasil"] },
-          { title: `${f.title} - Integrasi & Validasi`, tujuan: `Pengujian dan validasi operasional untuk ${f.title}`, selesai_bila: ["Validasi input output berhasil", "Error handling aktif"] },
+          { title: `${f.title} - ${handoff.language === "en" ? "Core components" : "Komponen utama"}`, tujuan: handoff.language === "en" ? `Implement the architecture and core components for ${f.title}` : `Implementasi arsitektur dan komponen utama untuk ${f.title}`, selesai_bila: handoff.language === "en" ? ["Core components function as expected", "Modules integrate successfully"] : ["Komponen terpasang dan berfungsi", "Integrasi antar modul berhasil"] },
+          { title: `${f.title} - ${handoff.language === "en" ? "Integration & validation" : "Integrasi & validasi"}`, tujuan: handoff.language === "en" ? `Test and validate ${f.title}` : `Pengujian dan validasi operasional untuk ${f.title}`, selesai_bila: handoff.language === "en" ? ["Inputs and outputs are validated", "Error handling is verified"] : ["Validasi input output berhasil", "Error handling aktif"] },
         ];
     if (rawSubs.length > limits.subFeatures[1]) subFeatureTrimmed = true;
     // Enforce keras batas sub-fitur per fitur.
@@ -581,7 +585,7 @@ export async function generatePlanStructure(
     return { slug: f.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""), title: f.title, icon: f.icon, description: f.description, tujuan: f.tujuan, selesaiBila: f.selesai_bila, priority: f.priority, status: "direncanakan" as const, subFeatures };
   });
   if (subFeatureTrimmed) {
-    structureWarnings.push(`Jumlah sub-fitur per fase dibatasi ${limits.subFeatures[1]} sesuai paket ${tier === "pro" ? "Pro" : "Free"}`);
+    structureWarnings.push(handoff.language === "en" ? `Subfeatures per phase were limited to ${limits.subFeatures[1]} for the ${tier === "pro" ? "Pro" : "Free"} plan.` : `Jumlah sub-fitur per fase dibatasi ${limits.subFeatures[1]} sesuai paket ${tier === "pro" ? "Pro" : "Free"}`);
   }
 
   const resolvedStack = one.stack?.length
@@ -598,15 +602,15 @@ export async function generatePlanStructure(
   const ctx = { title: brandTitle, stack: resolvedStack, featureTitles: featureTitles };
 
   const [archDiagram, dbDiagram] = await Promise.all([
-    archRaw && !hasMermaidDiagram(archRaw) ? regenerateDiagram("architecture", ctx, archRaw, usage) : Promise.resolve(null),
-    dbRaw && !hasMermaidDiagram(dbRaw) ? regenerateDiagram("database", ctx, dbRaw, usage) : Promise.resolve(null),
+    archRaw && !hasMermaidDiagram(archRaw) ? regenerateDiagram("architecture", ctx, archRaw, usage, handoff) : Promise.resolve(null),
+    dbRaw && !hasMermaidDiagram(dbRaw) ? regenerateDiagram("database", ctx, dbRaw, usage, handoff) : Promise.resolve(null),
   ]);
 
   const { architecture, databaseSchema, usedFallback } = applyArchFallback(
     { title: brandTitle, stack: resolvedStack, features: features as never },
     archDiagram ? `${archRaw}\n\n${archDiagram}` : archRaw,
     dbDiagram ? `${dbRaw}\n\n${dbDiagram}` : dbRaw,
-    { injectDiagrams: true },
+    { injectDiagrams: true, language: handoff.language },
   );
 
   const WARNING_LABELS: Record<string, string> = {
@@ -617,7 +621,9 @@ export async function generatePlanStructure(
     "databaseSchema:diagram": "ERD memakai template karena regenerasi diagram gagal",
     "databaseSchema:diagram-missing": "ERD memakai template (narasi LLM tanpa diagram)",
   };
-  const warnings = [...usedFallback.map((code) => WARNING_LABELS[code] ?? `Fallback dipakai: ${code}`), ...structureWarnings];
+  if (!reqDataRaw) structureWarnings.push(handoff.language === "en" ? "Requirements and user flows could not be generated. Review this draft before implementation." : "Kebutuhan dan user flow belum berhasil dibuat. Tinjau draft ini sebelum implementasi.");
+  const englishWarnings: Record<string, string> = { architecture: "Architecture uses a generic fallback draft because generation failed.", databaseSchema: "Database schema uses a generic fallback draft because generation failed.", "architecture:diagram-missing": "The architecture diagram uses a generic fallback. Review it against the requirements.", "databaseSchema:diagram-missing": "The ERD uses a generic fallback. Review it against the requirements." };
+  const warnings = [...usedFallback.map((code) => handoff.language === "en" ? englishWarnings[code] ?? `Fallback used: ${code}` : WARNING_LABELS[code] ?? `Fallback dipakai: ${code}`), ...structureWarnings];
   if (usedFallback.length) {
     console.warn(`[generate] fallback dipakai untuk: ${usedFallback.join(", ")}`);
   }
@@ -647,7 +653,9 @@ export async function generateTasksForFeature(
   featureCount = 1,
   /** Ide user dari kolom chat (Pro). WAJIB dibaca AI sebagai referensi tambahan. */
   ideas?: PlanIdea[] | null,
+  handoff: HandoffSettings = legacyHandoff,
 ): Promise<{ tasks: Omit<GenerateTask, "ref">[]; usage: LlmUsage }> {
+  const styleRule = STYLE_RULE + "\n" + handoffInstructions(handoff);
   const usage: LlmUsage = { tokensIn: 0, tokensOut: 0, models: [] };
   // Budget task per fitur berlaku per unit fitur/sub-fitur sesuai batas tier.
   const [minTasks, maxTasks] = taskRangePerFeature(tier, featureCount, subFeatures.length);
@@ -660,7 +668,7 @@ export async function generateTasksForFeature(
     : "";
   const result = await callLlm(
     stage3Schema,
-    `Brief: ${brief}\nFitur: ${featureTitle}\nSub-fitur: ${JSON.stringify(subFeatures)}\n${ideaBlock}\nKamu adalah tech lead senior. Buat task untuk fitur ini saja dengan pendekatan kritis:\n${STYLE_RULE}\n1. ${taskBudgetRule} Tiap task harus spesifik dan actionable.\n2. Setiap sub-fitur harus ada task (frontend, backend, dan/atau QA/testing).\n3. Tiap task title WAJIB singkat dan padat, MAKSIMAL 60 karakter, diawali kata kerja (Buat, Integrasikan, Uji, Deploy, Refactor, dll). Tanpa menyebut nama fitur.\n4. Sertakan task untuk: validasi input, error handling, state management, integrasi antar komponen, unit/integration test, accessibility/perf jika relevan.\n5. Beri SETIAP task id unik berurutan: "t1", "t2", "t3", dst.\n6. Dependency (deps): isi dengan id task lain yang harus selesai LEBIH DULU (hanya id dari daftar task ini, mis. ["t1","t3"]). Jangan membuat ketergantungan melingkar. Task yang bisa dikerjakan paralel tanpa prasyarat diberi deps [].\n7. Urutan logis layer: frontend -> backend -> qa.\n8. Setiap task wajib field: id, sub_feature (judul sub-fitur persis dari daftar), title, layer (frontend/backend/qa), phase, page (null atau path), deps (array id). JANGAN tulis field feature.\n\nFormat: {"tasks":[{"id":"t1","sub_feature":"${subFeatures[0] ?? "..."}","title":"...","layer":"frontend","phase":${featureIndex + 1},"page":null,"deps":[]},{"id":"t2","sub_feature":"${subFeatures[0] ?? "..."}","title":"...","layer":"backend","phase":${featureIndex + 1},"page":null,"deps":["t1"]}]}`,
+    `Brief: ${brief}\nFitur: ${featureTitle}\nSub-fitur: ${JSON.stringify(subFeatures)}\n${ideaBlock}\nKamu adalah tech lead senior. Buat task untuk fitur ini saja dengan pendekatan kritis:\n${styleRule}\n1. ${taskBudgetRule} Tiap task harus spesifik dan actionable.\n2. Setiap sub-fitur harus ada task (frontend, backend, dan/atau QA/testing).\n3. Tiap task title WAJIB singkat dan padat, MAKSIMAL 60 karakter, diawali kata kerja (Buat, Integrasikan, Uji, Deploy, Refactor, dll). Tanpa menyebut nama fitur.\n4. Sertakan task untuk: validasi input, error handling, state management, integrasi antar komponen, unit/integration test, accessibility/perf jika relevan.\n5. Beri SETIAP task id unik berurutan: "t1", "t2", "t3", dst.\n6. Dependency (deps): isi dengan id task lain yang harus selesai LEBIH DULU (hanya id dari daftar task ini, mis. ["t1","t3"]). Jangan membuat ketergantungan melingkar. Task yang bisa dikerjakan paralel tanpa prasyarat diberi deps [].\n7. Urutan logis layer: frontend -> backend -> qa.\n8. Setiap task wajib field: id, sub_feature (judul sub-fitur persis dari daftar), title, layer (frontend/backend/qa), phase, page (null atau path), deps (array id). JANGAN tulis field feature.\n\nFormat: {"tasks":[{"id":"t1","sub_feature":"${subFeatures[0] ?? "..."}","title":"...","layer":"frontend","phase":${featureIndex + 1},"page":null,"deps":[]},{"id":"t2","sub_feature":"${subFeatures[0] ?? "..."}","title":"...","layer":"backend","phase":${featureIndex + 1},"page":null,"deps":["t1"]}]}`,
     usage,
   );
   // Enforce keras: potong task berlebih dari LLM ke budget maksimum.
@@ -707,7 +715,7 @@ export interface IdeaFeature {
  * metadata). Task-nya digenerate terpisah oleh generateTasksForFeature agar
  * ikut budget task yang sama dengan fitur reguler.
  */
-export async function convertIdeaToFeature(brief: string, ideaText: string, phase: number): Promise<IdeaFeature> {
+export async function convertIdeaToFeature(brief: string, ideaText: string, phase: number, handoff: HandoffSettings = legacyHandoff): Promise<IdeaFeature> {
   const usage: LlmUsage = { tokensIn: 0, tokensOut: 0, models: [] };
   const result = await callLlm(
     ideaPhaseSchema,
@@ -717,7 +725,7 @@ IDE TAMBAHAN DARI USER (wajib diwujudkan, ini alasan fitur ini ada):
 ${ideaText}
 
 Kamu adalah product architect senior. Ubah ide user di atas menjadi SATU fase baru di project ini:
-${STYLE_RULE}
+${STYLE_RULE}\n${handoffInstructions(handoff)}
 1. title: nama fase singkat & jelas (bukan "Ide User").
 2. description: 1-2 kalimat menjelaskan fase ini berasal dari ide user.
 3. tujuan: hasil akhir fase ini.

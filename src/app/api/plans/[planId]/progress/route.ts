@@ -1,3 +1,4 @@
+import { getProjectState } from "@/lib/account-store";
 import { NextResponse } from "next/server";
 import { scheduleGeneration } from "@/lib/run-generation";
 import { accessPlan, getRequestUser } from "@/lib/api-auth";
@@ -24,17 +25,19 @@ export async function GET(request: Request, { params }: { params: Promise<{ plan
   if (plan.status === 'generating' && (plan.features ?? []).length === 0 && zombieAgeMs > 7 * 60_000) {
     const kick = generationKicks.get(planId);
     const bolehKick = !kick || (kick.n < 3 && Date.now() - kick.at > 5 * 60_000);
-    if (bolehKick) {
+    if (bolehKick && user && (!user.tokenPolicy || user.tokenPolicy.access === "write")) {
+      const snapshot = await getProjectState(planId);
       generationKicks.set(planId, { n: (kick?.n ?? 0) + 1, at: Date.now() });
       scheduleGeneration(
         {
           planId,
           brief: plan.brief,
-          techPrefs: { mode: 'auto' },
-          answers: [],
+          techPrefs: snapshot.generationInput?.techPrefs ?? { mode: 'auto' },
+          handoff: snapshot.generationSettings ?? undefined,
+          answers: snapshot.generationInput?.answers ?? [],
           tier: plan.tier ?? 'free',
           ownerId: plan.userId ?? '',
-          userId: plan.userId ?? '',
+          userId: user.userId,
           receipt: { userId: plan.userId ?? '', tier: plan.tier ?? 'free' },
         },
         (kick?.n ?? 0) + 2,

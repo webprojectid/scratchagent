@@ -1,9 +1,12 @@
 "use client";
+import { uiText as ui, useUiLanguage } from "@/lib/ui-text";
 
+import { buildAgentPrompt } from "@/lib/agent-prompt";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Check, Copy, FileText, Package, Sparkles, X } from "lucide-react";
+import { legacyHandoff, type HandoffSettings } from "@/lib/account-preferences";
 import { getCurrentUser } from "@/lib/current-user";
 
 const steps = [
@@ -13,6 +16,10 @@ const steps = [
 ];
 
 export function AgentPromptModal({ planId, onClose }: { planId: string; onClose: () => void }) {
+  useUiLanguage();
+  const [handoff, setHandoff] = useState<HandoffSettings>(legacyHandoff);
+  const [tokenError, setTokenError] = useState("");
+  useEffect(() => { fetch(`/api/plans/${planId}/export`).then(response => response.ok ? response.json() : null).then(plan => { if (plan?.generationSettings) setHandoff(plan.generationSettings); }).catch(() => {}); }, [planId]);
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
@@ -28,11 +35,13 @@ export function AgentPromptModal({ planId, onClose }: { planId: string; onClose:
     let active = true;
     getCurrentUser().then((u) => {
       if (!active) return;
-      fetch("/api/tokens", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ label: "CLI", userId: u?.email }) })
+      fetch("/api/tokens", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ label: "Agent project", days: 30, access: "write", projectIds: /^[0-9a-f-]{36}$/i.test(planId) ? [planId] : [], userId: u?.email }) })
         .then((r) => r.json())
         .then((d) => {
           if (active && d.token) setToken(d.token);
+          else if (active) setTokenError(d.error || ui("Token belum bisa dibuat. Coba kembali."));
         })
+        .catch(() => { if (active) setTokenError(ui("Server token belum bisa dihubungi.")); })
         .finally(() => {
           if (active) setLoading(false);
         });
@@ -52,59 +61,7 @@ export function AgentPromptModal({ planId, onClose }: { planId: string; onClose:
 
   const serverUrl = typeof window !== "undefined" ? window.location.origin : "";
 
-  const prompt = token
-    ? `Kamu akan mengerjakan task dari Scratch Agent lewat CLI scratch-agent (package npm: @notdeadlysins/scratch-agent).
-Prasyarat: Node.js + Python 3.x.
-
-PENTING — SERVER SCRATCH AGENT:
-Server API: ${serverUrl}
-- Semua perintah scratch-agent mengarah ke server di atas (login sudah menyimpannya, lihat LANGKAH 1).
-- scratch-agent hanyalah CLI client: PRD, task, dan progress hidup di server tersebut.
-- JANGAN menyala-kan server/dev server Scratch Agent sendiri (npm run dev, next dev, dsb).
-- Jika koneksi gagal, JANGAN cari atau proyekkan server lokal. Laporkan error koneksi ke user, lalu berhenti.
-
-LANGKAH 0: Install Skill Scratch Agent v2.4 (sekali saja):
- Cek apakah sudah terpasang: uipro --version
- Jika SUDAH: lanjut.
- Jika BELUM: install sekali lalu lanjut (TIDAK perlu restart):
-  npm install -g ui-ux-pro-max-cli
-  uipro init --ai opencode --global
-
-LANGKAH 1: Install CLI, login & init (sekali saja):
- npm install -g @notdeadlysins/scratch-agent
- scratch-agent login --token ${token} --url ${serverUrl}
- scratch-agent init --agent opencode
-
-LANGKAH 2: Baca PRD (sekali):
- scratch-agent plan get ${planId}
-
-LANGKAH 3: LOOP kerjakan SATU task per siklus:
- scratch-agent task next --plan ${planId} --json
- scratch-agent task start <ref>
- # ...kerjakan task ini (eksplor kode dulu, ikuti pola project)...
- scratch-agent task complete <ref>
- # Jika ke-block: scratch-agent task fail <ref> "alasan singkat"
- # Ulangi sampai done=true
-
-ATURAN:
-- Jika plan get menyertakan ideas (ide tambahan user): WAJIB dibaca dan dijadikan referensi saat mengerjakan task yang relevan.
-- Jika task next menyertakan last_fail_reason: BACA dulu, ganti pendekatan.
-- Jika respons blocked=true: berhenti, lapor daftar task gagal, tunggu perintah.
-- Jika respons checkpoint=true: JANGAN mulai task. Berhenti, lapor, tunggu "lanjut".
-- Jangan borong task; percayakan urutan ke server.
-- Server Scratch Agent (${serverUrl}) BUKAN bagian dari project yang kamu kerjakan.
-  Project-mu (Vite/Next.js/dst) dan server Scratch Agent itu dua hal berbeda —
-  jangan pernah menjalankan atau memodifikasi server Scratch Agent.
-- Saat mengerjakan task frontend/UI: CEK apakah Skill Scratch Agent aktif
-  otomatis. Jika AKTIF: terapkan rekomendasinya (warna, tipografi, layout,
-  best practice) supaya hasil profesional. Jika TIDAK aktif: beri tau user
-  "Skill Scratch Agent belum aktif (mungkin perlu sesi baru agar ter-load)",
-  lalu tetap lanjutkan dengan best practice UI umum.
-
-LANGKAH 4: Setelah done=true:
- Jalankan aplikasi sekali lagi, verifikasi semua alur utama melawan "selesai bila"
- tiap fitur. Lampirkan checklist di laporan akhir. Jika ada rusak, lapor jujur.`
-    : "";
+  const prompt = token ? buildAgentPrompt(planId, token, serverUrl, handoff) : "";
 
   const copyPrompt = () => {
     navigator.clipboard.writeText(prompt);
@@ -149,18 +106,14 @@ LANGKAH 4: Setelah done=true:
                 <Sparkles size={15} className="text-[#74FA6A]" />
               </span>
               <div>
-                <h3 className="!text-[15px] !font-semibold !leading-tight !tracking-tight text-white">
-                  Implementasi dengan AI agent
-                </h3>
-                <p className="mt-1 text-[12.5px] leading-5 text-slate-500">
-                  Serahkan plan ini ke coding agent. Tiga langkah, tanpa setup manual.
-                </p>
+                <h3 className="!text-[15px] !font-semibold !leading-tight !tracking-tight text-white">{ui("Implementasi dengan AI agent")}</h3>
+                <p className="mt-1 text-[12.5px] leading-5 text-slate-500">{ui("Serahkan plan ini ke coding agent. Tiga langkah, tanpa setup manual.")}</p>
               </div>
             </div>
             <button
               onClick={onClose}
               className="grid size-7 shrink-0 place-items-center rounded-lg text-white/30 transition hover:bg-white/5 hover:text-white"
-              aria-label="Tutup"
+              aria-label={ui("Tutup")}
             >
               <X size={14} />
             </button>
@@ -182,8 +135,8 @@ LANGKAH 4: Setelah done=true:
                     {i + 1}
                   </span>
                   <span className="min-w-0 pt-0.5">
-                    <span className="block text-[13.5px] font-medium leading-tight text-white/85">{s.title}</span>
-                    <span className="mt-0.5 block text-[12px] leading-5 text-slate-500">{s.desc}</span>
+                    <span className="block text-[13.5px] font-medium leading-tight text-white/85">{ui(s.title)}</span>
+                    <span className="mt-0.5 block text-[12px] leading-5 text-slate-500">{ui(s.desc)}</span>
                   </span>
                 </motion.li>
               ))}
@@ -203,7 +156,7 @@ LANGKAH 4: Setelah done=true:
                   className="flex items-center gap-1.5 rounded-md border border-white/[.08] bg-white/[.03] px-2.5 py-1 text-[11.5px] font-medium text-slate-300 transition hover:border-[#74FA6A]/40 hover:text-[#74FA6A] active:scale-[.98] disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   {copied ? <Check size={12} /> : <Copy size={12} />}
-                  {loading ? "Menyiapkan..." : copied ? "Copied" : "Copy prompt"}
+                  {loading ? ui("Menyiapkan...") : copied ? ui("Copied") : ui("Copy prompt")}
                 </button>
               </div>
               {loading ? (
@@ -214,10 +167,10 @@ LANGKAH 4: Setelah done=true:
                 </div>
               ) : token ? (
                 <pre className="max-h-44 overflow-auto whitespace-pre-wrap p-3.5 font-mono text-[11.5px] leading-[1.7] text-slate-400">
-                  {prompt}
+                  {tokenError ? tokenError : prompt}
                 </pre>
               ) : (
-                <p className="p-3.5 text-[12.5px] text-red-400/80">Token tidak tersedia. Coba lagi.</p>
+                <p className="p-3.5 text-[12.5px] text-red-400/80">{ui("Token tidak tersedia. Coba lagi.")}</p>
               )}
             </div>
 
@@ -226,7 +179,7 @@ LANGKAH 4: Setelah done=true:
               <button
                 onClick={tier === "pro" ? downloadMd : undefined}
                 disabled={tier !== "pro"}
-                title={tier !== "pro" ? "Export PRD hanya untuk paket Pro" : undefined}
+                title={tier !== "pro" ? ui("Export PRD hanya untuk paket Pro") : undefined}
                 className="flex items-center justify-center gap-1.5 rounded-lg border border-white/[.08] bg-white/[.02] px-3 py-2 text-[12.5px] text-slate-400 transition hover:border-white/20 hover:text-white active:scale-[.99] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-white/[.08] disabled:hover:text-slate-400"
               >
                 <FileText size={13} /> {tier === "pro" ? "File PRD" : "File PRD (Pro)"}
@@ -234,21 +187,17 @@ LANGKAH 4: Setelah done=true:
               <button
                 onClick={tier === "pro" ? downloadZip : undefined}
                 disabled={tier !== "pro"}
-                title={tier !== "pro" ? "Export ZIP hanya untuk paket Pro" : undefined}
+                title={tier !== "pro" ? ui("Export ZIP hanya untuk paket Pro") : undefined}
                 className="flex items-center justify-center gap-1.5 rounded-lg border border-white/[.08] bg-white/[.02] px-3 py-2 text-[12.5px] text-slate-400 transition hover:border-white/20 hover:text-white active:scale-[.99] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-white/[.08] disabled:hover:text-slate-400"
               >
                 <Package size={13} /> {tier === "pro" ? "ZIP" : "ZIP (Pro)"}
               </button>
             </div>
             {tier !== "pro" && (
-              <p className="mt-2 text-center text-[11px] leading-4 text-slate-600">
-                Export PRD terkunci untuk paket Free. <Link href="/pricing" className="text-[#74FA6A]/80 underline-offset-2 hover:underline">Upgrade ke Pro</Link> untuk membukanya.
-              </p>
+              <p className="mt-2 text-center text-[11px] leading-4 text-slate-600">{ui("Export PRD terkunci untuk paket Free.")}<Link href="/pricing" className="text-[#74FA6A]/80 underline-offset-2 hover:underline">Upgrade ke Pro</Link>{ui("untuk membukanya.")}</p>
             )}
 
-            <p className="mt-3 text-center text-[10.5px] leading-4 text-slate-600">
-              Prompt mengandung token pribadi. Paste hanya ke agent yang kamu percaya.
-            </p>
+            <p className="mt-3 text-center text-[10.5px] leading-4 text-slate-600">{ui("Prompt mengandung token pribadi. Paste hanya ke agent yang kamu percaya.")}</p>
           </div>
         </motion.div>
       </motion.div>

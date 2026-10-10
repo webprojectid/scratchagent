@@ -1,4 +1,5 @@
 "use client";
+import { uiText as ui, useUiLanguage } from "@/lib/ui-text";
 
 import { useState, useSyncExternalStore } from "react";
 import { accountBadges, type AccountMembership } from "@/lib/account-membership";
@@ -26,6 +27,7 @@ function readBadgeMotion(): "system" | "animated" | "reduced" {
 export function AccountBadges({ account, reducedMotion = false, compact = false }: {
   account: AccountMembership; reducedMotion?: boolean; compact?: boolean;
 }) {
+  useUiLanguage();
   const motion = useSyncExternalStore(subscribeMotion, readBadgeMotion, () => "system" as const);
   const [motionKey, setMotionKey] = useState(0);
   const replayMotion = () => {
@@ -36,7 +38,7 @@ export function AccountBadges({ account, reducedMotion = false, compact = false 
     <span
       className={`${s.badges} ${compact ? s.compact : ""}`}
       data-motion={reducedMotion ? "reduced" : motion}
-      aria-label="Role dan paket akun"
+      aria-label={ui("Role dan paket akun")}
       onPointerEnter={replayMotion}
       onPointerDown={replayMotion}
     >
@@ -45,7 +47,7 @@ export function AccountBadges({ account, reducedMotion = false, compact = false 
           key={kind}
           className={`${s.badge} ${s[kind]}`}
           data-account-badge={kind}
-          title={kind === "admin" ? "Role administrator; terpisah dari paket langganan" : kind === "pro" ? "Langganan Scratch Pro aktif" : kind === "free" ? "Paket Scratch Free" : "Status paket belum terverifikasi"}
+          title={kind === "admin" ? "Role administrator; terpisah dari paket langganan" : kind === "pro" ? "Langganan Scratch Pro aktif" : kind === "free" ? "Paket Scratch Free" : ui("Status paket belum terverifikasi")}
         >
           {kind !== "pending" && (
             <span className={s.iconTile} aria-hidden="true">
@@ -68,7 +70,7 @@ export function AccountBadges({ account, reducedMotion = false, compact = false 
               </svg>
             </span>
           )}
-          <span className={s.label}>{kind === "pending" ? "Belum terverifikasi" : kind.toUpperCase()}</span>
+          <span className={s.label}>{kind === "pending" ? ui("Belum terverifikasi") : kind.toUpperCase()}</span>
           {kind === "pro" && <span className={s.signalDot} aria-hidden="true" />}
         </span>
       ))}
