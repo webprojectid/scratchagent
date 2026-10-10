@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import { User, Settings, LogOut, ShieldCheck } from "lucide-react";
+import { AccountBadges } from "@/components/account-badges";
+import { User, Settings, LogOut, ShieldCheck, FolderOpen, CreditCard, Terminal } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { getCurrentUser, refreshCurrentUser, supabaseConfigured, type CurrentUser } from "@/lib/current-user";
 
@@ -15,6 +16,7 @@ export function UserNav() {
   useEffect(() => {
     let active = true;
     const sync = () => {
+      refreshCurrentUser();
       getCurrentUser().then((u) => {
         if (active) setUser(u);
       });
@@ -66,7 +68,7 @@ export function UserNav() {
     .join("")
     .toUpperCase();
 
-  const isAdmin = user.role === "admin" || user.email === "teguhends@gmail.com" || user.email?.startsWith("admin");
+  const isAdmin = user.role === "admin";
 
   return (
     <DropdownMenu.Root>
@@ -93,6 +95,7 @@ export function UserNav() {
         >
           <div className="border-b border-white/[.08] px-2.5 py-2">
             <p className="truncate text-[12.5px] font-semibold text-white">{user.name}</p>
+            <div className="my-2"><AccountBadges account={user}/></div>
             <p className="truncate font-mono text-[10.5px] text-white/40">{user.email}</p>
           </div>
 
@@ -103,19 +106,26 @@ export function UserNav() {
                 className="flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-[12.5px] text-white/80 outline-none transition hover:bg-white/[.07] hover:text-[#74FA6A]"
               >
                 <User size={14} className="text-white/40" />
-                <span>Profile</span>
+                <span>Profil</span>
               </Link>
             </DropdownMenu.Item>
 
             <DropdownMenu.Item asChild>
               <Link
-                href="/settings"
+                href="/profile?tab=preferences"
                 className="flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-[12.5px] text-white/80 outline-none transition hover:bg-white/[.07] hover:text-[#74FA6A]"
               >
                 <Settings size={14} className="text-white/40" />
-                <span>Setting</span>
+                <span>Pengaturan</span>
               </Link>
             </DropdownMenu.Item>
+
+            {[
+              { label: "Proyek", tab: "plans", icon: FolderOpen },
+              { label: "Billing & Pemakaian", tab: "billing", icon: CreditCard },
+              { label: "Keamanan", tab: "security", icon: ShieldCheck },
+              { label: "CLI & API", tab: "tokens", icon: Terminal },
+            ].map(({ label, tab, icon: Icon }) => <DropdownMenu.Item key={tab} asChild><Link href={`/profile?tab=${tab}`} className="flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-[12.5px] text-white/80 outline-none transition data-[highlighted]:bg-white/[.07] data-[highlighted]:text-[#74FA6A]"><Icon size={14} className="text-white/40"/><span>{label}</span></Link></DropdownMenu.Item>)}
 
             {isAdmin && (
               <DropdownMenu.Item asChild>
@@ -124,7 +134,7 @@ export function UserNav() {
                   className="flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-[12.5px] text-white/80 outline-none transition hover:bg-white/[.07] hover:text-[#74FA6A]"
                 >
                   <ShieldCheck size={14} className="text-[#74FA6A]" />
-                  <span>Developer Setting</span>
+                  <span>Kelola pengguna</span>
                 </Link>
               </DropdownMenu.Item>
             )}
@@ -137,7 +147,7 @@ export function UserNav() {
             className="flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-[12.5px] text-red-400 outline-none transition hover:bg-red-500/10 focus:bg-red-500/10"
           >
             <LogOut size={14} />
-            <span>Logout</span>
+            <span>Keluar</span>
           </DropdownMenu.Item>
         </DropdownMenu.Content>
       </DropdownMenu.Portal>

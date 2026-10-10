@@ -1,0 +1,173 @@
+.badges {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+  max-width: 100%;
+  font-family: var(--font-geist-sans), sans-serif;
+}
+
+.badges .badge {
+  --badge-accent: #a8bac4;
+  --tile-edge: #526069;
+  --tile-fill: #202b30;
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  min-height: 30px;
+  border: 1px solid #3a4347;
+  border-radius: 5px;
+  background: #151b1e;
+  color: #edf2f5;
+  font-size: .6875rem;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: .07em;
+  white-space: nowrap;
+}
+
+.badge::after {
+  content: "";
+  position: absolute;
+  inset: auto -1px -1px;
+  height: 2px;
+  border-radius: 0 0 5px 5px;
+  background: var(--badge-accent);
+  pointer-events: none;
+}
+
+.badges .iconTile {
+  position: relative;
+  display: grid;
+  place-items: center;
+  align-self: stretch;
+  flex: none;
+  width: 30px;
+  min-height: 28px;
+  margin: -1px 0 -1px -1px;
+  padding-bottom: 1px;
+  border: 1px solid var(--tile-edge);
+  border-radius: 5px;
+  background: var(--tile-fill);
+  color: var(--badge-accent);
+}
+
+.badges .icon {
+  display: block;
+  width: 17px;
+  height: 17px;
+  overflow: visible;
+}
+
+.badges .label {
+  padding: 5px 10px 6px;
+  color: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+}
+
+.badges .pro {
+  --badge-accent: #b6f58c;
+  --tile-edge: #638d43;
+  --tile-fill: #202c1c;
+}
+
+.badges .admin {
+  --badge-accent: #efc36b;
+  --tile-edge: #95703a;
+  --tile-fill: #2c2419;
+}
+
+.badges .signalDot {
+  display: block;
+  flex: none;
+  width: 5px;
+  height: 5px;
+  margin-right: 9px;
+  border-radius: 50%;
+  background: #67bafa;
+}
+
+.badges .pending {
+  color: #b8c6cc;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+.pending::after { display: none; }
+
+.badges.compact .badge {
+  min-height: 25px;
+  font-size: .625rem;
+  letter-spacing: .045em;
+}
+
+.compact .iconTile { width: 25px; min-height: 23px; }
+.compact .icon { width: 14px; height: 14px; }
+.compact .label { padding: 4px 7px 5px; }
+.compact .signalDot { width: 4px; height: 4px; margin-right: 7px; }
+
+.freeLine, .proBar, .adminCell {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation-duration: 1.7s;
+  animation-timing-function: cubic-bezier(.22, 1, .36, 1);
+  animation-iteration-count: 1;
+}
+
+.freeLine { animation-name: freeTrace; }
+.proBar { animation-name: proSignal; transform-origin: center bottom; }
+.proBar:nth-child(2) { animation-delay: .13s; }
+.adminCell { animation-name: adminSequence; }
+.adminCell:nth-child(2) { animation-delay: .1s; }
+.adminCell:nth-child(4) { animation-delay: .2s; }
+.adminCell:nth-child(3) { animation-delay: .3s; }
+
+/* Explicit badge opt-in overrides the account shell's system motion reset. */
+.badges[data-motion="animated"] :is(.freeLine, .proBar, .adminCell) {
+  animation-duration: 1.7s !important;
+}
+
+@keyframes freeTrace {
+  0%, 100% { transform: scaleX(1); opacity: 1; }
+  18% { transform: scaleX(.48); opacity: .65; }
+  48% { transform: scaleX(1.08); opacity: 1; }
+  72% { transform: scaleX(1); }
+}
+
+@keyframes proSignal {
+  0%, 100% { transform: scaleY(1); opacity: 1; }
+  18% { transform: scaleY(.38); opacity: .7; }
+  48% { transform: scaleY(1.06); opacity: 1; }
+  72% { transform: scaleY(1); }
+}
+
+@keyframes adminSequence {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  20% { transform: scale(.66); opacity: .65; }
+  50% { transform: scale(1.08); opacity: 1; }
+  76% { transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .badges:not([data-motion="animated"]) :is(.freeLine, .proBar, .adminCell) {
+    animation: none;
+  }
+}
+
+.badges[data-motion="reduced"] :is(.freeLine, .proBar, .adminCell) {
+  animation: none;
+}
+
+@media (forced-colors: active) {
+  .badges .badge, .badges .iconTile {
+    color: CanvasText;
+    background: Canvas;
+    border-color: CanvasText;
+  }
+  .badge::after, .badges .signalDot { background: CanvasText; }
+}

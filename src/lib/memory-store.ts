@@ -140,7 +140,16 @@ function clone<T>(v: T): T {
 }
 
 export function memorySavePlan(plan: Plan, userId: string): void {
-  planStore.set(plan.id, { ...clone(plan), userId });
+  const existing = planStore.get(plan.id);
+  planStore.set(plan.id, { ...clone(plan), userId, accountNotes: existing?.accountNotes ?? plan.accountNotes, accountNotesUpdatedAt: existing?.accountNotesUpdatedAt ?? plan.accountNotesUpdatedAt });
+}
+
+export function memoryUpdatePlanNotes(planId: string, notes: string, updatedAt: string): boolean {
+  const plan = planStore.get(planId);
+  if (!plan) return false;
+  plan.accountNotes = notes;
+  plan.accountNotesUpdatedAt = updatedAt;
+  return true;
 }
 
 export function memoryGetPlan(planId: string): Plan | undefined {

@@ -1,11 +1,16 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { effectiveAccountTier } from "@/lib/account-membership";
 
 export interface CurrentUser {
   email: string;
   name: string;
   provider?: string;
   role?: string;
+  tier?: "free" | "pro";
+  proActive?: boolean;
+  createdAt?: string | null;
+  proExpiresAt?: string | null;
 }
 
 /** Supabase dianggap aktif kalau env-nya terisi (bukan placeholder). */
@@ -13,16 +18,6 @@ export function supabaseConfigured(): boolean {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   return !!url && !!anonKey && url.startsWith("https://") && !anonKey.startsWith("ISI_");
-}
-
-function isAdmin(email: string | null | undefined): boolean {
-  if (!email) return false;
-  const lower = email.toLowerCase();
-  // Hanya allowlist eksplisit — konsisten dengan isAdminEmail() di lib/billing.
-  // (Pola "admin@*" dihapus: keputusan admin final tetap di server; ini cuma
-  // untuk tampilan UI.)
-  const list = ["teguhends@gmail.com", "teguends@gmail.com"];
-  return list.includes(lower);
 }
 
 import { formatDisplayName } from "@/lib/user-utils";
@@ -38,7 +33,7 @@ function readLegacyUser(): CurrentUser | null {
         email: u.email,
         name: formatDisplayName(u.email, u.name),
         provider: u.provider,
-        role: u.role || (isAdmin(u.email) ? "admin" : "user"),
+        role: "user",
       };
     }
   } catch {
@@ -49,7 +44,7 @@ function readLegacyUser(): CurrentUser | null {
 
 let cached: Promise<CurrentUser | null> | null = null;
 
-async function resolveUser(): Promise<CurrentUser | null> {
+async function resolveIdentity(): Promise<CurrentUser | null> {
   // 1) Sumber utama: session Supabase (cookie).
   if (supabaseConfigured()) {
     try {
@@ -63,7 +58,7 @@ async function resolveUser(): Promise<CurrentUser | null> {
           email: su.email,
           name: formatDisplayName(su.email, rawName),
           provider: ((su.app_metadata?.provider as string) ?? "oauth"),
-          role: (meta.role as string) || (isAdmin(su.email) ? "admin" : "user"),
+          role: "user",
         };
       }
     } catch {
@@ -72,6 +67,19 @@ async function resolveUser(): Promise<CurrentUser | null> {
   }
   // 2) Fallback: localStorage (mode dev polos / legacy).
   return readLegacyUser();
+}
+
+async function resolveUser(): Promise<CurrentUser | null> {
+  const identity = await resolveIdentity();
+  if (!identity) return null;
+  try {
+    const response = await fetch(`/api/me?userId=${encodeURIComponent(identity.email)}`, { cache: "no-store" });
+    if (response.ok) {
+      const account = await response.json();
+      return { ...identity, name: account.name || identity.name, role: account.role === "admin" ? "admin" : "user", tier: effectiveAccountTier(account), proActive: typeof account.proActive === "boolean" ? account.proActive : undefined, createdAt: account.createdAt ?? null, proExpiresAt: account.proExpiresAt ?? null };
+    }
+  } catch { /* Keep the signed-in identity when the account service is unavailable. */ }
+  return identity;
 }
 
 /**
