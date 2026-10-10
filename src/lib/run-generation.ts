@@ -1,3 +1,5 @@
+import { recordAccountActivity } from "./account-store";
+import type { HandoffSettings } from "./account-preferences";
 import { after } from "next/server";
 import { generatePlanStructure } from "./generate";
 import { savePlan, deletePlan, updatePlanTitle } from "./storage";
@@ -6,6 +8,7 @@ import { logSecurity } from "./security";
 
 export interface GenerationJob {
   planId: string;
+  handoff?: HandoffSettings;
   brief: string;
   techPrefs: {
     mode: "auto" | "custom";
@@ -32,7 +35,7 @@ export interface GenerationJob {
 export function scheduleGeneration(job: GenerationJob, tryNo = 1) {
   after(async () => {
     try {
-      const result = await generatePlanStructure(job.brief, job.techPrefs, job.answers, job.tier);
+      const result = await generatePlanStructure(job.brief, job.techPrefs, job.answers, job.tier, job.handoff);
       await savePlan(
         {
           id: job.planId,
@@ -62,9 +65,11 @@ export function scheduleGeneration(job: GenerationJob, tryNo = 1) {
       } else {
         await recordUsage(job.userId, job.tier, job.planId, result.usage);
       }
+      await recordAccountActivity(job.userId, "generation_complete", "Struktur PRD selesai disusun", job.planId, `generation:${job.planId}`);
       await logSecurity("generate", { planId: job.planId, tier: job.tier, features: result.features.length, tokens: result.usage.tokensIn + result.usage.tokensOut, tryNo }, { ip: job.ip, userId: job.userId });
     } catch (error) {
       await refundQuota(job.receipt);
+      await recordAccountActivity(job.userId, "generation_failed", "Generate PRD gagal; kuota dikembalikan", null);
       await deletePlan(job.planId);
       console.error(`[generate][bg try${tryNo}]`, error);
     }

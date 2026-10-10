@@ -71,6 +71,7 @@
       "when": 1788145960000,
       "tag": "0009_rls_security",
       "breakpoints": true
-    }
+    },
+    { "idx": 10, "version": "7", "when": 1791676800000, "tag": "0010_account_workspace", "breakpoints": true }
   ]
 }

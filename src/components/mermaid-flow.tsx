@@ -1,4 +1,5 @@
 "use client";
+import { uiText as ui, useUiLanguage } from "@/lib/ui-text";
 
 import { useMemo } from "react";
 import dagre from "dagre";
@@ -46,6 +47,7 @@ const shapeStyles: Record<Shape, { box: string; badge: string; glyph: string; ma
 };
 
 function FieldRow({ raw }: { raw: string }) {
+  useUiLanguage();
   const parts = raw.trim().split(/\s+/).filter(Boolean);
   if (parts.length < 2) {
     return <div className="truncate font-mono text-[9px] leading-4 text-slate-400">{raw}</div>;
@@ -74,6 +76,7 @@ function FieldRow({ raw }: { raw: string }) {
 }
 
 function FlowNode({ data }: { data: FlowNodeData }) {
+  useUiLanguage();
   const shape = data.shape ?? "rect";
   const s = shapeStyles[shape];
   const fields = data.fields ?? [];
@@ -111,7 +114,7 @@ function FlowNode({ data }: { data: FlowNodeData }) {
             <FieldRow key={i} raw={f} />
           ))}
           {fields.length > MAX_FIELDS && (
-            <div className="pt-0.5 text-[8px] text-slate-600">+{fields.length - MAX_FIELDS} kolom lain</div>
+            <div className="pt-0.5 text-[8px] text-slate-600">+{fields.length - MAX_FIELDS}{ui("kolom lain")}</div>
           )}
         </div>
       )}
@@ -311,6 +314,7 @@ export function mermaidToFlow(code: string): ParsedGraph | null {
 /* ---------------- komponen utama ---------------- */
 
 export function MermaidFlow({ code }: { code: string }) {
+  useUiLanguage();
   const graph = useMemo(() => mermaidToFlow(code), [code]);
   if (!graph) return null;
 

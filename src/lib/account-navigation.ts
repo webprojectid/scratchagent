@@ -1,5 +1,5 @@
-export const profileTabs = ["profile", "plans", "billing"] as const;
-export const settingsTabs = ["preferences", "security", "tokens", "llm"] as const;
+export const profileTabs = ["profile", "plans", "billing", "activity", "library"] as const;
+export const settingsTabs = ["preferences", "language", "handoff", "security", "tokens", "notifications", "privacy", "llm"] as const;
 export type AccountTab = typeof profileTabs[number] | typeof settingsTabs[number];
 export type AccountArea = "profile" | "settings";
 export type AccountSearchParams = Record<string, string | string[] | undefined>;

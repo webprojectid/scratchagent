@@ -2,6 +2,7 @@ import { createHash, randomBytes } from "crypto";
 import { eq, and, isNull } from "drizzle-orm";
 import { getDb } from "@/db";
 import { tokens } from "@/db/schema";
+import { getTokenPolicy, saveTokenPolicy, touchToken, type TokenPolicy } from "./account-store";
 import {
   memoryCreateToken,
   memoryFindTokenByHash,
@@ -22,15 +23,17 @@ function isMemoryMode() {
   return !process.env.DATABASE_URL;
 }
 
-export async function createToken(userId: string, label: string): Promise<{ token: string; hash: string }> {
+export async function createToken(userId: string, label: string, policy?: TokenPolicy): Promise<{ token: string; hash: string }> {
   const token = generateToken();
   const hash = hashToken(token);
   if (isMemoryMode()) {
     memoryCreateToken(userId, hash, label);
+    if (policy) await saveTokenPolicy(hash, policy);
     return { token, hash };
   }
   const db = getDb();
   await db.insert(tokens).values({ userId, tokenHash: hash, label } as any);
+  if (policy) await saveTokenPolicy(hash, policy);
   return { token, hash };
 }
 
@@ -54,16 +57,14 @@ export async function revokeToken(hash: string): Promise<boolean> {
   return (result.rowCount ?? 0) > 0;
 }
 
-export async function verifyToken(token: string): Promise<{ userId: string } | null> {
+export async function verifyToken(token: string): Promise<{ userId: string; policy: TokenPolicy } | null> {
   const hash = hashToken(token);
-  if (isMemoryMode()) {
-    const t = memoryFindTokenByHash(hash);
-    return t ? { userId: t.userId } : null;
-  }
-  const db = getDb();
-  const rows = await db.select().from(tokens).where(and(eq(tokens.tokenHash, hash), isNull(tokens.revokedAt)));
-  if (!rows[0]) return null;
-  return { userId: rows[0].userId };
+  const t = await findTokenByHash(hash);
+  if (!t) return null;
+  const policy = await getTokenPolicy(hash);
+  if (policy.expiresAt && Date.parse(policy.expiresAt) <= Date.now()) return null;
+  await touchToken(hash);
+  return { userId: t.userId, policy };
 }
 
 export { memoryGetOrCreateUser };

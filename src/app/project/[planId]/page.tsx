@@ -1,6 +1,7 @@
 import { requirePlanForPage, getRequestUser } from "@/lib/api-auth";
 import { getAccountState, isAdminEmail } from "@/lib/billing";
 import { PlanClient } from "@/components/plan-client";
+import { ProjectVisited } from "@/components/project-visited";
 
 export default async function PlanPage({ params }: { params: Promise<{ planId: string }> }) {
   const { planId } = await params;
@@ -9,5 +10,5 @@ export default async function PlanPage({ params }: { params: Promise<{ planId: s
   const user = await getRequestUser();
   const account = user ? await getAccountState(user.userId) : undefined;
   const isSuperUser = user?.email ? isAdminEmail(user.email) : false;
-  return <PlanClient plan={plan} tier={isSuperUser ? "pro" : (account?.tier ?? "free")} />;
+  return <><ProjectVisited planId={planId}/><PlanClient plan={plan} tier={isSuperUser ? "pro" : (account?.tier ?? "free")} /></>;
 }

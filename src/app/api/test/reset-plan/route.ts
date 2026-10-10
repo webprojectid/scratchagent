@@ -1,3 +1,4 @@
+import { apiText } from "@/lib/ui-messages";
 import { NextResponse } from "next/server";
 import { devOnlyGate } from "@/lib/api-auth";
 import { allTasks, getPlan, resetFeatureStatuses, updatePlanStatus, updateTask } from "@/lib/storage";
@@ -8,10 +9,10 @@ export async function POST(request: Request) {
   if (blocked) return blocked;
 
   const { planId } = await request.json().catch(() => ({} as { planId?: string }));
-  if (!planId) return NextResponse.json({ error: "planId wajib" }, { status: 400 });
+  if (!planId) return NextResponse.json({ error: apiText("planId wajib") }, { status: 400 });
 
   const plan = await getPlan(planId);
-  if (!plan) return NextResponse.json({ error: "Plan tidak ditemukan" }, { status: 404 });
+  if (!plan) return NextResponse.json({ error: apiText("Plan tidak ditemukan") }, { status: 404 });
 
   const tasks = allTasks(plan);
   for (const t of tasks) {

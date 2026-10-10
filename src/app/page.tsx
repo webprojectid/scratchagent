@@ -1,4 +1,5 @@
 "use client";
+import { uiText as ui, useUiLanguage } from "@/lib/ui-text";
 
 import Link from "next/link";
 import { animate, AnimatePresence, motion, useMotionValue, useSpring, useScroll } from "motion/react";
@@ -20,6 +21,7 @@ import { LandingWorkspace } from "@/components/landing-workspace";
 import featureArt from "./feature-art.module.css";
 
 function Magnetic({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  useUiLanguage();
   const ref = useRef<HTMLDivElement>(null);
   const x = useMotionValue(0);
   const y = useMotionValue(0);
@@ -29,10 +31,12 @@ function Magnetic({ children, className = "" }: { children: React.ReactNode; cla
 }
 
 function Eyebrow({ children }: { children: string }) {
+  useUiLanguage();
   return <p className="font-mono text-[10px] uppercase tracking-[.2em] text-[#9CA9B8]">{children}</p>;
 }
 
 function DoubleBezel({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  useUiLanguage();
   return <div className={`rounded-[24px] border border-[#1E252F] bg-[#0F1317] p-1.5 shadow-[0_18px_60px_#000A] ${className}`}><div className="rounded-[calc(24px-6px)] border border-[#1E252F] bg-[#141A22] shadow-[inset_0_1px_0_rgba(255,255,255,.06)]">{children}</div></div>;
 }
 
@@ -43,6 +47,7 @@ const stackRows = [
 ];
 
 function StackMarquee() {
+  useUiLanguage();
   const repeated = (row: typeof stackRows[number]) => [...row, ...row, ...row];
 
   return <section className="relative top-12 mx-auto mt-24 w-full overflow-hidden py-5 md:top-20 md:mt-32 md:py-8" aria-label="Scratch Agent stack">
@@ -54,6 +59,7 @@ function StackMarquee() {
 }
 
 function Navbar() {
+  useUiLanguage();
   const lang = useLang();
   const { scrollY } = useScroll();
   const [scrolled, setScrolled] = useState(false);
@@ -84,12 +90,12 @@ function Navbar() {
         <div className="hidden items-center gap-6 md:flex">
           <LanguageToggle />
           <UserNav />
-          <Link href={loggedIn ? "/new" : "/login"} className="grid size-8 place-items-center rounded-full bg-[#74FA6A] text-black transition hover:scale-105 hover:bg-[#A8FF9B]" aria-label="Mulai sekarang"><ArrowUpRight size={16} /></Link>
+          <Link href={loggedIn ? "/new" : "/login"} className="grid size-8 place-items-center rounded-full bg-[#74FA6A] text-black transition hover:scale-105 hover:bg-[#A8FF9B]" aria-label={ui("Mulai sekarang")}><ArrowUpRight size={16} /></Link>
         </div>
         <button className="grid size-8 place-items-center text-white md:hidden" onClick={() => setMobileNav((v) => !v)} aria-label="Navigasi"><span className="relative block h-3.5 w-5"><span className={`absolute left-0 top-0 block h-px w-full bg-white transition-all duration-300 ${mobileNav ? "translate-y-[7px] rotate-45" : ""}`} /><span className={`absolute left-0 top-[7px] block h-px w-full bg-white transition-opacity duration-200 ${mobileNav ? "opacity-0" : "opacity-100"}`} /><span className={`absolute left-0 top-[14px] block h-px w-full bg-white transition-all duration-300 ${mobileNav ? "translate-y-[-7px] -rotate-45" : ""}`} /></span></button>
       </motion.nav>
       <motion.div className="fixed inset-0 z-[60] flex flex-col bg-[#0A0A0A] md:hidden" initial={false} animate={mobileNav ? { opacity: 1, pointerEvents: "auto" } : { opacity: 0, pointerEvents: "none" }} transition={{ duration: .35, ease: [0.16, 1, 0.3, 1] }}>
-        <div className="flex h-[64px] items-center justify-between px-5"><span className="flex items-center gap-2 text-[18px] font-semibold tracking-[-.04em] text-[#E8F0E8]"><span className="size-6 skew-x-[-28deg] bg-[#74FA6A]" />Scratch Agent</span><div className="flex items-center gap-3"><LanguageToggle /><button className="grid size-8 place-items-center text-white" onClick={() => setMobileNav(false)} aria-label="Tutup"><X size={18} /></button></div></div>
+        <div className="flex h-[64px] items-center justify-between px-5"><span className="flex items-center gap-2 text-[18px] font-semibold tracking-[-.04em] text-[#E8F0E8]"><span className="size-6 skew-x-[-28deg] bg-[#74FA6A]" />Scratch Agent</span><div className="flex items-center gap-3"><LanguageToggle /><button className="grid size-8 place-items-center text-white" onClick={() => setMobileNav(false)} aria-label={ui("Tutup")}><X size={18} /></button></div></div>
         <div className="flex flex-1 flex-col justify-between px-5 py-12"><div className="space-y-1">{[{ href: "/pricing", label: t("nav", "pricing", lang) }, { href: "/solutions", label: t("nav", "solutions", lang) }, { href: "/docs", label: t("nav", "docs", lang) }, { href: "https://scratchagent.store/", label: "Api Key", external: true }, { href: "/project/demo", label: t("cta", "examplePlan", lang) }].map((link, i) => (<motion.a key={link.href} href={link.href} target={link.external ? "_blank" : undefined} rel={link.external ? "noopener noreferrer" : undefined} onClick={() => setMobileNav(false)} className={`block py-4 font-mono text-[14px] tracking-[0.08em] transition-colors hover:text-[#74FA6A] ${link.external ? "text-[#74FA6A]" : "text-white/70"}`} initial={{ opacity: 0, y: 16 }} animate={mobileNav ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }} transition={{ delay: 0.08 + i * 0.05, duration: .4, ease: [0.16, 1, 0.3, 1] }}>{link.label}</motion.a>))}</div><motion.div initial={{ opacity: 0, y: 16 }} animate={mobileNav ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }} transition={{ delay: 0.32, duration: .4, ease: [0.16, 1, 0.3, 1] }}><Link href={loggedIn ? "/new" : "/login"} onClick={() => setMobileNav(false)} className="flex w-full items-center justify-center rounded-full border border-[#74FA6A] px-6 py-3.5 font-mono text-[13px] tracking-[0.06em] text-[#74FA6A] transition-colors hover:bg-[#74FA6A] hover:text-black">{t("cta", "startFree", lang)}</Link><p className="mt-6 font-mono text-[11px] tracking-[.08em] text-white/30">{loggedIn ? <Link href="/profile" className="hover:text-[#74FA6A]">{t("nav", "profile", lang)}</Link> : t("cta", "login", lang)}</p></motion.div></div>
       </motion.div>
     </>
@@ -97,6 +103,7 @@ function Navbar() {
 }
 
 export default function Home() {
+  useUiLanguage();
   const lang = useLang();
   const hc = homeCopy(lang);
   const [loggedIn, setLoggedIn] = useState(false);
@@ -140,25 +147,25 @@ export default function Home() {
 
       <section id="showcase" className="mx-auto max-w-[1360px] px-5 pb-14 md:px-10 md:pb-20">
         <div className="flex flex-wrap items-end justify-between gap-6">
-          <div><Eyebrow>case studies</Eyebrow><h2 className="mt-5 max-w-[20ch] text-balance text-[clamp(2.35rem,4.2vw,3.75rem)] font-medium leading-[.98] tracking-[-.055em] text-[#F0F3F5]">Dari brief jadi plan siap eksekusi.</h2></div>
-          <p className="max-w-[42ch] text-sm leading-6 text-[#8C97A5]">Project simulasi nyata: dihasilkan otomatis dari brief singkat, lalu dijalankan task demi task oleh agent, dari aplikasi mobile sampai website.</p>
+          <div><Eyebrow>case studies</Eyebrow><h2 className="mt-5 max-w-[20ch] text-balance text-[clamp(2.35rem,4.2vw,3.75rem)] font-medium leading-[.98] tracking-[-.055em] text-[#F0F3F5]">{ui("Dari brief jadi plan siap eksekusi.")}</h2></div>
+          <p className="max-w-[42ch] text-sm leading-6 text-[#8C97A5]">{ui("Project simulasi nyata: dihasilkan otomatis dari brief singkat, lalu dijalankan task demi task oleh agent, dari aplikasi mobile sampai website.")}</p>
         </div>
         <div className="mt-12 grid gap-10 md:grid-cols-4">
           <div className="flex flex-col items-center gap-4">
             <div className="h-[480px] w-full max-w-[240px]"><PhoneFrame variant="android"><FlappyPreview /></PhoneFrame></div>
-            <div className="text-center"><p className="text-[15px] font-semibold text-[#E8F0E8]">Flappy Bird</p><p className="mt-1 flex items-center justify-center"><img src="https://cdn.simpleicons.org/android/3DDC84" alt="Android" className="h-4 w-4" /></p></div>
+            <div className="text-center"><p className="text-[15px] font-semibold text-[#E8F0E8]">Flappy Bird</p><p className="mt-1 flex items-center justify-center"><img src="https://cdn.simpleicons.org/android/3DDC84" alt={ui("Android")} className="h-4 w-4" /></p></div>
           </div>
           <div className="flex flex-col items-center gap-4">
             <div className="h-[480px] w-full max-w-[240px]"><PhoneFrame variant="android"><KriptoPreview /></PhoneFrame></div>
-            <div className="text-center"><p className="text-[15px] font-semibold text-[#E8F0E8]">Kripto Wallet</p><p className="mt-1 flex items-center justify-center"><img src="https://cdn.simpleicons.org/android/3DDC84" alt="Android" className="h-4 w-4" /></p></div>
+            <div className="text-center"><p className="text-[15px] font-semibold text-[#E8F0E8]">Kripto Wallet</p><p className="mt-1 flex items-center justify-center"><img src="https://cdn.simpleicons.org/android/3DDC84" alt={ui("Android")} className="h-4 w-4" /></p></div>
           </div>
           <div className="flex flex-col items-center gap-4">
             <div className="h-[480px] w-full max-w-[240px]"><PhoneFrame variant="ios"><IosFitnessPreview /></PhoneFrame></div>
-            <div className="text-center"><p className="text-[15px] font-semibold text-[#E8F0E8]">Habit Tracker</p><p className="mt-1 flex items-center justify-center"><img src="https://cdn.simpleicons.org/apple/E8F0E8" alt="iOS" className="h-4 w-4" /></p></div>
+            <div className="text-center"><p className="text-[15px] font-semibold text-[#E8F0E8]">Habit Tracker</p><p className="mt-1 flex items-center justify-center"><img src="https://cdn.simpleicons.org/apple/E8F0E8" alt={ui("iOS")} className="h-4 w-4" /></p></div>
           </div>
           <div className="flex flex-col items-center gap-4">
             <div className="h-[480px] w-full max-w-[240px] aspect-[9/19.5]"><IPhone17ShopDemo /></div>
-            <div className="text-center"><p className="text-[15px] font-semibold text-[#E8F0E8]">Sneakers Shop</p><p className="mt-1 flex items-center justify-center"><img src="https://cdn.simpleicons.org/apple/E8F0E8" alt="iOS" className="h-4 w-4" /></p></div>
+            <div className="text-center"><p className="text-[15px] font-semibold text-[#E8F0E8]">Sneakers Shop</p><p className="mt-1 flex items-center justify-center"><img src="https://cdn.simpleicons.org/apple/E8F0E8" alt={ui("iOS")} className="h-4 w-4" /></p></div>
           </div>
         </div>
         {/* Single CTA button mengarah ke halaman carousel web samples */}
@@ -171,7 +178,7 @@ export default function Home() {
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#74FA6A] opacity-60" />
               <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#74FA6A]" />
             </span>
-            {lang === "en" ? "View web samples" : "Lihat web samples"}
+            {lang === "en" ? "View web samples" : ui("Lihat web samples")}
             <ArrowUpRight size={14} className="transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 text-white/40 group-hover:text-white/70" />
           </Link>
         </div>
@@ -189,7 +196,7 @@ export default function Home() {
           <div className="flex items-stretch gap-8 md:gap-10">
             <div className="flex flex-col justify-end bp-stat-v pl-8 md:pl-10">
               <p className="text-[28px] font-semibold leading-none tracking-[-.03em] text-[#0F1A12] md:text-[32px]"><span className="text-[#1F7A3D]">3</span><span className="text-[#1F7A3D]">/24h</span></p>
-              <p className="mt-2 max-w-[18ch] font-mono text-[10.5px] leading-4 text-[#33473A]">{lang === "en" ? "Free plan generates per day" : "Generate paket Free per hari"}</p>
+              <p className="mt-2 max-w-[18ch] font-mono text-[10.5px] leading-4 text-[#33473A]">{lang === "en" ? "Free plan generates per day" : ui("Generate paket Free per hari")}</p>
             </div>
             <div className="flex flex-col justify-end bp-stat-v pl-8 md:pl-10">
               <p className="text-[28px] font-semibold leading-none tracking-[-.03em] text-[#0F1A12] md:text-[32px]"><span className="text-[#1F7A3D]">18</span></p>
@@ -265,6 +272,7 @@ export default function Home() {
 }
 
 function TypingText({ text, speed = 32, loop = true, className = "" }: { text: string; speed?: number; loop?: boolean; className?: string }) {
+  useUiLanguage();
   const [out, setOut] = useState("");
   const [idx, setIdx] = useState(0);
   useEffect(() => {
@@ -281,6 +289,7 @@ function TypingText({ text, speed = 32, loop = true, className = "" }: { text: s
 }
 
 function AnimatedTerminalPRD() {
+  useUiLanguage();
   const hc = homeCopy(useLang());
   return (
     <div className="space-y-1">
@@ -295,6 +304,7 @@ function AnimatedTerminalPRD() {
 }
 
 function AnimatedTerminalRuntime() {
+  useUiLanguage();
   const hc = homeCopy(useLang());
   const items = [{ label: hc.termReadingPrd }, { label: hc.termBuildingGraph }, { label: hc.termWaitingAgent }];
   const [step, setStep] = useState(0);
@@ -323,6 +333,7 @@ function AnimatedTerminalRuntime() {
 }
 
 function AnimatedTerminalQueue() {
+  useUiLanguage();
   const rows = [{ k: "frontend", v: 42 }, { k: "backend", v: 72 }, { k: "qa", v: 58 }];
   return (
     <>
@@ -342,6 +353,7 @@ function AnimatedTerminalQueue() {
 }
 
 function PromptShowcase() {
+  useUiLanguage();
   const hc = homeCopy(useLang());
   const steps = hc.promptSteps;
   const [active, setActive] = useState(0);
@@ -378,6 +390,7 @@ function PromptShowcase() {
 }
 
 function FeatureArtwork({ variant }: { variant: 0 | 1 | 2 | 3 }) {
+  useUiLanguage();
   return <div className={`${featureArt.art} ${featureArt[`variant${variant}`]}`} aria-hidden="true">
     <i className={featureArt.shapeA} /><i className={featureArt.shapeB} /><i className={featureArt.shapeC} />
     <b className={featureArt.nodeA} /><b className={featureArt.nodeB} /><b className={featureArt.nodeC} />
@@ -385,6 +398,7 @@ function FeatureArtwork({ variant }: { variant: 0 | 1 | 2 | 3 }) {
 }
 
 function FeatureCard({ artwork, label, title, copy, terminal }: { artwork: 0 | 1 | 2 | 3; label: string; title: string; copy: string; terminal: React.ReactNode }) {
+  useUiLanguage();
   return (
     <motion.article initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .2 }} transition={{ duration: .65, ease: [0.16, 1, 0.3, 1] }} className="group flex w-full flex-col overflow-hidden rounded-[16px] border border-white/15 bg-[#111413] transition-colors duration-300 hover:border-[#74FA6A]/45">
       <div className="relative flex min-h-[272px] items-center justify-center overflow-hidden border-b border-white/10 bg-[#A7D6A1] p-5">
@@ -403,6 +417,7 @@ function FeatureCard({ artwork, label, title, copy, terminal }: { artwork: 0 | 1
 
 // ===== RESTORED: preview device (Flappy Bird, iOS Fitness, Kripto Wallet) =====
 function PhoneFrame({ variant, children }: { variant: "android" | "ios"; children: React.ReactNode }) {
+  useUiLanguage();
   return (
     <div className="flex h-full w-full items-center justify-center">
       {variant === "ios" ? (
@@ -454,6 +469,7 @@ function PhoneFrame({ variant, children }: { variant: "android" | "ios"; childre
 // jadi homepage tetap ringan. Klik preview -> halaman sample masing-masing.
 // Chrome ditiru dari SafariFrame asli: traffic lights, URL pill, viewport gelap.
 function BrowserPreviewFrame({ url, children }: { url: string; children: React.ReactNode }) {
+  useUiLanguage();
   return (
     <div className="relative aspect-[16/11] h-full overflow-hidden rounded-xl border border-white/10 bg-[#16161C] shadow-[0_14px_34px_rgba(0,0,0,.5)] transition group-hover:border-white/20 group-hover:shadow-[0_18px_44px_rgba(0,0,0,.6)]">
       <div className="flex h-6 items-center gap-1.5 border-b border-white/[.06] bg-[#1F2023] px-2">
@@ -471,6 +487,7 @@ function BrowserPreviewFrame({ url, children }: { url: string; children: React.R
 }
 
 const GalaxyHeroPreview = memo(function GalaxyHeroPreview() {
+  useUiLanguage();
   return (
     <BrowserPreviewFrame url="scratchagent.app">
       {/* Nebula statis tiruan scene Spline (radial gradient, tanpa animasi berat) */}
@@ -488,6 +505,7 @@ const GalaxyHeroPreview = memo(function GalaxyHeroPreview() {
 });
 
 const VortexPreview = memo(function VortexPreview() {
+  useUiLanguage();
   return (
     <BrowserPreviewFrame url="immersiavr.app">
       {/* Vortex tiruan: ring konsentris ungu-cyan, CSS animasi ringan (rotate pelan) */}
@@ -504,6 +522,7 @@ const VortexPreview = memo(function VortexPreview() {
 });
 
 const SaasPreview = memo(function SaasPreview() {
+  useUiLanguage();
   return (
     <BrowserPreviewFrame url="template.app">
       {/* Glow lembut di belakang, tiruan glows.png */}
@@ -532,6 +551,7 @@ const SaasPreview = memo(function SaasPreview() {
 });
 
 const DashboardPreview = memo(function DashboardPreview() {
+  useUiLanguage();
   return (
     <BrowserPreviewFrame url="efferd.app/dashboard">
       {/* Sidebar mini */}
@@ -583,6 +603,7 @@ const DashboardPreview = memo(function DashboardPreview() {
 // transform langsung ke DOM (tanpa re-render React) => mulus 60fps, gak lemot.
 // Cuma mount saat hover; di-memo biar terisolasi.
 const FlappyPreview = memo(function FlappyPreview() {
+  useUiLanguage();
   const areaRef = useRef<HTMLDivElement>(null);
   const birdRef = useRef<HTMLDivElement>(null);
   const scoreRef = useRef<HTMLSpanElement>(null);
@@ -724,6 +745,7 @@ const AF = {
 
 // 3 activity ring konsentris (Move/Exercise/Stand), ngisi dari 0 tiap layar muncul.
 function AppleRings({ size = 58, delay = 0.3 }: { size?: number; delay?: number }) {
+  useUiLanguage();
   return (
     <div className="relative shrink-0" style={{ width: size, height: size }}>
       <svg viewBox="0 0 110 110" className="size-full -rotate-90">
@@ -740,6 +762,7 @@ function AppleRings({ size = 58, delay = 0.3 }: { size?: number; delay?: number 
 
 // Ikon workout sesuai jenis (hike/walk & cycle = lime, breathe = cyan).
 function WorkoutIcon({ kind }: { kind: "hike" | "cycle" | "breathe" }) {
+  useUiLanguage();
   if (kind === "cycle") return <Bike size={13} style={{ color: AF.ex }} />;
   if (kind === "breathe") return <Wind size={13} style={{ color: AF.stand }} />;
   return <Footprints size={13} style={{ color: AF.ex }} />;
@@ -747,6 +770,7 @@ function WorkoutIcon({ kind }: { kind: "hike" | "cycle" | "breathe" }) {
 
 // Satu baris item workout (ikon dalem lingkaran hitam + nama + value + tanggal).
 function WorkoutRow({ kind, name, val, date, delay = 0 }: { kind: "hike" | "cycle" | "breathe"; name: string; val: string; date: string; delay?: number }) {
+  useUiLanguage();
   const cyan = kind === "breathe";
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, ease: [0.2, 0.8, 0.2, 1], delay }} className="mx-3 mt-1.5 flex items-center gap-2 rounded-xl bg-[#1C1C1E] px-2.5 py-1.5">
@@ -761,6 +785,7 @@ function WorkoutRow({ kind, name, val, date, delay = 0 }: { kind: "hike" | "cycl
 }
 
 function AppleSummary() {
+  useUiLanguage();
   const stats = [
     { l: "Move", v: "209", g: "/500 CAL", c: AF.move },
     { l: "Exercise", v: "32", g: "/30 MIN", c: AF.ex },
@@ -803,6 +828,7 @@ function AppleSummary() {
 }
 
 function AppleHistory({ month, items, showFilter = false }: { month: string; items: { kind: "hike" | "cycle" | "breathe"; name: string; val: string; date: string }[]; showFilter?: boolean }) {
+  useUiLanguage();
   return (
     <div className="flex h-full flex-col">
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }} className="flex items-center gap-0.5 px-3 pt-1.5 text-[#A8FF00]">
@@ -812,7 +838,7 @@ function AppleHistory({ month, items, showFilter = false }: { month: string; ite
       <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.05 }} className="px-3 pt-0.5 text-[15px] font-bold tracking-tight text-white">History</motion.p>
       {showFilter && (
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }} className="mt-1 flex gap-1 px-3">
-          <span className="rounded-full bg-[#A8FF00] px-2 py-[2px] text-[6px] font-semibold text-black">All</span>
+          <span className="rounded-full bg-[#A8FF00] px-2 py-[2px] text-[6px] font-semibold text-black">{ui("All")}</span>
           <span className="rounded-full bg-[#2C2C2E] px-2 py-[2px] text-[6px] font-semibold text-[#A0A0A5]">Workouts</span>
           <span className="rounded-full bg-[#2C2C2E] px-2 py-[2px] text-[6px] font-semibold text-[#A0A0A5]">Mindfulness</span>
         </motion.div>
@@ -839,6 +865,7 @@ const APPLE_HIST_JUL = [
 
 // Status bar tipis (jam + sinyal + baterai), dampingi Dynamic Island dari PhoneFrame.
 function AppleStatusBar() {
+  useUiLanguage();
   return (
     <div className="flex items-center justify-between px-3.5 pt-2">
       <span className="text-[7.5px] font-semibold text-white">2:34</span>
@@ -852,6 +879,7 @@ function AppleStatusBar() {
 
 // Tab bar iOS glass (Summary aktif), persist di bawah, gak ikut transisi layar.
 function AppleTabBar() {
+  useUiLanguage();
   return (
     <div className="relative border-t border-white/[0.12] bg-black/50 px-5 pt-1.5 backdrop-blur-xl">
       <div className="flex items-start justify-around">
@@ -876,6 +904,7 @@ function AppleTabBar() {
 // Preview fitness iOS (Apple-style glass) ΓÇö 3 layar cycle dgn transisi slide, ring
 // aktivitas ngisi, item stagger. Cuma mount saat hover; di-memo biar terisolasi.
 const IosFitnessPreview = memo(function IosFitnessPreview() {
+  useUiLanguage();
   const [screen, setScreen] = useState(0);
   useEffect(() => {
     const t = setInterval(() => setScreen((s) => (s + 1) % 3), 4500);
@@ -912,6 +941,7 @@ const KRIPTO = {
 
 // Ikon ETH kecil (gradient biru-benar, huruf Xi sebagai glyph).
 function EthCoin({ size = 18, fontSize = 10 }: { size?: number; fontSize?: number }) {
+  useUiLanguage();
   return (
     <span className="grid shrink-0 place-items-center rounded-full font-bold text-white" style={{ width: size, height: size, fontSize, background: `linear-gradient(135deg, ${KRIPTO.eth}, ${KRIPTO.ethDeep})` }}>Ξ</span>
   );
@@ -919,6 +949,7 @@ function EthCoin({ size = 18, fontSize = 10 }: { size?: number; fontSize?: numbe
 
 // Chart harga: garis hijau ke-draw + fill gradient fade-in + dot pulse.
 function KriptoChart({ delay = 0.3 }: { delay?: number }) {
+  useUiLanguage();
   return (
     <div className="relative mt-1 h-[62px] w-full">
       <svg viewBox="0 0 360 120" preserveAspectRatio="none" className="size-full">
@@ -937,6 +968,7 @@ function KriptoChart({ delay = 0.3 }: { delay?: number }) {
 }
 
 function KriptoDashboard() {
+  useUiLanguage();
   return (
     <div className="flex h-full flex-col bg-white px-3">
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: [0.2, 0.8, 0.2, 1] }} className="flex items-center justify-between pt-1.5">
@@ -971,7 +1003,7 @@ function KriptoDashboard() {
 
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.5, ease: [0.2, 0.8, 0.2, 1] }} className="pt-1.5">
         <p className="text-[9px] font-bold text-[#111]">Deskripsi</p>
-        <p className="mt-0.5 text-[7px] leading-snug text-[#888]">Ethereum adalah platform global untuk aplikasi terdesentralisasi, bertujuan menghilangkan kebutuhan akan otoritas pusat. <span className="font-medium text-[#4CAF50]">Baca Selengkapnya</span></p>
+        <p className="mt-0.5 text-[7px] leading-snug text-[#888]">{ui("Ethereum adalah platform global untuk aplikasi terdesentralisasi, bertujuan menghilangkan kebutuhan akan otoritas pusat.")}<span className="font-medium text-[#4CAF50]">{ui("Baca Selengkapnya")}</span></p>
       </motion.div>
 
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.55, ease: [0.2, 0.8, 0.2, 1] }} className="mt-auto flex gap-1.5 pb-2 pt-2">
@@ -983,6 +1015,7 @@ function KriptoDashboard() {
 }
 
 function KriptoContact({ icon, name, sub, bg, delay = 0 }: { icon: React.ReactNode; name: string; sub: string; bg: string; delay?: number }) {
+  useUiLanguage();
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay, ease: [0.2, 0.8, 0.2, 1] }} className="mt-1 flex items-center gap-1.5 rounded-lg bg-[#F5F5F5] px-2 py-1.5">
       <span className="grid size-7 shrink-0 place-items-center rounded-md" style={{ background: bg }}>{icon}</span>
@@ -992,6 +1025,7 @@ function KriptoContact({ icon, name, sub, bg, delay = 0 }: { icon: React.ReactNo
 }
 
 function KriptoSendSelect() {
+  useUiLanguage();
   return (
     <div className="flex h-full flex-col bg-white px-3">
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="flex items-center justify-between border-b border-[#F0F0F0] pb-1.5 pt-1.5">
@@ -1005,19 +1039,20 @@ function KriptoSendSelect() {
       </motion.div>
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }} className="mt-1.5 flex items-center gap-1.5 rounded-lg bg-[#F5F5F5] px-2 py-1.5">
         <QrCode size={14} className="text-[#555]" />
-        <div><p className="text-[8.5px] font-semibold text-[#111]">Scan QR Code</p><p className="text-[7px] text-[#999]">Ketuk untuk scan alamat</p></div>
+        <div><p className="text-[8.5px] font-semibold text-[#111]">Scan QR Code</p><p className="text-[7px] text-[#999]">{ui("Ketuk untuk scan alamat")}</p></div>
       </motion.div>
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3, delay: 0.15 }} className="flex items-center gap-1 pt-1.5"><Clock size={9} className="text-[#888]" /><span className="text-[8px] font-semibold text-[#888]">Terbaru</span></motion.div>
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3, delay: 0.15 }} className="flex items-center gap-1 pt-1.5"><Clock size={9} className="text-[#888]" /><span className="text-[8px] font-semibold text-[#888]">{ui("Terbaru")}</span></motion.div>
       <KriptoContact icon={<Star size={13} className="text-[#C9A227]" />} name="Stash" sub="1 Transaksi Sebelumnya" bg="#E8E8E8" delay={0.2} />
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3, delay: 0.25 }} className="flex items-center gap-1 pt-1.5"><Sparkles size={9} className="text-[#888]" /><span className="text-[8px] font-semibold text-[#888]">Disarankan</span></motion.div>
       <KriptoContact icon={<CreditCard size={13} className="text-[#627EEA]" />} name="0xb249....9768" sub="1 Transaksi Sebelumnya" bg="#E8EEFF" delay={0.3} />
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3, delay: 0.35 }} className="flex items-center gap-1 pt-1.5"><User size={9} className="text-[#888]" /><span className="text-[8px] font-semibold text-[#888]">Buku Alamat</span></motion.div>
-      <KriptoContact icon={<CreditCard size={13} className="text-[#888]" />} name="vitalik.eth" sub="Tidak Ada Transaksi Sebelumnya" bg="#F0F0F0" delay={0.4} />
+      <KriptoContact icon={<CreditCard size={13} className="text-[#888]" />} name="vitalik.eth" sub={ui("Tidak Ada Transaksi Sebelumnya")} bg="#F0F0F0" delay={0.4} />
     </div>
   );
 }
 
 function KriptoSendAmount() {
+  useUiLanguage();
   return (
     <div className="flex h-full flex-col bg-white px-3">
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="flex items-center justify-between border-b border-[#F0F0F0] pb-1.5 pt-1.5">
@@ -1049,6 +1084,7 @@ function KriptoSendAmount() {
 }
 
 const KriptoPreview = memo(function KriptoPreview() {
+  useUiLanguage();
   const [screen, setScreen] = useState(0);
   useEffect(() => {
     const t = setInterval(() => setScreen((s) => (s + 1) % 3), 4500);

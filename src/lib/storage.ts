@@ -1,3 +1,4 @@
+import { getProjectState } from "./account-store";
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import { getDb } from "@/db";
 import { plans, features, subFeatures, tasks, taskEvents, usageEvents, users } from "@/db/schema";
@@ -57,10 +58,10 @@ function withDiagrams(plan: Plan): Plan {
 
   // Konten kosong total -> template fallback biar PRD tidak blank.
   if (!arch.trim()) {
-    arch = buildFallbackArchitecture(plan.title, plan.stack ?? [], plan.features.map((f) => f.title));
+    arch = buildFallbackArchitecture(plan.title, plan.stack ?? [], plan.features.map((f) => f.title), plan.generationSettings?.language);
   }
   if (!db.trim()) {
-    db = buildFallbackDatabaseSchema(plan.features.map((f) => f.title));
+    db = buildFallbackDatabaseSchema(plan.features.map((f) => f.title), plan.generationSettings?.language);
   }
 
   const result = { ...plan, architecture: arch, databaseSchema: db };
@@ -118,7 +119,7 @@ export async function savePlan(plan: Plan, userId: string): Promise<void> {
     .onConflictDoUpdate({ target: plans.id, set: { techPrefs: sql`${JSON.stringify({ stack: plan.stack ?? [], techStack: plan.techStack ?? [], architecture: plan.architecture ?? "", databaseSchema: plan.databaseSchema ?? "", requirements: plan.requirements ?? { fungsional: [], nonFungsional: [] }, userFlow: plan.userFlow ?? [], warnings: plan.warnings ?? [], tier: plan.tier ?? "free", ideas: plan.ideas ?? [] })}::jsonb || jsonb_strip_nulls(jsonb_build_object('accountNotes', ${plans.techPrefs}->'accountNotes', 'accountNotesUpdatedAt', ${plans.techPrefs}->'accountNotesUpdatedAt'))` } });
 
   // BATCH INSERT: fitur, sub-fitur, dan task dikumpulkan lalu ditulis masing-
-  // masing SATU statement. Dulu tiap baris INSERT sendiri-sendiri — plan 90
+  // masing SATU statement. Dulu tiap baris INSERT sendiri-sendiri â€” plan 90
   // task berarti 120+ perjalanan bolak-balik ke pooler Supabase, makan waktu
   // dan menggempur koneksi (max 5). Sekarang ~3-6 query total.
   const featureRows: (typeof features.$inferInsert)[] = [];
@@ -135,7 +136,7 @@ export async function savePlan(plan: Plan, userId: string): Promise<void> {
       planId: plan.id,
       slug,
       title: feature.title,
-      icon: feature.icon || "📦",
+      icon: feature.icon || "ðŸ“¦",
       description: feature.description || feature.tujuan || feature.title || "",
       tujuan: feature.tujuan || feature.description || feature.title || "",
       selesaiBila: Array.isArray(feature.selesaiBila) ? feature.selesaiBila : [],
@@ -236,7 +237,7 @@ export async function getPlan(planId: string): Promise<Plan | undefined> {
   if (planId === "demo") return { ...demoPlan, userId: "demo" } as Plan;
   if (isMemoryMode()) {
     const p = memoryGetPlan(planId);
-    return p ? withDiagrams(p) : undefined;
+    return p ? withDiagrams({ ...p, generationSettings: (await getProjectState(planId)).generationSettings ?? p.generationSettings }) : undefined;
   }
   const db = getDb();
   const [plan] = await db.select().from(plans).where(eq(plans.id, planId));
@@ -326,6 +327,7 @@ export async function getPlan(planId: string): Promise<Plan | undefined> {
     warnings: Array.isArray(savedMeta.warnings) ? savedMeta.warnings : undefined,
     tier: savedMeta.tier === "pro" ? "pro" : "free",
     ideas: Array.isArray(savedMeta.ideas) ? savedMeta.ideas : undefined,
+    generationSettings: (await getProjectState(planId)).generationSettings ?? undefined,
     accountNotes: typeof savedMeta.accountNotes === "string" ? savedMeta.accountNotes : "",
     accountNotesUpdatedAt: typeof savedMeta.accountNotesUpdatedAt === "string" ? savedMeta.accountNotesUpdatedAt : undefined,
   } as Plan;

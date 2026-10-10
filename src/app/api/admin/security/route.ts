@@ -1,3 +1,4 @@
+import { apiText } from "@/lib/ui-messages";
 import { NextResponse } from "next/server";
 import { desc, eq, gte, sql } from "drizzle-orm";
 import { getRequestUser, requireAdmin } from "@/lib/api-auth";
@@ -164,7 +165,7 @@ export async function POST(request: Request) {
   if (retryIn !== null) return rateLimitedResponse(clientKey(user!.userId, ip), retryIn, { ip, userId: user!.userId, route: "/api/admin/security POST" });
 
   if (!process.env.DATABASE_URL) {
-    return NextResponse.json({ error: "Aksi keamanan hanya tersedia dengan DATABASE_URL." }, { status: 400 });
+    return NextResponse.json({ error: apiText("Aksi keamanan hanya tersedia dengan DATABASE_URL.") }, { status: 400 });
   }
 
   const body = await request.json().catch(() => null) as Record<string, unknown> | null;
@@ -176,9 +177,9 @@ export async function POST(request: Request) {
     // --- 1. Blokir IP -------------------------------------------------
     if (action === "block_ip") {
       const targetIp = String(body?.ip ?? "").trim();
-      if (!targetIp) return NextResponse.json({ error: "IP target wajib diisi." }, { status: 400 });
+      if (!targetIp) return NextResponse.json({ error: apiText("IP target wajib diisi.") }, { status: 400 });
       if (isPrivateIp(targetIp)) {
-        return NextResponse.json({ error: "IP lokal/privat tidak perlu diblokir (itu mesin sendiri)." }, { status: 400 });
+        return NextResponse.json({ error: apiText("IP lokal/privat tidak perlu diblokir (itu mesin sendiri).") }, { status: 400 });
       }
       const hours = Number(body?.durationHours ?? 0);
       const expiresAt = hours > 0 ? new Date(Date.now() + hours * 60 * 60 * 1000) : null;
@@ -194,7 +195,7 @@ export async function POST(request: Request) {
     // --- 2. Cabut blokir IP --------------------------------------------
     if (action === "unblock_ip") {
       const targetIp = String(body?.ip ?? "").trim();
-      if (!targetIp) return NextResponse.json({ error: "IP target wajib diisi." }, { status: 400 });
+      if (!targetIp) return NextResponse.json({ error: apiText("IP target wajib diisi.") }, { status: 400 });
       await db.delete(blockedIps).where(eq(blockedIps.ip, targetIp));
       invalidateIpBlockCache();
       await logSecurity("ip_unblocked", { ip: targetIp, by: adminEmail }, { userId: user!.userId, ip, request });
@@ -204,7 +205,7 @@ export async function POST(request: Request) {
     // --- 3. Reset user: cabut SEMUA token API milik user ---------------
     if (action === "reset_user") {
       const targetUserId = String(body?.userId ?? "").trim();
-      if (!targetUserId) return NextResponse.json({ error: "userId target wajib diisi." }, { status: 400 });
+      if (!targetUserId) return NextResponse.json({ error: apiText("userId target wajib diisi.") }, { status: 400 });
       const rows = await db.select({ id: tokens.id }).from(tokens).where(eq(tokens.userId, targetUserId));
       await db.update(tokens).set({ revokedAt: new Date() }).where(sql`${tokens.userId} = ${targetUserId} and ${tokens.revokedAt} is null`);
       let email: string | null = null;
@@ -217,15 +218,15 @@ export async function POST(request: Request) {
     // --- 4. Tandai event sebagai false positive -------------------------
     if (action === "dismiss_event") {
       const eventId = String(body?.eventId ?? "").trim();
-      if (!eventId) return NextResponse.json({ error: "eventId wajib diisi." }, { status: 400 });
+      if (!eventId) return NextResponse.json({ error: apiText("eventId wajib diisi.") }, { status: 400 });
       await db.update(securityEvents).set({ dismissed: true }).where(eq(securityEvents.id, eventId));
       await logSecurity("event_dismissed", { eventId, by: adminEmail }, { userId: user!.userId, ip, request });
       return NextResponse.json({ ok: true });
     }
 
-    return NextResponse.json({ error: "Aksi tidak dikenal. Gunakan: block_ip, unblock_ip, reset_user, dismiss_event." }, { status: 400 });
+    return NextResponse.json({ error: apiText("Aksi tidak dikenal. Gunakan: block_ip, unblock_ip, reset_user, dismiss_event.") }, { status: 400 });
   } catch (e) {
     await logSecurity("admin_action", { route: "/api/admin/security POST", failed: String(e) }, { userId: user!.userId, ip, request });
-    return NextResponse.json({ error: "Aksi gagal diproses." }, { status: 500 });
+    return NextResponse.json({ error: apiText("Aksi gagal diproses.") }, { status: 500 });
   }
 }

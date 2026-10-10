@@ -1,4 +1,5 @@
 "use client";
+import { uiText as ui, useUiLanguage } from "@/lib/ui-text";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -29,6 +30,7 @@ const carouselItems: CarouselItem[] = stages.map((s, i) => ({
 }));
 
 export default function Generate() {
+  useUiLanguage();
   const [step, setStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [elapsed, setElapsed] = useState(0);
@@ -70,7 +72,7 @@ export default function Generate() {
         fetch("/api/generate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
+          body: JSON.stringify({ handoff: JSON.parse(sessionStorage.getItem("rv_handoff") || "null") ?? undefined,
             brief,
             techPrefs: JSON.parse(prefsStr),
             userId: user?.email || "shared",
@@ -101,7 +103,7 @@ export default function Generate() {
                 const pr = await fetch(`/api/plans/${data.id}/progress`);
                 if (pr.status === 404) {
                   cleanup();
-                  setError("Generate gagal di tengah jalan. Kuota sudah dikembalikan — silakan coba lagi.");
+                  setError(ui("Generate gagal di tengah jalan. Kuota sudah dikembalikan — silakan coba lagi."));
                   return;
                 }
                 const pj = await pr.json();
@@ -135,11 +137,11 @@ export default function Generate() {
   return (
     <Shell back="/new/prefs" sidebar={false}>
       <div className="mx-auto flex min-h-[100dvh] w-full max-w-xl flex-col justify-center px-5 py-16">
-        <p className="eyebrow">{error ? "Misi gagal" : "Agent sedang menyusun strategi"}</p>
+        <p className="eyebrow">{error ? ui("Misi gagal") : ui("Agent sedang menyusun strategi")}</p>
         {error ? (
           <div className="mt-8">
             <p className="text-red-400">{error}</p>
-            <button className="btn secondary mt-6" onClick={() => router.push("/new")}>Kembali</button>
+            <button className="btn secondary mt-6" onClick={() => router.push("/new")}>{ui("Kembali")}</button>
           </div>
         ) : (
           <>
@@ -179,7 +181,7 @@ export default function Generate() {
             </div>
 
             <p className="mt-8 text-center text-xs text-slate-500">
-              {elapsed > 60 ? "Masih bekerja. LLM sedang menyusun struktur kompleks, sabar ya." : elapsed > 30 ? "Hampir selesai..." : "Biasanya 20 sampai 60 detik. Task akan menyusul di halaman plan."}
+              {elapsed > 60 ? ui("Masih bekerja. LLM sedang menyusun struktur kompleks, sabar ya.") : elapsed > 30 ? ui("Hampir selesai...") : ui("Biasanya 20 sampai 60 detik. Task akan menyusul di halaman plan.")}
             </p>
           </>
         )}

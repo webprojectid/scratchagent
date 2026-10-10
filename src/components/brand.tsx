@@ -1,3 +1,5 @@
+"use client";
+import { uiText as ui, useUiLanguage } from "@/lib/ui-text";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { Sidebar } from "@/components/sidebar";
@@ -11,6 +13,7 @@ export function Brand() {
 }
 
 export function Shell({ children, back, sidebar = true, brand = true }: { children: React.ReactNode; back?: string; sidebar?: boolean; brand?: boolean }) {
+  useUiLanguage();
   // Brand kiri-atas:
   // - Halaman tanpa sidebar: selalu tampil (di samping tombol back kalau ada).
   // - Halaman bersidebar: tampil hanya di mobile (md:hidden), karena di desktop
@@ -21,7 +24,7 @@ export function Shell({ children, back, sidebar = true, brand = true }: { childr
         <Link
           href={back}
           className="fixed left-4 top-4 z-40 grid size-9 place-items-center rounded-[10px] border border-white/12 bg-[#13161A]/90 text-slate-400 backdrop-blur transition hover:border-[#74FA6A]/40 hover:text-white md:left-6 md:top-5"
-          aria-label="Kembali"
+          aria-label={ui("Kembali")}
         >
           <ArrowLeft size={18} />
         </Link>

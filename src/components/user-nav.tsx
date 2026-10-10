@@ -1,4 +1,5 @@
 "use client";
+import { uiText as ui, useUiLanguage } from "@/lib/ui-text";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -11,6 +12,7 @@ import { createClient } from "@/lib/supabase/client";
 import { getCurrentUser, refreshCurrentUser, supabaseConfigured, type CurrentUser } from "@/lib/current-user";
 
 export function UserNav() {
+  useUiLanguage();
   const router = useRouter();
   const [user, setUser] = useState<CurrentUser | null>(null);
 
@@ -55,9 +57,7 @@ export function UserNav() {
       <Link
         href="/login"
         className="font-mono text-[12px] tracking-[0.02em] text-white/80 transition-colors hover:text-[#74FA6A]"
-      >
-        Masuk
-      </Link>
+      >{ui("Masuk")}</Link>
     );
   }
 
@@ -105,7 +105,7 @@ export function UserNav() {
               const Icon = menuIcons[icon];
               return <DropdownMenu.Item key={href} asChild>
                 <Link href={href} className="flex min-h-11 cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-[12.5px] text-white/80 outline-none transition data-[highlighted]:bg-white/[.07] data-[highlighted]:text-[#74FA6A]">
-                  <Icon size={14} className="text-white/50"/><span>{label}</span>
+                  <Icon size={14} className="text-white/50"/><span>{ui(label)}</span>
                 </Link>
               </DropdownMenu.Item>;
             })}
@@ -117,7 +117,7 @@ export function UserNav() {
             className="flex min-h-11 cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-[12.5px] text-red-400 outline-none transition data-[highlighted]:bg-red-500/10"
           >
             <LogOut size={14} />
-            <span>Keluar</span>
+            <span>{ui("Keluar")}</span>
           </DropdownMenu.Item>
         </DropdownMenu.Content>
       </DropdownMenu.Portal>

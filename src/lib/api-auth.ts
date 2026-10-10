@@ -8,12 +8,17 @@ import { users } from "@/db/schema";
 import { memoryGetOrCreateUser, memoryGetUserById } from "@/lib/memory-store";
 import { getPlan } from "@/lib/storage";
 import type { Plan } from "@/lib/types";
+import { trackSession, type TokenPolicy } from "./account-store";
+import { apiText } from "./ui-messages";
 
 export interface AuthUser {
   /** ID kanonik user: UUID users.id (DB mode) atau UUID memory-store (memory mode). */
   userId: string;
   email: string | null;
   via: "token" | "session" | "legacy-dev";
+  tokenPolicy?: TokenPolicy;
+  sessionId?: string;
+  emailVerified?: boolean;
 }
 
 function isMemoryMode() {
@@ -57,8 +62,9 @@ export async function getAuthUser(): Promise<AuthUser | null> {
   if (auth?.startsWith("Bearer ")) {
     const result = await verifyToken(auth.slice(7));
     if (result) {
-      return { userId: result.userId, email: await emailById(result.userId), via: "token" };
+      return { userId: result.userId, email: await emailById(result.userId), via: "token", tokenPolicy: result.policy };
     }
+    return null;
   }
 
   if (supabaseConfigured()) {
@@ -68,7 +74,14 @@ export async function getAuthUser(): Promise<AuthUser | null> {
       const { data } = await supabase.auth.getUser();
       const email = data.user?.email;
       if (email) {
-        return { userId: await userIdByEmail(email), email, via: "session" };
+        const userId = await userIdByEmail(email);
+        const claims = await supabase.auth.getClaims();
+        const sessionId = claims.data?.claims?.session_id;
+        if (typeof sessionId !== "string" || !/^[0-9a-f-]{36}$/i.test(sessionId)) return null;
+        const agent = h.get("user-agent") ?? "Browser";
+        const device = `${/Edg\//.test(agent) ? "Edge" : /Firefox\//.test(agent) ? "Firefox" : /Chrome\//.test(agent) ? "Chromium" : /Safari\//.test(agent) ? "Safari" : "Browser"} · ${/Windows/.test(agent) ? "Windows" : /Android/.test(agent) ? "Android" : /iPhone|iPad/.test(agent) ? "iOS" : /Mac/.test(agent) ? "macOS" : "Perangkat lain"}`;
+        if (!await trackSession(sessionId, userId, device, claims.data?.claims?.iat)) return null;
+        return { userId, email, via: "session", sessionId, emailVerified: !!data.user?.email_confirmed_at };
       }
     } catch {
       // Session tidak terbaca / Supabase error: anggap belum login.
@@ -121,16 +134,16 @@ export function ownsPlan(plan: Pick<Plan, "userId">, user: AuthUser): boolean {
 }
 
 export function unauthorized() {
-  return NextResponse.json({ error: "Token tidak valid atau telah dicabut" }, { status: 401 });
+  return NextResponse.json({ error: apiText("Token tidak valid atau telah dicabut") }, { status: 401 });
 }
 
 export function forbidden(message = "Akses ditolak") {
-  return NextResponse.json({ error: message }, { status: 403 });
+  return NextResponse.json({ error: apiText(message) }, { status: 403 });
 }
 
 /** 404 (bukan 403) supaya keberadaan plan orang lain tidak bocor. */
 export function planNotFound() {
-  return NextResponse.json({ error: "Plan tidak ditemukan" }, { status: 404 });
+  return NextResponse.json({ error: apiText("Plan tidak ditemukan") }, { status: 404 });
 }
 
 /**
@@ -150,6 +163,7 @@ export async function accessPlan(
     return plan ? { plan } : { error: planNotFound() };
   }
   if (!user) return { error: unauthorized() };
+  if (user.tokenPolicy && (user.tokenPolicy.projectIds.length > 0 && !user.tokenPolicy.projectIds.includes(planId) || opts.write && user.tokenPolicy.access === "read")) return { error: forbidden("Token tidak memiliki izin untuk operasi proyek ini.") };
   const plan = await getPlan(planId);
   if (!plan) return { error: planNotFound() };
   if (!ownsPlan(plan, user)) {
@@ -199,6 +213,7 @@ export function devOnlyGate(): NextResponse | null {
  */
 export async function requireAdmin(user: AuthUser | null): Promise<NextResponse | null> {
   if (!user?.email) return unauthorized();
+  if (user.via === "token") return forbidden("Akses admin membutuhkan sesi browser.");
   const { isAdminEmail } = await import("@/lib/billing");
   if (!isAdminEmail(user.email)) {
     return forbidden("Akses admin ditolak. Hanya email admin yang terdaftar.");

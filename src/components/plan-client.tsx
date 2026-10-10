@@ -1,4 +1,5 @@
 "use client";
+import { uiText as ui, useUiLanguage } from "@/lib/ui-text";
 
 import { useEffect, useState, useCallback, useRef, startTransition } from "react";
 import { AnimatePresence, motion } from "motion/react";
@@ -52,17 +53,18 @@ type ViewKey = (typeof viewTabs)[number]["key"];
 
 /** Banner jujur: bagian PRD ini template generik karena LLM gagal saat generate. */
 function FallbackWarningBanner({ warnings }: { warnings?: string[] }) {
+  useUiLanguage();
   if (!warnings || warnings.length === 0) return null;
   return (
     <div className="border-b border-amber-400/20 bg-amber-400/[.06] px-4 py-2 md:px-6">
       <p className="text-[11px] leading-relaxed text-amber-200/90">
-        <span className="font-semibold">⚠ Catatan:</span> {warnings.join(" · ")}. Narasi lainnya tetap spesifik untuk project ini.
-      </p>
+        <span className="font-semibold">{ui("⚠ Catatan:")}</span> {warnings.join(" · ")}{ui(". Narasi lainnya tetap spesifik untuk project ini.")}</p>
     </div>
   );
 }
 
 function ViewTabs({ view, setView, pillId }: { view: ViewKey; setView: (v: ViewKey) => void; pillId: string }) {
+  useUiLanguage();
   return (
     <div role="tablist" className="flex items-center gap-1 rounded-2xl border border-white/[.08] bg-white/[.03] p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] backdrop-blur-xl">
       {viewTabs.map((t) => {
@@ -96,6 +98,7 @@ function ViewTabs({ view, setView, pillId }: { view: ViewKey; setView: (v: ViewK
 }
 
 export function PlanClient({ plan: initialPlan, tier = "free" }: { plan: Plan; tier?: "free" | "pro" }) {
+  useUiLanguage();
   const [plan, setPlan] = useState(initialPlan);
   const [liveTasks, setLiveTasks] = useState<Record<string, Task["status"]> | undefined>(undefined);
   const [showModal, setShowModal] = useState(false);
@@ -241,13 +244,13 @@ export function PlanClient({ plan: initialPlan, tier = "free" }: { plan: Plan; t
   // Hapus struktur (fitur Pro). Target: fase, sub-fitur, atau task.
   // Server menolak bila plan sedang dikerjakan agent (409) atau Free (403).
   const removeStructure = useCallback(async (type: "feature" | "subfeature" | "task", params: Record<string, string>, label: string) => {
-    if (!window.confirm(`Hapus ${label}? Task di dalamnya ikut terhapus.`)) return;
+    if (!window.confirm(ui("Hapus {0}? Task di dalamnya ikut terhapus.", label))) return;
     try {
       const qs = new URLSearchParams({ type, ...params }).toString();
       const res = await fetch(`/api/plans/${plan.id}/structure?${qs}`, { method: "DELETE" });
       const data = await res.json();
       if (!res.ok) {
-        setNotice(data.error ?? "Gagal menghapus struktur.");
+        setNotice(data.error ?? ui("Gagal menghapus struktur."));
         return;
       }
       setNotice(null);
@@ -262,7 +265,7 @@ export function PlanClient({ plan: initialPlan, tier = "free" }: { plan: Plan; t
       }));
       await refreshPlan();
     } catch {
-      setNotice("Gagal menghapus struktur. Coba lagi.");
+      setNotice(ui("Gagal menghapus struktur. Coba lagi."));
     }
   }, [plan.id, refreshPlan]);
 
@@ -343,13 +346,11 @@ export function PlanClient({ plan: initialPlan, tier = "free" }: { plan: Plan; t
               className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[.03] px-3 py-1.5 text-xs font-medium text-white/70 transition hover:border-[#74FA6A]/40 hover:text-white"
               onClick={() => setShowIdeas((v) => !v)}
               aria-pressed={showIdeas}
-              title="Kolom chat ide — fitur Pro, maksimal 2 kali per project"
+              title={ui("Kolom chat ide — fitur Pro, maksimal 2 kali per project")}
             >
-              <Lightbulb size={13} className={showIdeas ? "text-[#74FA6A]" : undefined} />
-              Ide Kamu
-            </button>
+              <Lightbulb size={13} className={showIdeas ? "text-[#74FA6A]" : undefined} />{ui("Ide Kamu")}</button>
             <button className="btn min-h-0 px-3.5 py-1.5 text-xs" onClick={() => setShowModal(true)} disabled={generatingTasks}>
-              {generatingTasks ? "Menyusun task..." : "Mulai implementasi"}
+              {generatingTasks ? "Menyusun task..." : ui("Mulai implementasi")}
             </button>
           </div>
 

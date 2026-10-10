@@ -1,3 +1,5 @@
+import { apiText } from "@/lib/ui-messages";
+import { recordAccountActivity } from "@/lib/account-store";
 import { NextResponse } from "next/server";
 import { accessPlan, getRequestUser } from "@/lib/api-auth";
 import { getAccountState } from "@/lib/billing";
@@ -57,7 +59,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pla
   const account = user ? await getAccountState(user.userId) : undefined;
   if ((account?.tier ?? "free") !== "pro") {
     return NextResponse.json(
-      { error: "Kolom chat ide hanya untuk paket Pro.", upgrade: "/pricing" },
+      { error: apiText("Kolom chat ide hanya untuk paket Pro."), upgrade: "/pricing" },
       { status: 403 },
     );
   }
@@ -77,11 +79,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ pla
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ error: "Body JSON tidak valid." }, { status: 400 });
+    return NextResponse.json({ error: apiText("Body JSON tidak valid.") }, { status: 400 });
   }
   const text = String(body.idea ?? "").trim();
-  if (!text) return NextResponse.json({ error: "Ide tidak boleh kosong." }, { status: 400 });
-  if (text.length > 2000) return NextResponse.json({ error: "Ide terlalu panjang (maks 2000 karakter)." }, { status: 400 });
+  if (!text) return NextResponse.json({ error: apiText("Ide tidak boleh kosong.") }, { status: 400 });
+  if (text.length > 2000) return NextResponse.json({ error: apiText("Ide terlalu panjang (maks 2000 karakter).") }, { status: 400 });
 
   // Gate 4: limit 2 ide per project.
   const ideas = plan.ideas ?? [];
@@ -108,7 +110,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pla
           subFeatures: [{ title: "Umum", tujuan: text, selesaiBila: [] }],
           usage: { tokensIn: 0, tokensOut: 0 },
         }
-      : await convertIdeaToFeature(plan.brief, text, phase);
+      : await convertIdeaToFeature(plan.brief, text, phase, plan.generationSettings);
 
     // 2) AI menyusun task untuk fase baru ini (budget sama dengan fitur reguler;
     //    ide-ide lain ikut disertakan sebagai referensi tambahan).
@@ -131,6 +133,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pla
           "pro",
           plan.features.length + 1,
           plan.ideas,
+          plan.generationSettings,
         )).tasks;
 
     // 3) Distribusi task ke sub-fitur (satu task satu sub-fitur, dedupe)
@@ -186,6 +189,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pla
     const ipAfter = await getClientIp(request);
     await logSecurity("idea_submitted", { planId, phase, featureTitle: ideaFeature.title, used: plan.ideas.length }, { ip: ipAfter, userId: user!.userId });
 
+    if (user) await recordAccountActivity(user.userId, "revision", "Idea added to the PRD", planId);
     return NextResponse.json({
       ok: true,
       idea: plan.ideas.at(-1),
@@ -195,6 +199,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ pla
     });
   } catch (err) {
     console.error(`[ideas] konversi ide gagal untuk plan ${planId}:`, err);
-    return NextResponse.json({ error: "AI gagal mengolah ide. Coba lagi dengan kalimat lebih spesifik." }, { status: 500 });
+    return NextResponse.json({ error: apiText("AI gagal mengolah ide. Coba lagi dengan kalimat lebih spesifik.") }, { status: 500 });
   }
 }

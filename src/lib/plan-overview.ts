@@ -13,6 +13,7 @@ export function buildPlanOverview(plan: Plan) {
     id: plan.id,
     brief: plan.brief,
     notes: plan.accountNotes ?? "",
+    generationSettings: plan.generationSettings ?? null,
     lastActivityAt: activityDates.length > 0 ? activityDates[0] : null,
     phases: plan.features.map(feature => {
       const tasks = feature.subFeatures.flatMap(part => part.tasks);

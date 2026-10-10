@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getRequestUser, planOwnerKey, unauthorized } from "@/lib/api-auth";
 import { listPlanSummaries } from "@/lib/storage";
+import { projectStates } from "@/lib/account-store";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -11,6 +12,7 @@ export async function GET(request: Request) {
   // Jalur ringkas: 3 query tetap berapa pun jumlah plan, tanpa hydrate
   // penuh tiap plan (getPlan + render diagram). Untuk halaman daftar saja;
   // halaman detail tetap pakai getPlan().
-  const plans = await listPlanSummaries(planOwnerKey(user));
-  return NextResponse.json({ plans });
+  const plans = (await listPlanSummaries(planOwnerKey(user))).filter(plan => !user.tokenPolicy?.projectIds.length || user.tokenPolicy.projectIds.includes(plan.id));
+  const states = await projectStates(plans.map(plan => plan.id));
+  return NextResponse.json({ plans: plans.map(plan => ({ ...plan, favorite: states[plan.id]?.favorite ?? false, archived: states[plan.id]?.archived ?? false, lastOpenedAt: states[plan.id]?.lastOpenedAt ?? null })) });
 }

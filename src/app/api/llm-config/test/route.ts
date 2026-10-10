@@ -1,3 +1,4 @@
+import { apiText } from "@/lib/ui-messages";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { lookup } from "node:dns/promises";
@@ -176,26 +177,26 @@ async function validateProviderUrl(
   try {
     url = new URL(raw);
   } catch {
-    return { ok: false, error: "baseUrl bukan URL yang valid." };
+    return { ok: false, error: apiText("baseUrl bukan URL yang valid.") };
   }
 
   if (url.protocol !== "https:" && url.protocol !== "http:") {
-    return { ok: false, error: "Protocol tidak diizinkan (hanya http/https)." };
+    return { ok: false, error: apiText("Protocol tidak diizinkan (hanya http/https).") };
   }
   if (url.protocol === "http:" && process.env.NODE_ENV === "production") {
-    return { ok: false, error: "Di production hanya https yang diizinkan." };
+    return { ok: false, error: apiText("Di production hanya https yang diizinkan.") };
   }
   if (url.username || url.password) {
-    return { ok: false, error: "URL dengan credentials (user:pass@host) tidak diizinkan." };
+    return { ok: false, error: apiText("URL dengan credentials (user:pass@host) tidak diizinkan.") };
   }
 
   // url.hostname untuk IPv6 sudah tanpa kurung di Node, tapi tetap bersihkan
   // demi keamanan bila runtime berperilaku berbeda.
   const host = url.hostname.replace(/^\[|\]$/g, "").toLowerCase().trim();
-  if (!host) return { ok: false, error: "Hostname kosong." };
+  if (!host) return { ok: false, error: apiText("Hostname kosong.") };
 
   if (BLOCKED_HOST_KEYWORDS.some((k) => host === k || host.endsWith("." + k))) {
-    return { ok: false, error: "Hostname layanan metadata internal tidak diizinkan." };
+    return { ok: false, error: apiText("Hostname layanan metadata internal tidak diizinkan.") };
   }
 
   const blocked = await assertHostIsPublic(host);
@@ -217,7 +218,7 @@ export async function POST(request: Request) {
 
   const parsed = bodySchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {
-    return NextResponse.json({ error: "Butuh baseUrl dan model untuk tes koneksi." }, { status: 400 });
+    return NextResponse.json({ error: apiText("Butuh baseUrl dan model untuk tes koneksi.") }, { status: 400 });
   }
   const { baseUrl, model } = parsed.data;
 
@@ -232,7 +233,7 @@ export async function POST(request: Request) {
     apiKey = cfg?.providers.find((p) => p.baseUrl.replace(/\/$/, "") === baseUrl.replace(/\/$/, ""))?.apiKey ?? "";
   }
   if (!apiKey) {
-    return NextResponse.json({ ok: false, error: "API key belum ada (kosong di form dan belum tersimpan)." });
+    return NextResponse.json({ ok: false, error: apiText("API key belum ada (kosong di form dan belum tersimpan).") });
   }
 
   const start = Date.now();

@@ -1,4 +1,5 @@
 "use client";
+import { uiText as ui, useUiLanguage, uiLocale } from "@/lib/ui-text";
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
@@ -25,6 +26,7 @@ const statusChip: Record<string, { label: string; className: string }> = {
 };
 
 function Stat({ label, value }: { label: string; value: string }) {
+  useUiLanguage();
   return (
     <div className="rounded-lg border border-white/[.06] bg-white/[.02] px-3 py-1.5">
       <p className="font-mono text-[13px] font-semibold tabular-nums leading-tight text-white">{value}</p>
@@ -34,6 +36,7 @@ function Stat({ label, value }: { label: string; value: string }) {
 }
 
 function Label({ children }: { children: ReactNode }) {
+  useUiLanguage();
   return (
     <p className="font-mono text-[10px] font-semibold uppercase tracking-[.14em] text-white/30">
       {children}
@@ -42,6 +45,7 @@ function Label({ children }: { children: ReactNode }) {
 }
 
 function SectionHeading({ num, title }: { num: string; title: string }) {
+  useUiLanguage();
   return (
     <div className="flex items-center gap-3">
       <span className="grid size-7 shrink-0 place-items-center rounded-lg border border-[#74FA6A]/20 bg-[#74FA6A]/[.06] font-mono text-[11px] font-bold tabular-nums text-[#74FA6A]">
@@ -121,6 +125,7 @@ function parseBrief(brief: string): BriefBlock[] {
 }
 
 function BriefBlocks({ brief }: { brief: string }) {
+  useUiLanguage();
   const blocks = parseBrief(brief);
   return (
     <div className="space-y-3">
@@ -155,7 +160,7 @@ function buildSections(plan: Plan): Section[] {
 
   sections.push({
     id: "overview",
-    title: "Overview",
+    title: ui("Overview"),
     body: (
       <div className="space-y-4">
         <BriefBlocks brief={plan.brief} />
@@ -238,8 +243,7 @@ function buildSections(plan: Plan): Section[] {
       <div className="space-y-6">
         {[...faseMap.keys()].sort((a, b) => a - b).map((fase) => (
           <div key={fase}>
-            <p className="font-mono text-[11px] font-semibold uppercase tracking-[.14em] text-[#74FA6A]/70">
-              Fase {fase}
+            <p className="font-mono text-[11px] font-semibold uppercase tracking-[.14em] text-[#74FA6A]/70">{ui("Fase")} {fase}
             </p>
             <div className="mt-2.5 space-y-3">
               {faseMap.get(fase)!.map((f) => {
@@ -269,11 +273,11 @@ function buildSections(plan: Plan): Section[] {
 
                     <div className="mt-3 grid gap-3 sm:grid-cols-2">
                       <div>
-                        <Label>Tujuan</Label>
+                        <Label>{ui("Tujuan")}</Label>
                         <p className="mt-1.5 text-sm leading-relaxed text-slate-400">{f.tujuan}</p>
                       </div>
                       <div>
-                        <Label>Selesai bila</Label>
+                        <Label>{ui("Selesai bila")}</Label>
                         <ul className="mt-1.5 space-y-1">
                           {f.selesaiBila.map((x) => (
                             <li key={x} className="flex gap-2 text-[13px] leading-relaxed text-slate-400">
@@ -387,7 +391,8 @@ function buildSections(plan: Plan): Section[] {
 }
 
 export function PrdView({ plan }: { plan: Plan }) {
-  const sections = useMemo(() => buildSections(plan), [plan]);
+  useUiLanguage();
+  const sections = buildSections(plan);
   const [active, setActive] = useState(sections[0]?.id ?? "");
   const suppressSpy = useRef(false);
   const suppressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -407,7 +412,7 @@ export function PrdView({ plan }: { plan: Plan }) {
 
   const chip = statusChip[plan.status] ?? statusChip.ready;
   const createdAt = plan.createdAt
-    ? new Date(plan.createdAt).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })
+    ? new Date(plan.createdAt).toLocaleDateString(uiLocale(), { day: "numeric", month: "short", year: "numeric" })
     : null;
 
   useEffect(() => {
@@ -512,7 +517,7 @@ export function PrdView({ plan }: { plan: Plan }) {
 
             <div className="mt-4 flex flex-wrap items-center gap-2">
               <span className={cn("rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide", chip.className)}>
-                {chip.label}
+                {ui(chip.label)}
               </span>
               {createdAt && (
                 <span className="font-mono text-[11px] tabular-nums text-slate-500">dibuat {createdAt}</span>
@@ -522,8 +527,8 @@ export function PrdView({ plan }: { plan: Plan }) {
             <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
               <Stat label="Fitur" value={String(plan.features.length)} />
               <Stat label="Sub-fitur" value={String(stats.subTotal)} />
-              <Stat label="Task selesai" value={`${stats.doneTotal}/${stats.taskTotal}`} />
-              <Stat label="Fase" value={String(new Set(plan.features.flatMap((f) => f.subFeatures.flatMap((sf) => sf.tasks.map((t) => t.phase)))).size || 1)} />
+              <Stat label={ui("Task selesai")} value={`${stats.doneTotal}/${stats.taskTotal}`} />
+              <Stat label={ui("Fase")} value={String(new Set(plan.features.flatMap((f) => f.subFeatures.flatMap((sf) => sf.tasks.map((t) => t.phase)))).size || 1)} />
             </div>
 
             {stats.taskTotal > 0 && (

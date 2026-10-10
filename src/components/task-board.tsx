@@ -1,4 +1,5 @@
 "use client";
+import { uiText as ui, useUiLanguage } from "@/lib/ui-text";
 
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
@@ -47,6 +48,7 @@ const layerStyle: Record<string, { label: string; badge: string; dot: string }> 
 };
 
 function FeaturePicker({ plan, selected, onSelect }: { plan: Plan; selected: string; onSelect: (slug: string) => void }) {
+  useUiLanguage();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const wrapper = useRef<HTMLDivElement>(null);
@@ -70,7 +72,7 @@ function FeaturePicker({ plan, selected, onSelect }: { plan: Plan; selected: str
           open ? "border-[#74FA6A]/30 bg-[#74FA6A]/[.05]" : "border-white/12 bg-[#0C0E10] hover:border-white/25"
         }`}
       >
-        <span className="truncate">{selectedSubFeature?.title ?? selectedFeature?.title ?? "Semua fitur"}</span>
+        <span className="truncate">{selectedSubFeature?.title ?? selectedFeature?.title ?? ui("Semua fitur")}</span>
         <ChevronDown size={14} strokeWidth={1.5} className={`shrink-0 text-slate-400 transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${open ? "rotate-180" : ""}`} />
       </button>
       <AnimatePresence>
@@ -84,12 +86,11 @@ function FeaturePicker({ plan, selected, onSelect }: { plan: Plan; selected: str
           >
             <label className="flex items-center gap-2 border-b border-white/[.07] px-3 py-2">
               <Search size={13} strokeWidth={1.5} className="text-slate-500" />
-              <input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Cari fitur..." className="min-w-0 flex-1 bg-transparent text-xs text-white outline-none placeholder:text-slate-500" />
+              <input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder={ui("Cari fitur...")} className="min-w-0 flex-1 bg-transparent text-xs text-white outline-none placeholder:text-slate-500" />
             </label>
             <div className="max-h-52 overflow-y-auto py-1">
               <button onClick={() => { onSelect("all"); setOpen(false); }} className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs transition-colors hover:bg-white/5 ${selected === "all" ? "bg-white/[.06] text-white" : "text-slate-200"}`}>
-                <span className="w-3 text-[#74FA6A]">{selected === "all" ? "✓" : ""}</span>Semua fitur
-              </button>
+                <span className="w-3 text-[#74FA6A]">{selected === "all" ? "✓" : ""}</span>{ui("Semua fitur")}</button>
               {visible.map((feature) => (
                 <div key={feature.slug}>
                   <button onClick={() => { onSelect(feature.slug); setOpen(false); }} className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-semibold transition-colors hover:bg-white/5 ${selected === feature.slug ? "text-white" : "text-slate-200"}`}>
@@ -101,7 +102,7 @@ function FeaturePicker({ plan, selected, onSelect }: { plan: Plan; selected: str
                   })}
                 </div>
               ))}
-              {visible.length === 0 && <p className="px-3 py-5 text-center text-[11px] text-slate-500">Fitur tidak ditemukan</p>}
+              {visible.length === 0 && <p className="px-3 py-5 text-center text-[11px] text-slate-500">{ui("Fitur tidak ditemukan")}</p>}
             </div>
           </motion.div>
         )}
@@ -111,6 +112,7 @@ function FeaturePicker({ plan, selected, onSelect }: { plan: Plan; selected: str
 }
 
 function TaskCard({ task, compact, onDelete }: { task: BoardTask; compact?: boolean; onDelete?: () => void }) {
+  useUiLanguage();
   const layer = layerStyle[task.layer] ?? layerStyle.qa;
   const accent = columns.find((c) => c.status === task.status)?.bar ?? "bg-slate-500/70";
 
@@ -187,6 +189,7 @@ function TaskCard({ task, compact, onDelete }: { task: BoardTask; compact?: bool
 }
 
 export function TaskBoard({ plan, liveTasks, compact = false, isPro = false, onRemoveTask }: { plan: Plan; liveTasks?: Record<string, Task["status"]>; compact?: boolean; isPro?: boolean; onRemoveTask?: (ref: string, label: string) => void }) {
+  useUiLanguage();
   const [selected, setSelected] = useState("all");
   const allTasks: BoardTask[] = plan.features.flatMap((feature) => feature.subFeatures.flatMap((subFeature) => subFeature.tasks.map((task) => ({ ...task, status: liveTasks?.[task.ref] ?? task.status ?? "pending", feature: feature.title, featureSlug: feature.slug, subFeature: subFeature.title, subFeatureKey: `${feature.slug}::${subFeature.title}` }))));
   const tasks = selected === "all" ? allTasks : selected.includes("::") ? allTasks.filter((task) => task.subFeatureKey === selected) : allTasks.filter((task) => task.featureSlug === selected);
@@ -202,8 +205,8 @@ export function TaskBoard({ plan, liveTasks, compact = false, isPro = false, onR
             <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1.4, ease: "linear" }} className="absolute inset-0 rounded-full border-2 border-transparent border-t-[#74FA6A]" />
             <span className="size-2.5 rounded-full bg-[#74FA6A]/40" />
           </div>
-          <p className="mt-5 font-mono text-[11px] uppercase tracking-[.16em] text-[#74FA6A]">sedang disusun</p>
-          <p className="mt-2 max-w-[32ch] text-[13px] leading-5 text-white/40">AI sedang menyusun task untuk setiap fitur. Task akan muncul otomatis di sini.</p>
+          <p className="mt-5 font-mono text-[11px] uppercase tracking-[.16em] text-[#74FA6A]">{ui("sedang disusun")}</p>
+          <p className="mt-2 max-w-[32ch] text-[13px] leading-5 text-white/40">{ui("AI sedang menyusun task untuk setiap fitur. Task akan muncul otomatis di sini.")}</p>
         </motion.div>
       </section>
     );
@@ -227,7 +230,7 @@ export function TaskBoard({ plan, liveTasks, compact = false, isPro = false, onR
               <div key={column.status} className="rounded-xl border border-white/[.05] bg-white/[.015] p-1.5">
                 <div className="flex items-center gap-1.5 px-1 py-0.5 text-[9px] font-semibold text-white/45">
                   <span className={`grid size-4 place-items-center rounded-full border ${column.chip}`}>{column.icon}</span>
-                  <span>{column.title}</span>
+                  <span>{ui(column.title)}</span>
                   {column.status === "in_progress" && columnTasks.length > 0 && (
                     <span className="flex items-center gap-1 text-[7px] font-bold uppercase tracking-wider text-amber-400">
                       <span className="relative flex size-1.5">
@@ -266,7 +269,7 @@ export function TaskBoard({ plan, liveTasks, compact = false, isPro = false, onR
               className="h-full rounded-full bg-gradient-to-r from-[#74FA6A]/60 to-[#74FA6A] shadow-[0_0_14px_rgba(116,250,106,0.5)]"
             />
           </div>
-          <span className="shrink-0 font-mono text-[11px] tabular-nums text-slate-300">{done}/{tasks.length} selesai</span>
+          <span className="shrink-0 font-mono text-[11px] tabular-nums text-slate-300">{done}/{tasks.length}{ui("selesai")}</span>
         </div>
       </div>
 
@@ -284,7 +287,7 @@ export function TaskBoard({ plan, liveTasks, compact = false, isPro = false, onR
               <div className="flex flex-1 flex-col rounded-[calc(1rem-0.25rem)] bg-[#0A0C0E]/80 p-2">
                 <div className="flex items-center gap-2 px-1.5 pb-2 pt-1">
                   <span className={`grid size-5 place-items-center rounded-full border ${column.chip}`}>{column.icon}</span>
-                  <span className="text-[12px] font-semibold text-white/85">{column.title}</span>
+                  <span className="text-[12px] font-semibold text-white/85">{ui(column.title)}</span>
                   {column.status === "in_progress" && columnTasks.length > 0 && (
                     <span className="flex items-center gap-1 rounded-full border border-amber-400/25 bg-amber-400/[.08] px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider text-amber-300">
                       <span className="relative flex size-1.5">

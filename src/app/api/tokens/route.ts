@@ -1,78 +1,41 @@
+import { apiText } from "@/lib/ui-messages";
 import { NextResponse } from "next/server";
-import { getRequestUser, unauthorized } from "@/lib/api-auth";
+import { z } from "zod";
+import { accountRequest, accountError, parseAccountBody } from "@/lib/account-api";
 import { createToken, findTokenByHash, listTokens, revokeToken } from "@/lib/tokens";
-import { RATE_LIMITS, clientKey, getClientIp, logSecurity, rateLimit, rateLimitedResponse } from "@/lib/security";
-
-// Semua operasi token terikat ke identitas terautentikasi (session/Bearer).
-// userId dari body client TIDAK lagi dipercaya: token hanya bisa dibuat
-// untuk user yang sedang login, dan hanya token miliknya yang terlihat/dicabut.
-
+import { getTokenPolicy } from "@/lib/account-store";
+import { accessPlan } from "@/lib/api-auth";
+import { rateLimit } from "@/lib/security";
+const input = z.object({ label: z.string().trim().min(1).max(80).default("CLI"), userId: z.string().optional(), days: z.union([z.literal(7), z.literal(30), z.literal(90)]).default(30), access: z.enum(["read", "write"]).default("write"), projectIds: z.array(z.uuid()).max(30).default([]) }).strict();
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const user = await getRequestUser(searchParams.get("userId"));
-  if (!user) return unauthorized();
-
   try {
+    const { user, error } = await accountRequest(request); if (error) return error;
     const rows = await listTokens(user.userId);
-    return NextResponse.json(
-      (rows as Array<{ hash?: string; tokenHash?: string; label: string; revokedAt?: string | Date | null; createdAt?: string | Date }>).map((t) => ({
-        hash: t.hash ?? t.tokenHash,
-        label: t.label,
-        revoked: !!t.revokedAt,
-        createdAt: t.createdAt,
-      })),
-    );
-  } catch {
-    return NextResponse.json([]);
-  }
+    return NextResponse.json(await Promise.all(rows.map(async t => {
+      const hash = "hash" in t ? t.hash : t.tokenHash;
+      return { hash, label: t.label, revoked: !!t.revokedAt, createdAt: t.createdAt, ...await getTokenPolicy(hash) };
+    })), { headers: { "Cache-Control": "private, no-store" } });
+  } catch (error) { return accountError(error); }
 }
-
 export async function POST(request: Request) {
-  let label = "CLI";
-  let legacyUserId: string | null = null;
   try {
-    const body = await request.json();
-    if (typeof body?.label === "string" && body.label.trim()) label = body.label.trim();
-    if (typeof body?.userId === "string" && body.userId) legacyUserId = body.userId;
-  } catch {
-    /* body opsional */
-  }
-
-  const user = await getRequestUser(legacyUserId);
-  if (!user) return unauthorized();
-
-  // Rem laju: cegah spam pembuatan token (vektor penyalahgunaan akun).
-  const ip = await getClientIp(request);
-  const rl = RATE_LIMITS.tokens;
-  const retryIn = rateLimit(clientKey(user.userId, ip), rl.limit, rl.windowMs);
-  if (retryIn !== null) return rateLimitedResponse(clientKey(user.userId, ip), retryIn, { ip, userId: user.userId, route: "/api/tokens" });
-
-  const result = await createToken(user.userId, label);
-  await logSecurity("admin_action", { action: "token_created", label }, { ip, userId: user.userId });
-  return NextResponse.json({ token: result.token, hash: result.hash });
+    const data = await parseAccountBody(request, input);
+    const url = new URL(request.url); if (data.userId) url.searchParams.set("userId", data.userId);
+    const { user, error } = await accountRequest(new Request(url, { method: "POST", headers: request.headers }), true); if (error) return error;
+    const retry = rateLimit("token-create:" + user.userId, 10, 600_000);
+    if (retry !== null) return NextResponse.json({ error: apiText("Terlalu banyak token baru. Coba nanti.") }, { status: 429 });
+    for (const id of data.projectIds) { const result = await accessPlan(id, user); if (result.error) return result.error; }
+    const policy = { expiresAt: new Date(Date.now() + data.days * 86400_000).toISOString(), lastUsedAt: null, access: data.access, projectIds: data.projectIds };
+    return NextResponse.json(await createToken(user.userId, data.label, policy));
+  } catch (error) { return accountError(error); }
 }
-
 export async function DELETE(request: Request) {
-  let hash = "";
-  let legacyUserId: string | null = null;
   try {
-    const body = await request.json();
-    if (typeof body?.hash === "string") hash = body.hash;
-    if (typeof body?.userId === "string" && body.userId) legacyUserId = body.userId;
-  } catch {
-    /* empty */
-  }
-  if (!hash) return NextResponse.json({ error: "Hash wajib" }, { status: 400 });
-
-  const user = await getRequestUser(legacyUserId);
-  if (!user) return unauthorized();
-
-  // Ownership: hanya token milik sendiri yang boleh dicabut.
-  const existing = await findTokenByHash(hash);
-  if (!existing || existing.userId !== user.userId) {
-    return NextResponse.json({ error: "Token tidak ditemukan" }, { status: 404 });
-  }
-
-  const ok = await revokeToken(hash);
-  return NextResponse.json({ ok });
+    const data = await parseAccountBody(request, z.object({ hash: z.string().regex(/^[a-f0-9]{64}$/), userId: z.string().optional() }).strict());
+    const url = new URL(request.url); if (data.userId) url.searchParams.set("userId", data.userId);
+    const { user, error } = await accountRequest(new Request(url, { method: "DELETE", headers: request.headers }), true); if (error) return error;
+    const existing = await findTokenByHash(data.hash);
+    if (!existing || existing.userId !== user.userId) return NextResponse.json({ error: apiText("Token tidak ditemukan.") }, { status: 404 });
+    return NextResponse.json({ ok: await revokeToken(data.hash) });
+  } catch (error) { return accountError(error); }
 }

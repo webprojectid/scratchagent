@@ -1,4 +1,5 @@
 "use client";
+import { uiText as ui, useUiLanguage, uiLocale } from "@/lib/ui-text";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -41,10 +42,11 @@ function timeAgo(iso?: string): string {
   if (h < 24) return `${h} jam lalu`;
   const d = Math.floor(h / 24);
   if (d < 7) return `${d} hari lalu`;
-  return new Date(iso).toLocaleDateString("id-ID", { day: "numeric", month: "short" });
+  return new Date(iso).toLocaleDateString(uiLocale(), { day: "numeric", month: "short" });
 }
 
 export function Sidebar() {
+  useUiLanguage();
   const [plans, setPlans] = useState<PlanItem[]>([]);
   const [open, setOpen] = useState(true);
   const [loading, setLoading] = useState(true);
@@ -129,8 +131,8 @@ export function Sidebar() {
                     <span className="grid size-10 place-items-center rounded-full border border-white/8 bg-white/[.03] text-white/25">
                       <FolderOpen size={16} />
                     </span>
-                    <p className="text-[12px] font-medium text-white/40">Belum ada project</p>
-                    <p className="text-[11px] leading-4 text-white/25">Plan yang kamu buat bakal muncul di sini.</p>
+                    <p className="text-[12px] font-medium text-white/40">{ui("Belum ada project")}</p>
+                    <p className="text-[11px] leading-4 text-white/25">{ui("Plan yang kamu buat bakal muncul di sini.")}</p>
                   </div>
                 ) : (
                   <div className="space-y-1.5 pt-1">
@@ -161,7 +163,7 @@ export function Sidebar() {
                               </span>
                             </div>
                             <div className="mt-1 flex items-center gap-1.5 pl-[14px] font-mono text-[9.5px] tabular-nums text-white/25">
-                              <span className={active ? "text-[#74FA6A]/80" : ""}>{statusLabel[p.status] ?? p.status}</span>
+                              <span className={active ? "text-[#74FA6A]/80" : ""}>{ui(statusLabel[p.status] ?? p.status)}</span>
                               <span className="text-white/15">·</span>
                               <span>{p.taskCount} task</span>
                               {ago && (
@@ -187,7 +189,7 @@ export function Sidebar() {
         <button
           onClick={() => setOpen(true)}
           className="sticky top-0 z-20 hidden h-[100dvh] w-11 shrink-0 items-start justify-center border-r border-white/8 bg-[#0B0D10] pt-5 text-white/30 transition hover:text-[#74FA6A] md:flex"
-          aria-label="Buka sidebar"
+          aria-label={ui("Buka sidebar")}
         >
           <PanelLeftOpen size={16} />
         </button>
