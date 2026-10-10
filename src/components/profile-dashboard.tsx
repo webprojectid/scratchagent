@@ -38,6 +38,8 @@ export function ProfileDashboard({ email, name, plans, loading, error, preview, 
   const selectedDay = days.find(day => day.date === selected);
   const unavailable = loading || error;
   const dateLabel = (date: string) => new Date(`${date}T12:00:00Z`).toLocaleDateString(uiLocale(), { month: "short", day: "numeric", timeZone: "UTC" });
+  const visitsLabel = (count: number) => count === 1 ? ui("1 kunjungan") : ui("{0} kunjungan", count);
+  const actionsLabel = (count: number) => count === 1 ? ui("1 aktivitas kerja") : ui("{0} aktivitas kerja", count);
   return <div className={s.dashboard}>
     <header className={s.header}><div><p className={s.eyebrow}>{ui("Profil / Dashboard")}</p><h1>{ui("Dashboard")}</h1><p>{ui("Progres kerja Anda, {0}.", name)}</p></div><button onClick={onProjects}>{ui("Lihat proyek")}<ArrowUpRight size={16}/></button></header>
     {preview && <p className={s.notice}>{ui("Preview: statistik proyek memakai data contoh. Kunjungan tidak direkayasa.")}</p>}
@@ -46,14 +48,14 @@ export function ProfileDashboard({ email, name, plans, loading, error, preview, 
       {[{ label: ui("Proyek"), value: plans.length, icon: FolderOpen, note: ui("Seluruh proyek akun") }, { label: ui("Tugas selesai"), value: done, icon: CheckCheck, note: ui("Dari {0} tugas", total) }, { label: ui("Progres keseluruhan"), value: `${percentage}%`, icon: Activity, note: ui("Berdasarkan tugas selesai") }, { label: ui("Hari aktif"), value: busy || failed ? "…" : activeDays, icon: CalendarDays, note: ui("Dalam 30 hari terakhir") }].map((metric, index) => <section key={metric.label} className={s.metric}><span><metric.icon size={17}/>{metric.label}</span><strong>{index < 3 && unavailable ? "…" : metric.value}</strong><small>{metric.note}</small></section>)}
     </div>
     <section className={s.calendar} aria-labelledby="activity-calendar">
-      <div className={s.sectionHeader}><div><h2 id="activity-calendar">{ui("Aktivitas 30 hari")}</h2><p>{ui("Semakin pekat warnanya, semakin sering Anda berkunjung.")}</p></div><span>{busy || failed ? "…" : ui("{0} kunjungan", visits)}</span></div>
+      <div className={s.sectionHeader}><div><h2 id="activity-calendar">{ui("Aktivitas 30 hari")}</h2><p>{ui("Semakin pekat warnanya, semakin sering Anda berkunjung.")}</p></div><span>{busy || failed ? "…" : visitsLabel(visits)}</span></div>
       {busy ? <p className={s.notice} role="status"><Loader2 size={17} className="animate-spin"/>{ui("Memuat aktivitas…")}</p> : failed ? <p className={s.notice} role="alert">{ui("Aktivitas belum bisa dimuat.")} <button onClick={() => setRevision(value => value + 1)}>{ui("Coba lagi")}</button></p> : <>
         <div className={s.heatmap}>{days.map(day => {
           const level = day.visits ? Math.min(4, Math.ceil(day.visits / peak * 4)) : 0;
-          const label = `${dateLabel(day.date)}: ${ui("{0} kunjungan", day.visits)}, ${ui("{0} aktivitas kerja", day.actions)}`;
+          const label = `${dateLabel(day.date)}: ${visitsLabel(day.visits)}, ${actionsLabel(day.actions)}`;
           return <button key={day.date} data-level={level} aria-label={label} title={label} aria-pressed={day.date === selected} onClick={() => setSelected(day.date)}><span>{Number(day.date.slice(-2))}</span></button>;
         })}</div>
-        <div className={s.calendarFooter}><span>{selectedDay ? `${dateLabel(selectedDay.date)} · ${ui("{0} kunjungan", selectedDay.visits)} · ${ui("{0} aktivitas kerja", selectedDay.actions)}` : ui("Pilih tanggal untuk melihat aktivitas.")}</span><div aria-label={ui("Intensitas kunjungan")}>{ui("Jarang")}{[0, 1, 2, 3, 4].map(level => <i key={level} data-level={level}/>)}{ui("Sering")}</div></div>
+        <div className={s.calendarFooter}><span>{selectedDay ? `${dateLabel(selectedDay.date)} · ${visitsLabel(selectedDay.visits)} · ${actionsLabel(selectedDay.actions)}` : ui("Pilih tanggal untuk melihat aktivitas.")}</span><div aria-label={ui("Intensitas kunjungan")}>{ui("Jarang")}{[0, 1, 2, 3, 4].map(level => <i key={level} data-level={level}/>)}{ui("Sering")}</div></div>
         <p className={s.footnote}>{ui("Kunjungan akun tercatat mulai pembaruan ini, maksimal sekali per 30 menit saat website terlihat. Hari kosong berarti belum ada kunjungan tercatat.")}</p>
       </>}
     </section>

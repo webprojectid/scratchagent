@@ -209,6 +209,7 @@
  ["Aktif: dibuat atau dipakai dalam periode ini. Revoked: tanggal pencabutan. Kedaluwarsa: tanggal berakhir. Filter tidak menghapus token.", "Active uses the creation or last-used date. Revoked uses the revocation date. Expired uses the expiration date. Filtering does not delete tokens."],
  ["Tidak ada token dalam filter ini", "No tokens match this filter"],
  ["Pilih Semua waktu untuk mengelola token lama.", "Choose All time to manage older tokens."],
+ ["1 kunjungan", "1 visit"], ["1 aktivitas kerja", "1 work event"],
  ["Terhambat", "Blocked"],
  ["Gaya warna", "Color style"],
  ["Satu warna aksen untuk seluruh antarmuka. Scratch Green adalah identitas default.", "One accent color across the interface. Scratch Green is the default brand color."]
