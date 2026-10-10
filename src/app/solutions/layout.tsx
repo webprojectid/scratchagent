@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 export const metadata: Metadata = {
   title: "Solutions · Scratch Agent",
   description:
-    "Untuk solo dev, freelancer, agency, dan operator agent coding. Lihat bagaimana Scratch Agent mengubah brief jadi plan siap eksekusi.",
+    "See how ScratchAgent turns product briefs into implementation plans for solo developers, freelancers, agencies, and teams working with coding agents.",
 };
 
 export default function SolutionsLayout({ children }: { children: ReactNode }) {
