@@ -5,7 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { AccountBadges } from "@/components/account-badges";
-import { User, Settings, LogOut, ShieldCheck, FolderOpen, CreditCard, Terminal } from "lucide-react";
+import { User, Settings, LogOut, BookOpen } from "lucide-react";
+import { accountMenuLinks } from "@/lib/account-navigation";
 import { createClient } from "@/lib/supabase/client";
 import { getCurrentUser, refreshCurrentUser, supabaseConfigured, type CurrentUser } from "@/lib/current-user";
 
@@ -68,7 +69,7 @@ export function UserNav() {
     .join("")
     .toUpperCase();
 
-  const isAdmin = user.role === "admin";
+  const menuIcons = { profile: User, settings: Settings, docs: BookOpen };
 
   return (
     <DropdownMenu.Root>
@@ -76,7 +77,7 @@ export function UserNav() {
         <button
           type="button"
           aria-label="Menu Akun"
-          className="group relative flex size-8 items-center justify-center rounded-full border border-white/15 bg-white/[.06] text-white/80 transition hover:border-[#74FA6A]/50 hover:bg-[#74FA6A]/10 hover:text-white focus:outline-none"
+          className="group relative flex size-8 items-center justify-center rounded-full border border-white/15 bg-white/[.06] text-white/80 transition hover:border-[#74FA6A]/50 hover:bg-[#74FA6A]/10 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#a5ef7d]"
         >
           {initials ? (
             <span className="font-mono text-[11px] font-bold text-[#74FA6A]">{initials}</span>
@@ -100,51 +101,20 @@ export function UserNav() {
           </div>
 
           <div className="py-1">
-            <DropdownMenu.Item asChild>
-              <Link
-                href="/profile"
-                className="flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-[12.5px] text-white/80 outline-none transition hover:bg-white/[.07] hover:text-[#74FA6A]"
-              >
-                <User size={14} className="text-white/40" />
-                <span>Profil</span>
-              </Link>
-            </DropdownMenu.Item>
-
-            <DropdownMenu.Item asChild>
-              <Link
-                href="/profile?tab=preferences"
-                className="flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-[12.5px] text-white/80 outline-none transition hover:bg-white/[.07] hover:text-[#74FA6A]"
-              >
-                <Settings size={14} className="text-white/40" />
-                <span>Pengaturan</span>
-              </Link>
-            </DropdownMenu.Item>
-
-            {[
-              { label: "Proyek", tab: "plans", icon: FolderOpen },
-              { label: "Billing & Pemakaian", tab: "billing", icon: CreditCard },
-              { label: "Keamanan", tab: "security", icon: ShieldCheck },
-              { label: "CLI & API", tab: "tokens", icon: Terminal },
-            ].map(({ label, tab, icon: Icon }) => <DropdownMenu.Item key={tab} asChild><Link href={`/profile?tab=${tab}`} className="flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-[12.5px] text-white/80 outline-none transition data-[highlighted]:bg-white/[.07] data-[highlighted]:text-[#74FA6A]"><Icon size={14} className="text-white/40"/><span>{label}</span></Link></DropdownMenu.Item>)}
-
-            {isAdmin && (
-              <DropdownMenu.Item asChild>
-                <Link
-                  href="/admin/users"
-                  className="flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-[12.5px] text-white/80 outline-none transition hover:bg-white/[.07] hover:text-[#74FA6A]"
-                >
-                  <ShieldCheck size={14} className="text-[#74FA6A]" />
-                  <span>Kelola pengguna</span>
+            {accountMenuLinks.map(({ label, href, icon }) => {
+              const Icon = menuIcons[icon];
+              return <DropdownMenu.Item key={href} asChild>
+                <Link href={href} className="flex min-h-11 cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-[12.5px] text-white/80 outline-none transition data-[highlighted]:bg-white/[.07] data-[highlighted]:text-[#74FA6A]">
+                  <Icon size={14} className="text-white/50"/><span>{label}</span>
                 </Link>
-              </DropdownMenu.Item>
-            )}
+              </DropdownMenu.Item>;
+            })}
           </div>
-
           <DropdownMenu.Separator className="h-px bg-white/[.08]" />
 
           <DropdownMenu.Item
             onSelect={handleLogout}
-            className="flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-[12.5px] text-red-400 outline-none transition hover:bg-red-500/10 focus:bg-red-500/10"
+            className="flex min-h-11 cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-[12.5px] text-red-400 outline-none transition data-[highlighted]:bg-red-500/10"
           >
             <LogOut size={14} />
             <span>Keluar</span>
