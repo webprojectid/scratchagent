@@ -4,11 +4,11 @@ import type { ReactNode } from "react";
 export const metadata: Metadata = {
   title: "Pricing · Scratch Agent",
   description:
-    "Mulai dari paket Free, upgrade saat butuh lebih. Free dan Pro untuk solo dev, freelancer, dan agency.",
+    "Start with Free and upgrade when you need more. Compare ScratchAgent Free and Pro for solo developers, freelancers, and agencies.",
   openGraph: {
     title: "Pricing · Scratch Agent",
     description:
-      "Mulai dari paket Free, upgrade saat butuh lebih. Free dan Pro untuk solo dev, freelancer, dan agency.",
+      "Start with Free and upgrade when you need more. Compare ScratchAgent Free and Pro for solo developers, freelancers, and agencies.",
   },
 };
 
