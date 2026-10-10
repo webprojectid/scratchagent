@@ -13,7 +13,7 @@ export async function GET(request: Request) {
     const rows = await listTokens(user.userId);
     return NextResponse.json(await Promise.all(rows.map(async t => {
       const hash = "hash" in t ? t.hash : t.tokenHash;
-      return { hash, label: t.label, revoked: !!t.revokedAt, createdAt: t.createdAt, ...await getTokenPolicy(hash) };
+      return { hash, label: t.label, revoked: !!t.revokedAt, revokedAt: t.revokedAt, createdAt: t.createdAt, ...await getTokenPolicy(hash) };
     })), { headers: { "Cache-Control": "private, no-store" } });
   } catch (error) { return accountError(error); }
 }

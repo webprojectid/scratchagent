@@ -22,14 +22,15 @@ test("legacy tabs redirect to the owning page and preserve preview identity and 
 });
 
 test("page defaults and invalid query values cannot render the other page's categories", () => {
-  assert.deepEqual(resolveAccountRoute("profile", {}), { tab: "profile", redirectTo: null });
+  assert.deepEqual(resolveAccountRoute("profile", {}), { tab: "dashboard", redirectTo: null });
   assert.deepEqual(resolveAccountRoute("settings", {}), { tab: "preferences", redirectTo: null });
   assert.deepEqual(resolveAccountRoute("settings", { tab: "https://evil.test" }), { tab: "preferences", redirectTo: null });
   assert.deepEqual(resolveAccountRoute("profile", { tab: ["billing", "security"] }), { tab: "billing", redirectTo: null });
 });
 
 test("default tabs drop obsolete tab values when navigating between page sections", () => {
-  assert.equal(accountTabHref("profile", "?tab=billing&preview=1"), "/profile?preview=1");
+  assert.equal(accountTabHref("dashboard", "?tab=billing&preview=1"), "/profile?preview=1");
+  assert.equal(accountTabHref("profile"), "/profile?tab=profile");
   assert.equal(accountTabHref("preferences", "?tab=tokens&preview=1"), "/settings?preview=1");
   assert.equal(accountTabHref("tokens", "?tab=billing"), "/settings?tab=tokens");
 });

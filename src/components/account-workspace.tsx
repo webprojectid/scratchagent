@@ -18,6 +18,8 @@ import { defaultDisplay, type DisplaySettings, type ProfileSettings } from "@/li
 import panelStyles from "@/components/account-panels.module.css";
 import { Activity, BookOpen, FileText, Bell, LockKeyhole } from "lucide-react";
 const ProfileOverview = dynamic(() => import("./profile-overview").then(module => module.ProfileOverview));
+const ProfileDashboard = dynamic(() => import("./profile-dashboard").then(module => module.ProfileDashboard));
+import { filterTokens } from "@/lib/account-dashboard";
 const ProjectLedger = dynamic(() => import("./project-ledger").then(module => module.ProjectLedger));
 import { AccountBadges } from "@/components/account-badges";
 import { isDeveloperAdmin } from "@/lib/admin-access";
@@ -85,6 +87,7 @@ type TokenItem = {
   hash: string;
   label: string;
   revoked: boolean;
+  revokedAt?: string | null;
   createdAt?: string;
   expiresAt?: string | null; lastUsedAt?: string | null; access?: "read" | "write"; projectIds?: string[];
 };
@@ -132,6 +135,8 @@ export function AccountWorkspace({ area, initialTab }: { area: AccountArea; init
   const [tokens, setTokens] = useState<TokenItem[]>([]);
   const [tokensLoading, setTokensLoading] = useState(true);
   const [tokensError, setTokensError] = useState(false);
+  const [tokenGroup, setTokenGroup] = useState<"active" | "revoked" | "expired">("active");
+  const [tokenRecent, setTokenRecent] = useState(true);
   const [tokenToRevoke, setTokenToRevoke] = useState<TokenItem | null>(null);
   const [creatingToken, setCreatingToken] = useState(false);
   const [newToken, setNewToken] = useState<string | null>(null);
@@ -438,7 +443,7 @@ export function AccountWorkspace({ area, initialTab }: { area: AccountArea; init
         body: JSON.stringify({ hash, userId: u?.email }),
       });
       if (!result.ok) { setToast(ui("Token gagal dicabut. Coba lagi.")); return; }
-      setTokens((prev) => prev.map((t) => (t.hash === hash ? { ...t, revoked: true } : t)));
+      setTokens((prev) => prev.map((t) => (t.hash === hash ? { ...t, revoked: true, revokedAt: new Date().toISOString() } : t)));
       setToast(ui("Token berhasil dicabut."));
       setTokenToRevoke(null);
     } catch { setToast(ui("Gagal menghubungi server token.")); }
@@ -482,6 +487,7 @@ export function AccountWorkspace({ area, initialTab }: { area: AccountArea; init
   const isPro = membershipTier === "pro";
   const accountPlanLabel = membershipTier ? `Scratch ${isPro ? "Pro" : ui("Free")}` : ui("Paket belum terverifikasi");
   const isAdmin = user.role === "admin" && isDeveloperAdmin(user.email);
+  const visibleTokens = filterTokens(tokens, tokenGroup, tokenRecent, Date.now());
   return (
     <div className="relative min-h-screen">
       <div className={accountStyles.page} data-motion={preferences.motion}>
@@ -494,6 +500,7 @@ export function AccountWorkspace({ area, initialTab }: { area: AccountArea; init
               <Link className={accountStyles.navItem} href="/"><ChartNoAxesColumn size={19}/>{ui("Ringkasan")}</Link>
               {isProfileArea ? <>
               <p className={accountStyles.navLabel}>{ui("Profil")}</p>
+              <button className={activeTab === "dashboard" ? accountStyles.navActive : accountStyles.navItem} aria-current={activeTab === "dashboard" ? "page" : undefined} onClick={() => navigateTab("dashboard")}><ChartNoAxesColumn size={17}/>{ui("Dashboard")}</button>
               <button className={activeTab === "profile" ? accountStyles.navActive : accountStyles.navItem} aria-current={activeTab === "profile" ? "page" : undefined} onClick={() => navigateTab("profile")}><User size={17}/>{ui("Profil")}</button>
               <button className={activeTab === "plans" ? accountStyles.navActive : accountStyles.navItem} aria-current={activeTab === "plans" ? "page" : undefined} onClick={() => navigateTab("plans")}><FolderOpen size={17}/>{ui("Proyek")}<span className={accountStyles.navCount}>{plans.length}</span></button>
               <button className={activeTab === "billing" ? accountStyles.navActive : accountStyles.navItem} aria-current={activeTab === "billing" ? "page" : undefined} onClick={() => navigateTab("billing")}><Crown size={17}/>{ui("Billing &amp; Pemakaian")}</button>
@@ -515,6 +522,7 @@ export function AccountWorkspace({ area, initialTab }: { area: AccountArea; init
             <div className={accountStyles.sidebarFooter}><div className={accountStyles.avatar}>{initials}</div><div><strong>{user.name}</strong><AccountBadges account={user} compact reducedMotion={preferences.motion === "reduced"}/></div><button type="button" onClick={handleLogout} aria-label={ui("Keluar")}><LogOut size={17}/></button></div>
           </aside>
           <main className={accountStyles.content}>
+        {activeTab === "dashboard" && <ProfileDashboard email={user.email} name={user.name} plans={plans} loading={plansLoading} error={plansError} preview={previewMode()} timezone={preferences.timezone} onProjects={() => navigateTab("plans")}/>}
         {activeTab === "profile" && (
           <ProfileOverview
             user={user}
@@ -541,8 +549,10 @@ export function AccountWorkspace({ area, initialTab }: { area: AccountArea; init
           <form className={panelStyles.panel} onSubmit={event => { event.preventDefault(); void createToken(); }}><div className={panelStyles.grid}><label className={panelStyles.field}>{ui("Nama token")}<input maxLength={80} value={tokenLabel} onChange={event => setTokenLabel(event.target.value)} placeholder={ui("Laptop kerja / agent proyek")}/></label><label className={panelStyles.field}>{ui("Masa berlaku")}<select value={tokenDays} onChange={event => setTokenDays(Number(event.target.value) as 7 | 30 | 90)}><option value="7">{ui("7 hari")}</option><option value="30">{ui("30 hari")}</option><option value="90">{ui("90 hari")}</option></select></label><label className={panelStyles.field}>{ui("Izin")}<select value={tokenAccess} onChange={event => setTokenAccess(event.target.value as "read" | "write")}><option value="read">{ui("Baca saja")}</option><option value="write">{ui("Baca &amp; tulis tugas")}</option></select></label><label className={panelStyles.field}>{ui("Batas proyek")}<select value={tokenProject} onChange={event => setTokenProject(event.target.value)} disabled={plansLoading || plansError}><option value="">{ui("Semua proyek milik akun")}</option>{plans.filter(plan => plan.id !== "demo").map(plan => <option key={plan.id} value={plan.id}>{plan.title}</option>)}</select></label></div></form>
           <div className={accountStyles.tokenOverview}><div><Terminal size={22}/><strong>{tokensLoading || tokensError ? "…" : tokens.filter((token) => !token.revoked && (!token.expiresAt || Date.parse(token.expiresAt) > Date.now())).length}</strong><span>{ui("Token aktif")}</span></div><p>{ui("Token baru hanya ditampilkan satu kali. Simpan dengan aman sebelum Anda menutup halaman ini. Token lama tidak bisa ditampilkan kembali.")}</p></div>
           {newToken && <div className={accountStyles.newToken} role="status"><div><strong>{ui("Token baru siap digunakan")}</strong><p>{ui("Salin sekarang. Nilai ini tidak akan ditampilkan lagi setelah halaman ditutup.")}</p></div><code>{newToken}</code><button type="button" onClick={() => handleCopy(newToken, "new-token")}>{copiedToken === "new-token" ? <Check size={16}/> : <Copy size={16}/>} {copiedToken === "new-token" ? ui("Tersalin") : ui("Salin token")}</button></div>}
-          <div className={accountStyles.tokenListHeading}><h2>{ui("Daftar token")}</h2><span>{tokensLoading || tokensError ? "…" : `${tokens.length} token`}</span></div>
-          {tokensLoading ? <div className={accountStyles.tokenEmpty} role="status"><Loader2 size={25} className="animate-spin"/><strong>{ui("Memuat token…")}</strong></div> : tokensError ? <div className={accountStyles.tokenEmpty} role="alert"><Terminal size={25}/><strong>{ui("Token belum bisa dimuat")}</strong><p>{ui("Periksa koneksi lalu coba lagi.")}</p><button type="button" onClick={() => window.location.reload()}>{ui("Coba lagi")}</button></div> : tokens.length === 0 ? <div className={accountStyles.tokenEmpty}><Terminal size={25}/><strong>{ui("Belum ada token")}</strong><p>{ui("Buat token untuk menghubungkan CLI Anda.")}</p></div> : <div className={accountStyles.tokenList}>{tokens.map((token) => <div className={accountStyles.tokenRow} key={token.hash}><div className={accountStyles.tokenIcon}><Terminal size={19}/></div><div className={accountStyles.tokenIdentity}><div><strong>{token.label}</strong><span className={token.revoked ? accountStyles.tokenRevoked : accountStyles.tokenActive}>{token.revoked ? ui("Dicabut") : token.expiresAt && Date.parse(token.expiresAt) <= Date.now() ? ui("Kedaluwarsa") : ui("Aktif")}</span></div><p>ID {token.hash.slice(0, 12)}… · {token.createdAt && !Number.isNaN(Date.parse(token.createdAt)) ? new Date(token.createdAt).toLocaleDateString(uiLocale()) : ui("Tanggal tidak tersedia")}</p><p>{token.access === "read" ? ui("Baca saja") : ui("Baca & tulis")} · {token.projectIds?.length ? ui("{0} proyek", token.projectIds.length) : ui("Semua proyek")}</p><p>{ui("Berlaku")}{token.expiresAt ? new Date(token.expiresAt).toLocaleDateString(uiLocale(), { timeZone: preferences.timezone }) : ui("tanpa batas (token lama)")} · {ui("Dipakai")} {token.lastUsedAt ? new Date(token.lastUsedAt).toLocaleString(uiLocale(), { timeZone: preferences.timezone }) : ui("belum pernah")}</p></div>{!token.revoked && <button type="button" onClick={() => setTokenToRevoke(token)} aria-label={ui("Cabut token {0}", token.label)}><Trash2 size={16}/>{ui("Cabut")}</button>}</div>)}</div>}
+          <div className={accountStyles.tokenListHeading}><h2>{ui("Daftar token")}</h2><span>{tokensLoading || tokensError ? "…" : `${visibleTokens.length} / ${tokens.length} token`}</span></div>
+          <div className={panelStyles.row}><div className={accountStyles.segmented} role="group" aria-label={ui("Status token")}>{(["active", "revoked", "expired"] as const).map(group => <button type="button" key={group} aria-pressed={tokenGroup === group} onClick={() => setTokenGroup(group)}>{ui(group === "active" ? "Aktif" : group === "revoked" ? "Dicabut" : "Kedaluwarsa")}</button>)}</div><select aria-label={ui("Periode token")} value={tokenRecent ? "recent" : "all"} onChange={event => setTokenRecent(event.target.value === "recent")}><option value="recent">{ui("3 hari terakhir")}</option><option value="all">{ui("Semua waktu")}</option></select></div>
+          <p className={accountStyles.intro}>{ui("Aktif: dibuat atau dipakai dalam periode ini. Revoked: tanggal pencabutan. Kedaluwarsa: tanggal berakhir. Filter tidak menghapus token.")}</p>
+          {tokensLoading ? <div className={accountStyles.tokenEmpty} role="status"><Loader2 size={25} className="animate-spin"/><strong>{ui("Memuat token…")}</strong></div> : tokensError ? <div className={accountStyles.tokenEmpty} role="alert"><Terminal size={25}/><strong>{ui("Token belum bisa dimuat")}</strong><p>{ui("Periksa koneksi lalu coba lagi.")}</p><button type="button" onClick={() => window.location.reload()}>{ui("Coba lagi")}</button></div> : visibleTokens.length === 0 ? <div className={accountStyles.tokenEmpty}><Terminal size={25}/><strong>{ui("Tidak ada token dalam filter ini")}</strong><p>{ui("Pilih Semua waktu untuk mengelola token lama.")}</p></div> : <div className={accountStyles.tokenList}>{visibleTokens.map((token) => <div className={accountStyles.tokenRow} key={token.hash}><div className={accountStyles.tokenIcon}><Terminal size={19}/></div><div className={accountStyles.tokenIdentity}><div><strong>{token.label}</strong><span className={token.revoked ? accountStyles.tokenRevoked : accountStyles.tokenActive}>{token.revoked ? ui("Dicabut") : token.expiresAt && Date.parse(token.expiresAt) <= Date.now() ? ui("Kedaluwarsa") : ui("Aktif")}</span></div><p>ID {token.hash.slice(0, 12)}… · {token.createdAt && !Number.isNaN(Date.parse(token.createdAt)) ? new Date(token.createdAt).toLocaleDateString(uiLocale()) : ui("Tanggal tidak tersedia")}</p><p>{token.access === "read" ? ui("Baca saja") : ui("Baca & tulis")} · {token.projectIds?.length ? ui("{0} proyek", token.projectIds.length) : ui("Semua proyek")}</p><p>{ui("Berlaku")}{token.expiresAt ? new Date(token.expiresAt).toLocaleDateString(uiLocale(), { timeZone: preferences.timezone }) : ui("tanpa batas (token lama)")} · {ui("Dipakai")} {token.lastUsedAt ? new Date(token.lastUsedAt).toLocaleString(uiLocale(), { timeZone: preferences.timezone }) : ui("belum pernah")}</p></div>{!token.revoked && <button type="button" onClick={() => setTokenToRevoke(token)} aria-label={ui("Cabut token {0}", token.label)}><Trash2 size={16}/>{ui("Cabut")}</button>}</div>)}</div>}
         </section>}
         {activeTab === "security" && <section className={accountStyles.security} aria-labelledby="security-title">
           <p className={accountStyles.eyebrow}>{ui("PENGATURAN / KEAMANAN")}</p>
@@ -588,6 +598,7 @@ export function AccountWorkspace({ area, initialTab }: { area: AccountArea; init
         {activeTab === "preferences" && <section className={accountStyles.preferences} aria-labelledby="preferences-title">
           <p className={accountStyles.eyebrow}>{ui("PENGATURAN / PREFERENSI")}</p>
           <h1 id="preferences-title">{ui("Tampilan")}</h1>
+          <fieldset className={panelStyles.panel}><legend>{ui("Gaya warna")}</legend><p className={panelStyles.hint}>{ui("Satu warna aksen untuk seluruh antarmuka. Scratch Green adalah identitas default.")}</p><div className="account-color-choices">{([{ value: "scratch", label: "Scratch Green", color: "#74fa6a" }, { value: "blue", label: "Blue", color: "#87bfff" }, { value: "violet", label: "Violet", color: "#c4a5ff" }, { value: "amber", label: "Amber", color: "#f2c66d" }, { value: "rose", label: "Rose", color: "#f4a5b8" }] as const).map(option => <button type="button" key={option.value} aria-pressed={preferences.colorStyle === option.value} disabled={accountSettings.loading || !!accountSettings.error || preferencesSaving} onClick={() => { setPreferences({ ...preferences, colorStyle: option.value }); setPreferencesSaved(false); document.documentElement.dataset.colorStyle = option.value; }}><i style={{ background: option.color }}/>{option.label}{preferences.colorStyle === option.value && <Check size={15}/>}</button>)}</div></fieldset>
           <p className={accountStyles.intro}>{ui("Atur tampilan, bahasa produk, dan zona waktu. Pengaturan disimpan di akun dan ikut ke perangkat Anda.")}</p>
           {accountSettings.error && <div role="alert" className={accountStyles.errorMessage}>{accountSettings.error} <button onClick={accountSettings.reload}>{ui("Coba lagi")}</button></div>}
           <div className={accountStyles.preferenceGroup}>

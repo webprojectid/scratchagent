@@ -171,3 +171,4 @@
   }
   .badge::after, .badges .signalDot { background: CanvasText; }
 }
+:global(html[data-color-style]:not([data-color-style=scratch])) .badges .pro,:global(html[data-color-style]:not([data-color-style=scratch])) .badges .admin{--badge-accent:var(--style-soft);--tile-edge:var(--style-accent);--tile-fill:var(--style-tint)}:global(html[data-color-style]:not([data-color-style=scratch])) .badges .signalDot{background:var(--style-accent)}

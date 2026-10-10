@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { defaultAccountSettings, type AccountSettings, type DisplaySettings } from "@/lib/account-preferences";
 import { setLang } from "@/lib/lang";
 export function applyDisplaySettings(display: DisplaySettings) {
+  document.documentElement.dataset.colorStyle = display.colorStyle ?? "scratch";
   localStorage.setItem("scratch_account_preferences", JSON.stringify(display));
   document.documentElement.dataset.accountTextSize = display.textSize;
   document.documentElement.dataset.accountMotion = display.motion;
@@ -36,7 +37,7 @@ export function useAccountSettings(email?: string, preview = false) {
     }
     setData(result);
     if (category === "display") {
-      if (preview) setLang(result.display.language, false);
+      if (preview) { setLang(result.display.language, false); document.documentElement.dataset.colorStyle = result.display.colorStyle; }
       else { try { applyDisplaySettings(result.display); } catch { /* Optional local cache. */ } }
     }
     return result;

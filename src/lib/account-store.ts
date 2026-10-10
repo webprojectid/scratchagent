@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, isNull, ne, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, ne, sql, gte } from "drizzle-orm";
 import { getDb } from "@/db";
 import { accountSettings, accountLibrary, accountActivity, accountSessions, projectState, tokenPolicy } from "@/db/account-schema";
 import { users, plans, tokens, usageEvents } from "@/db/schema";
@@ -77,9 +77,21 @@ async function persistAccountActivity(userId: string, kind: string, title: strin
   await getDb().insert(accountActivity).values({ userId, kind, title, planId, notification, dedupeKey }).onConflictDoNothing();
 }
 export async function listActivity(userId: string): Promise<ActivityItem[]> {
-  if (memoryMode()) return Array.from(memory.activity.values()).filter(item => item.userId === userId).sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 100);
-  const rows = await getDb().select().from(accountActivity).where(eq(accountActivity.userId, userId)).orderBy(desc(accountActivity.createdAt)).limit(100);
+  if (memoryMode()) return Array.from(memory.activity.values()).filter(item => item.userId === userId && item.kind !== "site_visit").sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 100);
+  const rows = await getDb().select().from(accountActivity).where(and(eq(accountActivity.userId, userId), ne(accountActivity.kind, "site_visit"))).orderBy(desc(accountActivity.createdAt)).limit(100);
   return rows.map(row => ({ ...row, readAt: row.readAt?.toISOString() ?? null, createdAt: row.createdAt.toISOString() }));
+}
+export async function dashboardActivity(userId: string) {
+  const since = new Date(Date.now() - 32 * 86400_000);
+  if (memoryMode()) return Array.from(memory.activity.values()).filter(row => row.userId === userId && Date.parse(row.createdAt) >= since.getTime()).map(row => ({ kind: row.kind, createdAt: row.createdAt }));
+  // Quarter-hour buckets preserve local-day boundaries, including quarter-hour time zones.
+  const bucket = sql<Date>`to_timestamp(floor(extract(epoch from ${accountActivity.createdAt}) / 900) * 900)`;
+  const rows = await getDb().select({ kind: accountActivity.kind, createdAt: bucket, count: sql<number>`count(*)::int` }).from(accountActivity).where(and(eq(accountActivity.userId, userId), gte(accountActivity.createdAt, since))).groupBy(accountActivity.kind, bucket);
+  return rows.map(row => ({ kind: row.kind, createdAt: new Date(row.createdAt).toISOString(), count: row.count }));
+}
+export async function recordSiteVisit(userId: string) {
+  const bucket = Math.floor(Date.now() / 1800_000);
+  await persistAccountActivity(userId, "site_visit", "ScratchAgent visit", null, `visit:${userId}:${bucket}`);
 }
 export async function readNotifications(userId: string) {
   if (memoryMode()) { for (const row of memory.activity.values()) if (row.userId === userId && row.notification) row.readAt = new Date().toISOString(); return; }

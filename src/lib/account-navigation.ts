@@ -1,4 +1,4 @@
-export const profileTabs = ["profile", "plans", "billing", "activity", "library"] as const;
+export const profileTabs = ["dashboard", "profile", "plans", "billing", "activity", "library"] as const;
 export const settingsTabs = ["preferences", "language", "handoff", "security", "tokens", "notifications", "privacy"] as const;
 export type AccountTab = typeof profileTabs[number] | typeof settingsTabs[number];
 export type AccountArea = "profile" | "settings";
@@ -19,7 +19,7 @@ export function accountAreaForTab(tab: AccountTab): AccountArea {
 }
 
 export function defaultAccountTab(area: AccountArea): AccountTab {
-  return area === "profile" ? "profile" : "preferences";
+  return area === "profile" ? "dashboard" : "preferences";
 }
 
 export function accountTabHref(tab: AccountTab, search = ""): string {

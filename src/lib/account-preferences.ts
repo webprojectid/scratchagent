@@ -6,6 +6,7 @@ export const profileSettingsSchema = z.object({
   avatar: z.enum(["initials", "sprout", "layers", "code", "orbit", "bolt"]).default("initials"),
 });
 export const displaySettingsSchema = z.object({
+  colorStyle: z.enum(["scratch", "blue", "violet", "amber", "rose"]).default("scratch"),
   density: z.enum(["comfortable", "compact"]).default("comfortable"),
   motion: z.enum(["system", "reduced"]).default("system"),
   badgeMotion: z.enum(["system", "animated", "reduced"]).default("system"),

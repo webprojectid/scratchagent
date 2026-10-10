@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { Geist, Geist_Mono, Space_Grotesk } from "next/font/google";
 import "./globals.css";
+import "./color-styles.css";
 import { Providers } from "@/components/providers";
 import { langInitScript } from "@/lib/lang";
 
@@ -31,6 +32,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: langInitScript }} />
+        <script dangerouslySetInnerHTML={{ __html: "try{var p=JSON.parse(localStorage.getItem('scratch_account_preferences')||'{}');if(['scratch','blue','violet','amber','rose'].includes(p.colorStyle))document.documentElement.dataset.colorStyle=p.colorStyle}catch(e){}" }} />
       </head>
       <body className="min-h-full flex flex-col"><Providers>{children}</Providers></body>
     </html>
