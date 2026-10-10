@@ -20,7 +20,6 @@ const categories = [
 
 const fallbackIcons = ["Compass", "Orbit", "Waypoints", "Route", "Network", "Puzzle", "Feather", "Telescope", "Radio", "Flag", "Focus", "ScanLine"] as const;
 export type ProjectIconName = typeof categories[number]["icons"][number] | typeof fallbackIcons[number];
-export const projectIdentityTones = ["green", "blue", "violet", "amber", "teal", "rose"] as const;
 
 function identityHash(value: string): number {
   let hash = 2166136261;
@@ -38,11 +37,10 @@ export function getProjectIdentity(project: { id: string; title: string }) {
   const title = project.title.normalize("NFKD").replace(/\p{M}/gu, "").toLowerCase();
   const category = categories.find(item => item.words.test(title));
   const icons: readonly ProjectIconName[] = category?.icons ?? fallbackIcons;
-  // Separate seeds keep icon and color choices independent and identical across surfaces.
   const seed = project.id.trim() || title || "untitled";
   return {
     category: category?.key ?? "general",
     icon: icons[identityHash(`icon:${seed}`) % icons.length],
-    tone: projectIdentityTones[identityHash(`tone:${seed}`) % projectIdentityTones.length],
+    tone: "green" as const,
   };
 }

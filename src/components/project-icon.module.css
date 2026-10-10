@@ -1,8 +1,3 @@
 .tile{display:inline-grid;place-items:center;flex:none;width:36px;height:36px;border:1px solid var(--icon-border);border-radius:10px;color:var(--icon-ink);background:var(--icon-surface);vertical-align:middle}
 .tile svg{flex:none}
-.green{--icon-ink:#a5ef8a;--icon-surface:#23312a;--icon-border:#354b3c}
-.blue{--icon-ink:#91c8ef;--icon-surface:#202e3b;--icon-border:#34495b}
-.violet{--icon-ink:#c8b0ef;--icon-surface:#30273e;--icon-border:#4b3c60}
-.amber{--icon-ink:#ecc783;--icon-surface:#342d21;--icon-border:#51452e}
-.teal{--icon-ink:#8bd9c8;--icon-surface:#213330;--icon-border:#34504a}
-.rose{--icon-ink:#eeb0ba;--icon-surface:#36282e;--icon-border:#543c45}
+.green{--icon-ink:#a5ef7d;--icon-surface:#23312a;--icon-border:#354b3c}
