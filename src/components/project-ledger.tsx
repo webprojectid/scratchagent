@@ -3,8 +3,9 @@
 import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from "react";
 import Link from "next/link";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import { ArrowDown, ArrowRight, ArrowUpRight, BookOpen, CalendarDays, Check, CheckCircle2, ChevronDown, ChevronRight, Download, Flag, FolderOpen, Layers3, Loader2, Megaphone, MoreVertical, Plus, RefreshCw, Search, ShoppingCart, SlidersHorizontal, Sparkles, Sprout, Tag, Trash2, UserRound } from "lucide-react";
+import { ArrowDown, ArrowRight, ArrowUpRight, CalendarDays, Check, CheckCircle2, ChevronDown, ChevronRight, Download, Flag, FolderOpen, Loader2, MoreVertical, Plus, RefreshCw, Search, SlidersHorizontal, Sparkles, Tag, Trash2, UserRound } from "lucide-react";
 import type { PlanOverview } from "@/lib/plan-overview";
+import { ProjectIcon } from "./project-icon";
 import s from "./project-ledger.module.css";
 
 export type LedgerPlan = {
@@ -23,14 +24,6 @@ function statusInfo(plan: LedgerPlan) {
   if (nearDone(plan)) return { label: "Hampir selesai", tone: "generating" };
   if (working(plan)) return { label: "Dikerjakan", tone: "active" };
   return { label: "Siap dikerjakan", tone: "ready" };
-}
-function projectVisual(plan: LedgerPlan) {
-  const title = plan.title.toLowerCase();
-  if (/habit|kebiasaan/.test(title)) return { Icon: Sprout, tone: "green" };
-  if (/toko|marketplace|commerce/.test(title)) return { Icon: ShoppingCart, tone: "violet" };
-  if (/belajar|learning|pendidikan/.test(title)) return { Icon: BookOpen, tone: "blue" };
-  if (/marketing|kampanye/.test(title)) return { Icon: Megaphone, tone: "amber" };
-  return { Icon: plan.status === "done" ? CheckCircle2 : Layers3, tone: "green" };
 }
 function dateLabel(date?: string | null, time = false) {
   if (!date || Number.isNaN(Date.parse(date))) return "Belum tersedia";
@@ -121,7 +114,6 @@ export function ProjectLedger({ plans, loading, error = false, onRetry, preview 
     finally { setExporting(false); }
   }
   const detailState = !detail ? <div className={s.detailState}>{detailErrorId === selectedPlanId ? <><p role="alert">Detail belum bisa dimuat.</p><button onClick={() => { setDetailErrorId(null); setDetailRevision(value => value + 1); }}>Coba lagi</button></> : <p role="status"><Loader2 size={16} className={s.spin}/> Memuat detail proyek…</p>}</div> : null;
-  const SelectedIcon = selected ? projectVisual(selected).Icon : Layers3;
   return <section className={`${s.ledger} ${compact ? s.compact : ""}`} aria-labelledby="project-title">
     <div className={s.mainColumn}>
       <header className={s.header}><div><h1 id="project-title">Proyek</h1><p>Rencanakan, kembangkan, dan lacak progres produk Anda dengan bantuan AI.</p></div><Link className={s.create} href="/new"><Plus size={20}/> Buat plan</Link></header>
@@ -130,9 +122,9 @@ export function ProjectLedger({ plans, loading, error = false, onRetry, preview 
       <div className={s.toolbar}><label className={s.search}><Search size={20}/><span className="sr-only">Cari proyek</span><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Cari proyek, deskripsi, atau teknologi…"/></label><div className={s.filters} role="group" aria-label="Filter status proyek">{(["all", "active", "near", "done", "ready"] as const).map(item => <button key={item} className={filter === item ? s.filterActive : ""} aria-pressed={filter === item} onClick={() => setFilter(item)}>{({ all: "Semua", active: "Dikerjakan", near: "Hampir selesai", done: "Selesai", ready: "Siap" })[item]} <span>({counts[item]})</span></button>)}</div></div>
       <div className={s.tableHeading}><span>Nama proyek</span><span>Progres fase / tugas</span><button aria-label={`Urutkan tanggal dibuat ${sortNewest ? "terlama" : "terbaru"} dahulu`} onClick={() => setSortNewest(!sortNewest)}>Dibuat <ArrowDown size={15} style={{ transform: sortNewest ? "none" : "rotate(180deg)" }}/></button><span>Status</span><span>Aksi</span></div>
       {loading ? <div className={s.empty} role="status"><Loader2 className={s.spin} size={24}/><strong>Memuat proyek…</strong><p>Daftar akan muncul sebentar lagi.</p></div> : error ? <div className={s.empty} role="alert"><FolderOpen size={28}/><strong>Proyek belum bisa dimuat</strong><p>Periksa koneksi lalu coba lagi.</p><button onClick={onRetry}>Coba lagi <ArrowRight size={16}/></button></div> : filtered.length === 0 ? <div className={s.empty}><FolderOpen size={28}/><strong>{plans.length === 0 ? "Belum ada proyek" : "Tidak ada hasil"}</strong><p>{plans.length === 0 ? "Mulai dengan membuat plan pertama Anda." : "Coba kata kunci atau filter yang lain."}</p>{plans.length === 0 && <Link href="/new">Buat plan <ArrowRight size={16}/></Link>}</div> : <div className={s.rows}>{filtered.map((plan, index) => {
-        const { Icon, tone } = projectVisual(plan), status = statusInfo(plan);
+        const status = statusInfo(plan);
         return <article key={plan.id} className={`${s.row} ${selected?.id === plan.id ? s.selected : ""}`} style={{ animationDelay: `${Math.min(index, 8) * 45}ms` }}>
-          <button className={s.rowSelect} onClick={() => { setSelectedId(plan.id); setNotice(null); }} aria-label={`Lihat detail ${plan.title}`} aria-pressed={selected?.id === plan.id}><span className={`${s.planIcon} ${s[tone]}`}><Icon size={26}/></span><span className={s.planName}><strong>{plan.title}</strong><small>{plan.brief || `${plan.featureCount} fase · ${plan.stack.join(", ") || "Teknologi belum ditentukan"}`}</small></span></button>
+          <button className={s.rowSelect} onClick={() => { setSelectedId(plan.id); setNotice(null); }} aria-label={`Lihat detail ${plan.title}`} aria-pressed={selected?.id === plan.id}><ProjectIcon project={plan} className={s.planIcon}/><span className={s.planName}><strong>{plan.title}</strong><small>{plan.brief || `${plan.featureCount} fase · ${plan.stack.join(", ") || "Teknologi belum ditentukan"}`}</small></span></button>
           <div className={s.progressCell}><span>{plan.featureCount} fase · {plan.tasksDone} dari {plan.taskCount} tugas</span><div><progress aria-label={`Progres ${plan.title}`} value={plan.tasksDone} max={Math.max(1, plan.taskCount)}/><b>{percent(plan)}%</b></div></div>
           <time className={s.date} dateTime={plan.createdAt}>{dateLabel(plan.createdAt)}{plan.createdAt && Number.isFinite(Date.parse(plan.createdAt)) && <small>{new Date(plan.createdAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}</small>}</time>
           <span className={`${s.status} ${s[status.tone]}`}><i/>{status.label}</span>
@@ -142,7 +134,7 @@ export function ProjectLedger({ plans, loading, error = false, onRetry, preview 
       <p className={s.resultCount}>{loading || error ? "" : `${filtered.length} dari ${plans.length} proyek`}</p>
     </div>
     <aside className={s.detail} aria-label="Detail proyek terpilih">{selected && !loading && !error ? <div key={selected.id} className={s.detailInner}>
-      <header className={s.detailHeading}><span className={`${s.detailIcon} ${s[projectVisual(selected).tone]}`}><SelectedIcon size={29}/></span><div><h2>{selected.title}</h2><p>{selected.brief || detail?.brief || "Ringkasan plan yang dipilih"}</p></div></header>
+      <header className={s.detailHeading}><ProjectIcon project={selected} className={s.detailIcon} size={29}/><div><h2>{selected.title}</h2><p>{selected.brief || detail?.brief || "Ringkasan plan yang dipilih"}</p></div></header>
       <div className={s.detailTabs} role="tablist" aria-label="Bagian detail proyek" onKeyDown={event => {
         const current = tabs.indexOf(inspectorTab), next = event.key === "ArrowRight" ? (current + 1) % tabs.length : event.key === "ArrowLeft" ? (current + tabs.length - 1) % tabs.length : event.key === "Home" ? 0 : event.key === "End" ? tabs.length - 1 : -1;
         if (next < 0) return; event.preventDefault(); setInspectorTab(tabs[next]); (event.currentTarget.querySelectorAll("button")[next] as HTMLButtonElement).focus();
