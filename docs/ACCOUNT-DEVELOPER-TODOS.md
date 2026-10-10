@@ -6,8 +6,10 @@
 - [x] 4. Audit landing page English US and Indonesian, including the interactive project demo. Preserve user-written project content.
 - [x] 5. Remove language switches from the landing page; retain account Language settings.
 - [x] 6. Run focused regression checks, production build and final antislop audit.
-- [ ] 7. Commit scoped changes, push and verify the production deployment.
+- [x] 7. Commit scoped changes, push and verify the production deployment.
 
 2FA remains deferred. Never run destructive account deletion, paid LLM requests or changes to real users as audit fixtures.
 
 Audit details and practical verification limits: [audit-013](../anti-slop/audit-013-2026-10-11.md).
+
+Implementation release: 725f41076f5d7d2f8ee95e10723bd894f3f04b08. GitHub/Vercel reports deployment completed. Canonical site: https://www.scratchagent.web.id/.
