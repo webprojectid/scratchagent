@@ -1,5 +1,4 @@
 import { headers } from "next/headers";
-import { eq } from "drizzle-orm";
 import { getDb } from "@/db";
 import { blockedIps, securityEvents } from "@/db/schema";
 import type { NextResponse } from "next/server";
@@ -221,26 +220,40 @@ export interface IpGeo {
   local: boolean;
 }
 
-const geoCache = new Map<string, IpGeo>();
+const geoCache = new Map<string, { value: IpGeo; expiresAt: number }>();
+const geoPending = new Map<string, Promise<IpGeo>>();
+const emptyGeo: IpGeo = { country: null, countryCode: null, city: null, isp: null, local: false };
+export function cachedIpGeo(ip: string): IpGeo {
+  const cached = geoCache.get(ip);
+  return cached && cached.expiresAt > Date.now() ? cached.value : emptyGeo;
+}
 
 export async function lookupIpGeo(ip: string | null | undefined): Promise<IpGeo> {
   const empty: IpGeo = { country: null, countryCode: null, city: null, isp: null, local: false };
   if (!ip) return empty;
   if (isPrivateIp(ip)) return { ...empty, local: true };
   const cached = geoCache.get(ip);
-  if (cached) return cached;
+  if (cached && cached.expiresAt > Date.now()) return cached.value;
+  const pending = geoPending.get(ip);
+  if (pending) return pending;
+  const lookup = fetchIpGeo(ip);
+  geoPending.set(ip, lookup);
+  try { return await lookup; } finally { geoPending.delete(ip); }
+}
+
+async function fetchIpGeo(ip: string): Promise<IpGeo> {
+  const empty = emptyGeo;
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 2500);
   try {
-    const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 2500);
     const res = await fetch(`https://ipwho.is/${encodeURIComponent(ip)}`, {
       signal: ctrl.signal,
       headers: { accept: "application/json" },
       cache: "no-store",
     });
-    clearTimeout(timer);
-    if (!res.ok) return empty;
+    if (!res.ok) throw new Error("Geolocation unavailable");
     const d = (await res.json()) as Record<string, unknown>;
-    if (d?.success === false) return empty;
+    if (d?.success === false) throw new Error("Geolocation unavailable");
     const geo: IpGeo = {
       country: (d.country as string) ?? null,
       countryCode: (d.country_code as string) ?? null,
@@ -249,11 +262,13 @@ export async function lookupIpGeo(ip: string | null | undefined): Promise<IpGeo>
       local: false,
     };
     if (geoCache.size > 500) geoCache.clear(); // batas memori sederhana
-    geoCache.set(ip, geo);
+    geoCache.set(ip, { value: geo, expiresAt: Date.now() + 60 * 60_000 });
     return geo;
   } catch {
+    if (geoCache.size > 500) geoCache.clear();
+    geoCache.set(ip, { value: empty, expiresAt: Date.now() + 60_000 });
     return empty;
-  }
+  } finally { clearTimeout(timer); }
 }
 
 /** Format lokasi jadi satu string pendek untuk tabel: "Jakarta, Indonesia (ID)". */

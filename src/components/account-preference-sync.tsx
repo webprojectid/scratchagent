@@ -10,7 +10,7 @@ export function AccountPreferenceSync() {
   const pathname = usePathname();
   const email = user?.email;
   useEffect(() => {
-    if (!email || new URLSearchParams(location.search).has("preview")) return;
+    if (!email || pathname === "/settings" || pathname === "/profile" || new URLSearchParams(location.search).has("preview")) return;
     const controller = new AbortController();
     fetch("/api/account/settings", { cache: "no-store", signal: controller.signal })
       .then(async response => {

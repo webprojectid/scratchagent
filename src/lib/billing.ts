@@ -1,4 +1,4 @@
-import { and, eq, gte, ilike, or, sql } from "drizzle-orm";
+import { and, desc, eq, gt, gte, ilike, isNull, or, sql } from "drizzle-orm";
 import { getDb } from "@/db";
 import { users, usageEvents, subscriptions, plans } from "@/db/schema";
 import {
@@ -416,25 +416,21 @@ export async function listAccounts(search?: string): Promise<AdminUserRow[]> {
       createdAt: new Date(u.createdAt),
     }));
   } else {
-    const db = getDb();
     const q = search?.trim();
-    let dbRows;
-    if (q) {
-      dbRows = await db
-        .select()
-        .from(users)
-        .where(or(ilike(users.email, `%${q}%`), ilike(users.name, `%${q}%`)))
-        .orderBy(sql`${users.createdAt} desc`);
-    } else {
-      dbRows = await db.select().from(users).orderBy(sql`${users.createdAt} desc`);
-    }
-    rows = dbRows.map((r) => ({
-      id: r.id,
-      email: r.email,
-      name: r.name,
-      bannedAt: r.bannedAt,
-      createdAt: r.createdAt,
-    }));
+    const now = new Date();
+    const dbRows = await getDb().selectDistinctOn([users.id], {
+      id: users.id, email: users.email, name: users.name, bannedAt: users.bannedAt, createdAt: users.createdAt,
+      subscriptionId: subscriptions.id, proExpiresAt: subscriptions.expiresAt,
+    }).from(users).leftJoin(subscriptions, and(
+      eq(subscriptions.userId, users.id), isNull(subscriptions.endedAt),
+      or(isNull(subscriptions.expiresAt), gt(subscriptions.expiresAt, now)),
+    )).where(q ? or(ilike(users.email, `%${q}%`), ilike(users.name, `%${q}%`)) : undefined)
+      .orderBy(users.id, desc(subscriptions.startedAt));
+    return dbRows.map(r => ({
+      id: r.id, email: r.email, name: r.name, bannedAt: r.bannedAt, createdAt: r.createdAt,
+      tier: r.subscriptionId ? "pro" as const : "free" as const,
+      proActive: !!r.subscriptionId, proExpiresAt: r.proExpiresAt, isAdmin: isAdminEmail(r.email),
+    })).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   }
   if (isMemoryMode() && search?.trim()) {
     const q = search.trim().toLowerCase();
@@ -454,4 +450,24 @@ export async function listAccounts(search?: string): Promise<AdminUserRow[]> {
     });
   }
   return withActive;
+}
+
+/** Identity and membership only; usage and project history belong to the detail screen. */
+export async function getAccountSummary(userId: string): Promise<AdminUserRow | null> {
+  if (isMemoryMode()) {
+    const u = memoryGetUserById(userId);
+    if (!u) return null;
+    const active = activeSub(memoryListSubscriptions(userId).map(normalizeSub).sort((a, b) => b.startedAt.getTime() - a.startedAt.getTime()));
+    return { id: u.id, email: u.email, name: u.name, bannedAt: toDate(u.bannedAt), createdAt: new Date(u.createdAt),
+      tier: active ? "pro" : "free", proActive: !!active, proExpiresAt: active?.expiresAt ?? null, isAdmin: isAdminEmail(u.email) };
+  }
+  const rows = await getDb().select({
+    id: users.id, email: users.email, name: users.name, bannedAt: users.bannedAt, createdAt: users.createdAt,
+    subscriptionId: subscriptions.id, proExpiresAt: subscriptions.expiresAt,
+  }).from(users).leftJoin(subscriptions, and(eq(subscriptions.userId, users.id), isNull(subscriptions.endedAt),
+    or(isNull(subscriptions.expiresAt), gt(subscriptions.expiresAt, new Date()))))
+    .where(eq(users.id, userId)).orderBy(desc(subscriptions.startedAt)).limit(1);
+  const r = rows[0];
+  return r ? { id: r.id, email: r.email, name: r.name, bannedAt: r.bannedAt, createdAt: r.createdAt,
+    tier: r.subscriptionId ? "pro" : "free", proActive: !!r.subscriptionId, proExpiresAt: r.proExpiresAt, isAdmin: isAdminEmail(r.email) } : null;
 }
