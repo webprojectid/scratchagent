@@ -39,33 +39,33 @@ const MAX_FIELDS = 8;
 /* ---------------- styling per bentuk ---------------- */
 
 const shapeStyles: Record<Shape, { box: string; badge: string; glyph: string; map: string }> = {
-  rect: { box: "border-white/10", badge: "text-slate-500", glyph: "▪", map: "#334155" },
-  round: { box: "border-emerald-400/30", badge: "text-emerald-400/70", glyph: "●", map: "#10b981" },
-  circle: { box: "border-emerald-400/30", badge: "text-emerald-400/70", glyph: "●", map: "#10b981" },
-  diamond: { box: "border-amber-400/40", badge: "text-amber-400/80", glyph: "◆", map: "#f59e0b" },
-  cylinder: { box: "border-sky-400/40", badge: "text-sky-400/80", glyph: "⛁", map: "#0ea5e9" },
+  rect: { box: "border-border", badge: "text-muted-foreground", glyph: "▪", map: "var(--theme-border)" },
+  round: { box: "border-primary", badge: "text-primary", glyph: "●", map: "var(--theme-accent)" },
+  circle: { box: "border-primary", badge: "text-primary", glyph: "●", map: "var(--theme-accent)" },
+  diamond: { box: "border-primary", badge: "text-primary", glyph: "◆", map: "var(--theme-accent)" },
+  cylinder: { box: "border-primary", badge: "text-primary", glyph: "⛁", map: "var(--theme-accent)" },
 };
 
 function FieldRow({ raw }: { raw: string }) {
   useUiLanguage();
   const parts = raw.trim().split(/\s+/).filter(Boolean);
   if (parts.length < 2) {
-    return <div className="truncate font-mono text-[9px] leading-4 text-slate-400">{raw}</div>;
+    return <div className="truncate font-mono text-[9px] leading-4 text-muted-foreground">{raw}</div>;
   }
   const [type, name, ...rest] = parts;
   const constraint = rest.join(" ");
   return (
     <div className="flex items-baseline gap-1.5 font-mono text-[9px] leading-4">
-      <span className="truncate text-slate-200">{name}</span>
-      <span className="shrink-0 text-slate-500">{type}</span>
+      <span className="truncate text-foreground">{name}</span>
+      <span className="shrink-0 text-muted-foreground">{type}</span>
       {constraint && (
         <span
           className={`ml-auto shrink-0 text-[7px] font-bold tracking-wide ${
             constraint.includes("PK")
-              ? "text-amber-400/90"
+              ? "text-primary"
               : constraint.includes("FK")
-                ? "text-sky-400/90"
-                : "text-slate-600"
+                ? "text-primary"
+                : "text-muted-foreground"
           }`}
         >
           {constraint}
@@ -87,34 +87,34 @@ function FlowNode({ data }: { data: FlowNodeData }) {
 
   return (
     <div
-      className={`h-full w-full border bg-[#0C0F13] px-3 py-2 shadow-lg shadow-black/40 ${s.box} ${
+      className={`h-full w-full border bg-background px-3 py-2 shadow-lg shadow-black/40 ${s.box} ${
         pill ? "rounded-full" : "rounded-lg"
       }`}
     >
       {vertical ? (
         <>
-          <Handle type="target" position={Position.Top} className="!size-1.5 !border-slate-600 !bg-[#0C0F13]" />
-          <Handle type="source" position={Position.Bottom} className="!size-1.5 !border-slate-600 !bg-[#0C0F13]" />
+          <Handle type="target" position={Position.Top} className="!size-1.5 !border-border !bg-background" />
+          <Handle type="source" position={Position.Bottom} className="!size-1.5 !border-border !bg-background" />
         </>
       ) : (
         <>
-          <Handle type="target" position={Position.Left} className="!size-1.5 !border-slate-600 !bg-[#0C0F13]" />
-          <Handle type="source" position={Position.Right} className="!size-1.5 !border-slate-600 !bg-[#0C0F13]" />
+          <Handle type="target" position={Position.Left} className="!size-1.5 !border-border !bg-background" />
+          <Handle type="source" position={Position.Right} className="!size-1.5 !border-border !bg-background" />
         </>
       )}
       <div className="flex items-start gap-1.5">
         <span className={`mt-px text-[8px] leading-none ${s.badge}`}>{s.glyph}</span>
-        <div className="min-w-0 flex-1 text-center text-[11px] font-semibold leading-tight text-slate-100">
+        <div className="min-w-0 flex-1 text-center text-[11px] font-semibold leading-tight text-foreground">
           {data.label}
         </div>
       </div>
       {hasFields && (
-        <div className="mt-1.5 space-y-px border-t border-white/[.06] pt-1.5 text-left">
+        <div className="mt-1.5 space-y-px border-t border-border pt-1.5 text-left">
           {visible.map((f, i) => (
             <FieldRow key={i} raw={f} />
           ))}
           {fields.length > MAX_FIELDS && (
-            <div className="pt-0.5 text-[8px] text-slate-600">+{fields.length - MAX_FIELDS}{ui("kolom lain")}</div>
+            <div className="pt-0.5 text-[8px] text-muted-foreground">+{fields.length - MAX_FIELDS}{ui("kolom lain")}</div>
           )}
         </div>
       )}
@@ -263,7 +263,7 @@ function buildGraph(
     data: { label: meta.label, shape: meta.shape ?? "rect", fields: meta.fields, rankdir },
   }));
 
-  const accent = kind === "erd" ? "#74FA6A" : "#5b6472";
+  const accent = kind === "erd" ? "var(--primary)" : "var(--muted-foreground)";
   const edges: Edge[] = edgeList.map((e, i) => ({
     id: `${kind}-${i}`,
     source: e.source,
@@ -274,8 +274,8 @@ function buildGraph(
     ...(kind === "flow"
       ? { markerEnd: { type: MarkerType.ArrowClosed, color: accent, width: 13, height: 13 } }
       : {}),
-    labelStyle: { fill: "#9ca3af", fontSize: 9 },
-    labelBgStyle: { fill: "#0A0C0E", fillOpacity: 0.92 },
+    labelStyle: { fill: "var(--theme-muted)", fontSize: 9 },
+    labelBgStyle: { fill: "var(--theme-muted)", fillOpacity: 0.92 },
     labelBgPadding: [4, 2] as [number, number],
     labelBgBorderRadius: 4,
   }));
@@ -319,7 +319,7 @@ export function MermaidFlow({ code }: { code: string }) {
   if (!graph) return null;
 
   return (
-    <div className="relative h-[460px] w-full overflow-hidden rounded-xl border border-white/[.06] bg-[#0A0C0E]">
+    <div className="relative h-[460px] w-full overflow-hidden rounded-xl border border-border bg-background">
       <ReactFlow
         nodes={graph.nodes}
         edges={graph.edges}
@@ -330,20 +330,20 @@ export function MermaidFlow({ code }: { code: string }) {
         fitViewOptions={{ padding: 0.12 }}
         nodesConnectable={false}
       >
-        <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="#1c2430" />
+        <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="var(--theme-surface)" />
         <Controls showInteractive={false} />
         {graph.nodes.length >= 8 && (
           <MiniMap
             pannable
             zoomable
-            className="!bg-[#0C0F13]"
-            maskColor="rgba(0,0,0,0.55)"
+            className="!bg-background"
+            maskColor="color-mix(in srgb, var(--theme-shadow) 55%, transparent)"
             nodeColor={(n) => shapeStyles[(n.data as FlowNodeData).shape ?? "rect"].map}
             nodeStrokeColor="transparent"
           />
         )}
       </ReactFlow>
-      <div className="pointer-events-none absolute right-2.5 top-2.5 rounded-md border border-white/[.06] bg-black/50 px-2 py-1 text-[8px] uppercase tracking-[.14em] text-white/30">
+      <div className="pointer-events-none absolute right-2.5 top-2.5 rounded-md border border-border bg-black/50 px-2 py-1 text-[8px] uppercase tracking-[.14em] text-muted-foreground">
         {graph.kind === "erd" ? "ER Diagram" : "Flowchart"} · drag node · scroll zoom
       </div>
     </div>

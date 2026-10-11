@@ -44,7 +44,7 @@ function Thumb({ scene }: { scene: string }) {
         loading="lazy"
         draggable={false}
       />
-      <div className="pointer-events-none absolute inset-0" style={{ boxShadow: "inset 0 0 36px rgba(0,0,0,0.65)" }} />
+      <div className="pointer-events-none absolute inset-0" style={{ boxShadow: "inset 0 0 36px color-mix(in srgb, var(--theme-shadow) 65%, transparent)" }} />
     </div>
   );
 }
@@ -53,8 +53,8 @@ function Thumb({ scene }: { scene: string }) {
 
 function TagBadge({ label, color }: { label: string; color: string }) {
   const styles = color === "yellow"
-    ? "bg-yellow-500/20 text-yellow-300 border border-yellow-500/30"
-    : "bg-white/10 text-slate-300 border border-white/10";
+    ? "bg-primary/20 text-primary border border-primary/30"
+    : "bg-foreground/10 text-muted-foreground border border-border";
   return <span className={`inline-block rounded px-1.5 py-[2px] text-[10px] font-medium ${styles}`}>{label}</span>;
 }
 
@@ -65,28 +65,28 @@ function AssetCard({ asset, selected, onSelect }: {
 }) {
   return (
     <div
-      className={`cursor-pointer overflow-hidden rounded-lg transition-all duration-150 ${selected ? "ring-2 ring-blue-500" : "hover:ring-1 hover:ring-white/20"}`}
-      style={{ background: "#111418" }}
+      className={`cursor-pointer overflow-hidden rounded-lg transition-all duration-150 ${selected ? "ring-2 ring-primary" : "hover:ring-1 hover:ring-white/20"}`}
+      style={{ background: "var(--theme-bg)" }}
       onClick={onSelect}
     >
       <div className="relative" style={{ height: 110 }}>
         <Thumb scene={asset.scene} />
         <div className="absolute bottom-2 left-2 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 backdrop-blur-sm">
-          <Play size={9} className="translate-x-[1px] text-white" fill="white" />
+          <Play size={9} className="translate-x-[1px] text-foreground" fill="white" />
         </div>
-        <div className="absolute bottom-2 right-2 rounded bg-black/70 px-1.5 py-[2px] text-[12px] font-medium text-white">
+        <div className="absolute bottom-2 right-2 rounded bg-black/70 px-1.5 py-[2px] text-[12px] font-medium text-foreground">
           {asset.duration}
         </div>
-        {selected && <div className="absolute inset-0 bg-blue-500/10" />}
+        {selected && <div className="absolute inset-0 bg-primary/10" />}
       </div>
       <div className="px-2.5 py-2 space-y-1.5">
-        <p className="truncate text-[12px] font-medium text-slate-200 leading-tight">{asset.file}</p>
-        <p className="text-[10px] text-slate-500">{asset.creator} | {asset.date}</p>
+        <p className="truncate text-[12px] font-medium text-foreground leading-tight">{asset.file}</p>
+        <p className="text-[10px] text-muted-foreground">{asset.creator} | {asset.date}</p>
         <div className="flex items-center justify-between gap-1">
           <TagBadge label={asset.tag} color={asset.tagColor} />
-          <div className="flex items-center gap-0.5 rounded border border-white/10 bg-white/5 px-1.5 py-[3px] cursor-pointer">
-            <span className="text-[10px] text-slate-400">Select an option</span>
-            <ChevronDown size={7} className="text-slate-500" />
+          <div className="flex items-center gap-0.5 rounded border border-border bg-foreground/5 px-1.5 py-[3px] cursor-pointer">
+            <span className="text-[10px] text-muted-foreground">Select an option</span>
+            <ChevronDown size={7} className="text-muted-foreground" />
           </div>
         </div>
       </div>
@@ -100,13 +100,13 @@ function SideItem({ icon, label, active, badge, badgeColor = "yellow" }: {
   icon?: React.ReactNode; label: string; active?: boolean; badge?: number; badgeColor?: string;
 }) {
   return (
-    <div className={`flex cursor-pointer items-center justify-between rounded-md px-2 py-[5px] text-[13px] transition-colors ${active ? "bg-white/10 text-white font-medium" : "text-slate-400 hover:bg-white/5 hover:text-slate-200"}`}>
+    <div className={`flex cursor-pointer items-center justify-between rounded-md px-2 py-[5px] text-[13px] transition-colors ${active ? "bg-foreground/10 text-foreground font-medium" : "text-muted-foreground hover:bg-foreground/5 hover:text-foreground"}`}>
       <div className="flex items-center gap-1.5 min-w-0">
-        {icon && <span className="shrink-0 text-slate-500">{icon}</span>}
+        {icon && <span className="shrink-0 text-muted-foreground">{icon}</span>}
         <span className="truncate">{label}</span>
       </div>
       {badge !== undefined && (
-        <span className={`ml-1 shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold ${badgeColor === "yellow" ? "bg-yellow-500/20 text-yellow-300" : "bg-red-500/20 text-red-300"}`}>{badge}</span>
+        <span className={`ml-1 shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold ${badgeColor === "yellow" ? "bg-primary/20 text-primary" : "bg-destructive0/20 text-destructive"}`}>{badge}</span>
       )}
     </div>
   );
@@ -119,43 +119,43 @@ export function VideoAssetManager() {
   const [view, setView] = useState<"grid" | "list">("grid");
 
   return (
-    <div className="flex h-full w-full overflow-hidden bg-[#0d1117] font-sans text-white select-none" style={{ fontSize: 16 }}>
+    <div className="flex h-full w-full overflow-hidden bg-background font-sans text-foreground select-none" style={{ fontSize: 16 }}>
 
       {/* ── Sidebar ── */}
-      <div className="flex w-[155px] shrink-0 flex-col border-r border-white/[.07] bg-[#090d13] overflow-y-auto [&::-webkit-scrollbar]:hidden">
+      <div className="flex w-[155px] shrink-0 flex-col border-r border-border bg-background overflow-y-auto [&::-webkit-scrollbar]:hidden">
         <div className="px-2 pt-3">
-          <p className="mb-1 px-2 text-[12px] font-semibold uppercase tracking-widest text-slate-600">Assets</p>
+          <p className="mb-1 px-2 text-[12px] font-semibold uppercase tracking-widest text-muted-foreground">Assets</p>
           <SideItem icon={<FolderOpen size={10} />} label="All Assets" />
           <SideItem label="Episodes" />
           <SideItem label="Key Scenes" active />
           <SideItem label="Teaser" />
           <SideItem label="Location" />
         </div>
-        <div className="my-2 mx-2 border-t border-white/[.06]" />
+        <div className="my-2 mx-2 border-t border-border" />
         <div className="px-2">
-          <p className="mb-1 px-2 text-[12px] font-semibold uppercase tracking-widest text-slate-600">Collections</p>
+          <p className="mb-1 px-2 text-[12px] font-semibold uppercase tracking-widest text-muted-foreground">Collections</p>
           <SideItem label="Needs Re-structuring" />
           <SideItem label="Videos" />
           <SideItem label="Images" />
           <SideItem label="Audio" />
           <SideItem label="Needs Review" badge={9} />
           <SideItem label="Approved" />
-          <div className="mt-0.5 flex cursor-pointer items-center gap-1.5 rounded-md px-2 py-[5px] text-[13px] text-slate-500 hover:text-slate-300">
+          <div className="mt-0.5 flex cursor-pointer items-center gap-1.5 rounded-md px-2 py-[5px] text-[13px] text-muted-foreground hover:text-muted-foreground">
             <Plus size={9} /><span>New Collection</span>
           </div>
         </div>
-        <div className="my-2 mx-2 border-t border-white/[.06]" />
+        <div className="my-2 mx-2 border-t border-border" />
         <div className="px-2">
-          <p className="mb-1 px-2 text-[12px] font-semibold uppercase tracking-widest text-slate-600">Shares</p>
+          <p className="mb-1 px-2 text-[12px] font-semibold uppercase tracking-widest text-muted-foreground">Shares</p>
           <SideItem label="All Shares (2)" />
           <SideItem label="Teaser #2" />
           <SideItem label="Teaser v1" />
-          <div className="mt-0.5 flex cursor-pointer items-center gap-1.5 rounded-md px-2 py-[5px] text-[13px] text-slate-500 hover:text-slate-300">
+          <div className="mt-0.5 flex cursor-pointer items-center gap-1.5 rounded-md px-2 py-[5px] text-[13px] text-muted-foreground hover:text-muted-foreground">
             <Plus size={9} /><span>New Share</span>
           </div>
         </div>
-        <div className="mt-auto border-t border-white/[.06] px-2 py-2">
-          <div className="flex cursor-pointer items-center gap-1.5 rounded-md px-2 py-[5px] text-[13px] text-slate-500 hover:text-slate-300">
+        <div className="mt-auto border-t border-border px-2 py-2">
+          <div className="flex cursor-pointer items-center gap-1.5 rounded-md px-2 py-[5px] text-[13px] text-muted-foreground hover:text-muted-foreground">
             <Link2 size={10} /><span>CSC Connections</span>
           </div>
         </div>
@@ -165,49 +165,49 @@ export function VideoAssetManager() {
       <div className="flex min-w-0 flex-1 flex-col">
 
         {/* Top navbar */}
-        <div className="flex shrink-0 items-center justify-between border-b border-white/[.07] bg-[#090d13] px-3" style={{ height: 38 }}>
+        <div className="flex shrink-0 items-center justify-between border-b border-border bg-background px-3" style={{ height: 38 }}>
           <div className="flex items-center gap-1.5">
-            <ChevronLeft size={13} className="text-slate-500 cursor-pointer hover:text-slate-300" />
-            <span className="text-[13px] text-slate-500 cursor-pointer hover:text-slate-300">Teaser</span>
-            <span className="text-[13px] text-slate-600 mx-0.5">|</span>
-            <span className="text-[13px] text-slate-500 cursor-pointer hover:text-slate-300">All Assets</span>
-            <span className="text-[13px] text-slate-600 mx-0.5">|</span>
-            <span className="text-[13px] font-semibold text-white border-b border-white pb-[1px]">Key Scenes</span>
+            <ChevronLeft size={13} className="text-muted-foreground cursor-pointer hover:text-muted-foreground" />
+            <span className="text-[13px] text-muted-foreground cursor-pointer hover:text-muted-foreground">Teaser</span>
+            <span className="text-[13px] text-muted-foreground mx-0.5">|</span>
+            <span className="text-[13px] text-muted-foreground cursor-pointer hover:text-muted-foreground">All Assets</span>
+            <span className="text-[13px] text-muted-foreground mx-0.5">|</span>
+            <span className="text-[13px] font-semibold text-foreground border-b border-border pb-[1px]">Key Scenes</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 rounded-md border border-white/10 bg-white/5 px-2 py-1">
-              <Search size={9} className="text-slate-500" />
-              <span className="text-[12px] text-slate-500">Search in Key Scenes</span>
+            <div className="flex items-center gap-1.5 rounded-md border border-border bg-foreground/5 px-2 py-1">
+              <Search size={9} className="text-muted-foreground" />
+              <span className="text-[12px] text-muted-foreground">Search in Key Scenes</span>
             </div>
-            <Users size={13} className="text-slate-500 cursor-pointer hover:text-slate-300" />
-            <Bell  size={13} className="text-slate-500 cursor-pointer hover:text-slate-300" />
-            <div className="h-[13px] w-[13px] rounded border border-white/20 cursor-pointer" />
-            <div className="relative flex h-6 w-6 items-center justify-center rounded-full bg-slate-700 text-[12px] font-bold text-white">
+            <Users size={13} className="text-muted-foreground cursor-pointer hover:text-muted-foreground" />
+            <Bell  size={13} className="text-muted-foreground cursor-pointer hover:text-muted-foreground" />
+            <div className="h-[13px] w-[13px] rounded border border-border cursor-pointer" />
+            <div className="relative flex h-6 w-6 items-center justify-center rounded-full bg-card text-[12px] font-bold text-foreground">
               CD
-              <span className="absolute bottom-0 right-0 h-1.5 w-1.5 rounded-full bg-green-400 ring-1 ring-[#090d13]" />
+              <span className="absolute bottom-0 right-0 h-1.5 w-1.5 rounded-full bg-primary ring-1 ring-border" />
             </div>
           </div>
         </div>
 
         {/* Controls bar */}
-        <div className="flex shrink-0 items-center justify-between border-b border-white/[.07] bg-[#0d1117] px-3 py-1.5">
+        <div className="flex shrink-0 items-center justify-between border-b border-border bg-background px-3 py-1.5">
           <div className="flex items-center gap-3">
-            <span className="text-[13px] text-slate-400">10 Assets · <span className="text-slate-500">514.08 GB</span></span>
+            <span className="text-[13px] text-muted-foreground">10 Assets · <span className="text-muted-foreground">514.08 GB</span></span>
             <div className="flex items-center gap-0.5">
               {["Appearance", "Fields", "Validate"].map((tab) => (
-                <button key={tab} className={`rounded px-2 py-[3px] text-[12px] font-medium transition-colors ${tab === "Appearance" ? "bg-white/10 text-white" : "text-slate-500 hover:text-slate-300"}`}>{tab}</button>
+                <button key={tab} className={`rounded px-2 py-[3px] text-[12px] font-medium transition-colors ${tab === "Appearance" ? "bg-foreground/10 text-foreground" : "text-muted-foreground hover:text-muted-foreground"}`}>{tab}</button>
               ))}
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1 text-[12px] text-slate-400 cursor-pointer hover:text-slate-200">
+            <div className="flex items-center gap-1 text-[12px] text-muted-foreground cursor-pointer hover:text-foreground">
               <SlidersHorizontal size={9} />
               <span>Sorted by: Date Uploaded</span>
               <ChevronDown size={9} />
             </div>
-            <div className="flex items-center gap-0.5 rounded border border-white/10 p-0.5">
-              <button onClick={() => setView("grid")} className={`rounded p-1 transition-colors ${view === "grid" ? "bg-white/15 text-white" : "text-slate-500 hover:text-slate-300"}`}><LayoutGrid size={10} /></button>
-              <button onClick={() => setView("list")} className={`rounded p-1 transition-colors ${view === "list" ? "bg-white/15 text-white" : "text-slate-500 hover:text-slate-300"}`}><List size={10} /></button>
+            <div className="flex items-center gap-0.5 rounded border border-border p-0.5">
+              <button onClick={() => setView("grid")} className={`rounded p-1 transition-colors ${view === "grid" ? "bg-foreground/15 text-foreground" : "text-muted-foreground hover:text-muted-foreground"}`}><LayoutGrid size={10} /></button>
+              <button onClick={() => setView("list")} className={`rounded p-1 transition-colors ${view === "list" ? "bg-foreground/15 text-foreground" : "text-muted-foreground hover:text-muted-foreground"}`}><List size={10} /></button>
             </div>
           </div>
         </div>
@@ -227,8 +227,8 @@ export function VideoAssetManager() {
         </div>
 
         {/* Footer */}
-        <div className="shrink-0 border-t border-white/[.07] bg-[#090d13] px-4 py-1.5">
-          <span className="text-[13px] text-slate-500">10 items</span>
+        <div className="shrink-0 border-t border-border bg-background px-4 py-1.5">
+          <span className="text-[13px] text-muted-foreground">10 items</span>
         </div>
       </div>
     </div>

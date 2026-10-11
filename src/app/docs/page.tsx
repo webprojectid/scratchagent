@@ -13,15 +13,15 @@ import { docsCopy } from "@/lib/copy-docs";
    lime dipakai hemat, heading tracking ketat dengan tiga weight saja. */
 
 function SectionLabel({ children }: { children: string }) {
-  return <p className="text-[12px] font-medium uppercase tracking-[.08em] text-[#74FA6A]">{children}</p>;
+  return <p className="text-[12px] font-medium uppercase tracking-[.08em] text-primary">{children}</p>;
 }
 
 function SectionHead({ id, label, title, lead }: { id: string; label: string; title: string; lead?: string }) {
   return (
     <div id={id} className="scroll-mt-24 pt-20 md:pt-24">
       <SectionLabel>{label}</SectionLabel>
-      <h2 className="mt-3 text-balance text-[32px] font-semibold leading-[1.1] tracking-[-.02em] text-[#EDEDED]">{title}</h2>
-      {lead && <p className="mt-4 max-w-[60ch] text-[16px] leading-[1.7] text-[#A0A0A0]">{lead}</p>}
+      <h2 className="mt-3 text-balance text-[32px] font-semibold leading-[1.1] tracking-[-.02em] text-foreground">{title}</h2>
+      {lead && <p className="mt-4 max-w-[60ch] text-[16px] leading-[1.7] text-muted-foreground">{lead}</p>}
     </div>
   );
 }
@@ -31,15 +31,15 @@ export default function DocsPage() {
   const c = docsCopy(lang);
 
   return (
-    <main className="min-h-screen bg-[#0d0d0d] text-[#EDEDED] selection:bg-[#74FA6A]/30 selection:text-[#0d0d0d]">
+    <main className="min-h-screen bg-background text-foreground selection:bg-primary/30 selection:text-muted-foreground">
       {/* Nav */}
-      <header className="sticky top-0 z-40 border-b border-white/[.06] bg-[rgba(10,10,10,0.85)] backdrop-blur-[12px]">
+      <header className="sticky top-0 z-40 border-b border-border bg-[color-mix(in_srgb,_var(--theme-bg)_85%,_transparent)] backdrop-blur-[12px]">
         <div className="mx-auto flex h-[54px] max-w-[1100px] items-center justify-between gap-3 px-5 max-lg:h-auto max-lg:min-h-[54px] max-lg:flex-wrap max-lg:py-2.5">
-          <Link href="/" className="flex items-center gap-2 text-[16px] font-semibold tracking-[-.04em] text-[#E8F0E8]">
-            <span className="relative grid size-6 place-items-center overflow-hidden text-[#74FA6A]" aria-hidden="true">
-              <span className="absolute left-0 top-[6px] h-2.5 w-2 -skew-x-[28deg] rounded-sm bg-[#74FA6A]" />
-              <span className="absolute left-[7px] top-[2.5px] h-2.5 w-2 -skew-x-[28deg] rounded-sm bg-[#9AFF82]" />
-              <span className="absolute left-[14px] top-[6px] h-2.5 w-2 -skew-x-[28deg] rounded-sm bg-[#4DDC62]" />
+          <Link href="/" className="flex items-center gap-2 text-[16px] font-semibold tracking-[-.04em] text-foreground">
+            <span className="relative grid size-6 place-items-center overflow-hidden text-primary" aria-hidden="true">
+              <span className="absolute left-0 top-[6px] h-2.5 w-2 -skew-x-[28deg] rounded-sm bg-primary" />
+              <span className="absolute left-[7px] top-[2.5px] h-2.5 w-2 -skew-x-[28deg] rounded-sm bg-primary" />
+              <span className="absolute left-[14px] top-[6px] h-2.5 w-2 -skew-x-[28deg] rounded-sm bg-primary" />
             </span>
             Scratch Agent
           </Link>
@@ -50,8 +50,8 @@ export default function DocsPage() {
       {/* Hero seragam — satu spesifikasi via PageHero (sama dengan /solutions dan /pricing) */}
       <PageHero eyebrow={c.badge} title={c.heroTitle} sub={c.heroSub}>
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-          <a href="#quickstart" className="rounded-full bg-[#74FA6A] px-6 py-2.5 text-[13.5px] font-bold text-black transition hover:bg-[#A8FF9B]">{c.heroQuickstart}</a>
-          <a href="#konsep" className="rounded-full border border-white/[.12] bg-transparent px-6 py-2.5 text-[13.5px] font-medium text-white/70 transition-colors hover:border-white/25 hover:text-white">{c.heroConcepts}</a>
+          <a href="#quickstart" className="rounded-full bg-primary px-6 py-2.5 text-[13.5px] font-bold text-primary-foreground transition hover:bg-primary">{c.heroQuickstart}</a>
+          <a href="#konsep" className="rounded-full border border-border bg-transparent px-6 py-2.5 text-[13.5px] font-medium text-foreground transition-colors hover:border-border hover:text-foreground">{c.heroConcepts}</a>
         </div>
       </PageHero>
 
@@ -71,9 +71,9 @@ export default function DocsPage() {
               <ConceptPipeline />
               <div className="grid gap-4 sm:grid-cols-2">
                 {c.concepts.map((item) => (
-                  <div key={item.t} className="rounded-2xl border border-white/[.08] bg-[#141414] p-6 transition-colors hover:border-white/[.14]">
-                    <h3 className="text-[16px] font-semibold tracking-[-.01em] text-[#EDEDED]">{item.t}</h3>
-                    <p className="mt-2 text-[14px] leading-[1.6] text-[#A0A0A0]">{item.d}</p>
+                  <div key={item.t} className="rounded-2xl border border-border bg-background p-6 transition-colors hover:border-border">
+                    <h3 className="text-[16px] font-semibold tracking-[-.01em] text-foreground">{item.t}</h3>
+                    <p className="mt-2 text-[14px] leading-[1.6] text-muted-foreground">{item.d}</p>
                   </div>
                 ))}
               </div>
@@ -85,19 +85,19 @@ export default function DocsPage() {
               <PromptVisual />
               <div className="grid gap-4 sm:grid-cols-2">
                 {c.promptCards.map((item) => (
-                  <div key={item.t} className="rounded-2xl border border-white/[.08] bg-[#141414] p-6 transition-colors hover:border-white/[.14]">
-                    <h3 className="text-[16px] font-semibold tracking-[-.01em] text-[#EDEDED]">{item.t}</h3>
-                    <p className="mt-2 text-[14px] leading-[1.6] text-[#A0A0A0]">{item.d}</p>
+                  <div key={item.t} className="rounded-2xl border border-border bg-background p-6 transition-colors hover:border-border">
+                    <h3 className="text-[16px] font-semibold tracking-[-.01em] text-foreground">{item.t}</h3>
+                    <p className="mt-2 text-[14px] leading-[1.6] text-muted-foreground">{item.d}</p>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* CTA */}
-            <div className="mt-20 rounded-2xl border border-white/[.08] bg-[#141414] p-8 text-center">
-              <p className="text-[18px] font-medium tracking-[-.01em] text-[#EDEDED]">{c.ctaTitle}</p>
-              <p className="mx-auto mt-2 max-w-[44ch] text-[14px] leading-6 text-[#A0A0A0]">{c.ctaSub}</p>
-              <Link href="/new" className="mt-6 inline-flex rounded-full bg-[#74FA6A] px-6 py-2.5 text-[15px] font-medium text-[#0d0d0d] transition-opacity hover:opacity-90">{c.ctaButton}</Link>
+            <div className="mt-20 rounded-2xl border border-border bg-background p-8 text-center">
+              <p className="text-[18px] font-medium tracking-[-.01em] text-foreground">{c.ctaTitle}</p>
+              <p className="mx-auto mt-2 max-w-[44ch] text-[14px] leading-6 text-muted-foreground">{c.ctaSub}</p>
+              <Link href="/new" className="mt-6 inline-flex rounded-full bg-primary px-6 py-2.5 text-[15px] font-medium text-muted-foreground transition-opacity hover:opacity-90">{c.ctaButton}</Link>
             </div>
           </div>
         </article>
@@ -105,13 +105,13 @@ export default function DocsPage() {
         <DocsToc />
       </div>
 
-      <footer className="border-t border-white/[.08] px-6 py-10">
-        <div className="mx-auto flex max-w-[1200px] flex-wrap items-center justify-between gap-4 text-[13px] text-[#737373]">
+      <footer className="border-t border-border px-6 py-10">
+        <div className="mx-auto flex max-w-[1200px] flex-wrap items-center justify-between gap-4 text-[13px] text-muted-foreground">
           <span>{c.footer}</span>
           <span className="flex gap-6">
-            <Link href="/" className="transition-colors hover:text-[#74FA6A]">home</Link>
-            <Link href="/pricing" className="transition-colors hover:text-[#74FA6A]">pricing</Link>
-            <Link href="/project/demo" className="transition-colors hover:text-[#74FA6A]">demo</Link>
+            <Link href="/" className="transition-colors hover:text-primary">home</Link>
+            <Link href="/pricing" className="transition-colors hover:text-primary">pricing</Link>
+            <Link href="/project/demo" className="transition-colors hover:text-primary">demo</Link>
           </span>
         </div>
       </footer>

@@ -117,13 +117,13 @@ export function TestimonialsSection({ lang = "en" }: { lang?: "id" | "en" }) {
       {/* Header Section matching screenshot layout */}
       <div className="relative flex flex-col justify-between gap-6 md:flex-row md:items-end">
         <div className="max-w-[620px]">
-          <h2 className="text-balance text-[clamp(1.85rem,3.4vw,2.9rem)] font-semibold leading-[1.1] tracking-[-.045em] text-[#F0F3F5]">
+          <h2 className="text-balance text-[clamp(1.85rem,3.4vw,2.9rem)] font-semibold leading-[1.1] tracking-[-.045em] text-foreground">
             {en ? "Explore a new way to work with agents." : "Jelajahi cara baru bekerja bareng agent."}
           </h2>
         </div>
 
         <div className="max-w-[340px] text-left md:text-right">
-          <p className="text-[14px] leading-relaxed text-[#8C97A5]">
+          <p className="text-[14px] leading-relaxed text-muted-foreground">
             {en ? "Real feedback from developers and creators building with Scratch Agent." : "Feedback asli dari developer dan creator yang membangun dengan Scratch Agent."}
           </p>
         </div>
@@ -135,26 +135,26 @@ export function TestimonialsSection({ lang = "en" }: { lang?: "id" | "en" }) {
         className="testimonials-track relative mt-12 w-full overflow-hidden"
       >
         {/* Soft edge blur gradients */}
-        <div className="pointer-events-none absolute inset-y-0 left-0 z-20 w-16 bg-gradient-to-r from-[#0A0A0A] to-transparent md:w-32" />
-        <div className="pointer-events-none absolute inset-y-0 right-0 z-20 w-16 bg-gradient-to-l from-[#0A0A0A] to-transparent md:w-32" />
+        <div className="pointer-events-none absolute inset-y-0 left-0 z-20 w-16 bg-gradient-to-r from-background to-transparent md:w-32" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 z-20 w-16 bg-gradient-to-l from-background to-transparent md:w-32" />
 
         <div className="bp-marquee flex w-max gap-5 py-4">
           {repeatedTestimonials.map((item, idx) => (
             <div
               key={`${item.quoteId}-${idx}`}
-              className="group relative flex w-[350px] sm:w-[380px] md:w-[420px] shrink-0 flex-col justify-between overflow-hidden rounded-[24px] border border-white/[0.12] bg-gradient-to-b from-white/[0.08] via-white/[0.04] to-white/[0.02] p-6 shadow-[inset_0_1px_1px_0_rgba(255,255,255,0.18),0_14px_36px_-8px_rgba(0,0,0,0.55)] backdrop-blur-2xl transition-all duration-300 hover:-translate-y-1.5 hover:border-white/[0.28] hover:bg-white/[0.09] hover:shadow-[inset_0_1px_2px_0_rgba(255,255,255,0.35),0_20px_50px_-10px_rgba(0,0,0,0.7)]"
+              className="group relative flex w-[350px] sm:w-[380px] md:w-[420px] shrink-0 flex-col justify-between overflow-hidden rounded-[24px] border border-border bg-gradient-to-b from-foreground/[0.08] via-foreground/[0.04] to-foreground/[0.02] p-6 shadow-[inset_0_1px_1px_0_color-mix(in_srgb,_var(--theme-text)_18%,_transparent),0_14px_36px_-8px_color-mix(in_srgb,_var(--theme-shadow)_55%,_transparent)] backdrop-blur-2xl transition-all duration-300 hover:-translate-y-1.5 hover:border-border hover:bg-foreground/[0.09] hover:shadow-[inset_0_1px_2px_0_color-mix(in_srgb,_var(--theme-text)_35%,_transparent),0_20px_50px_-10px_color-mix(in_srgb,_var(--theme-shadow)_70%,_transparent)]"
             >
               {/* Top Gloss Highlight (iOS Glass Specular) */}
-              <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/35 to-transparent transition-opacity duration-300 group-hover:via-white/60" />
+              <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-foreground/35 to-transparent transition-opacity duration-300 group-hover:via-foreground/60" />
 
               {/* Quote Text */}
-              <p className="text-[14px] sm:text-[14.5px] leading-[1.65] text-[#D1D5DB] transition-colors group-hover:text-white">
+              <p className="text-[14px] sm:text-[14.5px] leading-[1.65] text-foreground transition-colors group-hover:text-foreground">
                 &ldquo;{quotes[item.quoteId]}&rdquo;
               </p>
 
               {/* Author Row with Indonesian Portrait Photo */}
-              <div className="mt-6 flex items-center gap-3.5 border-t border-white/[0.08] pt-4.5">
-                <div className="relative size-11 shrink-0 overflow-hidden rounded-full border border-white/[0.22] shadow-[0_2px_10px_rgba(0,0,0,0.5)]">
+              <div className="mt-6 flex items-center gap-3.5 border-t border-border pt-4.5">
+                <div className="relative size-11 shrink-0 overflow-hidden rounded-full border border-border shadow-[0_2px_10px_color-mix(in_srgb,_var(--theme-shadow)_50%,_transparent)]">
                   <Image
                     src={item.avatar}
                     alt={item.name}
@@ -164,10 +164,10 @@ export function TestimonialsSection({ lang = "en" }: { lang?: "id" | "en" }) {
                   />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h4 className="truncate text-[14.5px] font-semibold text-white">
+                  <h4 className="truncate text-[14.5px] font-semibold text-foreground">
                     {item.name}
                   </h4>
-                  <p className="truncate text-[12px] text-[#8C97A5] transition-colors group-hover:text-[#A1A1AA]">
+                  <p className="truncate text-[12px] text-muted-foreground transition-colors group-hover:text-muted-foreground">
                     {item.role}
                   </p>
                 </div>

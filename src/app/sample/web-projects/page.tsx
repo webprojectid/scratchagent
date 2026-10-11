@@ -19,16 +19,16 @@ import { CopyPrompt } from "@/components/ui/copy-prompt";
 
 const PROMPTS = {
   en: [
-    `Build a dark-themed video asset management dashboard for a film production team. Include a left sidebar with asset collections (Key Scenes, Episodes, Locations). Main area shows a 2×4 grid of video thumbnails with filename, uploader, date, duration badge, and status tag. Add a top breadcrumb bar with search, user avatar, and notification icons. Dark navy color scheme (#0d1117). Stack: React, Tailwind CSS, TypeScript.`,
-    `Build a light-mode CRM sales dashboard called "Caleido". Layout: left sidebar with welcome greeting, 2×3 stat cards, and task progress bars. Center panel: orange gradient banner, activity feed tabs, and a vertical timeline of CRM events with audio waveform player. Right panel: contact detail view with profile photo, action buttons, and deal metadata rows. Accent color orange (#ef672f). Stack: React, Tailwind CSS, TypeScript.`,
+    `Build a dark-themed video asset management dashboard for a film production team. Include a left sidebar with asset collections (Key Scenes, Episodes, Locations). Main area shows a 2×4 grid of video thumbnails with filename, uploader, date, duration badge, and status tag. Add a top breadcrumb bar with search, user avatar, and notification icons. Charcoal and Scratch Green color scheme (#0d1110, #74fa6a). Stack: React, Tailwind CSS, TypeScript.`,
+    `Build a light-mode CRM sales dashboard called "Caleido". Layout: left sidebar with welcome greeting, 2×3 stat cards, and task progress bars. Center panel: green banner, activity feed tabs, and a vertical timeline of CRM events with audio waveform player. Right panel: contact detail view with profile photo, action buttons, and deal metadata rows. Accent color Scratch Green (#267a36). Stack: React, Tailwind CSS, TypeScript.`,
     `Build a vehicle purchase and financing web app on a dark navy gradient background. Top nav with logo and Vehicles / Application / Profile links. Main content: vehicle header with specs and monthly payment, interactive image gallery with 4 thumbnails, collapsible spec accordion, financing breakdown table, and dealer info card with contact button. Stack: React, Tailwind CSS, TypeScript.`,
-    `Build a dark-mode analytics dashboard for a SaaS business. Left sidebar with navigation icons. Main area: 4 KPI cards with trend indicators, a revenue line chart spanning 12 months, and a weekly active users bar chart. Right panel: recent transactions list and top channels breakdown with progress bars. Color scheme: dark (#0f1117) with purple accent (#7c3aed). Stack: React, Tailwind CSS, TypeScript.`,
+    `Build a dark-mode analytics dashboard for a SaaS business. Left sidebar with navigation icons. Main area: 4 KPI cards with trend indicators, a revenue line chart spanning 12 months, and a weekly active users bar chart. Right panel: recent transactions list and top channels breakdown with progress bars. Color scheme: charcoal (#0d1110) with Scratch Green accent (#74fa6a). Stack: React, Tailwind CSS, TypeScript.`,
   ],
   id: [
-    `Buat dashboard manajemen aset video bertema gelap untuk tim produksi film. Sidebar kiri dengan koleksi aset (Key Scenes, Episodes, Locations). Area utama menampilkan grid 2×4 thumbnail video lengkap dengan nama file, uploader, tanggal, badge durasi, dan tag status. Top bar breadcrumb dengan pencarian, avatar, dan notifikasi. Skema warna navy gelap (#0d1117). Stack: React, Tailwind CSS, TypeScript.`,
-    `Buat dashboard CRM sales bertema terang bernama "Caleido". Layout: sidebar kiri dengan salam, grid 2×3 kartu statistik, dan progress bar tugas. Panel tengah: banner gradien oranye, tab activity feed, dan timeline vertikal event CRM dengan audio waveform. Panel kanan: detail kontak dengan foto, tombol aksi, dan baris metadata deal. Aksen oranye (#ef672f). Stack: React, Tailwind CSS, TypeScript.`,
+    `Buat dashboard manajemen aset video bertema gelap untuk tim produksi film. Sidebar kiri dengan koleksi aset (Key Scenes, Episodes, Locations). Area utama menampilkan grid 2×4 thumbnail video lengkap dengan nama file, uploader, tanggal, badge durasi, dan tag status. Top bar breadcrumb dengan pencarian, avatar, dan notifikasi. Skema charcoal dan Scratch Green (#0d1110, #74fa6a). Stack: React, Tailwind CSS, TypeScript.`,
+    `Buat dashboard CRM sales bertema terang bernama "Caleido". Layout: sidebar kiri dengan salam, grid 2×3 kartu statistik, dan progress bar tugas. Panel tengah: banner hijau, tab activity feed, dan timeline vertikal event CRM dengan audio waveform. Panel kanan: detail kontak dengan foto, tombol aksi, dan baris metadata deal. Aksen Scratch Green (#267a36). Stack: React, Tailwind CSS, TypeScript.`,
     `Buat aplikasi web pembelian dan pembiayaan kendaraan dengan latar gradien navy gelap. Navbar atas dengan logo dan link Vehicles / Application / Profile. Konten utama: header kendaraan dengan spesifikasi dan cicilan bulanan, galeri gambar interaktif dengan 4 thumbnail, accordion spesifikasi, tabel rincian pembiayaan, dan kartu dealer. Stack: React, Tailwind CSS, TypeScript.`,
-    `Buat dashboard analitik dark-mode untuk bisnis SaaS. Sidebar kiri dengan ikon navigasi. Area utama: 4 kartu KPI dengan indikator tren, grafik garis revenue 12 bulan, dan grafik batang pengguna aktif mingguan. Panel kanan: daftar transaksi terbaru dan rincian top channel dengan progress bar. Skema gelap (#0f1117) aksen ungu (#7c3aed). Stack: React, Tailwind CSS, TypeScript.`,
+    `Buat dashboard analitik dark-mode untuk bisnis SaaS. Sidebar kiri dengan ikon navigasi. Area utama: 4 kartu KPI dengan indikator tren, grafik garis revenue 12 bulan, dan grafik batang pengguna aktif mingguan. Panel kanan: daftar transaksi terbaru dan rincian top channel dengan progress bar. Skema charcoal (#0d1110) aksen Scratch Green (#74fa6a). Stack: React, Tailwind CSS, TypeScript.`,
   ],
 };
 
@@ -66,16 +66,16 @@ function ArrowBtn({ dir, onClick }: { dir: "left" | "right"; onClick: () => void
       whileTap={{
         scale: 0.84,
         x: dir === "left" ? -5 : 5,
-        boxShadow: "0 0 38px rgba(116,250,106,.32)",
+        boxShadow: "0 0 38px color-mix(in srgb, var(--theme-accent) 32%, transparent)",
       }}
       transition={{ type: "spring", stiffness: 520, damping: 20 }}
     >
       {/* Ring tebal + glow */}
-      <span className="absolute inset-0 rounded-full border-2 border-white/25 bg-white/[.08] shadow-[0_0_20px_rgba(255,255,255,.05)] transition-all duration-200 group-hover:border-[#74FA6A]/70 group-hover:bg-[#74FA6A]/[.10] group-hover:shadow-[0_0_28px_rgba(116,250,106,.18)]" />
+      <span className="absolute inset-0 rounded-full border-2 border-border bg-foreground/[.08] shadow-[0_0_20px_color-mix(in_srgb,_var(--theme-text)_5%,_transparent)] transition-all duration-200 group-hover:border-primary/70 group-hover:bg-primary/[.10] group-hover:shadow-[0_0_28px_color-mix(in_srgb,_var(--theme-accent)_18%,_transparent)]" />
 
       {/* Flash sweep saat ditekan */}
       <motion.span
-        className="absolute inset-0 rounded-full bg-[#74FA6A]/25"
+        className="absolute inset-0 rounded-full bg-primary/25"
         initial={{ opacity: 0, scale: 0.35 }}
         whileTap={{ opacity: [0, 0.8, 0], scale: [0.35, 1.25, 1.5] }}
         transition={{ duration: 0.32 }}
@@ -83,7 +83,7 @@ function ArrowBtn({ dir, onClick }: { dir: "left" | "right"; onClick: () => void
 
       {/* Icon lebih tebal */}
       <motion.span
-        className="relative text-white/90 group-hover:text-[#74FA6A]"
+        className="relative text-foreground group-hover:text-primary"
         whileTap={{ x: dir === "left" ? -4 : 4 }}
       >
         {dir === "left"
@@ -102,7 +102,7 @@ function DotBar({ count, active }: { count: number; active: number }) {
       {Array.from({ length: count }).map((_, i) => (
         <motion.span
           key={i}
-          className="block rounded-full bg-white"
+          className="block rounded-full bg-card"
           animate={{ width: i === active ? 18 : 5, opacity: i === active ? 0.9 : 0.22 }}
           transition={{ type: "spring", stiffness: 420, damping: 32 }}
           style={{ height: 5 }}
@@ -116,11 +116,11 @@ function DotBar({ count, active }: { count: number; active: number }) {
 
 function Logo() {
   return (
-    <Link href="/" className="flex items-center gap-2 text-[16px] font-semibold tracking-[-.04em] text-[#E8F0E8]">
+    <Link href="/" className="flex items-center gap-2 text-[16px] font-semibold tracking-[-.04em] text-foreground">
       <span className="relative grid size-6 place-items-center overflow-hidden" aria-hidden="true">
-        <span className="absolute left-0 top-[6px] h-2.5 w-2 -skew-x-[28deg] rounded-sm bg-[#74FA6A]" />
-        <span className="absolute left-[7px] top-[2.5px] h-2.5 w-2 -skew-x-[28deg] rounded-sm bg-[#9AFF82]" />
-        <span className="absolute left-[14px] top-[6px] h-2.5 w-2 -skew-x-[28deg] rounded-sm bg-[#4DDC62]" />
+        <span className="absolute left-0 top-[6px] h-2.5 w-2 -skew-x-[28deg] rounded-sm bg-primary" />
+        <span className="absolute left-[7px] top-[2.5px] h-2.5 w-2 -skew-x-[28deg] rounded-sm bg-primary" />
+        <span className="absolute left-[14px] top-[6px] h-2.5 w-2 -skew-x-[28deg] rounded-sm bg-primary" />
       </span>
       Scratch Agent
     </Link>
@@ -151,8 +151,8 @@ export default function WebProjectsPage() {
   }, [go]);
 
   return (
-    <main className="min-h-screen bg-[#0A0A0A] text-[#E8EDEC]">
-      <header className="sticky top-0 z-40 border-b border-white/[.06] bg-[rgba(10,10,10,0.85)] backdrop-blur-[12px]">
+    <main className="min-h-screen bg-background text-foreground">
+      <header className="sticky top-0 z-40 border-b border-border bg-[color-mix(in_srgb,_var(--theme-bg)_85%,_transparent)] backdrop-blur-[12px]">
         <div className="mx-auto flex h-[54px] max-w-[1100px] items-center justify-between px-5">
           <Logo />
           <HeaderNav links={["solutions", "docs"]} ctaHref="/login" ctaKey="login" />
@@ -167,7 +167,7 @@ export default function WebProjectsPage() {
           {/* Arrow pojok kiri */}
           <div className="flex shrink-0 flex-col items-center gap-2">
             <ArrowBtn dir="left" onClick={() => go(-1)} />
-            <span className="font-mono text-[8px] uppercase tracking-[.18em] text-white/35">Prev</span>
+            <span className="font-mono text-[8px] uppercase tracking-[.18em] text-muted-foreground">Prev</span>
           </div>
 
           {/* Teks kiri + Safari kanan, tetap berdampingan */}
@@ -184,13 +184,13 @@ export default function WebProjectsPage() {
                   exit={{ opacity: 0, x: dir > 0 ? -18 : 18, filter: "blur(5px)" }}
                   transition={{ duration: 0.28, ease: [0.25, 0.46, 0.45, 0.94] }}
                 >
-                  <p className="font-mono text-[10px] uppercase tracking-[.2em] text-[#9CA9B8]">
+                  <p className="font-mono text-[10px] uppercase tracking-[.2em] text-muted-foreground">
                     web project {meta.num}
                   </p>
-                  <div className="mt-1 text-[15px] font-medium leading-[1.25] tracking-[-.025em] text-[#F0F3F5]">
+                  <div className="mt-1 text-[15px] font-medium leading-[1.25] tracking-[-.025em] text-foreground">
                     {meta.title}
                   </div>
-                  <p className="mt-0.5 text-[11px] font-medium text-[#5C6A7A]">{meta.type}</p>
+                  <p className="mt-0.5 text-[11px] font-medium text-muted-foreground">{meta.type}</p>
                   <div className="mt-4">
                     <DotBar count={DEMOS.length} active={index} />
                   </div>
@@ -220,7 +220,7 @@ export default function WebProjectsPage() {
           {/* Arrow pojok kanan */}
           <div className="flex shrink-0 flex-col items-center gap-2">
             <ArrowBtn dir="right" onClick={() => go(1)} />
-            <span className="font-mono text-[8px] uppercase tracking-[.18em] text-white/35">Next</span>
+            <span className="font-mono text-[8px] uppercase tracking-[.18em] text-muted-foreground">Next</span>
           </div>
 
         </div>

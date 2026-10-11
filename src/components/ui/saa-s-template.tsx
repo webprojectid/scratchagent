@@ -32,10 +32,10 @@ const TemplateButton = React.forwardRef<HTMLButtonElement, ButtonProps>(
       "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:ring-offset-2 focus-visible:ring-offset-black disabled:pointer-events-none disabled:opacity-50";
 
     const variants = {
-      default: "bg-white text-black hover:bg-gray-100",
-      secondary: "bg-gray-800 text-white hover:bg-gray-700",
-      ghost: "hover:bg-gray-800/50 text-white",
-      gradient: "bg-gradient-to-b from-white via-white/95 to-white/60 text-black hover:scale-105 active:scale-95",
+      default: "bg-card text-foreground hover:bg-secondary",
+      secondary: "bg-card text-foreground hover:bg-card",
+      ghost: "hover:bg-card/50 text-foreground",
+      gradient: "bg-gradient-to-b from-foreground via-foreground/95 to-foreground/60 text-foreground hover:scale-105 active:scale-95",
     };
 
     const sizes = {
@@ -60,19 +60,19 @@ const Navigation = React.memo(() => {
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-gray-800/50 bg-black/80 backdrop-blur-md">
+    <header className="sticky top-0 z-50 w-full border-b border-border bg-black/80 backdrop-blur-md">
       <nav className="mx-auto max-w-7xl px-6 py-4">
         <div className="flex items-center justify-between">
-          <div className="text-xl font-semibold text-white">Logo</div>
+          <div className="text-xl font-semibold text-foreground">Logo</div>
 
           <div className="absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 items-center justify-center gap-8 md:flex">
-            <a href="#getting-started" className="text-sm text-white/60 transition-colors hover:text-white">
+            <a href="#getting-started" className="text-sm text-foreground transition-colors hover:text-foreground">
               Getting started
             </a>
-            <a href="#components" className="text-sm text-white/60 transition-colors hover:text-white">
+            <a href="#components" className="text-sm text-foreground transition-colors hover:text-foreground">
               Components
             </a>
-            <a href="#documentation" className="text-sm text-white/60 transition-colors hover:text-white">
+            <a href="#documentation" className="text-sm text-foreground transition-colors hover:text-foreground">
               Documentation
             </a>
           </div>
@@ -88,7 +88,7 @@ const Navigation = React.memo(() => {
 
           <button
             type="button"
-            className="text-white md:hidden"
+            className="text-foreground md:hidden"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             aria-label="Toggle menu"
             aria-expanded={mobileMenuOpen}
@@ -99,30 +99,30 @@ const Navigation = React.memo(() => {
       </nav>
 
       {mobileMenuOpen && (
-        <div className="saas-slide-down border-t border-gray-800/50 bg-black/95 backdrop-blur-md md:hidden">
+        <div className="saas-slide-down border-t border-border bg-black/95 backdrop-blur-md md:hidden">
           <div className="flex flex-col gap-4 px-6 py-4">
             <a
               href="#getting-started"
-              className="py-2 text-sm text-white/60 transition-colors hover:text-white"
+              className="py-2 text-sm text-foreground transition-colors hover:text-foreground"
               onClick={() => setMobileMenuOpen(false)}
             >
               Getting started
             </a>
             <a
               href="#components"
-              className="py-2 text-sm text-white/60 transition-colors hover:text-white"
+              className="py-2 text-sm text-foreground transition-colors hover:text-foreground"
               onClick={() => setMobileMenuOpen(false)}
             >
               Components
             </a>
             <a
               href="#documentation"
-              className="py-2 text-sm text-white/60 transition-colors hover:text-white"
+              className="py-2 text-sm text-foreground transition-colors hover:text-foreground"
               onClick={() => setMobileMenuOpen(false)}
             >
               Documentation
             </a>
-            <div className="flex flex-col gap-2 border-t border-gray-800/50 pt-4">
+            <div className="flex flex-col gap-2 border-t border-border pt-4">
               <TemplateButton type="button" variant="ghost" size="sm">
                 Sign in
               </TemplateButton>
@@ -143,11 +143,11 @@ Navigation.displayName = "Navigation";
 const Hero = React.memo(() => {
   return (
     <section className="saas-fade relative flex min-h-screen flex-col items-center justify-start px-6 py-20 md:py-24">
-      <aside className="mb-8 inline-flex max-w-full flex-wrap items-center justify-center gap-2 rounded-full border border-gray-700 bg-gray-800/50 px-4 py-2 backdrop-blur-sm">
-        <span className="whitespace-nowrap text-center text-xs text-gray-400">New version of template is out!</span>
+      <aside className="mb-8 inline-flex max-w-full flex-wrap items-center justify-center gap-2 rounded-full border border-border bg-card/50 px-4 py-2 backdrop-blur-sm">
+        <span className="whitespace-nowrap text-center text-xs text-muted-foreground">New version of template is out!</span>
         <a
           href="#new-version"
-          className="flex items-center gap-1 whitespace-nowrap text-xs text-gray-400 transition-all hover:text-white active:scale-95"
+          className="flex items-center gap-1 whitespace-nowrap text-xs text-muted-foreground transition-all hover:text-foreground active:scale-95"
           aria-label="Read more about the new version"
         >
           Read more
@@ -158,7 +158,7 @@ const Hero = React.memo(() => {
       <h1
         className="mb-6 max-w-3xl px-6 text-center text-4xl font-medium leading-tight md:text-5xl lg:text-6xl"
         style={{
-          background: "linear-gradient(to bottom, #ffffff, #ffffff, rgba(255, 255, 255, 0.6))",
+          background: "linear-gradient(to bottom, var(--theme-surface), var(--theme-surface), color-mix(in srgb, var(--theme-text) 60%, transparent))",
           WebkitBackgroundClip: "text",
           WebkitTextFillColor: "transparent",
           backgroundClip: "text",
@@ -169,7 +169,7 @@ const Hero = React.memo(() => {
         the website it deserves
       </h1>
 
-      <p className="mb-10 max-w-2xl px-6 text-center text-sm text-gray-400 md:text-base">
+      <p className="mb-10 max-w-2xl px-6 text-center text-sm text-muted-foreground md:text-base">
         Landing page kit template with React, Shadcn/ui and Tailwind <br />
         that you can copy/paste into your project.
       </p>
@@ -216,7 +216,7 @@ Hero.displayName = "Hero";
 // Main Component
 export default function SaasTemplate() {
   return (
-    <main className="min-h-screen bg-black font-sans text-white">
+    <main className="min-h-screen bg-black font-sans text-foreground">
       <Navigation />
       <Hero />
     </main>

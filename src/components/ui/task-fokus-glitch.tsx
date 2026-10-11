@@ -1,8 +1,11 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useTheme } from "next-themes";
+import { themeColor } from "@/lib/theme-colors";
 
 export function TaskFokusGlitch() {
+  const { resolvedTheme } = useTheme();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const sceneRef = useRef<HTMLDivElement>(null);
   const w1Ref = useRef<HTMLSpanElement>(null);
@@ -14,6 +17,8 @@ export function TaskFokusGlitch() {
     if (!canvas || !scene) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
+    const accent = themeColor("--theme-accent");
+    const text = themeColor("--theme-text");
 
     let W = 0;
     let H = 0;
@@ -47,7 +52,7 @@ export function TaskFokusGlitch() {
           life: 1,
           decay: 0.022 + Math.random() * 0.03,
           size: isBolt ? 1 + Math.random() * 1.5 : 2 + Math.random() * 3,
-          color: Math.random() > 0.4 ? "#74FA6A" : Math.random() > 0.5 ? "#fff" : "#ffee44",
+          color: Math.random() > 0.4 ? accent : text,
           bolt: isBolt,
           len: 6 + Math.random() * 14,
           fork: Math.random() > 0.6,
@@ -60,7 +65,7 @@ export function TaskFokusGlitch() {
       const r = el.getBoundingClientRect();
       const sr = scene.getBoundingClientRect();
       for (let i = 0; i < 3; i++) {
-        particles.push({ x: r.left - sr.left + Math.random() * r.width, y: r.top - sr.top + r.height * 0.8, vx: (Math.random() - 0.5) * 1.5, vy: 1 + Math.random() * 2, life: 1, decay: 0.015 + Math.random() * 0.02, size: 2 + Math.random() * 2, color: "#74FA6A", drip: true });
+        particles.push({ x: r.left - sr.left + Math.random() * r.width, y: r.top - sr.top + r.height * 0.8, vx: (Math.random() - 0.5) * 1.5, vy: 1 + Math.random() * 2, life: 1, decay: 0.015 + Math.random() * 0.02, size: 2 + Math.random() * 2, color: accent, drip: true });
       }
     };
 
@@ -70,10 +75,11 @@ export function TaskFokusGlitch() {
 
     const drawBolt = (x: number, y: number, len: number, angle: number, life: number, fork?: boolean) => {
       ctx.save();
-      ctx.strokeStyle = `rgba(116,250,106,${life * 0.85})`;
+      ctx.strokeStyle = accent;
+      ctx.globalAlpha *= life * .85;
       ctx.lineWidth = 1.2 * life;
       ctx.shadowBlur = 8;
-      ctx.shadowColor = "#74FA6A";
+      ctx.shadowColor = accent;
       ctx.beginPath();
       ctx.moveTo(x, y);
       const ex = x + Math.cos(angle) * len;
@@ -126,11 +132,11 @@ export function TaskFokusGlitch() {
       cancelAnimationFrame(raf);
       intervals.forEach((id) => clearInterval(id));
     };
-  }, []);
+  }, [resolvedTheme]);
 
   return (
-    <div ref={sceneRef} className="scratch-electric-scene relative overflow-hidden bg-[#080808] px-6 py-10 md:px-10">
-      <style>{`.scratch-electric-scene .scanline{position:absolute;inset:0;background:repeating-linear-gradient(to bottom,transparent 0px,transparent 3px,rgba(0,0,0,0.15) 3px,rgba(0,0,0,0.15) 4px);pointer-events:none;z-index:10}.scratch-electric-scene .line{display:block;font-family:var(--font-display),sans-serif;font-size:clamp(36px,6vw,72px);color:#fff;letter-spacing:-.055em;line-height:.9;font-weight:600;position:relative;text-transform:uppercase}.scratch-electric-scene .word{display:inline-block;position:relative}.scratch-electric-scene .word.electric{animation:scratch-jitter .08s infinite}.scratch-electric-scene .word.electric .ghost1{position:absolute;inset:0;font-family:inherit;font-size:inherit;letter-spacing:inherit;font-weight:inherit;color:#74FA6A;mix-blend-mode:screen;animation:scratch-ghost1 .06s infinite;clip-path:polygon(0 15%,100% 15%,100% 45%,0 45%)}.scratch-electric-scene .word.electric .ghost2{position:absolute;inset:0;font-family:inherit;font-size:inherit;letter-spacing:inherit;font-weight:inherit;color:#ff1744;mix-blend-mode:screen;animation:scratch-ghost2 .07s infinite;clip-path:polygon(0 55%,100% 55%,100% 85%,0 85%)}.scratch-electric-scene .word.electric .ghost3{position:absolute;inset:0;font-family:inherit;font-size:inherit;letter-spacing:inherit;font-weight:inherit;color:#fff;animation:scratch-ghost3 .09s infinite;clip-path:polygon(0 0,100% 0,100% 12%,0 12%);opacity:.6}@keyframes scratch-jitter{0%{transform:translate(0,0) skewX(0deg)}10%{transform:translate(-3px,1px) skewX(-1deg)}20%{transform:translate(2px,-1px) skewX(0.5deg)}30%{transform:translate(-1px,2px) skewX(1deg)}40%{transform:translate(3px,0px) skewX(-0.5deg)}50%{transform:translate(-2px,-2px) skewX(0deg)}60%{transform:translate(1px,1px) skewX(1.5deg)}70%{transform:translate(-3px,0px) skewX(-1deg)}80%{transform:translate(2px,2px) skewX(0deg)}90%{transform:translate(0px,-1px) skewX(0.5deg)}100%{transform:translate(0,0) skewX(0deg)}}@keyframes scratch-ghost1{0%{transform:translate(-6px,0);opacity:.9}25%{transform:translate(4px,-1px);opacity:.7}50%{transform:translate(-2px,1px);opacity:1}75%{transform:translate(6px,0);opacity:.8}100%{transform:translate(-4px,0);opacity:.9}}@keyframes scratch-ghost2{0%{transform:translate(5px,0);opacity:.8}33%{transform:translate(-6px,1px);opacity:1}66%{transform:translate(3px,-1px);opacity:.7}100%{transform:translate(5px,0);opacity:.8}}@keyframes scratch-ghost3{0%{transform:translate(0,-3px);opacity:.5;clip-path:polygon(0 0,100% 0,100% 12%,0 12%)}50%{transform:translate(-8px,-1px);opacity:.8;clip-path:polygon(0 0,100% 0,100% 20%,0 20%)}100%{transform:translate(0,-3px);opacity:.5;clip-path:polygon(0 0,100% 0,100% 12%,0 12%)}}`}</style>
+    <div ref={sceneRef} className="scratch-electric-scene relative overflow-hidden bg-background px-6 py-10 md:px-10">
+      <style>{`.scratch-electric-scene .scanline{position:absolute;inset:0;background:repeating-linear-gradient(to bottom,transparent 0px,transparent 3px,color-mix(in srgb, var(--theme-shadow) 15%, transparent) 3px,color-mix(in srgb, var(--theme-shadow) 15%, transparent) 4px);pointer-events:none;z-index:10}.scratch-electric-scene .line{display:block;font-family:var(--font-display),sans-serif;font-size:clamp(36px,6vw,72px);color:var(--theme-text);letter-spacing:-.055em;line-height:.9;font-weight:600;position:relative;text-transform:uppercase}.scratch-electric-scene .word{display:inline-block;position:relative}.scratch-electric-scene .word.electric{animation:scratch-jitter .08s infinite}.scratch-electric-scene .word.electric .ghost1{position:absolute;inset:0;font-family:inherit;font-size:inherit;letter-spacing:inherit;font-weight:inherit;color:var(--theme-accent);mix-blend-mode:screen;animation:scratch-ghost1 .06s infinite;clip-path:polygon(0 15%,100% 15%,100% 45%,0 45%)}.scratch-electric-scene .word.electric .ghost2{position:absolute;inset:0;font-family:inherit;font-size:inherit;letter-spacing:inherit;font-weight:inherit;color:var(--theme-danger);mix-blend-mode:screen;animation:scratch-ghost2 .07s infinite;clip-path:polygon(0 55%,100% 55%,100% 85%,0 85%)}.scratch-electric-scene .word.electric .ghost3{position:absolute;inset:0;font-family:inherit;font-size:inherit;letter-spacing:inherit;font-weight:inherit;color:var(--theme-text);animation:scratch-ghost3 .09s infinite;clip-path:polygon(0 0,100% 0,100% 12%,0 12%);opacity:.6}@keyframes scratch-jitter{0%{transform:translate(0,0) skewX(0deg)}10%{transform:translate(-3px,1px) skewX(-1deg)}20%{transform:translate(2px,-1px) skewX(0.5deg)}30%{transform:translate(-1px,2px) skewX(1deg)}40%{transform:translate(3px,0px) skewX(-0.5deg)}50%{transform:translate(-2px,-2px) skewX(0deg)}60%{transform:translate(1px,1px) skewX(1.5deg)}70%{transform:translate(-3px,0px) skewX(-1deg)}80%{transform:translate(2px,2px) skewX(0deg)}90%{transform:translate(0px,-1px) skewX(0.5deg)}100%{transform:translate(0,0) skewX(0deg)}}@keyframes scratch-ghost1{0%{transform:translate(-6px,0);opacity:.9}25%{transform:translate(4px,-1px);opacity:.7}50%{transform:translate(-2px,1px);opacity:1}75%{transform:translate(6px,0);opacity:.8}100%{transform:translate(-4px,0);opacity:.9}}@keyframes scratch-ghost2{0%{transform:translate(5px,0);opacity:.8}33%{transform:translate(-6px,1px);opacity:1}66%{transform:translate(3px,-1px);opacity:.7}100%{transform:translate(5px,0);opacity:.8}}@keyframes scratch-ghost3{0%{transform:translate(0,-3px);opacity:.5;clip-path:polygon(0 0,100% 0,100% 12%,0 12%)}50%{transform:translate(-8px,-1px);opacity:.8;clip-path:polygon(0 0,100% 0,100% 20%,0 20%)}100%{transform:translate(0,-3px);opacity:.5;clip-path:polygon(0 0,100% 0,100% 12%,0 12%)}}`}</style>
       <div className="scanline" />
       <span className="line">
         SATU&nbsp;

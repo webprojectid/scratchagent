@@ -4,18 +4,25 @@ import { usePathname } from "next/navigation";
 import { useCurrentUser } from "@/lib/current-user";
 import { displaySettingsSchema } from "@/lib/account-preferences";
 import { applyDisplaySettings } from "./account-settings-state";
+import { useTheme } from "next-themes";
 
 export function AccountPreferenceSync() {
+  const { setTheme } = useTheme();
   const { user } = useCurrentUser();
   const pathname = usePathname();
   const email = user?.email;
   useEffect(() => {
     const sync = () => {
-      try { const parsed = displaySettingsSchema.safeParse(JSON.parse(localStorage.getItem("scratch_account_preferences") || "{}")); if (parsed.success) document.documentElement.dataset.colorStyle = parsed.data.colorStyle; } catch {}
+      try {
+        const cached = localStorage.getItem("scratch_account_preferences");
+        if (!cached) return;
+        const parsed = displaySettingsSchema.safeParse(JSON.parse(cached));
+        if (parsed.success) { document.documentElement.dataset.colorStyle = "scratch"; setTheme(parsed.data.theme); }
+      } catch {}
     };
-    sync(); window.addEventListener("storage", sync);
-    return () => window.removeEventListener("storage", sync);
-  }, []);
+    sync(); window.addEventListener("storage", sync); window.addEventListener("scratch:preferences", sync);
+    return () => { window.removeEventListener("storage", sync); window.removeEventListener("scratch:preferences", sync); };
+  }, [setTheme]);
   useEffect(() => {
     if (!email || new URLSearchParams(location.search).has("preview")) return;
     let lastBucket: number | null = null;

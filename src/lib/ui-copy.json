@@ -1,4 +1,8 @@
 [
+ ["Mode tampilan","Appearance mode"],
+ ["Pilih tampilan gelap atau terang. Identitas Scratch Green tetap sama di setiap halaman.","Choose dark or light mode. Scratch Green stays consistent across every page."],
+ ["Gelap","Dark"],
+ ["Terang","Light"],
  ["Agent menunggu penyelesaian dependensi","The agent is waiting for task dependencies."],
  ["Checkpoint agent perlu ditinjau","The agent checkpoint needs your review."],
  ["Plan diekspor sebagai Markdown","The plan was exported as Markdown."],

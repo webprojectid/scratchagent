@@ -8,11 +8,11 @@ import { useLang } from "@/lib/lang";
 
 function Logo() {
   return (
-    <Link href="/" className="flex items-center gap-2 text-[16px] font-semibold tracking-[-.04em] text-[#E8F0E8]">
-      <span className="relative grid size-6 place-items-center overflow-hidden text-[#74FA6A]" aria-hidden="true">
-        <span className="absolute left-0 top-[6px] h-2.5 w-2 -skew-x-[28deg] rounded-sm bg-[#74FA6A]" />
-        <span className="absolute left-[7px] top-[2.5px] h-2.5 w-2 -skew-x-[28deg] rounded-sm bg-[#9AFF82]" />
-        <span className="absolute left-[14px] top-[6px] h-2.5 w-2 -skew-x-[28deg] rounded-sm bg-[#4DDC62]" />
+    <Link href="/" className="flex items-center gap-2 text-[16px] font-semibold tracking-[-.04em] text-foreground">
+      <span className="relative grid size-6 place-items-center overflow-hidden text-primary" aria-hidden="true">
+        <span className="absolute left-0 top-[6px] h-2.5 w-2 -skew-x-[28deg] rounded-sm bg-primary" />
+        <span className="absolute left-[7px] top-[2.5px] h-2.5 w-2 -skew-x-[28deg] rounded-sm bg-primary" />
+        <span className="absolute left-[14px] top-[6px] h-2.5 w-2 -skew-x-[28deg] rounded-sm bg-primary" />
       </span>
       Scratch Agent
     </Link>
@@ -28,8 +28,8 @@ export default function SampleWebProjectThreePage() {
   const lang = useLang();
 
   return (
-    <main className="min-h-screen bg-[#0A0A0A] text-[#E8EDEC] selection:bg-[#74FA6A]/30 selection:text-black">
-      <header className="sticky top-0 z-40 border-b border-white/[.06] bg-[rgba(10,10,10,0.85)] backdrop-blur-[12px]">
+    <main className="min-h-screen bg-background text-foreground selection:bg-primary/30 selection:text-primary-foreground">
+      <header className="sticky top-0 z-40 border-b border-border bg-[color-mix(in_srgb,_var(--theme-bg)_85%,_transparent)] backdrop-blur-[12px]">
         <div className="mx-auto flex h-[54px] max-w-[1100px] items-center justify-between px-5">
           <Logo />
           <HeaderNav links={["solutions", "docs"]} ctaHref="/login" ctaKey="login" />
@@ -39,12 +39,12 @@ export default function SampleWebProjectThreePage() {
       <section className="w-full px-6 py-14 md:px-10 md:py-20">
         <div className="sample-project-layout">
           <div className="lg:sticky lg:top-24">
-            <p className="font-mono text-[10px] uppercase tracking-[.2em] text-[#9CA9B8]">web project 03</p>
-            <div className="mt-4 max-w-[28ch] text-balance text-[18px] font-medium leading-[1.25] tracking-[-.025em] text-[#F0F3F5]">
+            <p className="font-mono text-[10px] uppercase tracking-[.2em] text-muted-foreground">web project 03</p>
+            <div className="mt-4 max-w-[28ch] text-balance text-[18px] font-medium leading-[1.25] tracking-[-.025em] text-foreground">
               {lang === "en" ? "Auto finance platform, built to close." : "Platform otomotif, dirancang untuk closing."}
             </div>
 
-            <p className="mt-4 max-w-[42ch] text-sm leading-6 text-[#8C97A5]">
+            <p className="mt-4 max-w-[42ch] text-sm leading-6 text-muted-foreground">
               {lang === "en"
                 ? "A full vehicle purchase and financing interface for auto dealerships. Buyers can browse vehicle specs, flip through photo galleries, review a complete financing breakdown with APR and loan terms, and contact the dealer — all in a single guided flow."
                 : "UI pembelian dan pembiayaan kendaraan lengkap untuk dealer otomotif. Pembeli dapat menjelajahi spesifikasi kendaraan, melihat galeri foto, meninjau rincian pembiayaan lengkap dengan APR dan tenor, serta menghubungi dealer — semua dalam satu flow yang terarah."}

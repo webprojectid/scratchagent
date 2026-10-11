@@ -86,22 +86,22 @@ export default function NewPlan() {
     <Shell back="/" sidebar={false}>
       {loading || !authed ? (
         <div className="flex h-screen items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-[#74FA6A]" />
-          <p className="ml-3 text-slate-400 text-sm">{ui("Memuat…")}</p>
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="ml-3 text-muted-foreground text-sm">{ui("Memuat…")}</p>
         </div>
       ) : (
         <section
           ref={sectionRef}
-          className="relative isolate flex h-screen min-h-[100dvh] max-lg:h-auto max-lg:min-h-[100dvh] items-center justify-center bg-[#0F1113] max-lg:overflow-y-auto overflow-hidden"
+          className="relative isolate flex h-screen min-h-[100dvh] max-lg:h-auto max-lg:min-h-[100dvh] items-center justify-center bg-background max-lg:overflow-y-auto overflow-hidden"
         >
           {/* Card */}
-          <div className="relative w-full max-w-[1200px] h-[600px] max-lg:h-auto max-lg:min-h-[560px] mx-auto px-4 md:px-6 overflow-hidden rounded-[24px] border border-white/10 bg-white/[0.03] backdrop-blur-xl shadow-[0_28px_90px_#000A,inset_0_1px_0_rgba(255,255,255,0.12),inset_0_0_0_1px_rgba(255,255,255,0.05)] ring-1 ring-white/[0.08]">
+          <div className="relative w-full max-w-[1200px] h-[600px] max-lg:h-auto max-lg:min-h-[560px] mx-auto px-4 md:px-6 overflow-hidden rounded-[24px] border border-border bg-foreground/[0.03] backdrop-blur-xl shadow-[0_28px_90px_color-mix(in_srgb,_var(--theme-shadow)_66.7%,_transparent),inset_0_1px_0_color-mix(in_srgb,_var(--theme-text)_12%,_transparent),inset_0_0_0_1px_color-mix(in_srgb,_var(--theme-text)_5%,_transparent)] ring-1 ring-white/[0.08]">
             
             {/* Cursor glow - radial gradient silver-white following mouse */}
             <div
               className="pointer-events-none absolute inset-0 z-[1]"
               style={{
-                background: `radial-gradient(700px circle at ${mousePos.left} ${mousePos.top}, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.15) 35%, transparent 65%)`,
+                background: `radial-gradient(700px circle at ${mousePos.left} ${mousePos.top}, color-mix(in srgb, var(--theme-text) 40%, transparent) 0%, color-mix(in srgb, var(--theme-text) 15%, transparent) 35%, transparent 65%)`,
               }}
             />
 
@@ -110,7 +110,7 @@ export default function NewPlan() {
               {/* Form */}
               <div className="flex flex-col justify-start py-6 lg:py-0 overflow-hidden self-center">
                 <h1
-                  className="mb-3 max-w-[9ch] font-semibold leading-[1.15] tracking-tight text-white px-2"
+                  className="mb-3 max-w-[9ch] font-semibold leading-[1.15] tracking-tight text-foreground px-2"
                   style={{ fontSize: "clamp(2.25rem, 4vw, 3rem)" }}
                 >{ui("Apa yang harus dibangun?")}</h1>
 
@@ -131,7 +131,7 @@ export default function NewPlan() {
                     value={brief}
                     onChange={(e) => setBrief(e.target.value)}
                     onInput={() => textareaRef.current && (textareaRef.current.style.height = 'auto') || null}
-                    className="field w-full max-w-[580px] resize-none rounded-xl border border-white/12 bg-[#0D1011]/86 p-5 text-lg leading-relaxed shadow-lg backdrop-blur-md transition-all focus:border-emerald-400 focus:shadow-[0_0_0_2px_rgba(124,250,106,0.2)] placeholder:text-slate-600"
+                    className="field w-full max-w-[580px] resize-none rounded-xl border border-border bg-background/86 p-5 text-lg leading-relaxed shadow-lg backdrop-blur-md transition-all focus:border-primary focus:shadow-[0_0_0_2px_color-mix(in_srgb,_var(--theme-accent)_20%,_transparent)] placeholder:text-muted-foreground"
                     placeholder={ui("Contoh: Buat aplikasi booking studio musik...")}
                     style={{ minHeight: "160px", maxHeight: "300px" }}
                   />

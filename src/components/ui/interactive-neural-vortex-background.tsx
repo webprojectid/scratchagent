@@ -70,9 +70,9 @@ const FS_SOURCE = `
     noise += pow(noise, 10.);
     noise = max(.0, noise - .5);
     noise *= (1. - length(vUv - .5));
-    color = vec3(0.5, 0.15, 0.65);
-    color = mix(color, vec3(0.02, 0.7, 0.9), 0.32 + 0.16 * sin(2.0 * u_scroll_progress + 1.2));
-    color += vec3(0.15, 0.0, 0.6) * sin(2.0 * u_scroll_progress + 1.5);
+    color = vec3(0.30, 0.65, 0.26);
+    color = mix(color, vec3(0.45, 0.98, 0.42), 0.32 + 0.16 * sin(2.0 * u_scroll_progress + 1.2));
+    color += vec3(0.04, 0.12, 0.02) * sin(2.0 * u_scroll_progress + 1.5);
     color = color * noise;
     gl_FragColor = vec4(color, noise);
   }
@@ -246,17 +246,17 @@ const InteractiveNeuralVortex = ({ fill = false, scrollRef }: InteractiveNeuralV
 
       {/* Hero section */}
       <section className="z-10 flex w-full flex-1 flex-col items-center justify-center px-6 pt-16 pb-20">
-        <div className="nv-rise w-full max-w-2xl rounded-3xl border-2 border-white/10 px-8 py-14 text-center backdrop-blur-md">
-          <h1 className="mb-4 text-[clamp(2.4rem,6vw,4rem)] font-light leading-[1.05] tracking-[-0.02em] text-white">
+        <div className="nv-rise w-full max-w-2xl rounded-3xl border-2 border-border px-8 py-14 text-center backdrop-blur-md">
+          <h1 className="mb-4 text-[clamp(2.4rem,6vw,4rem)] font-light leading-[1.05] tracking-[-0.02em] text-foreground">
             Step Into the Future of VR
           </h1>
-          <p className="mb-9 text-[clamp(1.05rem,2vw,1.25rem)] font-light leading-[1.35] tracking-[-0.01em] text-white/60">
+          <p className="mb-9 text-[clamp(1.05rem,2vw,1.25rem)] font-light leading-[1.35] tracking-[-0.01em] text-foreground">
             ImmersiaVR delivers breathtaking realism, seamless interaction, and endless
             possibilities for gaming, education, and beyond.
           </p>
           <a
             href="#get-started"
-            className="inline-block rounded-xl border-2 border-white/10 px-8 py-4 font-semibold text-white transition-colors duration-300 hover:border-[#74FA6A]/60 hover:text-[#74FA6A]"
+            className="inline-block rounded-xl border-2 border-border px-8 py-4 font-semibold text-foreground transition-colors duration-300 hover:border-primary/60 hover:text-primary"
           >
             Get Started
           </a>

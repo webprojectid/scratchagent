@@ -22,22 +22,22 @@ export function PageHero({
   children?: ReactNode;
 }) {
   return (
-    <section className="relative overflow-hidden border-b border-white/[.06]">
+    <section className="relative overflow-hidden border-b border-border">
       <div
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            "radial-gradient(ellipse 60% 55% at 50% -15%, rgba(116,250,106,.10), transparent 65%)",
+            "radial-gradient(ellipse 60% 55% at 50% -15%, color-mix(in srgb, var(--theme-accent) 10%, transparent), transparent 65%)",
         }}
       />
       <div className="relative mx-auto max-w-[980px] px-5 pb-16 pt-16 text-center md:pt-24 animate-in fade-in slide-in-from-bottom-3 duration-500">
         {eyebrow && (
-          <p className="font-mono text-[10px] font-bold uppercase tracking-[.18em] text-[#8FDB90]">
+          <p className="font-mono text-[10px] font-bold uppercase tracking-[.18em] text-primary">
             {eyebrow}
           </p>
         )}
         <h1
-          className={`mx-auto max-w-[20ch] text-balance font-semibold text-[#EDF8EA] ${eyebrow ? "mt-4" : ""}`}
+          className={`mx-auto max-w-[20ch] text-balance font-semibold text-foreground ${eyebrow ? "mt-4" : ""}`}
           /* Inline style: rules mentah h1/p di globals.css (di luar @layer) selalu
              mengalahkan utility Tailwind, jadi nilai tipografi dikunci di sini. */
           style={{ fontSize: "clamp(2.4rem, 5.6vw, 3.9rem)", lineHeight: 1.05, letterSpacing: "-0.05em" }}
@@ -46,7 +46,7 @@ export function PageHero({
         </h1>
         {sub && (
           <p
-            className="mx-auto mt-5 text-balance text-[15px] leading-[1.65] text-[#A9C5A7]"
+            className="mx-auto mt-5 text-balance text-[15px] leading-[1.65] text-muted-foreground"
             style={{ maxWidth: "58ch" }}
           >
             {sub}

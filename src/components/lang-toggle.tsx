@@ -36,7 +36,7 @@ export function LanguageToggle({ className = "" }: { className?: string }) {
     <div
       role="group"
       aria-label={ui("Pilih bahasa")}
-      className={`flex items-center rounded-full border border-white/10 bg-white/[.03] p-0.5 ${className}`}
+      className={`flex items-center rounded-full border border-border bg-foreground/[.03] p-0.5 ${className}`}
     >
       {OPTIONS.map((opt) => (
         <button
@@ -47,7 +47,7 @@ export function LanguageToggle({ className = "" }: { className?: string }) {
           disabled={busy}
           onClick={() => void changeLanguage(opt.value)}
           className={`rounded-full px-2.5 py-1 font-mono text-[11px] font-semibold tracking-[0.06em] transition-colors ${
-            lang === opt.value ? "text-[#74FA6A]" : "text-white/45 hover:text-white"
+            lang === opt.value ? "text-primary" : "text-muted-foreground hover:text-foreground"
           }`}
         >
           {opt.label}

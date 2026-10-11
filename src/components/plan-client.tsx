@@ -12,9 +12,9 @@ const PlanMap = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="flex h-full w-full items-center justify-center bg-[#070A0D]">
-        <div className="flex items-center gap-2 font-mono text-xs text-white/40">
-          <span className="size-2 animate-pulse rounded-full bg-[#74FA6A]" />
+      <div className="flex h-full w-full items-center justify-center bg-background">
+        <div className="flex items-center gap-2 font-mono text-xs text-muted-foreground">
+          <span className="size-2 animate-pulse rounded-full bg-primary" />
           <span>Rendering node graph...</span>
         </div>
       </div>
@@ -56,8 +56,8 @@ function FallbackWarningBanner({ warnings }: { warnings?: string[] }) {
   useUiLanguage();
   if (!warnings || warnings.length === 0) return null;
   return (
-    <div className="border-b border-amber-400/20 bg-amber-400/[.06] px-4 py-2 md:px-6">
-      <p className="text-[11px] leading-relaxed text-amber-200/90">
+    <div className="border-b border-primary bg-primary/[.06] px-4 py-2 md:px-6">
+      <p className="text-[11px] leading-relaxed text-primary">
         <span className="font-semibold">{ui("⚠ Catatan:")}</span> {warnings.join(" · ")}{ui(". Narasi lainnya tetap spesifik untuk project ini.")}</p>
     </div>
   );
@@ -66,7 +66,7 @@ function FallbackWarningBanner({ warnings }: { warnings?: string[] }) {
 function ViewTabs({ view, setView, pillId }: { view: ViewKey; setView: (v: ViewKey) => void; pillId: string }) {
   useUiLanguage();
   return (
-    <div role="tablist" className="flex items-center gap-1 rounded-2xl border border-white/[.08] bg-white/[.03] p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] backdrop-blur-xl">
+    <div role="tablist" className="flex items-center gap-1 rounded-2xl border border-border bg-foreground/[.03] p-1.5 shadow-[inset_0_1px_0_color-mix(in_srgb,_var(--theme-text)_5%,_transparent)] backdrop-blur-xl">
       {viewTabs.map((t) => {
         const active = view === t.key;
         const Icon = t.icon;
@@ -78,13 +78,13 @@ function ViewTabs({ view, setView, pillId }: { view: ViewKey; setView: (v: ViewK
             onClick={() => setView(t.key)}
             whileTap={{ scale: 0.95 }}
             className={`relative flex min-w-[106px] items-center justify-center gap-1.5 rounded-xl px-4 py-2 text-[12.5px] font-semibold transition-colors duration-300 ${
-              active ? "text-[#07120A]" : "text-slate-400 hover:text-slate-100"
+              active ? "text-primary-foreground" : "text-muted-foreground hover:text-foreground"
             }`}
           >
             {active && (
               <motion.span
                 layoutId={pillId}
-                className="absolute inset-0 rounded-xl bg-[#74FA6A] shadow-[0_2px_16px_rgba(116,250,106,0.35)]"
+                className="absolute inset-0 rounded-xl bg-primary shadow-[0_2px_16px_color-mix(in_srgb,_var(--theme-accent)_35%,_transparent)]"
                 transition={{ type: "spring", stiffness: 420, damping: 32 }}
               />
             )}
@@ -324,11 +324,11 @@ export function PlanClient({ plan: initialPlan, tier = "free" }: { plan: Plan; t
 
   return (
     <Shell sidebar={false} brand={false}>
-      <div className="border-b border-white/8">
+      <div className="border-b border-border">
         <div className="relative flex flex-wrap items-center justify-between gap-x-3 gap-y-2 px-4 py-2.5 md:flex-nowrap md:px-6">
           <div className="flex min-w-0 items-center gap-3">
             <Brand />
-            <span className="h-4 w-px shrink-0 bg-white/10" aria-hidden="true" />
+            <span className="h-4 w-px shrink-0 bg-foreground/10" aria-hidden="true" />
             <ProjectSwitcher currentId={plan.id} fallbackTitle={plan.title} />
           </div>
 
@@ -338,17 +338,17 @@ export function PlanClient({ plan: initialPlan, tier = "free" }: { plan: Plan; t
 
           <div className="flex shrink-0 items-center gap-2.5">
             {taskCount > 0 && (
-              <span className="hidden font-mono text-[11px] tabular-nums text-white/30 lg:block">
+              <span className="hidden font-mono text-[11px] tabular-nums text-muted-foreground lg:block">
                 {doneCount}/{taskCount} task
               </span>
             )}
             <button
-              className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[.03] px-3 py-1.5 text-xs font-medium text-white/70 transition hover:border-[#74FA6A]/40 hover:text-white"
+              className="flex items-center gap-1.5 rounded-full border border-border bg-foreground/[.03] px-3 py-1.5 text-xs font-medium text-foreground transition hover:border-primary/40 hover:text-foreground"
               onClick={() => setShowIdeas((v) => !v)}
               aria-pressed={showIdeas}
               title={ui("Kolom chat ide — fitur Pro, maksimal 2 kali per project")}
             >
-              <Lightbulb size={13} className={showIdeas ? "text-[#74FA6A]" : undefined} />{ui("Ide Kamu")}</button>
+              <Lightbulb size={13} className={showIdeas ? "text-primary" : undefined} />{ui("Ide Kamu")}</button>
             <button className="btn min-h-0 px-3.5 py-1.5 text-xs" onClick={() => setShowModal(true)} disabled={generatingTasks}>
               {generatingTasks ? "Menyusun task..." : ui("Mulai implementasi")}
             </button>
@@ -365,10 +365,10 @@ export function PlanClient({ plan: initialPlan, tier = "free" }: { plan: Plan; t
         {showIdeas && <IdeaChatPanel planId={plan.id} isPro={isPro} open={showIdeas} onClose={() => setShowIdeas(false)} />}
       </AnimatePresence>
       {notice && (
-        <div className="border-b border-rose-400/20 bg-rose-400/[.06] px-4 py-2 md:px-6">
-          <p className="text-[11px] leading-relaxed text-rose-200/90">
+        <div className="border-b border-primary bg-primary/[.06] px-4 py-2 md:px-6">
+          <p className="text-[11px] leading-relaxed text-primary">
             <span className="font-semibold">✕</span> {notice}{" "}
-            {!isPro && <a href="/pricing" className="underline hover:text-white">Upgrade ke Pro</a>}
+            {!isPro && <a href="/pricing" className="underline hover:text-foreground">Upgrade ke Pro</a>}
           </p>
         </div>
       )}

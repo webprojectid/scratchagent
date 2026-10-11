@@ -6,7 +6,9 @@ export const profileSettingsSchema = z.object({
   avatar: z.enum(["initials", "sprout", "layers", "code", "orbit", "bolt"]).default("initials"),
 });
 export const displaySettingsSchema = z.object({
-  colorStyle: z.enum(["scratch", "blue", "violet", "amber", "rose"]).default("scratch"),
+  // Migrate saved legacy choices without discarding other account preferences.
+  colorStyle: z.enum(["scratch", "blue", "violet", "amber", "rose"]).default("scratch").transform(() => "scratch" as const),
+  theme: z.enum(["dark", "light"]).default("dark"),
   density: z.enum(["comfortable", "compact"]).default("comfortable"),
   motion: z.enum(["system", "reduced"]).default("system"),
   badgeMotion: z.enum(["system", "animated", "reduced"]).default("system"),

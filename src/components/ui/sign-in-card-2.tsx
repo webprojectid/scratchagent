@@ -17,7 +17,7 @@ function Input({ className, type, ...props }: React.ComponentProps<"input">) {
       type={type}
       data-slot="input"
       className={cn(
-        "file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input flex h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+        "file:text-primary-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input flex h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
         "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
         "aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
         className,
@@ -66,7 +66,7 @@ export function SignInCard2() {
   // (sumber cahaya seolah ada di posisi kursor).
   const glareX = useSpring(useTransform(mouseX, [-200, 200], [15, 85]), tiltSpring);
   const glareY = useSpring(useTransform(mouseY, [-280, 280], [8, 92]), tiltSpring);
-  const glareBackground = useMotionTemplate`radial-gradient(circle at ${glareX}% ${glareY}%, rgba(255,255,255,0.12) 0%, rgba(116,250,106,0.05) 30%, transparent 60%)`;
+  const glareBackground = useMotionTemplate`radial-gradient(circle at ${glareX}% ${glareY}%, color-mix(in srgb, var(--theme-text) 12%, transparent) 0%, color-mix(in srgb, var(--theme-accent) 5%, transparent) 30%, transparent 60%)`;
 
   // Isi card bergerak berlawanan arah dengan card: dua layer bergerak berbeda
   // menciptakan kedalaman (parallax), sekaligus mengarahkan fokus ke form.
@@ -248,7 +248,7 @@ export function SignInCard2() {
   return (
     <div className="relative flex min-h-screen w-full items-center justify-center overflow-hidden bg-black">
       {/* Background gradient — lime brand, menggantikan ungu */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#74FA6A]/20 via-[#0f2a12]/60 to-black" />
+      <div className="absolute inset-0 bg-gradient-to-b from-primary/20 via-[var(--theme-tint)]/60 to-black" />
 
       {/* Noise halus */}
       <div
@@ -260,26 +260,26 @@ export function SignInCard2() {
       />
 
       {/* Glow radial atas */}
-      <div className="absolute left-1/2 top-0 h-[60vh] w-[120vh] -translate-x-1/2 rounded-b-[50%] bg-[#74FA6A]/15 blur-[80px]" />
+      <div className="absolute left-1/2 top-0 h-[60vh] w-[120vh] -translate-x-1/2 rounded-b-[50%] bg-primary/15 blur-[80px]" />
       <motion.div
-        className="absolute left-1/2 top-0 h-[60vh] w-[100vh] -translate-x-1/2 rounded-b-full bg-[#9AFF82]/15 blur-[60px]"
+        className="absolute left-1/2 top-0 h-[60vh] w-[100vh] -translate-x-1/2 rounded-b-full bg-primary/15 blur-[60px]"
         animate={{ opacity: [0.15, 0.3, 0.15], scale: [0.98, 1.02, 0.98] }}
         transition={{ duration: 8, repeat: Infinity, repeatType: "mirror" }}
       />
       <motion.div
-        className="absolute bottom-0 left-1/2 h-[90vh] w-[90vh] -translate-x-1/2 rounded-t-full bg-[#74FA6A]/15 blur-[60px]"
+        className="absolute bottom-0 left-1/2 h-[90vh] w-[90vh] -translate-x-1/2 rounded-t-full bg-primary/15 blur-[60px]"
         animate={{ opacity: [0.3, 0.5, 0.3], scale: [1, 1.1, 1] }}
         transition={{ duration: 6, repeat: Infinity, repeatType: "mirror", delay: 1 }}
       />
 
       {/* Glow spot animasi */}
-      <div className="absolute left-1/4 top-1/4 h-96 w-96 animate-pulse rounded-full bg-white/5 opacity-40 blur-[100px]" />
-      <div className="absolute bottom-1/4 right-1/4 h-96 w-96 animate-pulse delay-1000 rounded-full bg-white/5 opacity-40 blur-[100px]" />
+      <div className="absolute left-1/4 top-1/4 h-96 w-96 animate-pulse rounded-full bg-foreground/5 opacity-40 blur-[100px]" />
+      <div className="absolute bottom-1/4 right-1/4 h-96 w-96 animate-pulse delay-1000 rounded-full bg-foreground/5 opacity-40 blur-[100px]" />
 
       {/* Link kembali ke beranda */}
       <Link
         href="/"
-        className="absolute left-5 top-5 z-20 flex items-center gap-1.5 text-xs text-white/50 transition-colors hover:text-white"
+        className="absolute left-5 top-5 z-20 flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
       >
         <ArrowLeft className="h-3.5 w-3.5" />
         {t.back}
@@ -307,9 +307,9 @@ export function SignInCard2() {
               className="absolute -inset-[1px] rounded-2xl opacity-0 transition-opacity duration-700 group-hover:opacity-70"
               animate={{
                 boxShadow: [
-                  "0 0 10px 2px rgba(116,250,106,0.05)",
-                  "0 0 15px 5px rgba(116,250,106,0.10)",
-                  "0 0 10px 2px rgba(116,250,106,0.05)",
+                  "0 0 10px 2px color-mix(in srgb, var(--theme-accent) 5%, transparent)",
+                  "0 0 15px 5px color-mix(in srgb, var(--theme-accent) 10%, transparent)",
+                  "0 0 10px 2px color-mix(in srgb, var(--theme-accent) 5%, transparent)",
                 ],
                 opacity: [0.2, 0.4, 0.2],
               }}
@@ -321,7 +321,7 @@ export function SignInCard2() {
                 ulang setiap frame dan bikin gerak tersendat. */}
             <div className="absolute -inset-[1px] overflow-hidden rounded-2xl">
               <motion.div
-                className="absolute left-0 top-0 h-[3px] w-[50%] bg-gradient-to-r from-transparent via-[#74FA6A] to-transparent opacity-70"
+                className="absolute left-0 top-0 h-[3px] w-[50%] bg-gradient-to-r from-transparent via-primary to-transparent opacity-70"
                 initial={{ filter: "blur(2px)", x: "-100%" }}
                 animate={{ x: ["-100%", "200%"], opacity: [0.3, 0.7, 0.3], filter: ["blur(1px)", "blur(2.5px)", "blur(1px)"] }}
                 transition={{
@@ -331,7 +331,7 @@ export function SignInCard2() {
                 }}
               />
               <motion.div
-                className="absolute right-0 top-0 h-[50%] w-[3px] bg-gradient-to-b from-transparent via-[#74FA6A] to-transparent opacity-70"
+                className="absolute right-0 top-0 h-[50%] w-[3px] bg-gradient-to-b from-transparent via-primary to-transparent opacity-70"
                 initial={{ filter: "blur(2px)", y: "-100%" }}
                 animate={{ y: ["-100%", "200%"], opacity: [0.3, 0.7, 0.3], filter: ["blur(1px)", "blur(2.5px)", "blur(1px)"] }}
                 transition={{
@@ -341,7 +341,7 @@ export function SignInCard2() {
                 }}
               />
               <motion.div
-                className="absolute bottom-0 right-0 h-[3px] w-[50%] bg-gradient-to-r from-transparent via-[#74FA6A] to-transparent opacity-70"
+                className="absolute bottom-0 right-0 h-[3px] w-[50%] bg-gradient-to-r from-transparent via-primary to-transparent opacity-70"
                 initial={{ filter: "blur(2px)", x: "200%" }}
                 animate={{ x: ["200%", "-100%"], opacity: [0.3, 0.7, 0.3], filter: ["blur(1px)", "blur(2.5px)", "blur(1px)"] }}
                 transition={{
@@ -351,7 +351,7 @@ export function SignInCard2() {
                 }}
               />
               <motion.div
-                className="absolute bottom-0 left-0 h-[50%] w-[3px] bg-gradient-to-b from-transparent via-[#74FA6A] to-transparent opacity-70"
+                className="absolute bottom-0 left-0 h-[50%] w-[3px] bg-gradient-to-b from-transparent via-primary to-transparent opacity-70"
                 initial={{ filter: "blur(2px)", y: "200%" }}
                 animate={{ y: ["200%", "-100%"], opacity: [0.3, 0.7, 0.3], filter: ["blur(1px)", "blur(2.5px)", "blur(1px)"] }}
                 transition={{
@@ -361,17 +361,17 @@ export function SignInCard2() {
                 }}
               />
               {/* Glow sudut */}
-              <motion.div className="absolute left-0 top-0 h-[5px] w-[5px] rounded-full bg-[#74FA6A]/40 blur-[1px]" animate={{ opacity: [0.2, 0.4, 0.2] }} transition={{ duration: 2, repeat: Infinity, repeatType: "mirror" }} />
-              <motion.div className="absolute right-0 top-0 h-[8px] w-[8px] rounded-full bg-[#9AFF82]/60 blur-[2px]" animate={{ opacity: [0.2, 0.4, 0.2] }} transition={{ duration: 2.4, repeat: Infinity, repeatType: "mirror", delay: 0.5 }} />
-              <motion.div className="absolute bottom-0 right-0 h-[8px] w-[8px] rounded-full bg-[#9AFF82]/60 blur-[2px]" animate={{ opacity: [0.2, 0.4, 0.2] }} transition={{ duration: 2.2, repeat: Infinity, repeatType: "mirror", delay: 1 }} />
-              <motion.div className="absolute bottom-0 left-0 h-[5px] w-[5px] rounded-full bg-[#74FA6A]/40 blur-[1px]" animate={{ opacity: [0.2, 0.4, 0.2] }} transition={{ duration: 2.3, repeat: Infinity, repeatType: "mirror", delay: 1.5 }} />
+              <motion.div className="absolute left-0 top-0 h-[5px] w-[5px] rounded-full bg-primary/40 blur-[1px]" animate={{ opacity: [0.2, 0.4, 0.2] }} transition={{ duration: 2, repeat: Infinity, repeatType: "mirror" }} />
+              <motion.div className="absolute right-0 top-0 h-[8px] w-[8px] rounded-full bg-primary/60 blur-[2px]" animate={{ opacity: [0.2, 0.4, 0.2] }} transition={{ duration: 2.4, repeat: Infinity, repeatType: "mirror", delay: 0.5 }} />
+              <motion.div className="absolute bottom-0 right-0 h-[8px] w-[8px] rounded-full bg-primary/60 blur-[2px]" animate={{ opacity: [0.2, 0.4, 0.2] }} transition={{ duration: 2.2, repeat: Infinity, repeatType: "mirror", delay: 1 }} />
+              <motion.div className="absolute bottom-0 left-0 h-[5px] w-[5px] rounded-full bg-primary/40 blur-[1px]" animate={{ opacity: [0.2, 0.4, 0.2] }} transition={{ duration: 2.3, repeat: Infinity, repeatType: "mirror", delay: 1.5 }} />
             </div>
 
             {/* Border glow saat hover */}
-            <div className="absolute -inset-[0.5px] rounded-2xl bg-gradient-to-r from-[#74FA6A]/15 via-white/10 to-[#74FA6A]/15 opacity-0 transition-opacity duration-500 group-hover:opacity-70" />
+            <div className="absolute -inset-[0.5px] rounded-2xl bg-gradient-to-r from-primary/15 via-foreground/10 to-primary/15 opacity-0 transition-opacity duration-500 group-hover:opacity-70" />
 
             {/* Glass card */}
-            <div className="relative overflow-hidden rounded-2xl border border-[#74FA6A]/15 bg-black/40 p-6 shadow-2xl backdrop-blur-xl">
+            <div className="relative overflow-hidden rounded-2xl border border-primary/15 bg-black/40 p-6 shadow-2xl backdrop-blur-xl">
               {/* Pola diagonal halus */}
               <div
                 className="absolute inset-0 opacity-[0.03]"
@@ -399,22 +399,22 @@ export function SignInCard2() {
                   initial={{ scale: 0.5, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ type: "spring", duration: 0.8 }}
-                  className="relative mx-auto flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-white/10"
+                  className="relative mx-auto flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-border"
                 >
                   {/* Logo Scratch Agent */}
                   <span className="relative grid size-4 place-items-center overflow-hidden" aria-hidden="true">
-                    <span className="absolute left-0 top-[5px] h-2 w-1.5 -skew-x-[28deg] rounded-sm bg-[#74FA6A]" />
-                    <span className="absolute left-[6px] top-[2px] h-2 w-1.5 -skew-x-[28deg] rounded-sm bg-[#9AFF82]" />
-                    <span className="absolute left-[12px] top-[5px] h-2 w-1.5 -skew-x-[28deg] rounded-sm bg-[#4DDC62]" />
+                    <span className="absolute left-0 top-[5px] h-2 w-1.5 -skew-x-[28deg] rounded-sm bg-primary" />
+                    <span className="absolute left-[6px] top-[2px] h-2 w-1.5 -skew-x-[28deg] rounded-sm bg-primary" />
+                    <span className="absolute left-[12px] top-[5px] h-2 w-1.5 -skew-x-[28deg] rounded-sm bg-primary" />
                   </span>
-                  <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-50" />
+                  <div className="absolute inset-0 bg-gradient-to-br from-foreground/10 to-transparent opacity-50" />
                 </motion.div>
 
                 <motion.h1
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 }}
-                  className="bg-clip-text text-xl font-bold text-transparent bg-gradient-to-b from-white to-white/80"
+                  className="bg-clip-text text-xl font-bold text-transparent bg-gradient-to-b from-foreground to-foreground/80"
                   // Inline style untuk mengalahkan aturan mentah `h1` di globals.css
                   // (clamp 3rem–5.4rem) yang berada di luar cascade layer Tailwind.
                   style={{ fontSize: "1.25rem", lineHeight: 1.3 }}
@@ -422,7 +422,7 @@ export function SignInCard2() {
                   {t.title}
                 </motion.h1>
 
-                <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="text-xs text-white/60">
+                <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="text-xs text-foreground">
                   {t.sub}
                 </motion.p>
               </div>
@@ -441,7 +441,7 @@ export function SignInCard2() {
                         className={`relative overflow-hidden ${focusedInput === "name" ? "z-10" : ""}`}
                       >
                         <div className="relative flex items-center overflow-hidden rounded-lg">
-                          <User className={`absolute left-3 h-4 w-4 transition-all duration-300 ${focusedInput === "name" ? "text-[#74FA6A]" : "text-white/40"}`} />
+                          <User className={`absolute left-3 h-4 w-4 transition-all duration-300 ${focusedInput === "name" ? "text-primary" : "text-muted-foreground"}`} />
                           <Input
                             type="text"
                             placeholder={t.namePlaceholder}
@@ -449,7 +449,7 @@ export function SignInCard2() {
                             onChange={(e) => setName(e.target.value)}
                             onFocus={() => setFocusedInput("name")}
                             onBlur={() => setFocusedInput(null)}
-                            className="h-10 w-full border-transparent bg-white/5 pl-10 pr-3 text-white transition-all duration-300 placeholder:text-white/30 focus:border-[#74FA6A]/30 focus:bg-white/10"
+                            className="h-10 w-full border-transparent bg-foreground/5 pl-10 pr-3 text-foreground transition-all duration-300 placeholder:text-muted-foreground focus:border-primary/30 focus:bg-foreground/10"
                           />
                         </div>
                       </motion.div>
@@ -462,7 +462,7 @@ export function SignInCard2() {
                       dan latar (R-19). */}
                   <div className={`relative ${focusedInput === "email" ? "z-10" : ""}`}>
                     <div className="relative flex items-center overflow-hidden rounded-lg">
-                      <Mail className={`absolute left-3 h-4 w-4 transition-all duration-300 ${focusedInput === "email" ? "text-[#74FA6A]" : "text-white/40"}`} />
+                      <Mail className={`absolute left-3 h-4 w-4 transition-all duration-300 ${focusedInput === "email" ? "text-primary" : "text-muted-foreground"}`} />
                       <Input
                         type="email"
                         placeholder={t.emailPlaceholder}
@@ -470,7 +470,7 @@ export function SignInCard2() {
                         onChange={(e) => setEmail(e.target.value)}
                         onFocus={() => setFocusedInput("email")}
                         onBlur={() => setFocusedInput(null)}
-                        className="h-10 w-full border-transparent bg-white/5 pl-10 pr-3 text-white transition-all duration-300 placeholder:text-white/30 focus:border-[#74FA6A]/30 focus:bg-white/10"
+                        className="h-10 w-full border-transparent bg-foreground/5 pl-10 pr-3 text-foreground transition-all duration-300 placeholder:text-muted-foreground focus:border-primary/30 focus:bg-foreground/10"
                       />
                     </div>
                   </div>
@@ -478,7 +478,7 @@ export function SignInCard2() {
                   {/* Password */}
                   <div className={`relative ${focusedInput === "password" ? "z-10" : ""}`}>
                     <div className="relative flex items-center overflow-hidden rounded-lg">
-                      <Lock className={`absolute left-3 h-4 w-4 transition-all duration-300 ${focusedInput === "password" ? "text-[#74FA6A]" : "text-white/40"}`} />
+                      <Lock className={`absolute left-3 h-4 w-4 transition-all duration-300 ${focusedInput === "password" ? "text-primary" : "text-muted-foreground"}`} />
                       <Input
                         type={showPassword ? "text" : "password"}
                         placeholder={t.passwordPlaceholder}
@@ -486,7 +486,7 @@ export function SignInCard2() {
                         onChange={(e) => setPassword(e.target.value)}
                         onFocus={() => setFocusedInput("password")}
                         onBlur={() => setFocusedInput(null)}
-                        className="h-10 w-full border-transparent bg-white/5 pl-10 pr-10 text-white transition-all duration-300 placeholder:text-white/30 focus:border-[#74FA6A]/30 focus:bg-white/10"
+                        className="h-10 w-full border-transparent bg-foreground/5 pl-10 pr-10 text-foreground transition-all duration-300 placeholder:text-muted-foreground focus:border-primary/30 focus:bg-foreground/10"
                       />
                       <div
                         onClick={() => setShowPassword(!showPassword)}
@@ -495,9 +495,9 @@ export function SignInCard2() {
                         aria-label={showPassword ? "Hide password" : "Show password"}
                       >
                         {showPassword ? (
-                          <Eye className="h-4 w-4 text-white/40 transition-colors duration-300 hover:text-white" />
+                          <Eye className="h-4 w-4 text-muted-foreground transition-colors duration-300 hover:text-foreground" />
                         ) : (
-                          <EyeClosed className="h-4 w-4 text-white/40 transition-colors duration-300 hover:text-white" />
+                          <EyeClosed className="h-4 w-4 text-muted-foreground transition-colors duration-300 hover:text-foreground" />
                         )}
                       </div>
                     </div>
@@ -505,7 +505,7 @@ export function SignInCard2() {
                 </motion.div>
 
                 {(error || info) && (
-                  <p className={`text-xs ${error ? "text-red-400" : "text-white/60"}`}>{error || info}</p>
+                  <p className={`text-xs ${error ? "text-destructive" : "text-foreground"}`}>{error || info}</p>
                 )}
 
                 {/* Cloudflare Turnstile */}
@@ -531,13 +531,13 @@ export function SignInCard2() {
                           type="checkbox"
                           checked={rememberMe}
                           onChange={() => setRememberMe(!rememberMe)}
-                          className="h-4 w-4 appearance-none rounded border border-white/20 bg-white/5 transition-all duration-200 checked:border-[#74FA6A] checked:bg-[#74FA6A] focus:outline-none focus:ring-1 focus:ring-[#74FA6A]/30"
+                          className="h-4 w-4 appearance-none rounded border border-border bg-foreground/5 transition-all duration-200 checked:border-primary checked:bg-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
                         />
                         {rememberMe && (
                           <motion.div
                             initial={{ opacity: 0, scale: 0.5 }}
                             animate={{ opacity: 1, scale: 1 }}
-                            className="pointer-events-none absolute inset-0 flex items-center justify-center text-black"
+                            className="pointer-events-none absolute inset-0 flex items-center justify-center text-foreground"
                           >
                             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                               <polyline points="20 6 9 17 4 12" />
@@ -545,7 +545,7 @@ export function SignInCard2() {
                           </motion.div>
                         )}
                       </div>
-                      <label htmlFor="remember-me" className="text-xs text-white/60 transition-colors duration-200 hover:text-white/80">
+                      <label htmlFor="remember-me" className="text-xs text-foreground transition-colors duration-200 hover:text-foreground">
                         {t.rememberMe}
                       </label>
                     </div>
@@ -556,7 +556,7 @@ export function SignInCard2() {
                         setInfo(t.forgotInfo);
                         setError("");
                       }}
-                      className="text-xs text-white/60 transition-colors duration-200 hover:text-white"
+                      className="text-xs text-foreground transition-colors duration-200 hover:text-foreground"
                     >
                       {t.forgot}
                     </button>
@@ -565,8 +565,8 @@ export function SignInCard2() {
 
                 {/* Tombol submit */}
                 <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 400, damping: 25 }} type="submit" disabled={isLoading || oauthLoading !== null} className="group/button relative mt-5 w-full">
-                  <div className="absolute inset-0 rounded-lg bg-[#74FA6A]/10 opacity-0 blur-lg transition-opacity duration-300 group-hover/button:opacity-70" />
-                  <div className="relative flex h-10 items-center justify-center overflow-hidden rounded-lg bg-gradient-to-b from-[#8CFF80] to-[#54C94A] text-black transition-all duration-300">
+                  <div className="absolute inset-0 rounded-lg bg-primary/10 opacity-0 blur-lg transition-opacity duration-300 group-hover/button:opacity-70" />
+                  <div className="relative flex h-10 items-center justify-center overflow-hidden rounded-lg bg-gradient-to-b from-primary to-primary text-primary-foreground transition-all duration-300">
                     <AnimatePresence mode="wait">
                       {isLoading ? (
                         <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex items-center justify-center">
@@ -584,16 +584,16 @@ export function SignInCard2() {
 
                 {/* Divider */}
                 <div className="relative mb-5 mt-2 flex items-center">
-                  <div className="flex-grow border-t border-white/5" />
+                  <div className="flex-grow border-t border-border" />
                   <motion.span
-                    className="mx-3 text-xs text-white/40"
+                    className="mx-3 text-xs text-muted-foreground"
                     initial={{ opacity: 0.7 }}
                     animate={{ opacity: [0.7, 0.9, 0.7] }}
                     transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
                   >
                     {t.or}
                   </motion.span>
-                  <div className="flex-grow border-t border-white/5" />
+                  <div className="flex-grow border-t border-border" />
                 </div>
 
                 {/* Google */}
@@ -606,19 +606,19 @@ export function SignInCard2() {
                   disabled={isLoading || oauthLoading !== null}
                   className="group/google relative w-full"
                 >
-                  <div className="absolute inset-0 rounded-lg bg-white/5 opacity-0 blur transition-opacity duration-300 group-hover/google:opacity-70" />
-                  <div className="relative flex h-10 items-center justify-center gap-2 overflow-hidden rounded-lg border border-white/10 bg-white/5 text-white transition-all duration-300 hover:border-white/20">
+                  <div className="absolute inset-0 rounded-lg bg-foreground/5 opacity-0 blur transition-opacity duration-300 group-hover/google:opacity-70" />
+                  <div className="relative flex h-10 items-center justify-center gap-2 overflow-hidden rounded-lg border border-border bg-foreground/5 text-foreground transition-all duration-300 hover:border-border">
                     {oauthLoading === "google" ? (
-                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/60 border-t-transparent" />
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-border border-t-transparent" />
                     ) : (
                       <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
-                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+                        <path fill="var(--theme-accent)" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                        <path fill="var(--theme-accent)" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                        <path fill="var(--theme-accent)" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                        <path fill="var(--theme-danger)" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
                       </svg>
                     )}
-                    <span className="text-xs text-white/80 transition-colors group-hover/google:text-white">{t.google}</span>
+                    <span className="text-xs text-foreground transition-colors group-hover/google:text-foreground">{t.google}</span>
                   </div>
                 </motion.button>
 
@@ -632,27 +632,27 @@ export function SignInCard2() {
                   disabled={isLoading || oauthLoading !== null}
                   className="group/github relative w-full"
                 >
-                  <div className="absolute inset-0 rounded-lg bg-white/5 opacity-0 blur transition-opacity duration-300 group-hover/github:opacity-70" />
-                  <div className="relative flex h-10 items-center justify-center gap-2 overflow-hidden rounded-lg border border-white/10 bg-white/5 text-white transition-all duration-300 hover:border-white/20">
+                  <div className="absolute inset-0 rounded-lg bg-foreground/5 opacity-0 blur transition-opacity duration-300 group-hover/github:opacity-70" />
+                  <div className="relative flex h-10 items-center justify-center gap-2 overflow-hidden rounded-lg border border-border bg-foreground/5 text-foreground transition-all duration-300 hover:border-border">
                     {oauthLoading === "github" ? (
-                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/60 border-t-transparent" />
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-border border-t-transparent" />
                     ) : (
-                      <svg viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4 text-white/80 transition-colors group-hover/github:text-white" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4 text-foreground transition-colors group-hover/github:text-foreground" aria-hidden="true">
                         <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" />
                       </svg>
                     )}
-                    <span className="text-xs text-white/80 transition-colors group-hover/github:text-white">{t.github}</span>
+                    <span className="text-xs text-foreground transition-colors group-hover/github:text-foreground">{t.github}</span>
                   </div>
                 </motion.button>
 
                 {/* Link ganti mode masuk/daftar */}
-                <motion.p className="mt-4 text-center text-xs text-white/60" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}>
+                <motion.p className="mt-4 text-center text-xs text-foreground" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}>
                   {mode === "signin" ? t.noAccount : t.hasAccount}{" "}
                   <button type="button" onClick={() => switchMode(mode === "signin" ? "signup" : "signin")} className="group/signup relative inline-block">
-                    <span className="relative z-10 font-medium text-white transition-colors duration-300 group-hover/signup:text-[#74FA6A]">
+                    <span className="relative z-10 font-medium text-foreground transition-colors duration-300 group-hover/signup:text-primary">
                       {t.switchLabel}
                     </span>
-                    <span className="absolute bottom-0 left-0 h-[1px] w-0 bg-[#74FA6A] transition-all duration-300 group-hover/signup:w-full" />
+                    <span className="absolute bottom-0 left-0 h-[1px] w-0 bg-primary transition-all duration-300 group-hover/signup:w-full" />
                   </button>
                 </motion.p>
               </form>

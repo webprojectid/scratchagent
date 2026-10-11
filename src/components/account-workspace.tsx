@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { useAccountSettings } from "@/components/account-settings-state";
+import { useTheme } from "next-themes";
 const AccountLanguage = dynamic(() => import("./account-panels").then(module => module.AccountLanguage));
 const AccountActivity = dynamic(() => import("./account-panels").then(module => module.AccountActivity));
 const AccountLibrary = dynamic(() => import("./account-panels").then(module => module.AccountLibrary));
@@ -98,6 +99,7 @@ const initialPreferences: AccountPreferences = defaultDisplay;
 const previewMode = () => typeof window !== "undefined" && new URLSearchParams(window.location.search).get("preview") === "1";
 
 export function AccountWorkspace({ area, initialTab }: { area: AccountArea; initialTab: AccountTab }) {
+  const { setTheme } = useTheme();
   useUiLanguage();
   const router = useRouter();
   const isProfileArea = area === "profile";
@@ -493,7 +495,7 @@ export function AccountWorkspace({ area, initialTab }: { area: AccountArea; init
       <div className={accountStyles.page} data-motion={preferences.motion}>
         <div className={accountStyles.frame}>
           <aside className={accountStyles.sidebar} aria-label={isProfileArea ? ui("Navigasi profil") : ui("Navigasi pengaturan")}>
-            <div className={accountStyles.sidebarBrand}><span className={accountStyles.brandMark}><svg width="26" height="26" viewBox="0 0 28 28" aria-hidden="true"><path d="M6 21 16 6" stroke="#a5ef7d" strokeWidth="8" strokeLinecap="round"/><path d="m17 15 5 7" stroke="#7fac64" strokeWidth="8" strokeLinecap="round"/><circle cx="19" cy="21" r="3" fill="#385838"/></svg></span><strong>ScratchAgent</strong></div>
+            <div className={accountStyles.sidebarBrand}><span className={accountStyles.brandMark}><svg width="26" height="26" viewBox="0 0 28 28" aria-hidden="true"><path d="M6 21 16 6" stroke="var(--primary)" strokeWidth="8" strokeLinecap="round"/><path d="m17 15 5 7" stroke="var(--theme-chart-2)" strokeWidth="8" strokeLinecap="round"/><circle cx="19" cy="21" r="3" fill="var(--theme-tint)"/></svg></span><strong>ScratchAgent</strong></div>
             <button type="button" className={accountStyles.mobileNavToggle} aria-expanded={mobileNavOpen} aria-controls="account-navigation" onClick={() => setMobileNavOpen(!mobileNavOpen)}><span>{isProfileArea ? ui("Menu profil") : ui("Menu pengaturan")} <AccountBadges account={user} compact reducedMotion={preferences.motion === "reduced"}/></span><span>{mobileNavOpen ? ui("Tutup") : ui("Buka")}</span></button>
             <nav id="account-navigation" className={mobileNavOpen ? accountStyles.navOpen : undefined} onClick={(event) => { if ((event.target as HTMLElement).closest("button,a")) setMobileNavOpen(false); }}>
               <p className={accountStyles.navLabel}>ScratchAgent</p>
@@ -598,7 +600,16 @@ export function AccountWorkspace({ area, initialTab }: { area: AccountArea; init
         {activeTab === "preferences" && <section className={accountStyles.preferences} aria-labelledby="preferences-title">
           <p className={accountStyles.eyebrow}>{ui("PENGATURAN / PREFERENSI")}</p>
           <h1 id="preferences-title">{ui("Tampilan")}</h1>
-          <fieldset className={panelStyles.panel}><legend>{ui("Gaya warna")}</legend><p className={panelStyles.hint}>{ui("Satu warna aksen untuk seluruh antarmuka. Scratch Green adalah identitas default.")}</p><div className="account-color-choices">{([{ value: "scratch", label: "Scratch Green", color: "#74fa6a" }, { value: "blue", label: "Blue", color: "#87bfff" }, { value: "violet", label: "Violet", color: "#c4a5ff" }, { value: "amber", label: "Amber", color: "#f2c66d" }, { value: "rose", label: "Rose", color: "#f4a5b8" }] as const).map(option => <button type="button" key={option.value} aria-pressed={preferences.colorStyle === option.value} disabled={accountSettings.loading || !!accountSettings.error || preferencesSaving} onClick={() => { setPreferences({ ...preferences, colorStyle: option.value }); setPreferencesSaved(false); document.documentElement.dataset.colorStyle = option.value; }}><i style={{ background: option.color }}/>{option.label}{preferences.colorStyle === option.value && <Check size={15}/>}</button>)}</div></fieldset>
+          <fieldset className="account-appearance-mode">
+            <legend>{ui("Mode tampilan")}</legend>
+            <p className={panelStyles.hint}>{ui("Pilih tampilan gelap atau terang. Identitas Scratch Green tetap sama di setiap halaman.")}</p>
+            <div className="account-theme-choices">
+              {(["dark", "light"] as const).map(mode => <button type="button" key={mode} aria-pressed={preferences.theme === mode} disabled={accountSettings.loading || !!accountSettings.error || preferencesSaving} onClick={() => { setPreferences({ ...preferences, colorStyle: "scratch", theme: mode }); setPreferencesSaved(false); setTheme(mode); }}>
+                <span className={`account-theme-preview account-theme-preview--${mode}`} aria-hidden="true"><i/><i/><i/></span>
+                <span>{mode === "dark" ? ui("Gelap") : ui("Terang")}</span>{preferences.theme === mode && <Check size={16}/>}
+              </button>)}
+            </div>
+          </fieldset>
           <p className={accountStyles.intro}>{ui("Atur tampilan, bahasa produk, dan zona waktu. Pengaturan disimpan di akun dan ikut ke perangkat Anda.")}</p>
           {accountSettings.error && <div role="alert" className={accountStyles.errorMessage}>{accountSettings.error} <button onClick={accountSettings.reload}>{ui("Coba lagi")}</button></div>}
           <div className={accountStyles.preferenceGroup}>
@@ -631,7 +642,7 @@ export function AccountWorkspace({ area, initialTab }: { area: AccountArea; init
 
         {/* Toast */}
         {toast && (
-          <div className="fixed bottom-5 right-5 z-50 rounded border border-white/10 bg-[#121517] px-3.5 py-1.5 text-xs text-white shadow-xl">
+          <div className="fixed bottom-5 right-5 z-50 rounded border border-border bg-card px-3.5 py-1.5 text-xs text-foreground shadow-xl">
             {toast}
           </div>
         )}
