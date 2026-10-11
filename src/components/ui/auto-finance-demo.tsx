@@ -11,29 +11,29 @@ import { SafariFrame } from "@/components/ui/safari-browser-frame";
 
 function TopNav() {
   return (
-    <nav className="flex h-[48px] shrink-0 items-center justify-between bg-card px-4 shadow-[0_1px_4px_color-mix(in_srgb,_var(--theme-shadow)_10%,_transparent)]">
+    <nav className="flex h-[48px] shrink-0 items-center justify-between bg-white px-4 shadow-[0_1px_4px_rgba(0,0,0,.10)]">
       {/* Logo + links */}
       <div className="flex items-center gap-5">
-        <div className="grid h-8 w-8 place-items-center rounded bg-primary">
-          <span className="text-[15px] font-bold text-foreground" style={{ fontFamily: "serif", fontStyle: "italic" }}>A</span>
+        <div className="grid h-8 w-8 place-items-center rounded bg-[#1a56db]">
+          <span className="text-[15px] font-bold text-white" style={{ fontFamily: "serif", fontStyle: "italic" }}>A</span>
         </div>
         {[
           { icon: <Car size={13} />, label: "Vehicles" },
           { icon: <User size={13} />, label: "Application" },
           { icon: <BarChart2 size={13} />, label: "Profile" },
         ].map(({ icon, label }) => (
-          <button key={label} className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground hover:text-primary">
-            <span className="text-muted-foreground">{icon}</span>{label}
+          <button key={label} className="flex items-center gap-1.5 text-[11px] font-medium text-[#374151] hover:text-[#1a56db]">
+            <span className="text-[#6b7280]">{icon}</span>{label}
           </button>
         ))}
       </div>
       {/* Right */}
       <div className="flex items-center gap-4">
-        <button className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground hover:text-primary">
-          <HelpCircle size={13} className="text-muted-foreground" />Help
+        <button className="flex items-center gap-1.5 text-[11px] font-medium text-[#374151] hover:text-[#1a56db]">
+          <HelpCircle size={13} className="text-[#6b7280]" />Help
         </button>
-        <button className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground hover:text-primary">
-          <LogOut size={13} className="text-muted-foreground" />Logout
+        <button className="flex items-center gap-1.5 text-[11px] font-medium text-[#374151] hover:text-[#1a56db]">
+          <LogOut size={13} className="text-[#6b7280]" />Logout
         </button>
       </div>
     </nav>
@@ -53,9 +53,9 @@ const IMAGES = [
 
 function SpecRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between border-b border-border py-[7px]">
-      <span className="text-[10px] text-muted-foreground">{label}</span>
-      <span className="text-[10px] font-medium text-muted-foreground">{value}</span>
+    <div className="flex items-center justify-between border-b border-[#f3f4f6] py-[7px]">
+      <span className="text-[10px] text-[#6b7280]">{label}</span>
+      <span className="text-[10px] font-medium text-[#111827]">{value}</span>
     </div>
   );
 }
@@ -64,9 +64,9 @@ function SpecRow({ label, value }: { label: string; value: string }) {
 
 function FinRow({ label, value, bold }: { label: string; value: string; bold?: boolean }) {
   return (
-    <div className={`flex items-center justify-between py-[6px] ${bold ? "border-t border-border mt-1 pt-2" : "border-b border-border"}`}>
-      <span className={`text-[10px] ${bold ? "font-semibold text-muted-foreground" : "text-muted-foreground"}`}>{label}</span>
-      <span className={`text-[10px] ${bold ? "font-semibold text-muted-foreground" : "text-muted-foreground"}`}>{value}</span>
+    <div className={`flex items-center justify-between py-[6px] ${bold ? "border-t border-[#e5e7eb] mt-1 pt-2" : "border-b border-[#f3f4f6]"}`}>
+      <span className={`text-[10px] ${bold ? "font-semibold text-[#111827]" : "text-[#6b7280]"}`}>{label}</span>
+      <span className={`text-[10px] ${bold ? "font-semibold text-[#111827]" : "text-[#111827]"}`}>{value}</span>
     </div>
   );
 }
@@ -75,10 +75,10 @@ function FinRow({ label, value, bold }: { label: string; value: string; bold?: b
 
 function Accordion({ title, open, onToggle, children }: { title: string; open: boolean; onToggle: () => void; children?: React.ReactNode }) {
   return (
-    <div className="border-t border-border">
+    <div className="border-t border-[#e5e7eb]">
       <button onClick={onToggle} className="flex w-full items-center justify-between py-2.5 text-left">
-        <span className="text-[11px] font-semibold text-muted-foreground">{title}</span>
-        <span className="grid h-5 w-5 place-items-center rounded border border-border text-muted-foreground">
+        <span className="text-[11px] font-semibold text-[#374151]">{title}</span>
+        <span className="grid h-5 w-5 place-items-center rounded border border-[#d1d5db] text-[#6b7280]">
           {open ? <Minus size={10} /> : <PlusIcon size={10} />}
         </span>
       </button>
@@ -99,23 +99,23 @@ export function AutoFinanceDashboard() {
   const next = () => setActiveImg(i => (i + 1) % IMAGES.length);
 
   return (
-    <div className="flex h-full min-h-[620px] w-full flex-col overflow-hidden" style={{ background: "linear-gradient(160deg,var(--theme-raised) 0%,var(--theme-surface) 60%,var(--theme-surface) 100%)" }}>
+    <div className="flex h-full min-h-[620px] w-full flex-col overflow-hidden" style={{ background: "linear-gradient(160deg,#1e3a5f 0%,#0f2340 60%,#071528 100%)" }}>
       <TopNav />
 
       {/* Scrollable body */}
       <div className="flex-1 overflow-y-auto px-5 py-4 [&::-webkit-scrollbar]:hidden">
 
         {/* Vehicle header card */}
-        <div className="rounded-lg bg-card px-5 py-3 shadow-sm">
+        <div className="rounded-lg bg-white px-5 py-3 shadow-sm">
           <div className="flex items-start justify-between gap-4">
             {/* Left — name */}
             <div className="min-w-0">
-              <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">Used</span>
+              <span className="text-[9px] font-semibold uppercase tracking-wider text-[#6b7280]">Used</span>
               <div className="flex items-center gap-1.5">
-                <span className="text-[18px] font-bold leading-tight text-muted-foreground">2023 Honda Civic</span>
-                <Heart size={14} className="text-primary" fill="var(--theme-accent)" />
+                <span className="text-[18px] font-bold leading-tight text-[#111827]">2023 Honda Civic</span>
+                <Heart size={14} className="text-[#1a56db]" fill="#1a56db" />
               </div>
-              <p className="text-[13px] font-semibold text-muted-foreground">Si</p>
+              <p className="text-[13px] font-semibold text-[#374151]">Si</p>
             </div>
             {/* Center specs */}
             <div className="flex gap-5">
@@ -126,18 +126,18 @@ export function AutoFinanceDashboard() {
                 ["Fuel", "Gas"],
               ].map(([k, v]) => (
                 <div key={k} className="text-center">
-                  <p className="text-[8px] text-muted-foreground">{k}</p>
-                  <p className="text-[10px] font-semibold text-muted-foreground">{v}</p>
+                  <p className="text-[8px] text-[#9ca3af]">{k}</p>
+                  <p className="text-[10px] font-semibold text-[#111827]">{v}</p>
                 </div>
               ))}
             </div>
             {/* Right — price + CTA */}
             <div className="flex shrink-0 flex-col items-end gap-1.5">
               <div>
-                <p className="text-[9px] text-muted-foreground">Your payment</p>
-                <p className="text-[18px] font-bold text-muted-foreground">Rp 7.695.000 <span className="text-[10px] font-normal text-muted-foreground">/bulan.</span></p>
+                <p className="text-[9px] text-[#6b7280]">Your payment</p>
+                <p className="text-[18px] font-bold text-[#111827]">Rp 7.695.000 <span className="text-[10px] font-normal text-[#6b7280]">/bulan.</span></p>
               </div>
-              <button className="rounded bg-primary px-4 py-1.5 text-[11px] font-semibold text-primary-foreground hover:bg-primary">Select</button>
+              <button className="rounded bg-[#1a56db] px-4 py-1.5 text-[11px] font-semibold text-white hover:bg-[#1648c0]">Select</button>
             </div>
           </div>
         </div>
@@ -149,7 +149,7 @@ export function AutoFinanceDashboard() {
           <div className="flex flex-col gap-3">
 
             {/* Image gallery */}
-            <div className="overflow-hidden rounded-lg bg-card shadow-sm">
+            <div className="overflow-hidden rounded-lg bg-white shadow-sm">
               <div className="flex gap-2 p-2">
                 {/* Main image */}
                 <div className="relative flex-1 overflow-hidden rounded-md" style={{ height: 200 }}>
@@ -157,11 +157,11 @@ export function AutoFinanceDashboard() {
                   <img src={IMAGES[activeImg]} alt="car" className="h-full w-full object-cover" />
                   {/* nav arrows */}
                   <div className="absolute inset-x-2 top-1/2 flex -translate-y-1/2 justify-between">
-                    <button onClick={prev} className="grid h-7 w-7 place-items-center rounded-full bg-foreground/80 shadow hover:bg-card">
-                      <ChevronLeft size={14} className="text-muted-foreground" />
+                    <button onClick={prev} className="grid h-7 w-7 place-items-center rounded-full bg-white/80 shadow hover:bg-white">
+                      <ChevronLeft size={14} className="text-[#374151]" />
                     </button>
-                    <button onClick={next} className="grid h-7 w-7 place-items-center rounded-full bg-foreground/80 shadow hover:bg-card">
-                      <ChevronRight size={14} className="text-muted-foreground" />
+                    <button onClick={next} className="grid h-7 w-7 place-items-center rounded-full bg-white/80 shadow hover:bg-white">
+                      <ChevronRight size={14} className="text-[#374151]" />
                     </button>
                   </div>
                 </div>
@@ -169,7 +169,7 @@ export function AutoFinanceDashboard() {
                 <div className="flex flex-col gap-1.5">
                   {IMAGES.map((src, i) => (
                     <button key={i} onClick={() => setActiveImg(i)}
-                      className={`h-[46px] w-[62px] overflow-hidden rounded border-2 transition-all ${i === activeImg ? "border-primary" : "border-transparent hover:border-primary"}`}>
+                      className={`h-[46px] w-[62px] overflow-hidden rounded border-2 transition-all ${i === activeImg ? "border-[#1a56db]" : "border-transparent hover:border-[#93c5fd]"}`}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={src} alt="" className="h-full w-full object-cover" />
                     </button>
@@ -179,7 +179,7 @@ export function AutoFinanceDashboard() {
             </div>
 
             {/* Vehicle Overview accordion */}
-            <div className="rounded-lg bg-card px-4 py-2 shadow-sm">
+            <div className="rounded-lg bg-white px-4 py-2 shadow-sm">
               <Accordion title="Vehicle Overview" open={overviewOpen} onToggle={() => setOverviewOpen(o => !o)}>
                 <div className="pb-1">
                   <SpecRow label="Features" value="209" />
@@ -203,8 +203,8 @@ export function AutoFinanceDashboard() {
           <div className="flex flex-col gap-3">
 
             {/* Financing */}
-            <div className="rounded-lg bg-card px-4 py-3 shadow-sm">
-              <p className="mb-2 text-[11px] font-bold text-muted-foreground">Financing</p>
+            <div className="rounded-lg bg-white px-4 py-3 shadow-sm">
+              <p className="mb-2 text-[11px] font-bold text-[#111827]">Financing</p>
               <FinRow label="Sales Price*" value="Rp 468.500.000" />
               <FinRow label="Total Fees & Taxes" value="Rp 37.500.000" />
               <FinRow label="Warranty" value="ask dealer" />
@@ -216,28 +216,28 @@ export function AutoFinanceDashboard() {
               <FinRow label="Loan Balance" value="Rp 423.500.000" bold />
               <FinRow label="Term" value="72" />
               <FinRow label="APR" value="23.700%" />
-              <p className="mt-2 text-[7.5px] leading-[1.5] text-muted-foreground">
+              <p className="mt-2 text-[7.5px] leading-[1.5] text-[#9ca3af]">
                 *Prices do not include government fees and taxes, any finance charge, any dealer document processing charge, any electronic filing charge and any emissions testing charge. Fee, tax, and product amounts are close estimates meaning the resulting Loan Amount, Monthly Payment, and APR are estimates as well. All numbers will be finalized upon making your deposit or may contact an agent if you have questions:{" "}
-                <span className="text-primary">888-909-3638</span>
+                <span className="text-[#1a56db]">888-909-3638</span>
               </p>
             </div>
 
             {/* Dealer info */}
-            <div className="rounded-lg bg-card px-4 py-3 shadow-sm">
+            <div className="rounded-lg bg-white px-4 py-3 shadow-sm">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <p className="text-[11px] font-bold text-muted-foreground">Honda Puri Harapan</p>
-                  <p className="mt-1 text-[9px] text-muted-foreground">Jl. Raya Bogor KM 25, Jakarta Timur</p>
+                  <p className="text-[11px] font-bold text-[#111827]">Honda Puri Harapan</p>
+                  <p className="mt-1 text-[9px] text-[#6b7280]">Jl. Raya Bogor KM 25, Jakarta Timur</p>
                   <div className="mt-1.5 flex flex-col gap-0.5">
-                    <a href="#" className="flex items-center gap-1 text-[9px] text-primary hover:underline">
+                    <a href="#" className="flex items-center gap-1 text-[9px] text-[#1a56db] hover:underline">
                       <Phone size={9} />(021) 8765-4321
                     </a>
-                    <a href="#" className="flex items-center gap-1 text-[9px] text-primary hover:underline">
+                    <a href="#" className="flex items-center gap-1 text-[9px] text-[#1a56db] hover:underline">
                       <Mail size={9} />sales@puriharapan.co.id
                     </a>
                   </div>
                 </div>
-                <button className="shrink-0 rounded border border-border bg-card px-3 py-1.5 text-[9px] font-semibold text-muted-foreground hover:bg-card">
+                <button className="shrink-0 rounded border border-[#d1d5db] bg-white px-3 py-1.5 text-[9px] font-semibold text-[#374151] hover:bg-[#f9fafb]">
                   Contact Dealer
                 </button>
               </div>

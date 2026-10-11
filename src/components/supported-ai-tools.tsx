@@ -58,16 +58,16 @@ export function SupportedAiTools() {
       {/* Full brand-color outer card: the whole stage surface is #9EC5AB.
           Reason: user wants this section to carry the site identity at full color, edge to edge.
           No bottom padding/shadow: the Solutions section continues on the same sage surface. */}
-      <div className="relative w-full overflow-hidden bg-secondary px-6 py-14 md:px-12 md:py-20">
+      <div className="relative w-full overflow-hidden bg-[#9EC5AB] px-6 py-14 md:px-12 md:py-20">
         <div className="relative mx-auto flex max-w-[840px] flex-col items-center text-center">
-          <h2 className="text-balance text-[clamp(2.1rem,4.2vw,3.5rem)] font-semibold leading-[1.05] tracking-[-.05em] text-foreground">
+          <h2 className="text-balance text-[clamp(2.1rem,4.2vw,3.5rem)] font-semibold leading-[1.05] tracking-[-.05em] text-[#0F1A12]">
             Supported AI Tools
           </h2>
-          <p className="mt-3.5 max-w-[62ch] text-[14px] leading-relaxed text-muted-foreground md:text-[15px]">
+          <p className="mt-3.5 max-w-[62ch] text-[14px] leading-relaxed text-[#33473A] md:text-[15px]">
             Token Plan works with mainstream tools that support OpenAI and Anthropic protocols{" "}
             <a
               href="/docs"
-              className="inline-flex items-center gap-1 font-medium text-foreground underline-offset-4 transition-all hover:text-foreground hover:underline"
+              className="inline-flex items-center gap-1 font-medium text-[#0F1A12] underline-offset-4 transition-all hover:text-black hover:underline"
             >
               Learn More <ArrowUpRight size={14} className="inline" />
             </a>
@@ -84,7 +84,7 @@ export function SupportedAiTools() {
               transition={{ duration: 0.45, delay: idx * 0.03, ease: [0.16, 1, 0.3, 1] }}
               /* Tool card on sage surface: near-white card so logos + dark text stay readable,
                   tactile push on :active. */
-              className="group relative flex items-center gap-3.5 overflow-hidden rounded-[20px] border border-border/10 bg-card/90 px-4 py-3.5 shadow-[0_2px_10px_-2px_color-mix(in_srgb,_var(--theme-shadow)_12%,_transparent)] transition-all duration-300 hover:-translate-y-1 hover:border-border/25 hover:bg-card hover:shadow-[0_8px_24px_-6px_color-mix(in_srgb,_var(--theme-shadow)_22%,_transparent)] active:scale-[0.98]"
+              className="group relative flex items-center gap-3.5 overflow-hidden rounded-[20px] border border-[#0F1A12]/10 bg-[#F6FAF7]/90 px-4 py-3.5 shadow-[0_2px_10px_-2px_rgba(15,26,18,0.12)] transition-all duration-300 hover:-translate-y-1 hover:border-[#0F1A12]/25 hover:bg-white hover:shadow-[0_8px_24px_-6px_rgba(15,26,18,0.22)] active:scale-[0.98]"
             >
               {/* Brand Icon Container - no background, logo keeps original colors */}
               <div className="relative flex size-10 shrink-0 items-center justify-center overflow-hidden">
@@ -92,7 +92,7 @@ export function SupportedAiTools() {
               </div>
 
               {/* Tool Name */}
-              <span className="flex-1 truncate text-[14.5px] font-semibold tracking-[-0.01em] text-foreground transition-colors group-hover:text-foreground">
+              <span className="flex-1 truncate text-[14.5px] font-semibold tracking-[-0.01em] text-[#1A2B1F] transition-colors group-hover:text-[#0F1A12]">
                 {tool.name}
               </span>
             </motion.div>

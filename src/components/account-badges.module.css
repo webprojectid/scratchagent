@@ -8,19 +8,19 @@
 }
 
 .badges .badge {
-  --badge-accent: var(--theme-muted);
-  --tile-edge: var(--theme-muted);
-  --tile-fill: var(--theme-surface);
+  --badge-accent: #a8bac4;
+  --tile-edge: #526069;
+  --tile-fill: #202b30;
   position: relative;
   isolation: isolate;
   display: inline-flex;
   align-items: center;
   flex: none;
   min-height: 30px;
-  border: 1px solid var(--theme-border);
+  border: 1px solid #3a4347;
   border-radius: 5px;
-  background: var(--theme-surface);
-  color: var(--theme-text);
+  background: #151b1e;
+  color: #edf2f5;
   font-size: .6875rem;
   font-weight: 600;
   line-height: 1.4;
@@ -71,15 +71,15 @@
 }
 
 .badges .pro {
-  --badge-accent: var(--theme-accent);
-  --tile-edge: var(--theme-accent);
-  --tile-fill: var(--theme-surface);
+  --badge-accent: #b6f58c;
+  --tile-edge: #638d43;
+  --tile-fill: #202c1c;
 }
 
 .badges .admin {
-  --badge-accent: var(--theme-accent);
-  --tile-edge: var(--theme-accent);
-  --tile-fill: var(--theme-surface);
+  --badge-accent: #efc36b;
+  --tile-edge: #95703a;
+  --tile-fill: #2c2419;
 }
 
 .badges .signalDot {
@@ -89,11 +89,11 @@
   height: 5px;
   margin-right: 9px;
   border-radius: 50%;
-  background: var(--theme-accent);
+  background: #67bafa;
 }
 
 .badges .pending {
-  color: var(--theme-muted);
+  color: #b8c6cc;
   font-weight: 400;
   letter-spacing: 0;
 }

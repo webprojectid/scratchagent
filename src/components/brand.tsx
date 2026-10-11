@@ -7,7 +7,7 @@ const Sidebar = dynamic(() => import("./sidebar").then(module => module.Sidebar)
 
 export function Brand() {
   return (
-    <Link href="/" className="flex items-center gap-2 text-[13px] font-semibold tracking-[-.03em] text-foreground">
+    <Link href="/" className="flex items-center gap-2 text-[13px] font-semibold tracking-[-.03em] text-white">
       Scratch Agent
     </Link>
   );
@@ -25,7 +25,7 @@ export function Shell({ children, back, sidebar = true, brand = true, embedded =
       {back && (
         <Link
           href={back}
-          className="fixed left-4 top-4 z-40 grid size-9 place-items-center rounded-[10px] border border-border bg-card/90 text-muted-foreground backdrop-blur transition hover:border-primary/40 hover:text-foreground md:left-6 md:top-5"
+          className="fixed left-4 top-4 z-40 grid size-9 place-items-center rounded-[10px] border border-white/12 bg-[#13161A]/90 text-slate-400 backdrop-blur transition hover:border-[#74FA6A]/40 hover:text-white md:left-6 md:top-5"
           aria-label={ui("Kembali")}
         >
           <ArrowLeft size={18} />

@@ -23,16 +23,10 @@ test("tokens use revocation dates, retain older active tokens in All time, and s
   assert.deepEqual(filterTokens(rows, "revoked", true, now).map(row => row.id), ["revoked"]);
   assert.deepEqual(filterTokens(rows, "expired", true, now).map(row => row.id), ["expired"]);
 });
-test("legacy colors migrate to Scratch Green while preserving theme and other preferences", () => {
+test("color preferences remain backward compatible and validate all five choices", () => {
   assert.equal(displaySettingsSchema.parse({}).colorStyle, "scratch");
-  assert.equal(displaySettingsSchema.parse({}).theme, "dark");
-  for (const colorStyle of ["scratch", "blue", "violet", "amber", "rose"]) {
-    const preferences = displaySettingsSchema.parse({ colorStyle, theme: "light", language: "id", density: "compact" });
-    assert.equal(preferences.colorStyle, "scratch"); assert.equal(preferences.theme, "light");
-    assert.equal(preferences.language, "id"); assert.equal(preferences.density, "compact");
-  }
+  for (const colorStyle of ["scratch", "blue", "violet", "amber", "rose"]) assert.equal(displaySettingsSchema.parse({ colorStyle }).colorStyle, colorStyle);
   assert.equal(displaySettingsSchema.safeParse({ colorStyle: "arbitrary" }).success, false);
-  assert.equal(displaySettingsSchema.safeParse({ theme: "unknown" }).success, false);
 });
 test("site visits deduplicate across tabs and remain private to each owner", async () => {
   await recordSiteVisit("dashboard-owner-a"); await recordSiteVisit("dashboard-owner-a");

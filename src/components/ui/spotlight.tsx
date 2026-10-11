@@ -44,5 +44,5 @@ export function Spotlight({ className, size = 200, springOptions = { bounce: 0 }
     };
   }, [parentElement, handleMouseMove]);
 
-  return <motion.div ref={containerRef} className={cn("pointer-events-none absolute rounded-full bg-[radial-gradient(circle_at_center,var(--tw-gradient-stops),transparent_80%)] from-primary via-primary to-foreground blur-xl transition-opacity duration-200", isHovered ? "opacity-70" : "opacity-20", className)} style={{ width: size, height: size, left: spotlightLeft, top: spotlightTop }} />;
+  return <motion.div ref={containerRef} className={cn("pointer-events-none absolute rounded-full bg-[radial-gradient(circle_at_center,var(--tw-gradient-stops),transparent_80%)] from-orange-200 via-orange-100 to-white blur-xl transition-opacity duration-200", isHovered ? "opacity-70" : "opacity-20", className)} style={{ width: size, height: size, left: spotlightLeft, top: spotlightTop }} />;
 }

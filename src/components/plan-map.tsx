@@ -50,16 +50,16 @@ function MapNode({ data }: { data: MapNodeData }) {
   // abu=belum), angka fase besar transparan di pojok, dan trail cahaya di garis.
   if (data.kind === "root") {
     return (
-      <div className="relative w-56 overflow-hidden rounded-2xl border border-border bg-card p-4 pl-5 shadow-lg shadow-black/30">
-        <span className="absolute inset-y-2 left-0 w-[3px] rounded-full bg-primary" />
-        <Handle type="source" position={Position.Right} className="!size-2.5 !border-2 !border-border !bg-primary" />
+      <div className="relative w-56 overflow-hidden rounded-2xl border border-white/[.08] bg-[#1C2330] p-4 pl-5 shadow-lg shadow-black/30">
+        <span className="absolute inset-y-2 left-0 w-[3px] rounded-full bg-[#74FA6A]" />
+        <Handle type="source" position={Position.Right} className="!size-2.5 !border-2 !border-[#14161A] !bg-[#74FA6A]" />
         <div className="flex items-center gap-2.5">
-          <span className="grid size-8 shrink-0 place-items-center rounded-xl bg-primary/12 text-primary">
+          <span className="grid size-8 shrink-0 place-items-center rounded-xl bg-[#74FA6A]/12 text-[#74FA6A]">
             <Network size={15} />
           </span>
-          <b className="text-[13px] leading-tight text-foreground">{data.label}</b>
+          <b className="text-[13px] leading-tight text-slate-50">{data.label}</b>
         </div>
-        <p className="mt-2 text-[10px] font-medium text-muted-foreground">Perencanaan</p>
+        <p className="mt-2 text-[10px] font-medium text-slate-500">Perencanaan</p>
       </div>
     );
   }
@@ -67,27 +67,27 @@ function MapNode({ data }: { data: MapNodeData }) {
   if (data.kind === "feature") {
     const pct = data.total ? Math.round(((data.done ?? 0) / data.total) * 100) : 0;
     const status = data.feature?.status ?? "direncanakan";
-    const rail = status === "selesai" ? "bg-primary" : status === "berjalan" ? "bg-primary" : "bg-foreground/20";
+    const rail = status === "selesai" ? "bg-[#74FA6A]" : status === "berjalan" ? "bg-amber-400" : "bg-white/20";
     return (
-      <div className="relative w-60 cursor-pointer overflow-hidden rounded-2xl border border-border bg-card p-3.5 pl-4 shadow-lg shadow-black/30 transition hover:border-primary/40">
+      <div className="relative w-60 cursor-pointer overflow-hidden rounded-2xl border border-white/[.08] bg-[#1C2330] p-3.5 pl-4 shadow-lg shadow-black/30 transition hover:border-[#74FA6A]/40">
         <span className={`absolute inset-y-2 left-0 w-[3px] rounded-full ${rail}`} />
-        <span className="pointer-events-none absolute right-2.5 top-1.5 select-none font-mono text-[28px] font-bold leading-none text-muted-foreground">
+        <span className="pointer-events-none absolute right-2.5 top-1.5 select-none font-mono text-[28px] font-bold leading-none text-white/[.05]">
           {String(data.phase ?? 0).padStart(2, "0")}
         </span>
-        <Handle type="target" position={Position.Left} className="!size-2 !border-2 !border-border !bg-secondary" />
-        <Handle type="source" position={Position.Right} className="!size-2 !border-2 !border-border !bg-secondary" />
+        <Handle type="target" position={Position.Left} className="!size-2 !border-2 !border-[#14161A] !bg-slate-500" />
+        <Handle type="source" position={Position.Right} className="!size-2 !border-2 !border-[#14161A] !bg-slate-500" />
         <div className="flex min-w-0 items-center gap-2">
-          <span className="grid size-6 shrink-0 place-items-center rounded-lg bg-foreground/[.05] text-muted-foreground">
+          <span className="grid size-6 shrink-0 place-items-center rounded-lg bg-white/[.05] text-slate-400">
             <FolderKanban size={12} />
           </span>
-          <b className="truncate text-[12px] leading-snug text-foreground">{data.label}</b>
+          <b className="truncate text-[12px] leading-snug text-slate-100">{data.label}</b>
         </div>
-        <div className="mt-2.5 flex items-center justify-between text-[10px] text-muted-foreground">
+        <div className="mt-2.5 flex items-center justify-between text-[10px] text-slate-500">
           <span className="capitalize">{status}</span>
           <span className="font-mono tabular-nums">{data.done}/{data.total}</span>
         </div>
-        <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-foreground/[.06]">
-          <div className="h-full rounded-full bg-primary/70 transition-all duration-500" style={{ width: `${pct}%` }} />
+        <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-white/[.06]">
+          <div className="h-full rounded-full bg-[#74FA6A]/70 transition-all duration-500" style={{ width: `${pct}%` }} />
         </div>
       </div>
     );
@@ -95,34 +95,34 @@ function MapNode({ data }: { data: MapNodeData }) {
 
   const taskNode = data.kind === "tasks";
   return (
-    <div className="w-56 cursor-pointer rounded-2xl border border-border bg-card p-3 shadow-lg shadow-black/30 transition hover:border-border">
-      <Handle type="target" position={Position.Left} className="!size-2 !border-2 !border-border !bg-secondary" />
-      {!taskNode && <Handle type="source" position={Position.Right} className="!size-2 !border-2 !border-border !bg-secondary" />}
-      <div className="mb-2 flex items-center justify-between text-[9px] font-semibold tracking-wide text-muted-foreground">
+    <div className="w-56 cursor-pointer rounded-2xl border border-white/[.08] bg-[#1C2330] p-3 shadow-lg shadow-black/30 transition hover:border-white/[.16]">
+      <Handle type="target" position={Position.Left} className="!size-2 !border-2 !border-[#14161A] !bg-slate-600" />
+      {!taskNode && <Handle type="source" position={Position.Right} className="!size-2 !border-2 !border-[#14161A] !bg-slate-600" />}
+      <div className="mb-2 flex items-center justify-between text-[9px] font-semibold tracking-wide text-slate-500">
         <span className="flex items-center gap-1"><ListChecks size={10} />{taskNode ? "TASKS" : "SUB FITUR"}</span>
         <span className="font-mono tabular-nums">{data.done ?? 0}/{data.total ?? 0}</span>
       </div>
       {taskNode && (!data.items || data.items.length === 0) && data.generating ? (
         <div className="space-y-1.5">
           {[0, 1, 2].map((i) => (
-            <div key={i} className="flex items-center gap-1.5 rounded-lg border border-border bg-foreground/[.02] px-2 py-1">
-              <div className="size-1.5 animate-pulse rounded-full bg-foreground/20" />
-              <div className="h-1.5 w-20 animate-pulse rounded bg-foreground/10" />
+            <div key={i} className="flex items-center gap-1.5 rounded-lg border border-white/[.05] bg-white/[.02] px-2 py-1">
+              <div className="size-1.5 animate-pulse rounded-full bg-white/20" />
+              <div className="h-1.5 w-20 animate-pulse rounded bg-white/10" />
             </div>
           ))}
-          <p className="pt-0.5 text-center text-[9px] text-muted-foreground">Menyusun...</p>
+          <p className="pt-0.5 text-center text-[9px] text-slate-500">Menyusun...</p>
         </div>
       ) : (
         <div className="space-y-1">
           {data.items?.slice(0, 3).map((item, index) => (
-            <div key={`${item.label}-${index}`} className="flex min-w-0 items-center gap-1.5 rounded-lg border border-border bg-foreground/[.02] px-2 py-1">
-              {item.status === "done" ? <Check size={9} className="shrink-0 text-primary" /> : item.status === "in_progress" ? <span className="size-1.5 shrink-0 animate-spin rounded-full border border-primary border-r-transparent" /> : taskNode ? <Circle size={7} className="shrink-0 text-muted-foreground" /> : <span className="size-1 shrink-0 rounded-full bg-secondary" />}
-              <span className={`truncate text-[10px] ${item.status === "done" ? "text-muted-foreground line-through" : "text-muted-foreground"}`}>{item.label}</span>
+            <div key={`${item.label}-${index}`} className="flex min-w-0 items-center gap-1.5 rounded-lg border border-white/[.05] bg-white/[.02] px-2 py-1">
+              {item.status === "done" ? <Check size={9} className="shrink-0 text-emerald-400" /> : item.status === "in_progress" ? <span className="size-1.5 shrink-0 animate-spin rounded-full border border-amber-400 border-r-transparent" /> : taskNode ? <Circle size={7} className="shrink-0 text-slate-600" /> : <span className="size-1 shrink-0 rounded-full bg-slate-600" />}
+              <span className={`truncate text-[10px] ${item.status === "done" ? "text-slate-600 line-through" : "text-slate-300"}`}>{item.label}</span>
             </div>
           ))}
         </div>
       )}
-      <div className="mt-1.5 text-right text-[9px] text-muted-foreground">{ui("Lihat semua (")}{data.total ?? 0})
+      <div className="mt-1.5 text-right text-[9px] text-slate-500">{ui("Lihat semua (")}{data.total ?? 0})
       </div>
     </div>
   );
@@ -163,8 +163,8 @@ const AnimatedFlowEdge = memo(function AnimatedFlowEdge({
     <>
       <defs>
         <linearGradient id={gradId} gradientUnits="userSpaceOnUse" x1={sourceX} y1={sourceY} x2={targetX} y2={targetY}>
-          <stop offset="0%" stopColor="var(--theme-text)" />
-          <stop offset="100%" stopColor="var(--theme-accent)" />
+          <stop offset="0%" stopColor="#FFFFFF" />
+          <stop offset="100%" stopColor="#74FA6A" />
         </linearGradient>
       </defs>
       <BaseEdge path={path} style={style} />
@@ -223,92 +223,92 @@ function FeaturePanel({ plan, index, onClose, onNav, isPro, onDeleteFeature, onD
       animate={{ x: 0 }}
       exit={{ x: "-100%" }}
       transition={{ type: "spring", damping: 28 }}
-      className="absolute inset-y-0 left-0 z-20 w-full overflow-auto border-r border-border bg-background shadow-xl shadow-black/30 sm:w-[390px]"
+      className="absolute inset-y-0 left-0 z-20 w-full overflow-auto border-r border-white/[.06] bg-[#0C0E10] shadow-xl shadow-black/30 sm:w-[390px]"
     >
-      <div className="sticky top-0 z-10 flex h-12 items-center justify-between border-b border-border bg-background px-3">
+      <div className="sticky top-0 z-10 flex h-12 items-center justify-between border-b border-white/[.06] bg-[#0C0E10] px-3">
         <div className="flex items-center gap-1">
-          <button onClick={() => onNav(-1)} disabled={index === 0} className="grid size-7 place-items-center rounded border border-border text-muted-foreground transition hover:border-primary/60 hover:text-primary disabled:opacity-30" aria-label="Fitur sebelumnya"><ChevronLeft size={14} /></button>
-          <span className="min-w-12 text-center text-[11px] text-muted-foreground">{index + 1} / {plan.features.length}</span>
-          <button onClick={() => onNav(1)} disabled={index === plan.features.length - 1} className="grid size-7 place-items-center rounded border border-border text-muted-foreground transition hover:border-primary/60 hover:text-primary disabled:opacity-30" aria-label="Fitur berikutnya"><ChevronRight size={14} /></button>
+          <button onClick={() => onNav(-1)} disabled={index === 0} className="grid size-7 place-items-center rounded border border-white/10 text-slate-400 transition hover:border-[#74FA6A]/60 hover:text-[#74FA6A] disabled:opacity-30" aria-label="Fitur sebelumnya"><ChevronLeft size={14} /></button>
+          <span className="min-w-12 text-center text-[11px] text-slate-300">{index + 1} / {plan.features.length}</span>
+          <button onClick={() => onNav(1)} disabled={index === plan.features.length - 1} className="grid size-7 place-items-center rounded border border-white/10 text-slate-400 transition hover:border-[#74FA6A]/60 hover:text-[#74FA6A] disabled:opacity-30" aria-label="Fitur berikutnya"><ChevronRight size={14} /></button>
         </div>
-        <div className="flex items-center gap-1 text-muted-foreground">
-          <button disabled title="Segera" className="grid size-8 place-items-center rounded transition hover:bg-foreground/5 disabled:opacity-40" aria-label="Revisi fitur"><Pencil size={14} /></button>
+        <div className="flex items-center gap-1 text-slate-500">
+          <button disabled title="Segera" className="grid size-8 place-items-center rounded transition hover:bg-white/5 disabled:opacity-40" aria-label="Revisi fitur"><Pencil size={14} /></button>
           <button
             disabled={!isPro}
             onClick={() => isPro && onDeleteFeature?.(feature.slug, feature.title)}
             title={isPro ? ui("Hapus fase ini") : ui("Hapus struktur hanya untuk paket Pro")}
-            className="grid size-8 place-items-center rounded transition hover:bg-foreground/5 hover:text-primary disabled:opacity-40 disabled:hover:text-muted-foreground"
+            className="grid size-8 place-items-center rounded transition hover:bg-white/5 hover:text-rose-400 disabled:opacity-40 disabled:hover:text-slate-500"
             aria-label={ui("Hapus fitur")}
           ><Trash2 size={14} /></button>
-          <button title="Perbesar panel" className="grid size-8 place-items-center rounded transition hover:bg-foreground/5 hover:text-primary" onClick={() => document.querySelector('[data-feature-panel]')?.classList.toggle('sm:w-[560px]')} aria-label="Perbesar panel"><Maximize2 size={14} /></button>
-          <button onClick={onClose} className="grid size-8 place-items-center rounded transition hover:bg-foreground/5 hover:text-primary" aria-label={ui("Tutup")}><X size={15} /></button>
+          <button title="Perbesar panel" className="grid size-8 place-items-center rounded transition hover:bg-white/5 hover:text-[#74FA6A]" onClick={() => document.querySelector('[data-feature-panel]')?.classList.toggle('sm:w-[560px]')} aria-label="Perbesar panel"><Maximize2 size={14} /></button>
+          <button onClick={onClose} className="grid size-8 place-items-center rounded transition hover:bg-white/5 hover:text-[#74FA6A]" aria-label={ui("Tutup")}><X size={15} /></button>
         </div>
       </div>
       <div data-feature-panel className="p-4 transition-[width]">
         <div className="flex items-center gap-2">
-          <Search size={15} className="shrink-0 text-muted-foreground" />
-          <h2 className="text-sm font-bold text-foreground">{feature.title}</h2>
+          <Search size={15} className="shrink-0 text-slate-300" />
+          <h2 className="text-sm font-bold text-white">{feature.title}</h2>
         </div>
-        <p className="mt-2 text-[11px] leading-4 text-muted-foreground">{feature.description}</p>
+        <p className="mt-2 text-[11px] leading-4 text-slate-400">{feature.description}</p>
         <div className="mt-2 flex items-center gap-2">
-          <span className="rounded-full border border-border px-1.5 py-0.5 text-[9px] text-muted-foreground">{statusLabel}</span>
-          <span className="text-[9px] text-muted-foreground">{done}/{tasks.length}{ui("tugas selesai")}</span>
+          <span className="rounded-full border border-white/15 px-1.5 py-0.5 text-[9px] text-slate-300">{statusLabel}</span>
+          <span className="text-[9px] text-slate-400">{done}/{tasks.length}{ui("tugas selesai")}</span>
         </div>
 
-        <h3 className="mt-5 text-[11px] font-bold text-foreground">{ui("Tujuan")}</h3>
-        <p className="mt-1.5 text-[11px] leading-4 text-foreground">{feature.tujuan}</p>
+        <h3 className="mt-5 text-[11px] font-bold text-white">{ui("Tujuan")}</h3>
+        <p className="mt-1.5 text-[11px] leading-4 text-slate-200">{feature.tujuan}</p>
 
-        <h3 className="mt-4 text-[11px] font-bold text-foreground">{ui("Selesai bila")}</h3>
+        <h3 className="mt-4 text-[11px] font-bold text-white">{ui("Selesai bila")}</h3>
         <ul className="mt-1.5 space-y-1.5">
           {feature.selesaiBila.map((item) => (
-            <li key={item} className="flex gap-2 text-[11px] leading-4 text-foreground">
-              <span className="mt-1.5 size-1 shrink-0 rounded-full bg-secondary" />
+            <li key={item} className="flex gap-2 text-[11px] leading-4 text-slate-200">
+              <span className="mt-1.5 size-1 shrink-0 rounded-full bg-slate-500" />
               <span>{item}</span>
             </li>
           ))}
         </ul>
 
-        <h3 className="mt-4 text-[11px] font-bold text-foreground">{ui("Sub fitur")} ({feature.subFeatures.length})</h3>
+        <h3 className="mt-4 text-[11px] font-bold text-white">{ui("Sub fitur")} ({feature.subFeatures.length})</h3>
         <div className="mt-1.5 space-y-1.5">
           {feature.subFeatures.map((subFeature) => {
             const subTasks = subFeature.tasks;
             const subDone = subTasks.filter((task) => task.status === "done").length;
             const subActive = subTasks.some((task) => task.status === "in_progress");
             return (
-               <div key={subFeature.title} className={`rounded-lg border bg-background px-2.5 py-2 ${subActive ? "border-primary" : "border-border"}`}>
+               <div key={subFeature.title} className={`rounded-lg border bg-[#0C0E10] px-2.5 py-2 ${subActive ? "border-amber-400/30" : "border-white/[.06]"}`}>
                 <div className="flex items-center justify-between gap-2">
                   <span className="flex min-w-0 items-center gap-1.5">
-                    {subActive && <span className="size-1.5 shrink-0 animate-spin rounded-full border border-primary border-r-transparent" />}
-                    <span className="truncate text-[10px] font-medium text-foreground">{subFeature.title}</span>
+                    {subActive && <span className="size-1.5 shrink-0 animate-spin rounded-full border border-amber-400 border-r-transparent" />}
+                    <span className="truncate text-[10px] font-medium text-slate-200">{subFeature.title}</span>
                   </span>
                   <span className="flex shrink-0 items-center gap-1.5">
-                    <span className="text-[8px] text-muted-foreground">{subDone}/{subTasks.length}</span>
+                    <span className="text-[8px] text-slate-500">{subDone}/{subTasks.length}</span>
                     {/* Hapus sub-fitur: Pro only, lewat tombol trash kecil di tiap baris. */}
                     <button
                       disabled={!isPro || subActive}
                       onClick={() => isPro && onDeleteSubFeature?.(feature.slug, subFeature.title)}
                       title={!isPro ? ui("Hapus struktur hanya untuk paket Pro") : subActive ? "Sub-fitur sedang dikerjakan agent" : `Hapus sub-fitur "${subFeature.title}"`}
-                      className="grid size-4 place-items-center rounded text-muted-foreground transition hover:bg-primary/10 hover:text-primary disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-muted-foreground"
+                      className="grid size-4 place-items-center rounded text-slate-600 transition hover:bg-rose-400/10 hover:text-rose-400 disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-slate-600"
                       aria-label={`Hapus sub-fitur ${subFeature.title}`}
                     ><Trash2 size={9} /></button>
                   </span>
                 </div>
-                {subTasks.length > 0 && <p className="mt-0.5 truncate text-[8px] text-muted-foreground">{subTasks[0].title}</p>}
+                {subTasks.length > 0 && <p className="mt-0.5 truncate text-[8px] text-slate-500">{subTasks[0].title}</p>}
               </div>
             );
           })}
         </div>
 
-        <div className="mt-5 rounded-lg border border-border bg-background p-2.5">
+        <div className="mt-5 rounded-lg border border-white/[.06] bg-[#0C0E10] p-2.5">
           <div className="flex items-center justify-between">
-            <b className="text-[10px] text-foreground">Task ({tasks.length})</b>
+            <b className="text-[10px] text-slate-200">Task ({tasks.length})</b>
           </div>
           <div className="mt-2 space-y-1.5">
             {tasks.slice(0, 2).map((task) => (
               <div key={task.ref} className="flex items-center gap-1.5 text-[9px]">
-                {task.status === "done" ? <Check size={9} className="shrink-0 text-primary" /> : task.status === "in_progress" ? <span className="size-2 shrink-0 animate-spin rounded-full border border-primary border-r-transparent" /> : <Circle size={8} className="shrink-0 text-muted-foreground" />}
-                <span className={`min-w-0 flex-1 truncate ${task.status === "done" ? "line-through text-muted-foreground" : "text-foreground"}`}>{task.title}</span>
-                <span className={`shrink-0 ${task.status === "in_progress" ? "text-primary" : "text-muted-foreground"}`}>{task.status === "done" ? ui("Selesai") : task.status === "in_progress" ? "Sedang" : task.status === "failed" ? ui("Gagal") : ui("Belum")}</span>
+                {task.status === "done" ? <Check size={9} className="shrink-0 text-emerald-400" /> : task.status === "in_progress" ? <span className="size-2 shrink-0 animate-spin rounded-full border border-amber-400 border-r-transparent" /> : <Circle size={8} className="shrink-0 text-slate-500" />}
+                <span className={`min-w-0 flex-1 truncate ${task.status === "done" ? "line-through text-slate-500" : "text-slate-200"}`}>{task.title}</span>
+                <span className={`shrink-0 ${task.status === "in_progress" ? "text-amber-400" : "text-slate-500"}`}>{task.status === "done" ? ui("Selesai") : task.status === "in_progress" ? "Sedang" : task.status === "failed" ? ui("Gagal") : ui("Belum")}</span>
               </div>
             ))}
           </div>
@@ -387,9 +387,9 @@ const { nodes, edges } = useMemo(() => {
       // smoothstep yang kaku). Root -> fase garis halus penuh; lanjutan antar
       // kolom putus-putus titik-titik, jadi terbaca sebagai "aliran rencana".
       nextEdges.push(
-        { id: `root-${featureId}`, source: "root", target: featureId, type: "flow", style: { stroke: "var(--theme-muted)", strokeWidth: 1.8 } },
-        { id: `${featureId}-${subFeatureId}`, source: featureId, target: subFeatureId, type: "flow", style: { stroke: "var(--theme-muted)", strokeWidth: 2.2, strokeDasharray: "0.1 7", strokeLinecap: "round" } },
-        { id: `${subFeatureId}-${taskId}`, source: subFeatureId, target: taskId, type: "flow", style: { stroke: "var(--theme-muted)", strokeWidth: 2.2, strokeDasharray: "0.1 7", strokeLinecap: "round" } },
+        { id: `root-${featureId}`, source: "root", target: featureId, type: "flow", style: { stroke: "#6b7280", strokeWidth: 1.8 } },
+        { id: `${featureId}-${subFeatureId}`, source: featureId, target: subFeatureId, type: "flow", style: { stroke: "#7b8595", strokeWidth: 2.2, strokeDasharray: "0.1 7", strokeLinecap: "round" } },
+        { id: `${subFeatureId}-${taskId}`, source: subFeatureId, target: taskId, type: "flow", style: { stroke: "#7b8595", strokeWidth: 2.2, strokeDasharray: "0.1 7", strokeLinecap: "round" } },
       );
     });
 
@@ -398,7 +398,7 @@ const { nodes, edges } = useMemo(() => {
 }, [structureKey, plan.status, plan.title, language]);
 
   return (
-    <div className="relative h-[calc(100vh-150px)] min-h-[620px] bg-card">
+    <div className="relative h-[calc(100vh-150px)] min-h-[620px] bg-[#14161A]">
       <style>{TRAIL_CSS}</style>
       <ReactFlow
         nodes={nodes}
@@ -414,7 +414,7 @@ const { nodes, edges } = useMemo(() => {
           if (feature) setSelected(displayPlan.features.findIndex((candidate) => candidate.slug === feature.slug));
         }}
       >
-        <Background variant={BackgroundVariant.Dots} gap={18} size={1.2} color="var(--theme-border)" />
+        <Background variant={BackgroundVariant.Dots} gap={18} size={1.2} color="#282C33" />
         <Controls showInteractive={false} />
       </ReactFlow>
       <AnimatePresence>
