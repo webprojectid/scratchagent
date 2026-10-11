@@ -27,8 +27,8 @@ function Header({
 		<div
 			className={cn(
 				// Tailwind v4: default border = currentColor; pakai white/10 biar halus
-				// dan konsisten dengan token garis situs (border-border).
-				'bg-muted/80 dark:bg-muted/50 relative mb-4 rounded-xl border border-border p-4',
+				// dan konsisten dengan token garis situs (border-white/10).
+				'bg-muted/80 dark:bg-muted/50 relative mb-4 rounded-xl border border-white/10 p-4',
 				className,
 			)}
 			{...props}
@@ -40,7 +40,7 @@ function Header({
 					className="absolute inset-x-0 top-0 h-48 rounded-[inherit]"
 					style={{
 						background:
-							'linear-gradient(180deg, color-mix(in srgb, var(--theme-text) 7%, transparent) 0%, color-mix(in srgb, var(--theme-text) 3%, transparent) 40%, color-mix(in srgb, var(--theme-shadow) 0%, transparent) 100%)',
+							'linear-gradient(180deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.03) 40%, rgba(0,0,0,0) 100%)',
 					}}
 				/>
 			)}

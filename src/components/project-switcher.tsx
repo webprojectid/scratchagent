@@ -66,13 +66,13 @@ export function ProjectSwitcher({ currentId, fallbackTitle }: { currentId?: stri
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen((o) => !o)}
-        className="flex h-9 items-center gap-2 rounded-[10px] border border-border bg-foreground/[.03] px-3 text-[12px] text-muted-foreground transition hover:border-border hover:text-foreground"
+        className="flex h-9 items-center gap-2 rounded-[10px] border border-white/10 bg-white/[.03] px-3 text-[12px] text-slate-300 transition hover:border-white/20 hover:text-white"
         aria-haspopup="listbox"
         aria-expanded={open}
       >
-        {currentId ? <ProjectIcon project={{ id: currentId, title: current?.title ?? fallbackTitle ?? "" }} className="!size-6 !rounded-md" size={14}/> : <Folder size={13} className="shrink-0 text-muted-foreground" />}
+        {currentId ? <ProjectIcon project={{ id: currentId, title: current?.title ?? fallbackTitle ?? "" }} className="!size-6 !rounded-md" size={14}/> : <Folder size={13} className="shrink-0 text-white/40" />}
         <span className="max-w-[200px] truncate">{current?.title ?? fallbackTitle ?? "Project"}</span>
-        <ChevronDown size={13} className={`shrink-0 text-muted-foreground transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
+        <ChevronDown size={13} className={`shrink-0 text-white/40 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
       </button>
 
       <AnimatePresence>
@@ -82,21 +82,21 @@ export function ProjectSwitcher({ currentId, fallbackTitle }: { currentId?: stri
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -6, scale: 0.98 }}
             transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
-            className="absolute left-0 top-full z-40 mt-2 w-[300px] overflow-hidden rounded-xl border border-border bg-background shadow-2xl shadow-black/60"
+            className="absolute left-0 top-full z-40 mt-2 w-[300px] overflow-hidden rounded-xl border border-white/[.08] bg-[#12151A] shadow-2xl shadow-black/60"
             role="listbox"
           >
-            <div className="flex items-center justify-between border-b border-border px-3.5 py-2.5">
-              <span className="font-mono text-[10px] uppercase tracking-[.14em] text-muted-foreground">Project history</span>
+            <div className="flex items-center justify-between border-b border-white/[.06] px-3.5 py-2.5">
+              <span className="font-mono text-[10px] uppercase tracking-[.14em] text-white/30">Project history</span>
               <Link
                 href="/new"
-                className="flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] text-primary transition hover:bg-primary/10"
+                className="flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] text-[#74FA6A] transition hover:bg-[#74FA6A]/10"
               >
                 <Plus size={11} />{ui("baru")}</Link>
             </div>
 
             <div className="max-h-[320px] overflow-y-auto p-1.5">
               {plans.length === 0 ? (
-                <p className="px-3 py-6 text-center text-[11px] text-muted-foreground">{ui("Belum ada project")}</p>
+                <p className="px-3 py-6 text-center text-[11px] text-white/25">{ui("Belum ada project")}</p>
               ) : (
                 plans.map((p) => {
                   const active = p.id === currentId;
@@ -107,19 +107,19 @@ export function ProjectSwitcher({ currentId, fallbackTitle }: { currentId?: stri
                       role="option"
                       aria-selected={active}
                       className={`group flex items-center gap-2.5 rounded-lg px-2.5 py-2 transition ${
-                        active ? "bg-primary/[.06]" : "hover:bg-foreground/[.04]"
+                        active ? "bg-[#74FA6A]/[.06]" : "hover:bg-white/[.04]"
                       }`}
                     >
                       <ProjectIcon project={p} className="!size-8 !rounded-lg" size={18}/>
                       <span className="min-w-0 flex-1">
-                        <span className={`block truncate text-[12px] font-medium leading-tight ${active ? "text-foreground" : "text-muted-foreground"}`}>
+                        <span className={`block truncate text-[12px] font-medium leading-tight ${active ? "text-white" : "text-slate-300"}`}>
                           {p.title}
                         </span>
-                        <span className="mt-0.5 block font-mono text-[10px] text-muted-foreground">
+                        <span className="mt-0.5 block font-mono text-[10px] text-white/25">
                           {ui(statusLabel[p.status] ?? p.status)} · {p.taskCount} task
                         </span>
                       </span>
-                      {active && <Check size={13} className="shrink-0 text-primary" />}
+                      {active && <Check size={13} className="shrink-0 text-[#74FA6A]" />}
                     </Link>
                   );
                 })

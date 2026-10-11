@@ -40,7 +40,7 @@ export function ProductCard({
   rating = 4.8,
   reviewCount = 142,
   images = ["/logo.svg", "/logo.svg", "/logo.svg"],
-  colors = ["var(--theme-border)", "var(--theme-chart-1)", "var(--theme-chart-2)", "var(--theme-chart-3)"],
+  colors = ["#1e293b", "#a855f7", "#0ea5e9", "#84cc16"],
   sizes = ["XS", "S", "M", "L", "XL"],
   isNew = true,
   isBestSeller = true,
@@ -145,15 +145,15 @@ export function ProductCard({
         {/* Badges */}
         <div className="absolute top-3 left-3 flex flex-col gap-2">
           {isNew && (
-            <Badge className="bg-primary hover:bg-primary/90">New</Badge>
+            <Badge className="bg-blue-500 hover:bg-blue-500/90">New</Badge>
           )}
           {isBestSeller && (
-            <Badge className="bg-primary hover:bg-primary/90">
+            <Badge className="bg-amber-500 hover:bg-amber-500/90">
               Best Seller
             </Badge>
           )}
           {discount > 0 && (
-            <Badge className="bg-primary hover:bg-primary/90">
+            <Badge className="bg-rose-500 hover:bg-rose-500/90">
               -{discount}%
             </Badge>
           )}
@@ -164,7 +164,7 @@ export function ProductCard({
           variant="secondary"
           size="icon"
           className={`absolute top-3 right-3 h-8 w-8 rounded-full bg-background/80 backdrop-blur-sm shadow-sm ${
-            isWishlisted ? "text-primary" : ""
+            isWishlisted ? "text-rose-500" : ""
           }`}
           onClick={(e) => {
             e.stopPropagation();
@@ -172,7 +172,7 @@ export function ProductCard({
           }}
         >
           <Heart
-            className={`h-4 w-4 ${isWishlisted ? "fill-primary" : ""}`}
+            className={`h-4 w-4 ${isWishlisted ? "fill-rose-500" : ""}`}
           />
         </Button>
       </div>
@@ -184,14 +184,14 @@ export function ProductCard({
             <h3 className="font-medium line-clamp-1">{name}</h3>
             <div className="flex items-center gap-2 mt-1">
               <div className="flex items-center">
-                <Star className="h-3.5 w-3.5 fill-primary text-primary" />
+                <Star className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
                 <span className="ml-1 text-sm font-medium">{rating}</span>
               </div>
               <span className="text-xs text-muted-foreground">
                 ({reviewCount} reviews)
               </span>
               {freeShipping && (
-                <span className="text-xs text-primary ml-auto">
+                <span className="text-xs text-emerald-600 ml-auto">
                   Free shipping
                 </span>
               )}

@@ -33,8 +33,8 @@ export function DocsToc() {
 
   return (
     <nav aria-label={c.tocTitle} className="sticky top-24 hidden w-48 shrink-0 self-start xl:block">
-      <p className="text-[12px] font-medium uppercase tracking-[.08em] text-muted-foreground">{c.tocTitle}</p>
-      <ul className="mt-4 space-y-0.5 border-l border-border">
+      <p className="text-[12px] font-medium uppercase tracking-[.08em] text-[#737373]">{c.tocTitle}</p>
+      <ul className="mt-4 space-y-0.5 border-l border-white/[.08]">
         {c.tocItems.map((item) => {
           const isActive = active === item.id;
           return (
@@ -45,8 +45,8 @@ export function DocsToc() {
                 className={cn(
                   "-ml-px block w-full border-l-2 py-1.5 pl-4 pr-2 text-left text-[13px] leading-5 transition-colors",
                   isActive
-                    ? "border-primary font-medium text-foreground"
-                    : "border-transparent text-muted-foreground hover:text-foreground",
+                    ? "border-[#74FA6A] font-medium text-[#EDEDED]"
+                    : "border-transparent text-[#A0A0A0] hover:text-[#EDEDED]",
                 )}
               >
                 {item.label}

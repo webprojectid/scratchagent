@@ -33,11 +33,11 @@ export default function AuthComplete() {
   return (
     <div className="flex min-h-[100dvh] flex-col items-center justify-center gap-3 px-4">
       {error ? (
-        <p className="text-destructive text-sm">{error}</p>
+        <p className="text-red-400 text-sm">{error}</p>
       ) : (
         <>
-          <Loader2 className="h-6 w-6 animate-spin text-primary" />
-          <p className="text-muted-foreground text-sm">Lagi masuk… sebentar ya.</p>
+          <Loader2 className="h-6 w-6 animate-spin text-[#74FA6A]" />
+          <p className="text-slate-400 text-sm">Lagi masuk… sebentar ya.</p>
         </>
       )}
     </div>

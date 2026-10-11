@@ -57,7 +57,7 @@ export function UserNav() {
     return (
       <Link
         href="/login"
-        className="font-mono text-[12px] tracking-[0.02em] text-foreground transition-colors hover:text-primary"
+        className="font-mono text-[12px] tracking-[0.02em] text-white/80 transition-colors hover:text-[#74FA6A]"
       >{ui("Masuk")}</Link>
     );
   }
@@ -78,14 +78,14 @@ export function UserNav() {
         <button
           type="button"
           aria-label={ui("Menu Akun")}
-          className="group relative flex size-8 items-center justify-center rounded-full border border-border bg-foreground/[.06] text-foreground transition hover:border-primary/50 hover:bg-primary/10 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          className="group relative flex size-8 items-center justify-center rounded-full border border-white/15 bg-white/[.06] text-white/80 transition hover:border-[#74FA6A]/50 hover:bg-[#74FA6A]/10 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#a5ef7d]"
         >
           {initials ? (
-            <span className="font-mono text-[11px] font-bold text-primary">{initials}</span>
+            <span className="font-mono text-[11px] font-bold text-[#74FA6A]">{initials}</span>
           ) : (
             <User size={15} />
           )}
-          <span className="absolute -bottom-0.5 -right-0.5 size-2 rounded-full border border-border bg-primary" />
+          <span className="absolute -bottom-0.5 -right-0.5 size-2 rounded-full border border-[#1D2223] bg-[#74FA6A]" />
         </button>
       </DropdownMenu.Trigger>
 
@@ -93,30 +93,30 @@ export function UserNav() {
         <DropdownMenu.Content
           align="end"
           sideOffset={8}
-          className="z-50 min-w-[200px] overflow-hidden rounded-xl border border-border bg-background p-1.5 shadow-2xl backdrop-blur-xl animate-in fade-in-0 zoom-in-95"
+          className="z-50 min-w-[200px] overflow-hidden rounded-xl border border-white/10 bg-[#121517] p-1.5 shadow-2xl backdrop-blur-xl animate-in fade-in-0 zoom-in-95"
         >
-          <div className="border-b border-border px-2.5 py-2">
-            <p className="truncate text-[12.5px] font-semibold text-foreground">{user.name}</p>
+          <div className="border-b border-white/[.08] px-2.5 py-2">
+            <p className="truncate text-[12.5px] font-semibold text-white">{user.name}</p>
             <div className="my-2"><AccountBadges account={user}/></div>
-            <p className="truncate font-mono text-[10.5px] text-muted-foreground">{user.email}</p>
+            <p className="truncate font-mono text-[10.5px] text-white/40">{user.email}</p>
           </div>
 
           <div className="py-1">
-            {user.role === "admin" && isDeveloperAdmin(user.email) && <DropdownMenu.Item asChild><Link href="/developer-settings" className="flex min-h-11 items-center gap-2 rounded-lg px-2.5 py-2 text-[12.5px] text-foreground outline-none data-[highlighted]:bg-foreground/[.07] data-[highlighted]:text-primary"><Cpu size={14}/>Developer Setting</Link></DropdownMenu.Item>}
+            {user.role === "admin" && isDeveloperAdmin(user.email) && <DropdownMenu.Item asChild><Link href="/developer-settings" className="flex min-h-11 items-center gap-2 rounded-lg px-2.5 py-2 text-[12.5px] text-white/80 outline-none data-[highlighted]:bg-white/[.07] data-[highlighted]:text-[#74FA6A]"><Cpu size={14}/>Developer Setting</Link></DropdownMenu.Item>}
             {accountMenuLinks.map(({ label, href, icon }) => {
               const Icon = menuIcons[icon];
               return <DropdownMenu.Item key={href} asChild>
-                <Link href={href} className="flex min-h-11 cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-[12.5px] text-foreground outline-none transition data-[highlighted]:bg-foreground/[.07] data-[highlighted]:text-primary">
-                  <Icon size={14} className="text-muted-foreground"/><span>{ui(label)}</span>
+                <Link href={href} className="flex min-h-11 cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-[12.5px] text-white/80 outline-none transition data-[highlighted]:bg-white/[.07] data-[highlighted]:text-[#74FA6A]">
+                  <Icon size={14} className="text-white/50"/><span>{ui(label)}</span>
                 </Link>
               </DropdownMenu.Item>;
             })}
           </div>
-          <DropdownMenu.Separator className="h-px bg-foreground/[.08]" />
+          <DropdownMenu.Separator className="h-px bg-white/[.08]" />
 
           <DropdownMenu.Item
             onSelect={handleLogout}
-            className="flex min-h-11 cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-[12.5px] text-destructive outline-none transition data-[highlighted]:bg-destructive0/10"
+            className="flex min-h-11 cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-[12.5px] text-red-400 outline-none transition data-[highlighted]:bg-red-500/10"
           >
             <LogOut size={14} />
             <span>{ui("Keluar")}</span>

@@ -150,15 +150,15 @@ export function CircularCarousel({
                 className={cn(
                   "absolute left-1/2 top-1/2 flex h-32 w-48 -translate-x-1/2 -translate-y-1/2 cursor-pointer flex-col items-start justify-between rounded-2xl border p-4 backdrop-blur-sm transition-shadow duration-300",
                   isActive
-                    ? "border-primary/30 bg-gradient-to-b from-primary/10 to-background/90 shadow-[0_20px_60px_-12px_color-mix(in_srgb,_var(--theme-accent)_15%,_transparent)]"
-                    : "border-border bg-gradient-to-b from-card/90 to-background/90 shadow-[0_8px_24px_-4px_color-mix(in_srgb,_var(--theme-shadow)_30%,_transparent)] hover:border-primary/15 hover:shadow-[0_12px_32px_-4px_color-mix(in_srgb,_var(--theme-shadow)_40%,_transparent)]",
+                    ? "border-[#74FA6A]/30 bg-gradient-to-b from-[#74FA6A]/10 to-zinc-900/90 shadow-[0_20px_60px_-12px_rgba(116,250,106,0.15)]"
+                    : "border-white/10 bg-gradient-to-b from-zinc-800/90 to-zinc-900/90 shadow-[0_8px_24px_-4px_rgba(0,0,0,0.3)] hover:border-[#74FA6A]/15 hover:shadow-[0_12px_32px_-4px_rgba(0,0,0,0.4)]",
                 )}
                 style={{ transformOrigin: "center center" }}
               >
                 {item.tag && (
                   <span className={cn(
                     "rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider",
-                    isActive ? "bg-primary/15 text-primary" : "bg-foreground/10 text-foreground",
+                    isActive ? "bg-[#74FA6A]/15 text-[#74FA6A]" : "bg-white/10 text-white/70",
                   )}>
                     {item.tag}
                   </span>
@@ -168,8 +168,8 @@ export function CircularCarousel({
                     className={cn(
                       "font-semibold leading-tight transition-colors duration-300",
                       isActive
-                        ? "text-foreground text-base"
-                        : "text-foreground text-sm",
+                        ? "text-white text-base"
+                        : "text-white/80 text-sm",
                     )}
                   >
                     {item.title}
@@ -177,7 +177,7 @@ export function CircularCarousel({
                   <p
                     className={cn(
                       "mt-1 line-clamp-2 text-xs leading-relaxed transition-colors duration-300",
-                      isActive ? "text-foreground" : "text-muted-foreground",
+                      isActive ? "text-white/60" : "text-white/40",
                     )}
                   >
                     {item.description}
@@ -197,10 +197,10 @@ export function CircularCarousel({
         transition={{ duration: 0.4, ease: "easeOut" }}
         className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none"
       >
-        <span className="text-5xl font-bold tracking-tight text-primary/80">
+        <span className="text-5xl font-bold tracking-tight text-[#74FA6A]/80">
           {String(activeIndex + 1).padStart(2, "0")}
         </span>
-        <span className="mt-1 text-xs text-muted-foreground">
+        <span className="mt-1 text-xs text-white/40">
           of {String(total).padStart(2, "0")}
         </span>
       </motion.div>
@@ -213,7 +213,7 @@ export function CircularCarousel({
           whileTap={{ scale: 0.95 }}
           onClick={prev}
           aria-label="Previous item"
-          className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-foreground/5 text-foreground backdrop-blur-sm transition-colors hover:bg-foreground/10 hover:text-foreground focus-visible:ring-2 focus-visible:ring-white/30"
+          className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/70 backdrop-blur-sm transition-colors hover:bg-white/10 hover:text-white focus-visible:ring-2 focus-visible:ring-white/30"
         >
           <ChevronLeft className="size-5" />
         </motion.button>
@@ -229,8 +229,8 @@ export function CircularCarousel({
               className={cn(
                 "h-1.5 rounded-full transition-all duration-300",
                 i === activeIndex
-                  ? "w-6 bg-primary/80"
-                  : "w-1.5 bg-foreground/20 hover:bg-foreground/40",
+                  ? "w-6 bg-[#74FA6A]/80"
+                  : "w-1.5 bg-white/20 hover:bg-white/40",
               )}
               aria-label={`Go to item ${i + 1}`}
             />
@@ -242,7 +242,7 @@ export function CircularCarousel({
           whileTap={{ scale: 0.95 }}
           onClick={next}
           aria-label="Next item"
-          className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-foreground/5 text-foreground backdrop-blur-sm transition-colors hover:bg-foreground/10 hover:text-foreground focus-visible:ring-2 focus-visible:ring-white/30"
+          className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/70 backdrop-blur-sm transition-colors hover:bg-white/10 hover:text-white focus-visible:ring-2 focus-visible:ring-white/30"
         >
           <ChevronRight className="size-5" />
         </motion.button>

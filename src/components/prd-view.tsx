@@ -13,24 +13,24 @@ interface Section {
 }
 
 const priorityBadge: Record<string, string> = {
-  high: "border-destructive bg-destructive/[.08] text-destructive",
-  medium: "border-primary bg-primary/[.08] text-primary",
-  low: "border-border bg-secondary/[.08] text-muted-foreground",
+  high: "border-red-400/30 bg-red-400/[.08] text-red-300",
+  medium: "border-amber-400/30 bg-amber-400/[.08] text-amber-300",
+  low: "border-slate-400/30 bg-slate-400/[.08] text-slate-300",
 };
 
 const statusChip: Record<string, { label: string; className: string }> = {
-  generating: { label: "Menyusun", className: "border-primary bg-primary/[.08] text-primary" },
-  ready: { label: "Siap", className: "border-primary/30 bg-primary/[.08] text-primary" },
-  implementing: { label: "Berjalan", className: "border-primary bg-primary/[.08] text-primary" },
-  done: { label: "Selesai", className: "border-primary bg-primary/[.08] text-primary" },
+  generating: { label: "Menyusun", className: "border-amber-400/30 bg-amber-400/[.08] text-amber-300" },
+  ready: { label: "Siap", className: "border-[#74FA6A]/30 bg-[#74FA6A]/[.08] text-[#74FA6A]" },
+  implementing: { label: "Berjalan", className: "border-blue-400/30 bg-blue-400/[.08] text-blue-300" },
+  done: { label: "Selesai", className: "border-emerald-400/30 bg-emerald-400/[.08] text-emerald-300" },
 };
 
 function Stat({ label, value }: { label: string; value: string }) {
   useUiLanguage();
   return (
-    <div className="rounded-lg border border-border bg-foreground/[.02] px-3 py-1.5">
-      <p className="font-mono text-[13px] font-semibold tabular-nums leading-tight text-foreground">{value}</p>
-      <p className="text-[10px] leading-tight text-muted-foreground">{label}</p>
+    <div className="rounded-lg border border-white/[.06] bg-white/[.02] px-3 py-1.5">
+      <p className="font-mono text-[13px] font-semibold tabular-nums leading-tight text-white">{value}</p>
+      <p className="text-[10px] leading-tight text-slate-500">{label}</p>
     </div>
   );
 }
@@ -38,7 +38,7 @@ function Stat({ label, value }: { label: string; value: string }) {
 function Label({ children }: { children: ReactNode }) {
   useUiLanguage();
   return (
-    <p className="font-mono text-[10px] font-semibold uppercase tracking-[.14em] text-muted-foreground">
+    <p className="font-mono text-[10px] font-semibold uppercase tracking-[.14em] text-white/30">
       {children}
     </p>
   );
@@ -48,10 +48,10 @@ function SectionHeading({ num, title }: { num: string; title: string }) {
   useUiLanguage();
   return (
     <div className="flex items-center gap-3">
-      <span className="grid size-7 shrink-0 place-items-center rounded-lg border border-primary/20 bg-primary/[.06] font-mono text-[11px] font-bold tabular-nums text-primary">
+      <span className="grid size-7 shrink-0 place-items-center rounded-lg border border-[#74FA6A]/20 bg-[#74FA6A]/[.06] font-mono text-[11px] font-bold tabular-nums text-[#74FA6A]">
         {num}
       </span>
-      <h2 className="!text-[17px] !font-semibold !leading-tight !tracking-tight text-foreground">{title}</h2>
+      <h2 className="!text-[17px] !font-semibold !leading-tight !tracking-tight text-white">{title}</h2>
     </div>
   );
 }
@@ -131,19 +131,19 @@ function BriefBlocks({ brief }: { brief: string }) {
     <div className="space-y-3">
       {blocks.map((b, i) =>
         b.type === "p" ? (
-          <p key={i} className="text-sm leading-relaxed text-muted-foreground">
+          <p key={i} className="text-sm leading-relaxed text-slate-300">
             {b.text}
           </p>
         ) : (
           <ul key={i} className="space-y-2">
             {b.items.map((item, j) => (
-              <li key={j} className="flex gap-2.5 text-sm leading-relaxed text-muted-foreground">
+              <li key={j} className="flex gap-2.5 text-sm leading-relaxed text-slate-300">
                 {b.ordered ? (
-                  <span className="mt-[2px] grid size-5 shrink-0 place-items-center rounded-md border border-primary/20 bg-primary/[.06] font-mono text-[10px] font-bold tabular-nums text-primary">
+                  <span className="mt-[2px] grid size-5 shrink-0 place-items-center rounded-md border border-[#74FA6A]/20 bg-[#74FA6A]/[.06] font-mono text-[10px] font-bold tabular-nums text-[#74FA6A]">
                     {j + 1}
                   </span>
                 ) : (
-                  <span className="mt-[9px] size-1 shrink-0 rounded-full bg-primary/60" />
+                  <span className="mt-[9px] size-1 shrink-0 rounded-full bg-[#74FA6A]/60" />
                 )}
                 <span className="min-w-0">{item}</span>
               </li>
@@ -169,7 +169,7 @@ function buildSections(plan: Plan): Section[] {
             {plan.stack.map((s) => (
               <span
                 key={s}
-                className="rounded-md border border-border bg-foreground/[.03] px-2 py-1 font-mono text-[11px] text-muted-foreground"
+                className="rounded-md border border-white/[.08] bg-white/[.03] px-2 py-1 font-mono text-[11px] text-slate-300"
               >
                 {s}
               </span>
@@ -190,8 +190,8 @@ function buildSections(plan: Plan): Section[] {
             <Label>Fungsional</Label>
             <ul className="mt-2 space-y-1.5">
               {plan.requirements.fungsional.map((x) => (
-                <li key={x} className="flex gap-2 text-sm leading-relaxed text-muted-foreground">
-                  <span className="mt-[9px] size-1 shrink-0 rounded-full bg-primary/60" />
+                <li key={x} className="flex gap-2 text-sm leading-relaxed text-slate-400">
+                  <span className="mt-[9px] size-1 shrink-0 rounded-full bg-[#74FA6A]/60" />
                   {x}
                 </li>
               ))}
@@ -203,8 +203,8 @@ function buildSections(plan: Plan): Section[] {
             <Label>Non-Fungsional</Label>
             <ul className="mt-2 space-y-1.5">
               {plan.requirements.nonFungsional.map((x) => (
-                <li key={x} className="flex gap-2 text-sm leading-relaxed text-muted-foreground">
-                  <span className="mt-[9px] size-1 shrink-0 rounded-full bg-secondary" />
+                <li key={x} className="flex gap-2 text-sm leading-relaxed text-slate-400">
+                  <span className="mt-[9px] size-1 shrink-0 rounded-full bg-slate-500" />
                   {x}
                 </li>
               ))}
@@ -216,8 +216,8 @@ function buildSections(plan: Plan): Section[] {
             <Label>Asumsi</Label>
             <ul className="mt-2 space-y-1.5">
               {plan.asumsi.map((x) => (
-                <li key={x} className="flex gap-2 text-sm leading-relaxed text-muted-foreground">
-                  <span className="mt-[9px] size-1 shrink-0 rounded-full bg-secondary" />
+                <li key={x} className="flex gap-2 text-sm leading-relaxed text-slate-400">
+                  <span className="mt-[9px] size-1 shrink-0 rounded-full bg-slate-600" />
                   {x}
                 </li>
               ))}
@@ -243,7 +243,7 @@ function buildSections(plan: Plan): Section[] {
       <div className="space-y-6">
         {[...faseMap.keys()].sort((a, b) => a - b).map((fase) => (
           <div key={fase}>
-            <p className="font-mono text-[11px] font-semibold uppercase tracking-[.14em] text-primary/70">{ui("Fase")} {fase}
+            <p className="font-mono text-[11px] font-semibold uppercase tracking-[.14em] text-[#74FA6A]/70">{ui("Fase")} {fase}
             </p>
             <div className="mt-2.5 space-y-3">
               {faseMap.get(fase)!.map((f) => {
@@ -251,10 +251,10 @@ function buildSections(plan: Plan): Section[] {
                 return (
                   <div
                     key={f.slug}
-                    className="rounded-xl border border-border bg-foreground/[.02] p-4 transition-colors hover:border-border"
+                    className="rounded-xl border border-white/[.06] bg-white/[.02] p-4 transition-colors hover:border-white/[.12]"
                   >
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-[15px] font-semibold text-foreground">{f.title}</span>
+                      <span className="text-[15px] font-semibold text-white">{f.title}</span>
                       {f.priority && (
                         <span
                           className={cn(
@@ -265,24 +265,24 @@ function buildSections(plan: Plan): Section[] {
                           {f.priority}
                         </span>
                       )}
-                      <span className="ml-auto font-mono text-[10px] tabular-nums text-muted-foreground">
+                      <span className="ml-auto font-mono text-[10px] tabular-nums text-white/30">
                         {taskCount} task
                       </span>
                     </div>
-                    <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{f.description}</p>
+                    <p className="mt-1.5 text-sm leading-relaxed text-slate-400">{f.description}</p>
 
                     <div className="mt-3 grid gap-3 sm:grid-cols-2">
                       <div>
                         <Label>{ui("Tujuan")}</Label>
-                        <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{f.tujuan}</p>
+                        <p className="mt-1.5 text-sm leading-relaxed text-slate-400">{f.tujuan}</p>
                       </div>
                       <div>
                         <Label>{ui("Selesai bila")}</Label>
                         <ul className="mt-1.5 space-y-1">
                           {f.selesaiBila.map((x) => (
-                            <li key={x} className="flex gap-2 text-[13px] leading-relaxed text-muted-foreground">
+                            <li key={x} className="flex gap-2 text-[13px] leading-relaxed text-slate-400">
                               <svg
-                                className="mt-[3px] size-3.5 shrink-0 text-primary"
+                                className="mt-[3px] size-3.5 shrink-0 text-[#74FA6A]"
                                 viewBox="0 0 16 16"
                                 fill="none"
                                 aria-hidden
@@ -303,16 +303,16 @@ function buildSections(plan: Plan): Section[] {
                     </div>
 
                     {f.subFeatures.length > 0 && (
-                      <div className="mt-3 border-t border-border pt-3">
+                      <div className="mt-3 border-t border-white/[.05] pt-3">
                         <Label>Sub-fitur</Label>
                         <div className="mt-2 flex flex-wrap gap-1.5">
                           {f.subFeatures.map((sf) => (
                             <span
                               key={sf.title}
-                              className="inline-flex items-center gap-1.5 rounded-md border border-border bg-foreground/[.02] px-2 py-1 text-[12px] text-muted-foreground"
+                              className="inline-flex items-center gap-1.5 rounded-md border border-white/[.07] bg-white/[.02] px-2 py-1 text-[12px] text-slate-300"
                             >
                               {sf.title}
-                              <span className="font-mono text-[9px] tabular-nums text-muted-foreground">
+                              <span className="font-mono text-[9px] tabular-nums text-white/30">
                                 {sf.tasks.length}
                               </span>
                             </span>
@@ -337,12 +337,12 @@ function buildSections(plan: Plan): Section[] {
       body: (
         <div className="grid gap-4 sm:grid-cols-2">
           {plan.userFlow.map((flow, i) => (
-            <div key={i} className="rounded-xl border border-border bg-foreground/[.02] p-4">
-              <p className="text-[14px] font-semibold text-foreground">{flow.title}</p>
+            <div key={i} className="rounded-xl border border-white/[.06] bg-white/[.02] p-4">
+              <p className="text-[14px] font-semibold text-white">{flow.title}</p>
               <ol className="mt-2.5 space-y-1.5">
                 {flow.steps.map((step, si) => (
-                  <li key={si} className="flex gap-2.5 text-[13px] leading-relaxed text-muted-foreground">
-                    <span className="font-mono text-[11px] tabular-nums text-primary/70">{si + 1}.</span>
+                  <li key={si} className="flex gap-2.5 text-[13px] leading-relaxed text-slate-400">
+                    <span className="font-mono text-[11px] tabular-nums text-[#74FA6A]/70">{si + 1}.</span>
                     {step}
                   </li>
                 ))}
@@ -376,14 +376,14 @@ function buildSections(plan: Plan): Section[] {
     body: plan.techStack?.length ? (
       <div className="grid gap-2 sm:grid-cols-2">
         {plan.techStack.map((t) => (
-          <div key={t.name} className="rounded-lg border border-border bg-foreground/[.02] px-3 py-2.5">
-            <p className="text-[13px] font-semibold text-foreground">{t.name}</p>
-            <p className="mt-0.5 text-[12px] leading-relaxed text-muted-foreground">{t.desc}</p>
+          <div key={t.name} className="rounded-lg border border-white/[.06] bg-white/[.02] px-3 py-2.5">
+            <p className="text-[13px] font-semibold text-white/80">{t.name}</p>
+            <p className="mt-0.5 text-[12px] leading-relaxed text-slate-500">{t.desc}</p>
           </div>
         ))}
       </div>
     ) : (
-      <p className="text-sm text-muted-foreground">{plan.stack.join(" · ")}</p>
+      <p className="text-sm text-slate-400">{plan.stack.join(" · ")}</p>
     ),
   });
 
@@ -454,7 +454,7 @@ export function PrdView({ plan }: { plan: Plan }) {
   return (
     <div className="w-full">
       {/* Mobile horizontal nav */}
-      <nav className="sticky top-0 z-20 -mx-4 overflow-x-auto border-b border-border bg-background/85 px-4 py-2 backdrop-blur-xl md:hidden">
+      <nav className="sticky top-0 z-20 -mx-4 overflow-x-auto border-b border-white/8 bg-[#0A0A0A]/85 px-4 py-2 backdrop-blur-xl md:hidden">
         <div className="flex w-max items-center gap-1">
           {sections.map((s, i) => (
             <button
@@ -463,8 +463,8 @@ export function PrdView({ plan }: { plan: Plan }) {
               className={cn(
                 "flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-medium transition-colors",
                 active === s.id
-                  ? "bg-primary/[.12] text-primary"
-                  : "text-muted-foreground hover:text-muted-foreground"
+                  ? "bg-[#74FA6A]/[.12] text-[#74FA6A]"
+                  : "text-slate-500 hover:text-slate-300"
               )}
             >
               <span className="font-mono tabular-nums">{num(i)}</span>
@@ -477,10 +477,10 @@ export function PrdView({ plan }: { plan: Plan }) {
       <div className="flex gap-10 px-4 py-8 md:px-6">
         {/* Desktop sidebar */}
         <aside className="sticky top-6 hidden w-56 shrink-0 self-start md:block">
-          <p className="px-3 font-mono text-[10px] font-semibold uppercase tracking-[.16em] text-muted-foreground">
+          <p className="px-3 font-mono text-[10px] font-semibold uppercase tracking-[.16em] text-white/25">
             Daftar isi
           </p>
-          <nav className="mt-2.5 space-y-0.5 border-l border-border">
+          <nav className="mt-2.5 space-y-0.5 border-l border-white/[.06]">
             {sections.map((s, i) => (
               <button
                 key={s.id}
@@ -488,15 +488,15 @@ export function PrdView({ plan }: { plan: Plan }) {
                 className={cn(
                   "group -ml-px flex w-full items-center gap-2.5 border-l-2 py-1.5 pl-3.5 pr-2 text-left transition-colors",
                   active === s.id
-                    ? "border-primary text-foreground"
-                    : "border-transparent text-muted-foreground hover:border-border hover:text-muted-foreground"
+                    ? "border-[#74FA6A] text-white"
+                    : "border-transparent text-slate-500 hover:border-white/20 hover:text-slate-300"
                 )}
                 aria-current={active === s.id ? "location" : undefined}
               >
                 <span
                   className={cn(
                     "font-mono text-[10px] tabular-nums",
-                    active === s.id ? "text-primary" : "text-muted-foreground group-hover:text-muted-foreground"
+                    active === s.id ? "text-[#74FA6A]" : "text-white/25 group-hover:text-white/40"
                   )}
                 >
                   {num(i)}
@@ -511,7 +511,7 @@ export function PrdView({ plan }: { plan: Plan }) {
         <div className="min-w-0 flex-1">
           <article className="w-full">
             <p className="eyebrow">Product requirements document</p>
-            <h1 className="mt-2 !text-2xl !font-bold !leading-tight !tracking-tight text-foreground">
+            <h1 className="mt-2 !text-2xl !font-bold !leading-tight !tracking-tight text-white">
               {plan.title}
             </h1>
 
@@ -520,7 +520,7 @@ export function PrdView({ plan }: { plan: Plan }) {
                 {ui(chip.label)}
               </span>
               {createdAt && (
-                <span className="font-mono text-[11px] tabular-nums text-muted-foreground">dibuat {createdAt}</span>
+                <span className="font-mono text-[11px] tabular-nums text-slate-500">dibuat {createdAt}</span>
               )}
             </div>
 
@@ -533,9 +533,9 @@ export function PrdView({ plan }: { plan: Plan }) {
 
             {stats.taskTotal > 0 && (
               <div className="mt-3">
-                <div className="h-1 overflow-hidden rounded-full bg-foreground/[.05]">
+                <div className="h-1 overflow-hidden rounded-full bg-white/[.05]">
                   <div
-                    className="h-full rounded-full bg-primary transition-[width] duration-500"
+                    className="h-full rounded-full bg-[#74FA6A] transition-[width] duration-500"
                     style={{ width: `${stats.taskTotal ? (stats.doneTotal / stats.taskTotal) * 100 : 0}%` }}
                   />
                 </div>

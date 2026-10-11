@@ -94,7 +94,7 @@ export function AgentPromptModal({ planId, onClose }: { planId: string; onClose:
           animate={{ scale: 1, y: 0 }}
           exit={{ scale: 0.97, y: 14 }}
           transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-          className="w-[460px] max-w-full rounded-2xl border border-border bg-background shadow-2xl shadow-black/50"
+          className="w-[460px] max-w-full rounded-2xl border border-white/[.08] bg-[#12151A] shadow-2xl shadow-black/50"
           onClick={(e) => e.stopPropagation()}
           role="dialog"
           aria-modal="true"
@@ -102,17 +102,17 @@ export function AgentPromptModal({ planId, onClose }: { planId: string; onClose:
           {/* Header */}
           <div className="flex items-start justify-between p-5 pb-4">
             <div className="flex items-start gap-3">
-              <span className="grid size-9 shrink-0 place-items-center rounded-xl border border-primary/20 bg-primary/[.08]">
-                <Sparkles size={15} className="text-primary" />
+              <span className="grid size-9 shrink-0 place-items-center rounded-xl border border-[#74FA6A]/20 bg-[#74FA6A]/[.08]">
+                <Sparkles size={15} className="text-[#74FA6A]" />
               </span>
               <div>
-                <h3 className="!text-[15px] !font-semibold !leading-tight !tracking-tight text-foreground">{ui("Implementasi dengan AI agent")}</h3>
-                <p className="mt-1 text-[12.5px] leading-5 text-muted-foreground">{ui("Serahkan plan ini ke coding agent. Tiga langkah, tanpa setup manual.")}</p>
+                <h3 className="!text-[15px] !font-semibold !leading-tight !tracking-tight text-white">{ui("Implementasi dengan AI agent")}</h3>
+                <p className="mt-1 text-[12.5px] leading-5 text-slate-500">{ui("Serahkan plan ini ke coding agent. Tiga langkah, tanpa setup manual.")}</p>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="grid size-7 shrink-0 place-items-center rounded-lg text-muted-foreground transition hover:bg-foreground/5 hover:text-foreground"
+              className="grid size-7 shrink-0 place-items-center rounded-lg text-white/30 transition hover:bg-white/5 hover:text-white"
               aria-label={ui("Tutup")}
             >
               <X size={14} />
@@ -122,7 +122,7 @@ export function AgentPromptModal({ planId, onClose }: { planId: string; onClose:
           {/* Steps */}
           <div className="px-5">
             <ol className="relative space-y-3.5">
-              <span aria-hidden className="absolute bottom-4 left-[11px] top-4 w-px bg-gradient-to-b from-foreground/15 via-foreground/8 to-transparent" />
+              <span aria-hidden className="absolute bottom-4 left-[11px] top-4 w-px bg-gradient-to-b from-white/15 via-white/8 to-transparent" />
               {steps.map((s, i) => (
                 <motion.li
                   key={s.title}
@@ -131,12 +131,12 @@ export function AgentPromptModal({ planId, onClose }: { planId: string; onClose:
                   transition={{ delay: 0.08 + i * 0.07, duration: 0.25 }}
                   className="relative flex items-start gap-3"
                 >
-                  <span className="z-10 grid size-6 shrink-0 place-items-center rounded-full border border-primary/25 bg-background font-mono text-[10px] font-bold text-primary">
+                  <span className="z-10 grid size-6 shrink-0 place-items-center rounded-full border border-[#74FA6A]/25 bg-[#12151A] font-mono text-[10px] font-bold text-[#74FA6A]">
                     {i + 1}
                   </span>
                   <span className="min-w-0 pt-0.5">
-                    <span className="block text-[13.5px] font-medium leading-tight text-foreground">{ui(s.title)}</span>
-                    <span className="mt-0.5 block text-[12px] leading-5 text-muted-foreground">{ui(s.desc)}</span>
+                    <span className="block text-[13.5px] font-medium leading-tight text-white/85">{ui(s.title)}</span>
+                    <span className="mt-0.5 block text-[12px] leading-5 text-slate-500">{ui(s.desc)}</span>
                   </span>
                 </motion.li>
               ))}
@@ -145,15 +145,15 @@ export function AgentPromptModal({ planId, onClose }: { planId: string; onClose:
 
           {/* Prompt block */}
           <div className="p-5 pt-4">
-            <div className="overflow-hidden rounded-xl border border-border bg-background">
-              <div className="flex items-center justify-between border-b border-border px-3 py-2">
-                <span className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[.14em] text-muted-foreground">
-                  <span className="size-1 rounded-full bg-primary/70" /> agent-prompt
+            <div className="overflow-hidden rounded-xl border border-white/[.07] bg-[#0A0C0E]">
+              <div className="flex items-center justify-between border-b border-white/[.06] px-3 py-2">
+                <span className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[.14em] text-white/25">
+                  <span className="size-1 rounded-full bg-[#74FA6A]/70" /> agent-prompt
                 </span>
                 <button
                   onClick={copyPrompt}
                   disabled={!token}
-                  className="flex items-center gap-1.5 rounded-md border border-border bg-foreground/[.03] px-2.5 py-1 text-[11.5px] font-medium text-muted-foreground transition hover:border-primary/40 hover:text-primary active:scale-[.98] disabled:cursor-not-allowed disabled:opacity-40"
+                  className="flex items-center gap-1.5 rounded-md border border-white/[.08] bg-white/[.03] px-2.5 py-1 text-[11.5px] font-medium text-slate-300 transition hover:border-[#74FA6A]/40 hover:text-[#74FA6A] active:scale-[.98] disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   {copied ? <Check size={12} /> : <Copy size={12} />}
                   {loading ? ui("Menyiapkan...") : copied ? ui("Copied") : ui("Copy prompt")}
@@ -162,15 +162,15 @@ export function AgentPromptModal({ planId, onClose }: { planId: string; onClose:
               {loading ? (
                 <div className="space-y-1.5 p-3.5">
                   {[80, 62, 71, 45].map((w, i) => (
-                    <div key={i} className="h-2 animate-pulse rounded bg-foreground/[.05]" style={{ width: `${w}%` }} />
+                    <div key={i} className="h-2 animate-pulse rounded bg-white/[.05]" style={{ width: `${w}%` }} />
                   ))}
                 </div>
               ) : token ? (
-                <pre className="max-h-44 overflow-auto whitespace-pre-wrap p-3.5 font-mono text-[11.5px] leading-[1.7] text-muted-foreground">
+                <pre className="max-h-44 overflow-auto whitespace-pre-wrap p-3.5 font-mono text-[11.5px] leading-[1.7] text-slate-400">
                   {tokenError ? tokenError : prompt}
                 </pre>
               ) : (
-                <p className="p-3.5 text-[12.5px] text-destructive">{ui("Token tidak tersedia. Coba lagi.")}</p>
+                <p className="p-3.5 text-[12.5px] text-red-400/80">{ui("Token tidak tersedia. Coba lagi.")}</p>
               )}
             </div>
 
@@ -180,7 +180,7 @@ export function AgentPromptModal({ planId, onClose }: { planId: string; onClose:
                 onClick={tier === "pro" ? downloadMd : undefined}
                 disabled={tier !== "pro"}
                 title={tier !== "pro" ? ui("Export PRD hanya untuk paket Pro") : undefined}
-                className="flex items-center justify-center gap-1.5 rounded-lg border border-border bg-foreground/[.02] px-3 py-2 text-[12.5px] text-muted-foreground transition hover:border-border hover:text-foreground active:scale-[.99] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-border disabled:hover:text-muted-foreground"
+                className="flex items-center justify-center gap-1.5 rounded-lg border border-white/[.08] bg-white/[.02] px-3 py-2 text-[12.5px] text-slate-400 transition hover:border-white/20 hover:text-white active:scale-[.99] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-white/[.08] disabled:hover:text-slate-400"
               >
                 <FileText size={13} /> {tier === "pro" ? "File PRD" : "File PRD (Pro)"}
               </button>
@@ -188,16 +188,16 @@ export function AgentPromptModal({ planId, onClose }: { planId: string; onClose:
                 onClick={tier === "pro" ? downloadZip : undefined}
                 disabled={tier !== "pro"}
                 title={tier !== "pro" ? ui("Export ZIP hanya untuk paket Pro") : undefined}
-                className="flex items-center justify-center gap-1.5 rounded-lg border border-border bg-foreground/[.02] px-3 py-2 text-[12.5px] text-muted-foreground transition hover:border-border hover:text-foreground active:scale-[.99] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-border disabled:hover:text-muted-foreground"
+                className="flex items-center justify-center gap-1.5 rounded-lg border border-white/[.08] bg-white/[.02] px-3 py-2 text-[12.5px] text-slate-400 transition hover:border-white/20 hover:text-white active:scale-[.99] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-white/[.08] disabled:hover:text-slate-400"
               >
                 <Package size={13} /> {tier === "pro" ? "ZIP" : "ZIP (Pro)"}
               </button>
             </div>
             {tier !== "pro" && (
-              <p className="mt-2 text-center text-[11px] leading-4 text-muted-foreground">{ui("Export PRD terkunci untuk paket Free.")}<Link href="/pricing" className="text-primary/80 underline-offset-2 hover:underline">Upgrade ke Pro</Link>{ui("untuk membukanya.")}</p>
+              <p className="mt-2 text-center text-[11px] leading-4 text-slate-600">{ui("Export PRD terkunci untuk paket Free.")}<Link href="/pricing" className="text-[#74FA6A]/80 underline-offset-2 hover:underline">Upgrade ke Pro</Link>{ui("untuk membukanya.")}</p>
             )}
 
-            <p className="mt-3 text-center text-[10.5px] leading-4 text-muted-foreground">{ui("Prompt mengandung token pribadi. Paste hanya ke agent yang kamu percaya.")}</p>
+            <p className="mt-3 text-center text-[10.5px] leading-4 text-slate-600">{ui("Prompt mengandung token pribadi. Paste hanya ke agent yang kamu percaya.")}</p>
           </div>
         </motion.div>
       </motion.div>

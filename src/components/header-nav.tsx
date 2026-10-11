@@ -31,9 +31,9 @@ export function HeaderNav({
   const resolvedKey: CtaKey = ctaKey ?? (loggedIn ? "createPlan" : "login");
 
   return (
-    <div className="flex flex-wrap items-center gap-x-5 gap-y-2 font-mono text-[12px] text-foreground">
+    <div className="flex flex-wrap items-center gap-x-5 gap-y-2 font-mono text-[12px] text-white/60">
       {links.map((key) => (
-        <Link key={key} href={`/${key}`} className="transition-colors hover:text-primary">
+        <Link key={key} href={`/${key}`} className="transition-colors hover:text-[#74FA6A]">
           {t("nav", key, lang)}
         </Link>
       ))}
@@ -41,7 +41,7 @@ export function HeaderNav({
         href={API_KEY_STORE_URL}
         target="_blank"
         rel="noopener noreferrer"
-        className="flex items-center gap-1.5 text-primary transition-colors hover:text-primary"
+        className="flex items-center gap-1.5 text-[#74FA6A] transition-colors hover:text-[#A8FF9B]"
       >
         <KeyRound size={13} strokeWidth={2.2} aria-hidden="true" />
         Api Key
@@ -50,7 +50,7 @@ export function HeaderNav({
       <LanguageToggle />
       <Link
         href={resolvedHref}
-        className="rounded-full bg-primary px-3.5 py-1.5 font-semibold text-primary-foreground transition hover:bg-primary"
+        className="rounded-full bg-[#74FA6A] px-3.5 py-1.5 font-semibold text-black transition hover:bg-[#A8FF9B]"
       >
         {t("cta", resolvedKey, lang)}
       </Link>

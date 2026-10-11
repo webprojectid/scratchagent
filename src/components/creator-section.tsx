@@ -16,9 +16,9 @@ const CREATOR = {
 function ScratchMark({ className = "" }: { className?: string }) {
   return (
     <svg viewBox="0 0 32 28" fill="none" className={className} aria-hidden="true">
-      <path d="M6 9h9l-6 13H0z" fill="var(--theme-accent)" />
-      <path d="M16 4h9l-6 13h-9z" fill="var(--theme-accent)" />
-      <path d="M23 9h9l-6 13h-9z" fill="var(--theme-accent)" />
+      <path d="M6 9h9l-6 13H0z" fill="#74FA6A" />
+      <path d="M16 4h9l-6 13h-9z" fill="#9AFF82" />
+      <path d="M23 9h9l-6 13h-9z" fill="#4DDC62" />
     </svg>
   );
 }
@@ -98,8 +98,8 @@ export function CreatorSection() {
         <div className={styles.topRow}>
           <div className={styles.profileStage}>
             <svg viewBox="0 0 456 318" fill="none" preserveAspectRatio="xMidYMid slice" className={styles.ribbon} aria-hidden="true">
-              <path d="M330-70C400 117 253 236-70 257" stroke="var(--theme-accent)" strokeWidth="56" />
-              <path d="M330-70C400 117 253 236-70 257" stroke="var(--theme-muted)" strokeOpacity=".3" strokeDasharray="4 4" />
+              <path d="M330-70C400 117 253 236-70 257" stroke="#3F8250" strokeWidth="56" />
+              <path d="M330-70C400 117 253 236-70 257" stroke="#B6DAB4" strokeOpacity=".3" strokeDasharray="4 4" />
             </svg>
             <div className={styles.profile}>
               <div className={styles.profileHeader}>

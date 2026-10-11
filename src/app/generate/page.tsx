@@ -140,32 +140,32 @@ export default function Generate() {
         <p className="eyebrow">{error ? ui("Misi gagal") : ui("Agent sedang menyusun strategi")}</p>
         {error ? (
           <div className="mt-8">
-            <p className="text-destructive">{error}</p>
+            <p className="text-red-400">{error}</p>
             <button className="btn secondary mt-6" onClick={() => router.push("/new")}>{ui("Kembali")}</button>
           </div>
         ) : (
           <>
-            <div className="mt-6 flex items-center justify-between text-sm text-muted-foreground">
+            <div className="mt-6 flex items-center justify-between text-sm text-slate-400">
               <span>{pct}%</span>
               <span className="font-mono text-xs">{elapsed}s</span>
             </div>
 
-            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-foreground/10">
+            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10">
               <motion.div
                 animate={{ width: `${pct}%` }}
                 transition={{ ease: "easeOut", duration: 0.4 }}
-                className="relative h-full bg-primary"
+                className="relative h-full bg-[#74FA6A]"
               >
                 <motion.div
                   animate={{ x: ["-100%", "200%"] }}
                   transition={{ repeat: Infinity, duration: 1.2, ease: "easeInOut" }}
-                  className="absolute inset-0 w-1/3 bg-gradient-to-r from-transparent via-foreground/60 to-transparent"
+                  className="absolute inset-0 w-1/3 bg-gradient-to-r from-transparent via-white/60 to-transparent"
                 />
               </motion.div>
             </div>
 
-            <div className="mt-5 flex items-center gap-3 text-sm text-muted-foreground">
-              <Loader2 className="size-4 animate-spin text-primary" />
+            <div className="mt-5 flex items-center gap-3 text-sm text-slate-300">
+              <Loader2 className="size-4 animate-spin text-[#74FA6A]" />
               <motion.span key={currentStage} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}>
                 {stages[currentStage].desc}
               </motion.span>
@@ -180,7 +180,7 @@ export default function Generate() {
               />
             </div>
 
-            <p className="mt-8 text-center text-xs text-muted-foreground">
+            <p className="mt-8 text-center text-xs text-slate-500">
               {elapsed > 60 ? ui("Masih bekerja. LLM sedang menyusun struktur kompleks, sabar ya.") : elapsed > 30 ? ui("Hampir selesai...") : ui("Biasanya 20 sampai 60 detik. Task akan menyusul di halaman plan.")}
             </p>
           </>
