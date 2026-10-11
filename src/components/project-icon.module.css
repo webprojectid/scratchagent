@@ -1,3 +1,3 @@
 .tile{display:inline-grid;place-items:center;flex:none;width:36px;height:36px;border:1px solid var(--icon-border);border-radius:10px;color:var(--icon-ink);background:var(--icon-surface);vertical-align:middle}
 .tile svg{flex:none}
-.green{--icon-ink:var(--style-soft,#a5ef7d);--icon-surface:var(--style-tint,#23312a);--icon-border:color-mix(in srgb,var(--style-accent,#a5ef7d) 35%,#25302c)}
+.green{--icon-ink:var(--style-soft,var(--theme-accent));--icon-surface:var(--style-tint,var(--theme-surface));--icon-border:color-mix(in srgb,var(--style-accent,var(--theme-accent)) 35%,var(--theme-border))}

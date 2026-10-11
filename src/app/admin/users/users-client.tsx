@@ -74,12 +74,12 @@ function TierChip({ tier }: { tier: string }) {
   useUiLanguage();
   if (tier === "pro") {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-[#74FA6A] px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-[.12em] text-black">
+      <span className="inline-flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-[.12em] text-primary-foreground">
         <Crown size={11} /> Pro
       </span>
     );
   }
-  return <span className="inline-flex rounded-full border border-white/12 bg-white/[.05] px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-[.12em] text-white/45">free</span>;
+  return <span className="inline-flex rounded-full border border-border bg-foreground/[.05] px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-[.12em] text-muted-foreground">free</span>;
 }
 
 const DEMO_ACCOUNTS: AccountRow[] = [
@@ -303,34 +303,34 @@ export default function AdminUsersPage({ preview = false, embedded = false }: { 
         {/* Pencarian */}
         <form onSubmit={onSearch} className="mt-6 flex gap-2.5">
           <div className="relative flex-1">
-            <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-white/30" />
+            <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
               aria-label={ui("Cari pengguna")} placeholder={ui("Cari berdasarkan email atau nama")}
-              className="w-full rounded-[12px] border border-white/10 bg-[#101417] py-2.5 pl-10 pr-4 text-[13px] text-white placeholder:text-white/25 focus:border-[#74FA6A]/50 focus:outline-none"
+              className="w-full rounded-[12px] border border-border bg-background py-2.5 pl-10 pr-4 text-[13px] text-foreground placeholder:text-muted-foreground focus:border-primary/50 focus:outline-none"
             />
           </div>
-          <button type="submit" className="inline-flex items-center gap-1.5 rounded-[12px] bg-[#74FA6A] px-5 text-[13px] font-semibold text-black transition hover:bg-[#A8FF9B] active:scale-[.985]">{ui("Cari")}</button>
-          <button type="button" onClick={() => { setQ(""); setFilter("all"); setSelected(null); void loadAccounts("").catch(() => setToast({text:ui("Gagal memuat akun."),ok:false})); }} className="border border-white/15 px-3 text-xs">{ui("Reset")}</button>
+          <button type="submit" className="inline-flex items-center gap-1.5 rounded-[12px] bg-primary px-5 text-[13px] font-semibold text-primary-foreground transition hover:bg-primary active:scale-[.985]">{ui("Cari")}</button>
+          <button type="button" onClick={() => { setQ(""); setFilter("all"); setSelected(null); void loadAccounts("").catch(() => setToast({text:ui("Gagal memuat akun."),ok:false})); }} className="border border-border px-3 text-xs">{ui("Reset")}</button>
         </form>
 
         {/* Card konfirmasi durasi Pro: terbuka saat admin menekan Berikan Pro */}
         {grantTarget && (
-          <section className="mt-4 rounded-[16px] border border-[#74FA6A]/35 bg-[#101417] p-5">
+          <section className="mt-4 rounded-[16px] border border-primary/35 bg-background p-5">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-3">
-                <div className="grid size-10 place-items-center rounded-[12px] border border-[#74FA6A]/30 bg-[#74FA6A]/[.08] text-[#74FA6A]">
+                <div className="grid size-10 place-items-center rounded-[12px] border border-primary/30 bg-primary/[.08] text-primary">
                   <Sparkles size={17} />
                 </div>
                 <div>
-                  <p className="text-[14.5px] font-semibold text-white">{ui("Berikan akses Pro")}</p>
-                  <p className="mt-0.5 text-[12px] text-[#8C97A5]">{grantTarget.name || grantTarget.email} · {grantTarget.email}</p>
+                  <p className="text-[14.5px] font-semibold text-foreground">{ui("Berikan akses Pro")}</p>
+                  <p className="mt-0.5 text-[12px] text-muted-foreground">{grantTarget.name || grantTarget.email} · {grantTarget.email}</p>
                 </div>
               </div>
-              <button onClick={() => setGrantTarget(null)} className="rounded-full border border-white/10 px-3 py-1.5 text-[11.5px] text-white/50 transition hover:text-white">{ui("Batal")}</button>
+              <button onClick={() => setGrantTarget(null)} className="rounded-full border border-border px-3 py-1.5 text-[11.5px] text-muted-foreground transition hover:text-foreground">{ui("Batal")}</button>
             </div>
-            <p className="mt-4 font-mono text-[10px] font-bold uppercase tracking-[.16em] text-white/35">{ui("pilih masa aktif")}</p>
+            <p className="mt-4 font-mono text-[10px] font-bold uppercase tracking-[.16em] text-muted-foreground">{ui("pilih masa aktif")}</p>
             <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-5">
               {PRO_DURATIONS.map((d) => (
                 <button
@@ -339,12 +339,12 @@ export default function AdminUsersPage({ preview = false, embedded = false }: { 
                   onClick={() => setGrantDays(d.days)}
                   className={`rounded-[12px] border px-3 py-2.5 text-left transition ${
                     grantDays === d.days
-                      ? "border-[#74FA6A] bg-[#74FA6A]/[.12]"
-                      : "border-white/12 hover:border-white/25"
+                      ? "border-primary bg-primary/[.12]"
+                      : "border-border hover:border-border"
                   }`}
                 >
-                  <span className={`block text-[13px] font-semibold ${grantDays === d.days ? "text-[#74FA6A]" : "text-white"}`}>{ui(d.label)}</span>
-                  <span className="mt-0.5 block font-mono text-[10px] tabular-nums text-white/35">{ui("{0} hari", d.days)}</span>
+                  <span className={`block text-[13px] font-semibold ${grantDays === d.days ? "text-primary" : "text-foreground"}`}>{ui(d.label)}</span>
+                  <span className="mt-0.5 block font-mono text-[10px] tabular-nums text-muted-foreground">{ui("{0} hari", d.days)}</span>
                 </button>
               ))}
             </div>
@@ -352,17 +352,17 @@ export default function AdminUsersPage({ preview = false, embedded = false }: { 
               <button
                 onClick={confirmGrant}
                 disabled={busy !== null}
-                className="inline-flex items-center gap-1.5 rounded-full bg-[#74FA6A] px-5 py-2.5 text-[13px] font-semibold text-black transition hover:bg-[#A8FF9B] active:scale-[.985] disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 rounded-full bg-primary px-5 py-2.5 text-[13px] font-semibold text-primary-foreground transition hover:bg-primary active:scale-[.985] disabled:opacity-50"
               >
                 <Check size={14} /> {busy === `${grantTarget.id}:grant-pro` ? ui("Memproses…") : `Confirm · ${durationLabel(grantDays)}`}
               </button>
-              <p className="font-mono text-[10.5px] tabular-nums text-white/30">{grantDays}{ui("hari sejak sekarang")}</p>
+              <p className="font-mono text-[10.5px] tabular-nums text-muted-foreground">{grantDays}{ui("hari sejak sekarang")}</p>
             </div>
           </section>
         )}
 
         {toast && (
-          <div role="status" className={`mt-4 rounded-[12px] border px-4 py-3 text-[12.5px] ${toast.ok ? "border-[#74FA6A]/30 bg-[#74FA6A]/[.08] text-[#74FA6A]" : "border-red-500/30 bg-red-500/[.08] text-red-400"}`}>
+          <div role="status" className={`mt-4 rounded-[12px] border px-4 py-3 text-[12.5px] ${toast.ok ? "border-primary/30 bg-primary/[.08] text-primary" : "border-destructive0/30 bg-destructive0/[.08] text-destructive"}`}>
             {toast.text}
           </div>
         )}
@@ -372,104 +372,104 @@ export default function AdminUsersPage({ preview = false, embedded = false }: { 
         </div>
         {/* Detail akun terpilih */}
         {loadingDetail && (
-          <div className="mt-6 rounded-[16px] border border-white/[.08] bg-[#101417] p-6 text-[13px] text-white/40">{ui("Memuat detail akun…")}</div>
+          <div className="mt-6 rounded-[16px] border border-border bg-background p-6 text-[13px] text-muted-foreground">{ui("Memuat detail akun…")}</div>
         )}
         {!loadingDetail && selected && (
-          <section className="mt-6 rounded-[16px] border border-[#74FA6A]/25 bg-[#101417] p-6">
+          <section className="mt-6 rounded-[16px] border border-primary/25 bg-background p-6">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="truncate text-[17px] font-semibold text-white">{formatDisplayName(selected.email, selected.name)}</h2>
+                  <h2 className="truncate text-[17px] font-semibold text-foreground">{formatDisplayName(selected.email, selected.name)}</h2>
                   <TierChip tier={selected.tier} />
                   {selected.bannedAt && (
-                    <span className="inline-flex items-center gap-1 rounded-full border border-red-500/30 bg-red-500/[.08] px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-[.12em] text-red-400">
+                    <span className="inline-flex items-center gap-1 rounded-full border border-destructive0/30 bg-destructive0/[.08] px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-[.12em] text-destructive">
                       <Ban size={10} /> banned
                     </span>
                   )}
                 </div>
-                <p className="mt-1 text-[12.5px] text-[#8C97A5]">{selected.email}</p>
-                <p className="mt-0.5 font-mono text-[10.5px] text-white/30">{ui("Joined {0}", fmtDate(selected.createdAt))}</p>
+                <p className="mt-1 text-[12.5px] text-muted-foreground">{selected.email}</p>
+                <p className="mt-0.5 font-mono text-[10.5px] text-muted-foreground">{ui("Joined {0}", fmtDate(selected.createdAt))}</p>
                 {selected.proActive && (
-                  <p className="mt-0.5 font-mono text-[10.5px] tabular-nums text-sky-300/80">
+                  <p className="mt-0.5 font-mono text-[10.5px] tabular-nums text-primary">
                     {ui("Pro valid until {0}", selected.proExpiresAt ? fmtDate(selected.proExpiresAt) : ui("tidak terbatas"))}
                   </p>
                 )}
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 {!selected.proActive && !selected.bannedAt && (
-                  <button onClick={() => openGrantConfirm({ id: selected.id, email: selected.email, name: selected.name })} disabled={busy !== null} className="inline-flex items-center gap-1.5 rounded-full bg-[#74FA6A] px-4 py-2 text-[12.5px] font-semibold text-black transition hover:bg-[#A8FF9B] active:scale-[.985] disabled:opacity-50">
+                  <button onClick={() => openGrantConfirm({ id: selected.id, email: selected.email, name: selected.name })} disabled={busy !== null} className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-[12.5px] font-semibold text-primary-foreground transition hover:bg-primary active:scale-[.985] disabled:opacity-50">
                     <Sparkles size={13} />{ui("Berikan akses Pro")}</button>
                 )}
                 {selected.proActive && (
-                  <button onClick={() => runAction("end-pro")} disabled={busy !== null} className="inline-flex items-center gap-1.5 rounded-full border border-white/15 px-4 py-2 text-[12.5px] font-medium text-white/80 transition hover:border-amber-400/50 hover:text-amber-300 disabled:opacity-50">
+                  <button onClick={() => runAction("end-pro")} disabled={busy !== null} className="inline-flex items-center gap-1.5 rounded-full border border-border px-4 py-2 text-[12.5px] font-medium text-foreground transition hover:border-primary hover:text-primary disabled:opacity-50">
                     <CircleOff size={13} /> {busy === "end-pro" ? ui("Memproses…") : ui("Akhiri Pro")}
                   </button>
                 )}
                 {!selected.bannedAt ? (
-                  <button onClick={() => runAction("ban")} disabled={busy !== null} className="inline-flex items-center gap-1.5 rounded-full border border-red-500/30 px-4 py-2 text-[12.5px] font-medium text-red-400 transition hover:border-red-500/60 hover:bg-red-500/[.06] disabled:opacity-50">
+                  <button onClick={() => runAction("ban")} disabled={busy !== null} className="inline-flex items-center gap-1.5 rounded-full border border-destructive0/30 px-4 py-2 text-[12.5px] font-medium text-destructive transition hover:border-destructive0/60 hover:bg-destructive0/[.06] disabled:opacity-50">
                     <Ban size={13} /> {busy === "ban" ? ui("Memproses…") : ui("Blokir akun")}
                   </button>
                 ) : (
-                  <button onClick={() => runAction("unban")} disabled={busy !== null} className="inline-flex items-center gap-1.5 rounded-full border border-[#74FA6A]/30 px-4 py-2 text-[12.5px] font-medium text-[#74FA6A] transition hover:bg-[#74FA6A]/[.08] disabled:opacity-50">
+                  <button onClick={() => runAction("unban")} disabled={busy !== null} className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 px-4 py-2 text-[12.5px] font-medium text-primary transition hover:bg-primary/[.08] disabled:opacity-50">
                     <Undo2 size={13} /> {busy === "unban" ? ui("Memproses…") : ui("Buka blokir")}
                   </button>
                 )}
-                <button onClick={() => setSelected(null)} className="inline-flex items-center rounded-full border border-white/10 px-3 py-2 text-[12px] text-white/50 transition hover:text-white">{ui("Tutup")}</button>
+                <button onClick={() => setSelected(null)} className="inline-flex items-center rounded-full border border-border px-3 py-2 text-[12px] text-muted-foreground transition hover:text-foreground">{ui("Tutup")}</button>
               </div>
             </div>
 
             {/* Ringkasan angka */}
-            <div className="mt-5 grid grid-cols-2 gap-px overflow-hidden rounded-[12px] border border-white/[.08] bg-white/[.06] md:grid-cols-4">
-              <div className="bg-[#0C0E10] px-4 py-3.5">
-                <p className="font-mono text-[20px] font-semibold tabular-nums text-white">{selected.planCount}</p>
-                <p className="mt-1.5 font-mono text-[9.5px] uppercase tracking-[.14em] text-white/35">{ui("plan dibuat")}</p>
+            <div className="mt-5 grid grid-cols-2 gap-px overflow-hidden rounded-[12px] border border-border bg-foreground/[.06] md:grid-cols-4">
+              <div className="bg-background px-4 py-3.5">
+                <p className="font-mono text-[20px] font-semibold tabular-nums text-foreground">{selected.planCount}</p>
+                <p className="mt-1.5 font-mono text-[9.5px] uppercase tracking-[.14em] text-muted-foreground">{ui("plan dibuat")}</p>
               </div>
-              <div className="bg-[#0C0E10] px-4 py-3.5">
-                <p className="font-mono text-[20px] font-semibold tabular-nums text-sky-300">{selected.proGenerateCount}</p>
-                <p className="mt-1.5 font-mono text-[9.5px] uppercase tracking-[.14em] text-white/35">{ui("generate saat pro")}</p>
+              <div className="bg-background px-4 py-3.5">
+                <p className="font-mono text-[20px] font-semibold tabular-nums text-primary">{selected.proGenerateCount}</p>
+                <p className="mt-1.5 font-mono text-[9.5px] uppercase tracking-[.14em] text-muted-foreground">{ui("generate saat pro")}</p>
               </div>
-              <div className="bg-[#0C0E10] px-4 py-3.5">
-                <p className="font-mono text-[20px] font-semibold tabular-nums text-[#74FA6A]">{selected.freeGenerate24h}<span className="text-[13px] text-white/30"> / {selected.freeLimit}</span></p>
-                <p className="mt-1.5 font-mono text-[9.5px] uppercase tracking-[.14em] text-white/35">jatah free 24 jam</p>
+              <div className="bg-background px-4 py-3.5">
+                <p className="font-mono text-[20px] font-semibold tabular-nums text-primary">{selected.freeGenerate24h}<span className="text-[13px] text-muted-foreground"> / {selected.freeLimit}</span></p>
+                <p className="mt-1.5 font-mono text-[9.5px] uppercase tracking-[.14em] text-muted-foreground">jatah free 24 jam</p>
               </div>
-              <div className="bg-[#0C0E10] px-4 py-3.5">
-                <p className={`font-mono text-[20px] font-semibold ${selected.proActive ? "text-[#74FA6A]" : "text-white/40"}`}>{selected.proActive ? "aktif" : "tidak"}</p>
-                <p className="mt-1.5 font-mono text-[9.5px] uppercase tracking-[.14em] text-white/35">status pro</p>
+              <div className="bg-background px-4 py-3.5">
+                <p className={`font-mono text-[20px] font-semibold ${selected.proActive ? "text-primary" : "text-muted-foreground"}`}>{selected.proActive ? "aktif" : "tidak"}</p>
+                <p className="mt-1.5 font-mono text-[9.5px] uppercase tracking-[.14em] text-muted-foreground">status pro</p>
               </div>
             </div>
 
             {/* Catatan langganan */}
             <div className="mt-5 grid gap-4 md:grid-cols-2">
-              <div className="rounded-[12px] border border-white/[.06] bg-[#0C0E10] p-4">
-                <p className="font-mono text-[10px] font-bold uppercase tracking-[.16em] text-white/35">catatan langganan</p>
+              <div className="rounded-[12px] border border-border bg-background p-4">
+                <p className="font-mono text-[10px] font-bold uppercase tracking-[.16em] text-muted-foreground">catatan langganan</p>
                 <div className="mt-3 space-y-2 text-[12.5px]">
                   <p className="flex items-center justify-between gap-3">
-                    <span className="text-[#8C97A5]">Pertama kali subscribe Pro</span>
-                    <span className="font-mono tabular-nums text-white">{fmtDate(selected.firstProAt)}</span>
+                    <span className="text-muted-foreground">Pertama kali subscribe Pro</span>
+                    <span className="font-mono tabular-nums text-foreground">{fmtDate(selected.firstProAt)}</span>
                   </p>
                   <p className="flex items-center justify-between gap-3">
-                    <span className="text-[#8C97A5]">Pro berakhir terakhir</span>
-                    <span className="font-mono tabular-nums text-white">{selected.lastProEnd ? fmtDate(selected.lastProEnd) : selected.proActive ? "masih aktif" : ui("belum pernah")}</span>
+                    <span className="text-muted-foreground">Pro berakhir terakhir</span>
+                    <span className="font-mono tabular-nums text-foreground">{selected.lastProEnd ? fmtDate(selected.lastProEnd) : selected.proActive ? "masih aktif" : ui("belum pernah")}</span>
                   </p>
                 </div>
               </div>
-              <div className="rounded-[12px] border border-white/[.06] bg-[#0C0E10] p-4">
-                <p className="font-mono text-[10px] font-bold uppercase tracking-[.16em] text-white/35">riwayat periode pro</p>
+              <div className="rounded-[12px] border border-border bg-background p-4">
+                <p className="font-mono text-[10px] font-bold uppercase tracking-[.16em] text-muted-foreground">riwayat periode pro</p>
                 {selected.subscriptions.length === 0 ? (
-                  <p className="mt-3 text-[12.5px] text-white/40">{ui("Akun ini belum pernah berlangganan Pro.")}</p>
+                  <p className="mt-3 text-[12.5px] text-muted-foreground">{ui("Akun ini belum pernah berlangganan Pro.")}</p>
                 ) : (
                   <ul className="mt-3 space-y-2">
                     {selected.subscriptions.map((s, i) => (
                       <li key={s.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px]">
-                        <span className="font-mono text-white/40">#{selected.subscriptions.length - i}</span>
-                        <span className="font-mono tabular-nums text-white/80">{fmtDate(s.startedAt)}</span>
-                        <span className="text-white/25">sampai</span>
-                        <span className="text-right font-mono tabular-nums text-white/80">{s.endedAt ? fmtDate(s.endedAt) : "aktif"}</span>
+                        <span className="font-mono text-muted-foreground">#{selected.subscriptions.length - i}</span>
+                        <span className="font-mono tabular-nums text-foreground">{fmtDate(s.startedAt)}</span>
+                        <span className="text-muted-foreground">sampai</span>
+                        <span className="text-right font-mono tabular-nums text-foreground">{s.endedAt ? fmtDate(s.endedAt) : "aktif"}</span>
                         {!s.endedAt && s.expiresAt && (
-                          <span className="rounded-full border border-sky-400/25 bg-sky-400/[.07] px-2 py-0.5 font-mono text-[10px] tabular-nums text-sky-300">kedaluwarsa {fmtDate(s.expiresAt)}</span>
+                          <span className="rounded-full border border-primary bg-primary/[.07] px-2 py-0.5 font-mono text-[10px] tabular-nums text-primary">kedaluwarsa {fmtDate(s.expiresAt)}</span>
                         )}
                         {s.endedAt && !s.expiresAt && s.endedBy && (
-                          <span className="rounded-full border border-white/10 px-2 py-0.5 font-mono text-[10px] text-white/40">{ui("ditarik admin")}</span>
+                          <span className="rounded-full border border-border px-2 py-0.5 font-mono text-[10px] text-muted-foreground">{ui("ditarik admin")}</span>
                         )}
                       </li>
                     ))}
@@ -481,23 +481,23 @@ export default function AdminUsersPage({ preview = false, embedded = false }: { 
         )}
 
         {/* Tabel akun */}
-        <section className="mt-6 overflow-hidden rounded-[16px] border border-white/[.08] bg-[#101417]">
-          <div className="flex items-center justify-between border-b border-white/[.06] px-5 py-4">
-            <p className="font-mono text-[10px] font-bold uppercase tracking-[.18em] text-white/35">{ui("semua akun")}</p>
+        <section className="mt-6 overflow-hidden rounded-[16px] border border-border bg-background">
+          <div className="flex items-center justify-between border-b border-border px-5 py-4">
+            <p className="font-mono text-[10px] font-bold uppercase tracking-[.18em] text-muted-foreground">{ui("semua akun")}</p>
             <div className="flex items-center gap-3">
-              {accounts !== null && <span className="font-mono text-[11px] tabular-nums text-white/40">{visibleAccounts.length}{ui("akun ditampilkan")}</span>}
+              {accounts !== null && <span className="font-mono text-[11px] tabular-nums text-muted-foreground">{visibleAccounts.length}{ui("akun ditampilkan")}</span>}
               <button
                 onClick={() => loadAccounts(q).catch(() => setToast({ text: "Gagal me-refresh", ok: false }))}
-                className="inline-flex items-center gap-1.5 rounded-full border border-white/10 px-3 py-1.5 text-[11.5px] text-white/60 transition hover:border-[#74FA6A]/40 hover:text-[#74FA6A]"
+                className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-[11.5px] text-foreground transition hover:border-primary/40 hover:text-primary"
               >
                 <RefreshCw size={12} /> Refresh
               </button>
             </div>
           </div>
 
-          {accounts === null && <p className="px-5 py-8 text-[13px] text-white/40">{ui("Memuat akun…")}</p>}
+          {accounts === null && <p className="px-5 py-8 text-[13px] text-muted-foreground">{ui("Memuat akun…")}</p>}
           {accounts !== null && visibleAccounts.length === 0 && (
-            <p className="px-5 py-8 text-[13px] text-white/40">{ui("Tidak ada akun yang cocok dengan pencarian ini.")}</p>
+            <p className="px-5 py-8 text-[13px] text-muted-foreground">{ui("Tidak ada akun yang cocok dengan pencarian ini.")}</p>
           )}
           {accounts !== null && visibleAccounts.length > 0 && (
             <ul className="divide-y divide-white/[.05]">
@@ -508,24 +508,24 @@ export default function AdminUsersPage({ preview = false, embedded = false }: { 
                   <li key={a.id} className={adminStyles.userRow}>
                     <button onClick={() => openDetail(a.id)} className="flex min-w-0 flex-1 items-center gap-4 text-left">
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-[13.5px] font-medium text-white">{a.email}</p>
-                        <p className="mt-0.5 truncate font-mono text-[10.5px] text-white/30">
+                        <p className="truncate text-[13.5px] font-medium text-foreground">{a.email}</p>
+                        <p className="mt-0.5 truncate font-mono text-[10.5px] text-muted-foreground">
                           {a.name || ui("tanpa nama")} · {ui("Joined {0}", fmtDate(a.createdAt))}
                         </p>
                       </div>
                       <TierChip tier={a.tier} />
                       {a.proActive && (
-                        <span className="hidden rounded-full border border-sky-400/30 bg-sky-400/[.08] px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-[.12em] tabular-nums text-sky-300 sm:inline-flex">
+                        <span className="hidden rounded-full border border-primary bg-primary/[.08] px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-[.12em] tabular-nums text-primary sm:inline-flex">
                           {a.proExpiresAt ? ui("Pro valid until {0}", fmtDate(a.proExpiresAt)) : ui("subs aktif")}
                         </span>
                       )}
                       {a.bannedAt && (
-                        <span className="inline-flex items-center gap-1 rounded-full border border-red-500/30 bg-red-500/[.08] px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-[.12em] text-red-400">
+                        <span className="inline-flex items-center gap-1 rounded-full border border-destructive0/30 bg-destructive0/[.08] px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-[.12em] text-destructive">
                           <Ban size={10} /> banned
                         </span>
                       )}
                       {a.isAdmin && (
-                        <span className="inline-flex items-center gap-1 rounded-full border border-[#74FA6A]/30 bg-[#74FA6A]/[.08] px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-[.12em] text-[#74FA6A]">admin</span>
+                        <span className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/[.08] px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-[.12em] text-primary">admin</span>
                       )}
                     </button>
                     {!a.isAdmin && !a.bannedAt && (
@@ -534,7 +534,7 @@ export default function AdminUsersPage({ preview = false, embedded = false }: { 
                           <button
                             onClick={() => quickAction(a.id, "end-pro")}
                             disabled={busy !== null}
-                            className="inline-flex items-center gap-1.5 rounded-full border border-white/15 px-3 py-1.5 text-[11.5px] font-medium text-white/70 transition hover:border-amber-400/50 hover:text-amber-300 disabled:opacity-50"
+                            className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-[11.5px] font-medium text-foreground transition hover:border-primary hover:text-primary disabled:opacity-50"
                             title={ui("Tarik akses Pro, akun kembali ke Free")}
                           >
                             <CircleOff size={12} /> {busy === endKey ? "…" : ui("Tarik Pro")}
@@ -543,7 +543,7 @@ export default function AdminUsersPage({ preview = false, embedded = false }: { 
                           <button
                             onClick={() => openGrantConfirm(a)}
                             disabled={busy !== null}
-                            className="inline-flex items-center gap-1.5 rounded-full border border-[#74FA6A]/35 bg-[#74FA6A]/[.08] px-3 py-1.5 text-[11.5px] font-semibold text-[#74FA6A] transition hover:bg-[#74FA6A]/[.14] disabled:opacity-50"
+                            className="inline-flex items-center gap-1.5 rounded-full border border-primary/35 bg-primary/[.08] px-3 py-1.5 text-[11.5px] font-semibold text-primary transition hover:bg-primary/[.14] disabled:opacity-50"
                             title={ui("Berikan akses Pro: pilih masa aktif lalu confirm")}
                           >
                             <Sparkles size={12} /> {busy === busyKey ? "…" : ui("Berikan Pro")}
@@ -556,7 +556,7 @@ export default function AdminUsersPage({ preview = false, embedded = false }: { 
               })}
             </ul>
           )}
-          {pageCount > 1 && <nav aria-label={ui("User list pages")} className="flex items-center justify-between gap-4 border-t border-white/10 px-4 py-4 text-xs"><span>{ui("Page {0} of {1}", currentPage, pageCount)}</span><div className="flex gap-3"><button className="min-h-10 px-3 disabled:opacity-40" disabled={currentPage === 1} onClick={() => setAccountPage(currentPage - 1)}>{ui("Previous")}</button><button className="min-h-10 px-3 disabled:opacity-40" disabled={currentPage === pageCount} onClick={() => setAccountPage(currentPage + 1)}>{ui("Next")}</button></div></nav>}
+          {pageCount > 1 && <nav aria-label={ui("User list pages")} className="flex items-center justify-between gap-4 border-t border-border px-4 py-4 text-xs"><span>{ui("Page {0} of {1}", currentPage, pageCount)}</span><div className="flex gap-3"><button className="min-h-10 px-3 disabled:opacity-40" disabled={currentPage === 1} onClick={() => setAccountPage(currentPage - 1)}>{ui("Previous")}</button><button className="min-h-10 px-3 disabled:opacity-40" disabled={currentPage === pageCount} onClick={() => setAccountPage(currentPage + 1)}>{ui("Next")}</button></div></nav>}
         </section>
       </AccountWorkbench>
     </Shell>

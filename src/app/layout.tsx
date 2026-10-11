@@ -27,12 +27,12 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html
       lang="en-US"
-      className={`${geistSans.variable} ${geistMono.variable} ${display.variable} h-full antialiased dark`}
+      className={`${geistSans.variable} ${geistMono.variable} ${display.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: langInitScript }} />
-        <script dangerouslySetInnerHTML={{ __html: "try{var p=JSON.parse(localStorage.getItem('scratch_account_preferences')||'{}');if(['scratch','blue','violet','amber','rose'].includes(p.colorStyle))document.documentElement.dataset.colorStyle=p.colorStyle}catch(e){}" }} />
+        <script dangerouslySetInnerHTML={{ __html: "document.documentElement.dataset.colorStyle='scratch';" }} />
       </head>
       <body className="min-h-full flex flex-col"><Providers>{children}</Providers></body>
     </html>

@@ -2,6 +2,8 @@
 
 import { useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
+import { useTheme } from "next-themes";
+import { themeColor } from "@/lib/theme-colors";
 
 const vertexShaderGLSL = `
 attribute vec2 position;
@@ -113,10 +115,10 @@ export interface VelarisProps {
   children?: React.ReactNode;
 }
 
-const DEFAULT_COLORS = ["#86efac", "#4ade80", "#059669", "#000000"];
+const DEFAULT_COLORS = ["var(--theme-chart-1)", "var(--theme-chart-2)", "var(--theme-chart-3)", "var(--theme-bg)"];
 
 const Velaris = ({
-  bg = "#000000",
+  bg = "var(--theme-bg)",
   colors = DEFAULT_COLORS,
   speed = 2.0,
   grain = 0.3,
@@ -124,11 +126,13 @@ const Velaris = ({
   className,
   children,
 }: VelarisProps) => {
+  const { resolvedTheme } = useTheme();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   const hexToRgb = (hex: string): [number, number, number] => {
-    const h = hex.replace("#", "");
+    const token = hex.match(/^var\((--[\w-]+)\)$/)?.[1];
+    const h = (token ? themeColor(token) : hex).replace("#", "");
     return [
       parseInt(h.slice(0, 2), 16) / 255,
       parseInt(h.slice(2, 4), 16) / 255,
@@ -201,7 +205,7 @@ const Velaris = ({
       ro.disconnect();
       cancelAnimationFrame(raf);
     };
-  }, [bg, colors, speed, grain]);
+  }, [bg, colors, speed, grain, resolvedTheme]);
 
   return (
     <div ref={containerRef} style={{ height }} className={cn("relative w-full overflow-hidden", className)}>

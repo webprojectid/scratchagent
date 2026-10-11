@@ -28,7 +28,7 @@ export function DeveloperWorkspace({ email, initialTab }: { email: string; initi
   return <Shell sidebar={false} back="/settings"><div className={s.page}><div className={s.frame}>
     <nav className={s.nav} aria-label="Developer Setting">
       <p>ADMIN</p>
-      {tabs.map(({ id, title, icon: Icon }) => <button key={id} type="button" onClick={() => select(id)} aria-current={tab === id ? "page" : undefined} className="flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm text-white/70 hover:bg-white/5 aria-[current=page]:bg-[#a5ef7d]/10 aria-[current=page]:text-[#a5ef7d]"><Icon size={16}/>{title}</button>)}
+      {tabs.map(({ id, title, icon: Icon }) => <button key={id} type="button" onClick={() => select(id)} aria-current={tab === id ? "page" : undefined} className="flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm text-foreground hover:bg-foreground/5 aria-[current=page]:bg-primary/10 aria-[current=page]:text-primary"><Icon size={16}/>{title}</button>)}
       <Link href="/profile">{ui("Profil")}</Link>
       <Link href="/settings">{ui("Pengaturan")}</Link>
     </nav>
