@@ -33,3 +33,27 @@ test("the brand accent and all chart series use green or neutral shades in both 
     }
   }
 });
+test("form boundaries have non-text contrast in both modes", () => {
+  for (const palette of palettes) {
+    for (const background of ["--theme-bg", "--theme-surface"]) {
+      assert.ok(contrast(palette["--theme-border-strong"], palette[background]) >= 3);
+    }
+  }
+});
+test("every activity-calendar intensity keeps its date label readable", () => {
+  const calendar = readFileSync("src/components/profile-dashboard.module.css", "utf8");
+  const levels = [...calendar.matchAll(/\.heatmap button\[data-level="([1-4])"\][^{]*\{([^}]+)\}/g)];
+  assert.equal(levels.length, 4);
+  for (const palette of palettes) {
+    for (const [, level, body] of levels) {
+      const percentage = Number(body.match(/var\(--primary\) (\d+)%/)?.[1] ?? 100) / 100;
+      const accent = palette["--theme-accent"], surface = palette["--theme-surface"];
+      const mixed = "#" + [1, 3, 5].map(index => Math.round(
+        parseInt(accent.slice(index, index + 2), 16) * percentage +
+        parseInt(surface.slice(index, index + 2), 16) * (1 - percentage),
+      ).toString(16).padStart(2, "0")).join("");
+      const text = body.includes("--theme-on-accent") ? palette["--theme-on-accent"] : palette["--theme-text"];
+      assert.ok(contrast(text, mixed) >= 4.5, `Calendar level ${level} must meet 4.5:1`);
+    }
+  }
+});

@@ -10,7 +10,7 @@ Scratch Green is the only UI accent. Dark mode remains the default. Light mode u
 | Main text | #E9EDED | #202720 |
 | Secondary text | #A8B2A9 | #566157 |
 | Border | #354039 | #CDD4C9 |
-| Strong border | #536157 | #A3AEA0 |
+| Strong border | #6A786D | #7B8877 |
 | Brand / focus / action | #74FA6A | #267A36 |
 | Action hover | #A5EF7D | #1D612B |
 | Text on action | #0A1A10 | #FCFCFA |

@@ -7,7 +7,7 @@
   --theme-text: #e9eded;
   --theme-muted: #a8b2a9;
   --theme-border: #354039;
-  --theme-border-strong: #536157;
+  --theme-border-strong: #6a786d;
   --theme-accent: #74fa6a;
   --theme-accent-hover: #a5ef7d;
   --theme-on-accent: #0a1a10;
@@ -28,7 +28,7 @@ html.light {
   --theme-text: #202720;
   --theme-muted: #566157;
   --theme-border: #cdd4c9;
-  --theme-border-strong: #a3aea0;
+  --theme-border-strong: #7b8877;
   --theme-accent: #267a36;
   --theme-accent-hover: #1d612b;
   --theme-on-accent: #fcfcfa;
@@ -59,7 +59,7 @@ html.light {
   --destructive: var(--theme-danger);
   --destructive-foreground: var(--theme-on-danger);
   --border: var(--theme-border);
-  --input: var(--theme-border);
+  --input: var(--theme-border-strong);
   --ring: var(--theme-accent);
   --ink: var(--theme-bg);
   --ink-2: var(--theme-surface);
@@ -94,3 +94,4 @@ html.light {
 ::selection { background: var(--primary); color: var(--primary-foreground); }
 .react-flow { --xy-background-color: var(--background); --xy-controls-button-background-color: var(--card); --xy-controls-button-background-color-hover: var(--secondary); --xy-controls-button-color: var(--foreground); --xy-controls-button-border-color: var(--border); --xy-minimap-background-color: var(--card); }
 .light body::before { opacity: .035; }
+html[data-color-style] :is(input:not([type=range]):not([type=checkbox]), select, textarea) { border-color: var(--input); }
