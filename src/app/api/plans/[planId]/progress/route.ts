@@ -2,7 +2,9 @@ import { getProjectState } from "@/lib/account-store";
 import { NextResponse } from "next/server";
 import { scheduleGeneration } from "@/lib/run-generation";
 import { accessPlan, getRequestUser } from "@/lib/api-auth";
-import { allTasks } from "@/lib/storage";
+import { allTasks, getPlan } from "@/lib/storage";
+import { getProgressRevision, type ProgressRevision } from "@/lib/plan-progress";
+import { RATE_LIMITS, clientKey, getClientIp, rateLimit, rateLimitedResponse } from "@/lib/security";
 
 // Pelacak kick watchdog per instance server (cukup perkiraan, bukan sumber kebenaran).
 const generationKicks = new Map<string, { n: number; at: number }>();
@@ -14,8 +16,25 @@ export async function GET(request: Request, { params }: { params: Promise<{ plan
   const { planId } = await params;
   const legacyUserId = new URL(request.url).searchParams.get("userId");
   const user = await getRequestUser(legacyUserId);
-  const { plan, error } = await accessPlan(planId, user);
-  if (error || !plan) return error;
+  const ip = await getClientIp(request);
+  const key = `progress:${clientKey(user?.userId, ip)}`;
+  const retryIn = rateLimit(key, RATE_LIMITS.agent.limit, RATE_LIMITS.agent.windowMs);
+  if (retryIn !== null) return rateLimitedResponse(key, retryIn, { ip, userId: user?.userId ?? null, route: "/api/plans/[id]/progress" });
+  const { plan: header, error } = await accessPlan(planId, user, { loadPlan: getProgressRevision });
+  if (error || !header) return error;
+  const revision = header as ProgressRevision;
+  const etag = `"${revision.progressVersion}"`;
+  const responseHeaders = { ETag: etag, "Cache-Control": "private, no-store", Vary: "Cookie, Authorization" };
+  const lastKick = generationKicks.get(planId);
+  const needsWatchdog = header.status === "generating" && revision.featureCount === 0 &&
+    !!header.createdAt && Date.now() - new Date(header.createdAt).getTime() > 7 * 60_000 &&
+    (!lastKick || lastKick.n < 3 && Date.now() - lastKick.at > 5 * 60_000) &&
+    !!user && (!user.tokenPolicy || user.tokenPolicy.access === "write");
+  if (request.headers.get("if-none-match") === etag && !needsWatchdog) {
+    return new NextResponse(null, { status: 304, headers: responseHeaders });
+  }
+  const plan = await getPlan(planId);
+  if (!plan) return NextResponse.json({ error: "Plan not found" }, { status: 404, headers: responseHeaders });
 
   // Watchdog plan zombie: plan asinkron yang function-nya mati di tengah jalan
   // (kena batas waktu Vercel / crash) tertinggal status generating dengan 0
@@ -69,5 +88,5 @@ export async function GET(request: Request, { params }: { params: Promise<{ plan
         tasks: (sf.tasks ?? []).map((t: any) => ({ ref: t.ref, title: t.title, layer: t.layer, phase: t.phase, page: t.page, deps: t.deps, status: t.status })),
       })),
     })),
-  });
+  }, { headers: responseHeaders });
 }

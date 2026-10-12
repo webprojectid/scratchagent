@@ -29,16 +29,24 @@ export async function getProjectState(planId: string): Promise<ProjectAccountSta
   const [row] = await getDb().select().from(projectState).where(eq(projectState.planId, planId));
   return row ? { favorite: row.favorite, archived: row.archived, lastOpenedAt: row.lastOpenedAt?.toISOString() ?? null, generationSettings: row.generationSettings, generationInput: row.generationInput } : { ...blankProject };
 }
+export async function getProjectGenerationSettings(planId: string): Promise<HandoffSettings | null> {
+  if (memoryMode() || planId === "demo") return structuredClone(memory.projects.get(planId)?.generationSettings ?? null);
+  const [row] = await getDb().select({ generationSettings: projectState.generationSettings }).from(projectState).where(eq(projectState.planId, planId));
+  return row?.generationSettings ?? null;
+}
 export async function saveProjectState(planId: string, patch: Partial<ProjectAccountState>) {
   if (memoryMode()) { memory.projects.set(planId, { ...structuredClone(memory.projects.get(planId) ?? blankProject), ...structuredClone(patch) }); return; }
   const { lastOpenedAt, ...rest } = patch;
   const values = { ...rest, ...(lastOpenedAt !== undefined ? { lastOpenedAt: lastOpenedAt ? new Date(lastOpenedAt) : null } : {}) };
   await getDb().insert(projectState).values({ planId, ...values }).onConflictDoUpdate({ target: projectState.planId, set: values });
 }
-export async function projectStates(planIds: string[]) {
+export async function projectStates(planIds: string[], summaryOnly = false) {
   if (!planIds.length) return {};
   if (memoryMode()) return Object.fromEntries(planIds.map(id => [id, memory.projects.get(id) ?? blankProject]));
-  const rows = await getDb().select().from(projectState).where(inArray(projectState.planId, planIds));
+  const db = getDb();
+  const rows = summaryOnly
+    ? await db.select({ planId: projectState.planId, favorite: projectState.favorite, archived: projectState.archived, lastOpenedAt: projectState.lastOpenedAt }).from(projectState).where(inArray(projectState.planId, planIds))
+    : await db.select().from(projectState).where(inArray(projectState.planId, planIds));
   return Object.fromEntries(rows.map(row => [row.planId, { ...row, lastOpenedAt: row.lastOpenedAt?.toISOString() ?? null }]));
 }
 export async function listLibrary(userId: string): Promise<LibraryItem[]> {

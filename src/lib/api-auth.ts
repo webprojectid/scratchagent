@@ -155,16 +155,16 @@ export function planNotFound() {
 export async function accessPlan(
   planId: string,
   user: AuthUser | null,
-  opts: { write?: boolean } = {},
+  opts: { write?: boolean; loadPlan?: typeof getPlan } = {},
 ): Promise<{ plan?: Plan; error?: NextResponse }> {
   if (planId === "demo") {
     if (opts.write) return { error: forbidden("Plan demo bersifat read-only") };
-    const plan = await getPlan("demo");
+    const plan = await (opts.loadPlan ?? getPlan)("demo");
     return plan ? { plan } : { error: planNotFound() };
   }
   if (!user) return { error: unauthorized() };
   if (user.tokenPolicy && (user.tokenPolicy.projectIds.length > 0 && !user.tokenPolicy.projectIds.includes(planId) || opts.write && user.tokenPolicy.access === "read")) return { error: forbidden("Token tidak memiliki izin untuk operasi proyek ini.") };
-  const plan = await getPlan(planId);
+  const plan = await (opts.loadPlan ?? getPlan)(planId);
   if (!plan) return { error: planNotFound() };
   if (!ownsPlan(plan, user)) {
     const { isAdminEmail } = await import("@/lib/billing");

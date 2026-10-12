@@ -13,6 +13,6 @@ export async function GET(request: Request) {
   // penuh tiap plan (getPlan + render diagram). Untuk halaman daftar saja;
   // halaman detail tetap pakai getPlan().
   const plans = (await listPlanSummaries(planOwnerKey(user))).filter(plan => !user.tokenPolicy?.projectIds.length || user.tokenPolicy.projectIds.includes(plan.id));
-  const states = await projectStates(plans.map(plan => plan.id));
+  const states = await projectStates(plans.map(plan => plan.id), true);
   return NextResponse.json({ plans: plans.map(plan => ({ ...plan, favorite: states[plan.id]?.favorite ?? false, archived: states[plan.id]?.archived ?? false, lastOpenedAt: states[plan.id]?.lastOpenedAt ?? null })) });
 }

@@ -1,4 +1,4 @@
-import { getProjectState } from "./account-store";
+import { getProjectGenerationSettings } from "./account-store";
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import { getDb } from "@/db";
 import { plans, features, subFeatures, tasks, taskEvents, usageEvents, users } from "@/db/schema";
@@ -237,17 +237,21 @@ export async function getPlan(planId: string): Promise<Plan | undefined> {
   if (planId === "demo") return { ...demoPlan, userId: "demo" } as Plan;
   if (isMemoryMode()) {
     const p = memoryGetPlan(planId);
-    return p ? withDiagrams({ ...p, generationSettings: (await getProjectState(planId)).generationSettings ?? p.generationSettings }) : undefined;
+    return p ? withDiagrams({ ...p, generationSettings: (await getProjectGenerationSettings(planId)) ?? p.generationSettings }) : undefined;
   }
   const db = getDb();
   const [plan] = await db.select().from(plans).where(eq(plans.id, planId));
   if (!plan) return undefined;
 
   const featuresRows = await db.select().from(features).where(eq(features.planId, planId));
-  const resultFeatures = await Promise.all(featuresRows.map(async (feature) => {
-    const subs = await db.select().from(subFeatures).where(eq(subFeatures.featureId, feature.id));
-    const subFeaturesWithTasks = await Promise.all(subs.map(async (sub) => {
-      const taskRows = await db.select().from(tasks).where(eq(tasks.subFeatureId, sub.id));
+  const [allSubs, allTaskRows] = featuresRows.length ? await Promise.all([
+    db.select().from(subFeatures).where(inArray(subFeatures.featureId, featuresRows.map(f => f.id))).orderBy(subFeatures.order, subFeatures.id),
+    db.select().from(tasks).where(eq(tasks.planId, planId)).orderBy(tasks.order, tasks.ref),
+  ]) : [[], []];
+  const resultFeatures = featuresRows.map((feature) => {
+    const subs = allSubs.filter(sub => sub.featureId === feature.id);
+    const subFeaturesWithTasks = subs.map((sub) => {
+      const taskRows = allTaskRows.filter(task => task.subFeatureId === sub.id);
         return {
           id: sub.id,
           title: sub.title,
@@ -269,7 +273,7 @@ export async function getPlan(planId: string): Promise<Plan | undefined> {
           order: t.order,
         })),
       };
-    }));
+    });
     return {
       id: feature.id,
       slug: feature.slug,
@@ -283,7 +287,7 @@ export async function getPlan(planId: string): Promise<Plan | undefined> {
       order: feature.order,
       subFeatures: subFeaturesWithTasks,
     };
-  }));
+  });
 
   // Urutan fase: (1) kolom order; plan lama punya order=0 semua, jadi
   // tiebreak (2) phase terkecil dari task di dalamnya (= posisi asli fitur
@@ -327,7 +331,7 @@ export async function getPlan(planId: string): Promise<Plan | undefined> {
     warnings: Array.isArray(savedMeta.warnings) ? savedMeta.warnings : undefined,
     tier: savedMeta.tier === "pro" ? "pro" : "free",
     ideas: Array.isArray(savedMeta.ideas) ? savedMeta.ideas : undefined,
-    generationSettings: (await getProjectState(planId)).generationSettings ?? undefined,
+    generationSettings: (await getProjectGenerationSettings(planId)) ?? undefined,
     accountNotes: typeof savedMeta.accountNotes === "string" ? savedMeta.accountNotes : "",
     accountNotesUpdatedAt: typeof savedMeta.accountNotesUpdatedAt === "string" ? savedMeta.accountNotesUpdatedAt : undefined,
   } as Plan;
@@ -340,7 +344,7 @@ export async function listPlans(userId: string): Promise<Plan[]> {
   const dbUserId = await resolveDbUserId(userId);
   if (!dbUserId) return [];
   const db = getDb();
-  const rows = await db.select().from(plans).where(eq(plans.userId, dbUserId));
+  const rows = await db.select({ id: plans.id }).from(plans).where(eq(plans.userId, dbUserId));
   const result = await Promise.all(rows.map((r) => getPlan(r.id).then((p) => p!).catch(() => undefined)));
   return result.filter((p): p is Plan => !!p);
 }
@@ -391,7 +395,8 @@ export async function listPlanSummaries(userId: string): Promise<PlanSummary[]> 
   if (!dbUserId) return [];
   const db = getDb();
   const rows = await db
-    .select({ id: plans.id, title: plans.title, brief: sql<string>`left(${plans.brief}, 220)`, status: plans.status, createdAt: plans.createdAt, techPrefs: plans.techPrefs })
+    .select({ id: plans.id, title: plans.title, brief: sql<string>`left(${plans.brief}, 220)`, status: plans.status, createdAt: plans.createdAt,
+      techPrefs: sql<unknown>`case when jsonb_typeof(${plans.techPrefs}) = 'array' then ${plans.techPrefs} else coalesce(${plans.techPrefs}->'stack', '[]'::jsonb) end` })
     .from(plans)
     .where(eq(plans.userId, dbUserId))
     .orderBy(sql`${plans.createdAt} desc`);
@@ -446,7 +451,7 @@ export async function listPlanSummaries(userId: string): Promise<PlanSummary[]> 
 export async function listAllPlans(): Promise<Plan[]> {
   if (isMemoryMode()) return memoryListAllPlans();
   const db = getDb();
-  const rows = await db.select().from(plans);
+  const rows = await db.select({ id: plans.id }).from(plans);
   const result = await Promise.all(rows.map((r) => getPlan(r.id).then((p) => p!).catch(() => undefined)));
   return result.filter((p): p is Plan => !!p);
 }
