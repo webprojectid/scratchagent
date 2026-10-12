@@ -23,8 +23,8 @@ export interface NextTaskResult {
   };
 }
 
-export async function getNextTask(planId: string): Promise<NextTaskResult> {
-  const plan = await getPlan(planId);
+export async function getNextTask(planId: string, loadedPlan?: Plan): Promise<NextTaskResult> {
+  const plan = loadedPlan?.id === planId ? loadedPlan : await getPlan(planId);
   if (!plan) return { done: true, blocked: false, failedTasks: [], task: null, progress: { phase: { current: 0, total: 0 }, layer: "qa", page: null, checkpoint: false, remainingInLayer: 0 } };
 
   const tasks = allTasks(plan);

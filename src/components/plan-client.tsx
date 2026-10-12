@@ -28,6 +28,7 @@ import { PrdView } from "@/components/prd-view";
 import { ProjectSwitcher } from "@/components/project-switcher";
 import type { Plan, Task } from "@/lib/types";
 import { getCurrentUser } from "@/lib/current-user";
+import { startProgressPolling } from "@/lib/progress-polling";
 
 // Query param identitas fallback (dipakai server hanya di mode dev polos;
 // di mode Supabase, session cookie yang menang). Sumber: session Supabase.
@@ -107,6 +108,8 @@ export function PlanClient({ plan: initialPlan, tier = "free" }: { plan: Plan; t
   const [statusIdx, setStatusIdx] = useState(0);
   const [notice, setNotice] = useState<string | null>(null);
   const lastPollSig = useRef("");
+  const progressEtag = useRef<{ id: string; value: string } | null>(null);
+  const progressInFlight = useRef(false);
   const genAllKickAt = useRef(0);
   const generatingTasks = plan.status === "generating";
   const isPro = tier === "pro";
@@ -116,10 +119,20 @@ export function PlanClient({ plan: initialPlan, tier = "free" }: { plan: Plan; t
     ? Object.values(liveTasks).filter((s) => s === "done").length
     : plan.features.reduce((acc, f) => acc + f.subFeatures.reduce((a, sf) => a + sf.tasks.filter((t) => t.status === "done").length, 0), 0);
 
-  const refreshPlan = useCallback(async () => {
+  const refreshPlan = useCallback(async (signal?: AbortSignal) => {
+    if (progressInFlight.current || signal?.aborted) return true;
+    progressInFlight.current = true;
     try {
-      const res = await fetch(`/api/plans/${plan.id}/progress${await userQs()}`);
+      const etag = progressEtag.current?.id === plan.id ? progressEtag.current.value : undefined;
+      const res = await fetch(`/api/plans/${plan.id}/progress${await userQs()}`, {
+        signal, cache: "no-store", headers: etag ? { "If-None-Match": etag } : {},
+      });
+      if (res.status === 304) return true;
+      if (!res.ok) return false;
       const data = await res.json();
+      if (signal?.aborted) return true;
+      const nextEtag = res.headers.get("etag");
+      progressEtag.current = nextEtag ? { id: plan.id, value: nextEtag } : null;
       if (data.features) {
         const map: Record<string, Task["status"]> = {};
         for (const f of data.features) {
@@ -133,7 +146,7 @@ export function PlanClient({ plan: initialPlan, tier = "free" }: { plan: Plan; t
         // Sig mencakup status + seluruh isi fitur/task, jadi cukup sebagai penanda.
         const sig = JSON.stringify({ s: data.status, f: data.features });
         if (sig === lastPollSig.current) {
-          return;
+          return true;
         }
         lastPollSig.current = sig;
         // startTransition: polling bisa resolve pas React Flow lagi render
@@ -238,7 +251,9 @@ export function PlanClient({ plan: initialPlan, tier = "free" }: { plan: Plan; t
           }).catch(() => {});
         }
       }
-    } catch { /* ignore */ }
+      return true;
+    } catch { return false; }
+    finally { progressInFlight.current = false; }
   }, [plan.id]);
 
   // Hapus struktur (fitur Pro). Target: fase, sub-fitur, atau task.
@@ -306,20 +321,15 @@ export function PlanClient({ plan: initialPlan, tier = "free" }: { plan: Plan; t
   }, []);
 
   useEffect(() => {
-    // Polling saat "generating" (task digenerate server-side, browser harus
-    // melihat task muncul satu per satu) dan saat plan dikerjakan agent
-    // (status task berubah). refreshPlan menyuntikkan task & sub-fitur baru
-    // ke state + meng-update status plan; dulu polling ini HANYA meng-update
-    // peta status tanpa menambah task, jadi UI kosong sampai user refresh.
     if (plan.status !== "generating" && plan.status !== "implementing" && plan.status !== "done" && plan.status !== "ready") return;
-    let active = true;
-    const poll = async () => {
-      if (!active) return;
-      await refreshPlan();
-    };
-    poll();
-    const timer = setInterval(poll, 3000);
-    return () => { active = false; clearInterval(timer); };
+    return startProgressPolling(plan.status, signal => refreshPlan(signal), {
+      hidden: () => document.hidden,
+      onVisibility: listener => {
+        document.addEventListener("visibilitychange", listener);
+        return () => document.removeEventListener("visibilitychange", listener);
+      },
+      schedule: (callback, delay) => { const timer = setTimeout(callback, delay); return () => clearTimeout(timer); },
+    });
   }, [plan.id, plan.status, refreshPlan]);
 
   return (
