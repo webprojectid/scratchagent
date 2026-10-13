@@ -101,7 +101,7 @@ function MapNode({ data }: { data: MapNodeData }) {
       <Handle type="target" position={Position.Left} className="!size-2 !border-2 !border-[#14161A] !bg-slate-600" />
       {!taskNode && <Handle type="source" position={Position.Right} className="!size-2 !border-2 !border-[#14161A] !bg-slate-600" />}
       <div className="mb-2 flex items-center justify-between text-[9px] font-semibold tracking-wide text-slate-500">
-        <span className="flex items-center gap-1"><ListChecks size={10} />{taskNode ? "TASKS" : "SUB FITUR"}</span>
+        <span className="flex items-center gap-1"><ListChecks size={10} />{taskNode ? "TASKS" : ui("Sub fitur").toUpperCase()}</span>
         <span className="font-mono tabular-nums">{data.done ?? 0}/{data.total ?? 0}</span>
       </div>
       {taskNode && (!data.items || data.items.length === 0) && data.generating ? (
