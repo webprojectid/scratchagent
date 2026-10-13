@@ -1,4 +1,4 @@
-import { and, eq, gte } from "drizzle-orm";
+import { and, eq, gte, sql } from "drizzle-orm";
 import { getDb } from "@/db";
 import { usageEvents } from "@/db/schema";
 import {
@@ -127,6 +127,7 @@ export async function consumeQuota(
   const since = new Date(Date.now() - DAY_MS);
   let eventId: string | null = null;
   await db.transaction(async (tx) => {
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtextextended(${`quota:${userId}`}, 0))`);
     const usedRows = await tx
       .select({ id: usageEvents.id })
       .from(usageEvents)

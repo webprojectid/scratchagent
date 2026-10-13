@@ -32,7 +32,7 @@ export async function createToken(userId: string, label: string, policy?: TokenP
     return { token, hash };
   }
   const db = getDb();
-  await db.insert(tokens).values({ userId, tokenHash: hash, label } as any);
+  await db.insert(tokens).values({ userId, tokenHash: hash, label });
   if (policy) await saveTokenPolicy(hash, policy);
   return { token, hash };
 }
@@ -53,7 +53,7 @@ export async function listTokens(userId: string) {
 export async function revokeToken(hash: string): Promise<boolean> {
   if (isMemoryMode()) return memoryRevokeToken(hash);
   const db = getDb();
-  const result = await db.update(tokens).set({ revokedAt: new Date() } as any).where(eq(tokens.tokenHash, hash));
+  const result = await db.update(tokens).set({ revokedAt: new Date() }).where(eq(tokens.tokenHash, hash));
   return (result.rowCount ?? 0) > 0;
 }
 

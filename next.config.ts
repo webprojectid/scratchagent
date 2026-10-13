@@ -3,6 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   // Sembunyikan fingerprint framework.
   poweredByHeader: false,
+  outputFileTracingIncludes: { "/*": ["./src/db/certificates/supabase-ca.crt"] },
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "lobehub.com" },

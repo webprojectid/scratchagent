@@ -1,3 +1,4 @@
+import { writeOriginGate } from "@/lib/write-origin";
 import { apiText } from "@/lib/ui-messages";
 import { NextResponse } from "next/server";
 import { getRequestUser, unauthorized } from "@/lib/api-auth";
@@ -39,6 +40,8 @@ export async function GET(request: Request) {
 }
 
 export async function PATCH(request: Request) {
+  const originGate = writeOriginGate(request);
+  if (originGate) return originGate;
   const origin = request.headers.get("origin");
   if (origin) {
     try {

@@ -1,5 +1,6 @@
+import { hasProFeatures } from "@/lib/account-capabilities";
 import { requirePlanForPage, getRequestUser } from "@/lib/api-auth";
-import { getAccountState, isAdminEmail } from "@/lib/billing";
+import { getAccountState } from "@/lib/billing";
 import { PlanClient } from "@/components/plan-client";
 import { ProjectVisited } from "@/components/project-visited";
 
@@ -9,6 +10,6 @@ export default async function PlanPage({ params }: { params: Promise<{ planId: s
   // Tier user dipakai client untuk mengunci/membuka edit struktur (fitur Pro).
   const user = await getRequestUser();
   const account = user ? await getAccountState(user.userId) : undefined;
-  const isSuperUser = user?.email ? isAdminEmail(user.email) : false;
-  return <><ProjectVisited planId={planId}/><PlanClient plan={plan} tier={isSuperUser ? "pro" : (account?.tier ?? "free")} /></>;
+  const isPro = hasProFeatures(user, account?.tier);
+  return <><ProjectVisited planId={planId}/><PlanClient plan={plan} tier={isPro ? "pro" : "free"} /></>;
 }

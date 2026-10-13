@@ -1,4 +1,5 @@
 import { getProjectState } from "@/lib/account-store";
+import { writeOriginGate } from "@/lib/write-origin";
 import { NextResponse } from "next/server";
 import { scheduleGeneration } from "@/lib/run-generation";
 import { accessPlan, getRequestUser } from "@/lib/api-auth";
@@ -39,15 +40,19 @@ export async function GET(request: Request, { params }: { params: Promise<{ plan
   // Watchdog plan zombie: plan asinkron yang function-nya mati di tengah jalan
   // (kena batas waktu Vercel / crash) tertinggal status generating dengan 0
   // fase selamanya. Kalau umurnya sudah lewat batas, kick ulang generasinya
-  // (maksimal 3 kali per instance server) tanpa memotong kuota baru.
+  // Lease persisten membatasi empat percobaan total, termasuk job awal.
+  // Counter lokal hanya mengurangi pemanggilan watchdog pada satu instance.
   const zombieAgeMs = plan.createdAt ? Date.now() - new Date(plan.createdAt).getTime() : 0;
   if (plan.status === 'generating' && (plan.features ?? []).length === 0 && zombieAgeMs > 7 * 60_000) {
     const kick = generationKicks.get(planId);
     const bolehKick = !kick || (kick.n < 3 && Date.now() - kick.at > 5 * 60_000);
-    if (bolehKick && user && (!user.tokenPolicy || user.tokenPolicy.access === "write")) {
+    const writeAccess = bolehKick && user && !writeOriginGate(request)
+      ? await accessPlan(planId, user, { write: true, loadPlan: async () => plan })
+      : null;
+    if (writeAccess?.plan && user) {
       const snapshot = await getProjectState(planId);
       generationKicks.set(planId, { n: (kick?.n ?? 0) + 1, at: Date.now() });
-      scheduleGeneration(
+      await scheduleGeneration(
         {
           planId,
           brief: plan.brief,

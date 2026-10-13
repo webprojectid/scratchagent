@@ -163,6 +163,10 @@ export async function accessPlan(
     return plan ? { plan } : { error: planNotFound() };
   }
   if (!user) return { error: unauthorized() };
+  if (opts.write) {
+    const { getAccountState } = await import("./billing");
+    if ((await getAccountState(user.userId))?.bannedAt) return { error: forbidden("Account is disabled.") };
+  }
   if (user.tokenPolicy && (user.tokenPolicy.projectIds.length > 0 && !user.tokenPolicy.projectIds.includes(planId) || opts.write && user.tokenPolicy.access === "read")) return { error: forbidden("Token tidak memiliki izin untuk operasi proyek ini.") };
   const plan = await (opts.loadPlan ?? getPlan)(planId);
   if (!plan) return { error: planNotFound() };

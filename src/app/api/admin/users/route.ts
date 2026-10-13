@@ -23,7 +23,8 @@ export async function GET(request: Request) {
   try {
     const accounts = await listAccounts(searchParams.get("q") ?? undefined);
     return NextResponse.json({ accounts });
-  } catch (e: any) {
-    return NextResponse.json({ error: e?.message ?? "Gagal memuat daftar akun" }, { status: 500 });
+  } catch (e: unknown) {
+    console.error("[admin]", e);
+    return NextResponse.json({ error: "The request could not be completed. Please try again." }, { status: 500 });
   }
 }

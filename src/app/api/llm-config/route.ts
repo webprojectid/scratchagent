@@ -1,3 +1,5 @@
+import { writeOriginGate } from "@/lib/write-origin";
+import { validateProviderUrl } from "@/lib/provider-network";
 import { apiText } from "@/lib/ui-messages";
 import { NextResponse } from "next/server";
 import { z } from "zod";
@@ -54,6 +56,8 @@ const bodySchema = z.object({
 // - Kolom legacy (baseUrl/apiKey/model) ikut disinkronkan dari provider #1
 //   supaya tampilan lama & fallback env tetap konsisten.
 export async function POST(request: Request) {
+  const originGate = writeOriginGate(request);
+  if (originGate) return originGate;
   const legacyUserId = new URL(request.url).searchParams.get("userId");
   const user = await getRequestUser(legacyUserId);
   const gate = await requireAdmin(user);
@@ -72,6 +76,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: apiText("Tidak ada provider yang valid (baseUrl, apiKey, dan minimal 1 model wajib terisi).") }, { status: 400 });
   }
 
+  for (const provider of valid) {
+    const result = await validateProviderUrl(provider.baseUrl);
+    if (!result.ok) return NextResponse.json({ error: result.error }, { status: 400 });
+  }
   await saveLlmConfig({
     baseUrl: valid[0].baseUrl,
     apiKey: valid[0].apiKey,

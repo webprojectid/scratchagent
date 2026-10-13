@@ -1,3 +1,4 @@
+import { writeOriginGate } from "@/lib/write-origin";
 import { apiText } from "@/lib/ui-messages";
 import { recordAccountActivity } from "@/lib/account-store";
 import { NextResponse } from "next/server";
@@ -15,6 +16,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ plan
 }
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ planId: string }> }) {
+  const originGate = writeOriginGate(request);
+  if (originGate) return originGate;
   const origin = request.headers.get("origin");
   if (origin) {
     try {

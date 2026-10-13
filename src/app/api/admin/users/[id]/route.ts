@@ -1,8 +1,9 @@
+import { writeOriginGate } from "@/lib/write-origin";
 import { apiText } from "@/lib/ui-messages";
 import { NextResponse } from "next/server";
 import { getRequestUser, requireAdmin } from "@/lib/api-auth";
 import { banUser, endPro, getAccountDetail, grantPro, isAdminEmail, unbanUser } from "@/lib/billing";
-import { getClientIp, logSecurity } from "@/lib/security";
+import { getClientIp, logSecurity, clientKey, rateLimit, RATE_LIMITS, rateLimitedResponse } from "@/lib/security";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -12,12 +13,18 @@ export async function GET(_request: Request, { params }: Params) {
   const gate = await requireAdmin(user);
   if (gate) return gate;
   try {
+    const auditIp = await getClientIp();
+    const key = clientKey(user?.userId, auditIp);
+    const limit = RATE_LIMITS.admin;
+    const retry = rateLimit(key, limit.limit, limit.windowMs);
+    if (retry !== null) return rateLimitedResponse(key, retry, { ip: auditIp, userId: user?.userId ?? null, route: "/api/admin/users/[id]" });
     const { id } = await params;
     const detail = await getAccountDetail(id);
     if (!detail) return NextResponse.json({ error: apiText("Akun tidak ditemukan") }, { status: 404 });
     return NextResponse.json({ account: detail });
-  } catch (e: any) {
-    return NextResponse.json({ error: e?.message ?? "Gagal memuat detail akun" }, { status: 500 });
+  } catch (e: unknown) {
+    console.error("[admin]", e);
+    return NextResponse.json({ error: "The request could not be completed. Please try again." }, { status: 500 });
   }
 }
 
@@ -29,6 +36,8 @@ export async function GET(_request: Request, { params }: Params) {
  * - unban: cabut banned
  */
 export async function POST(request: Request, { params }: Params) {
+  const originGate = writeOriginGate(request);
+  if (originGate) return originGate;
   const user = await getRequestUser();
   const gate = await requireAdmin(user);
   if (gate) {
@@ -37,6 +46,11 @@ export async function POST(request: Request, { params }: Params) {
     return gate;
   }
   try {
+    const auditIp = await getClientIp(request);
+    const key = clientKey(user?.userId, auditIp);
+    const limit = RATE_LIMITS.admin;
+    const retry = rateLimit(key, limit.limit, limit.windowMs);
+    if (retry !== null) return rateLimitedResponse(key, retry, { ip: auditIp, userId: user?.userId ?? null, route: "/api/admin/users/[id]" });
     const { id } = await params;
     const body = await request.json().catch(() => ({}));
     const action = String(body?.action ?? "");
@@ -65,7 +79,8 @@ export async function POST(request: Request, { params }: Params) {
     const ip = await getClientIp(request);
     await logSecurity("admin_action", { action, targetUserId: id, targetEmail: target.email, days: Number(body?.days) || null }, { ip, userId: user!.userId });
     return NextResponse.json({ ok: true, message: result.message });
-  } catch (e: any) {
-    return NextResponse.json({ error: e?.message ?? "Aksi gagal" }, { status: 500 });
+  } catch (e: unknown) {
+    console.error("[admin]", e);
+    return NextResponse.json({ error: "The request could not be completed. Please try again." }, { status: 500 });
   }
 }

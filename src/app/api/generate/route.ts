@@ -1,3 +1,5 @@
+import { writeOriginGate } from "@/lib/write-origin";
+import { resolveLlmProviders } from "@/lib/llm-config";
 import { apiText } from "@/lib/ui-messages";
 import { getAccountSettings, saveProjectState } from "@/lib/account-store";
 import { handoffSettingsSchema, resolveHandoff, effectiveTechPrefs } from "@/lib/account-preferences";
@@ -5,7 +7,7 @@ import { NextResponse } from "next/server";
 import { scheduleGeneration } from "@/lib/run-generation";
 import { z } from "zod";
 import { getRequestUser, planOwnerKey, unauthorized } from "@/lib/api-auth";
-import { savePlan, deletePlan, updatePlanTitle } from "@/lib/storage";
+import { savePlan, deletePlan } from "@/lib/storage";
 import { refundQuota, consumeQuota, getQuota } from "@/lib/quota";
 import { getAccountState, isAdminEmail } from "@/lib/billing";
 import { RATE_LIMITS, blockedIpResponse, clientKey, getClientIp, logSecurity, rateLimit, rateLimitedResponse } from "@/lib/security";
@@ -37,6 +39,8 @@ const input = z.object({
 export const maxDuration = 300;
 
 export async function POST(request: Request) {
+  const originGate = writeOriginGate(request);
+  if (originGate) return originGate;
   const ip = await getClientIp(request);
 
   // IP yang diblokir admin dari Pusat Keamanan ditolak sebelum apa pun
@@ -74,8 +78,8 @@ export async function POST(request: Request) {
     // tapi pemakaian tetap tercatat di usage_events dengan tier asli untuk
     // audit. Batas struktur PRD (jumlah fase/sub-fitur/task) tetap tier akun.
 
-    if (!process.env.LLM_BASE_URL || !process.env.LLM_API_KEY || !process.env.LLM_MODEL) {
-      return NextResponse.json({ error: apiText("Konfigurasi LLM belum lengkap. Set LLM_BASE_URL, LLM_API_KEY, LLM_MODEL di .env") }, { status: 503 });
+    if (!(await resolveLlmProviders()).length) {
+      return NextResponse.json({ error: apiText("Konfigurasi LLM belum lengkap. Konfigurasikan provider melalui Developer Setting") }, { status: 503 });
     }
 
     const receipt = await consumeQuota(ownerId, tier, { skipLimit: await isAdminEmail(user.email) });
@@ -108,10 +112,13 @@ export async function POST(request: Request) {
     await saveProjectState(planId, { generationSettings: handoff, generationInput: { techPrefs, answers: data.answers } });
     } catch (error) {
       await refundQuota(receipt);
+      await deletePlan(planId);
       throw error;
     }
 
-    scheduleGeneration(
+    let scheduled: boolean;
+    try {
+      scheduled = await scheduleGeneration(
       {
         planId,
         brief: data.brief,
@@ -126,12 +133,22 @@ export async function POST(request: Request) {
       },
       1,
     );
+    } catch (error) {
+      await refundQuota(receipt);
+      await deletePlan(planId);
+      throw error;
+    }
 
-        return NextResponse.json({ id: planId, async: true });
+    if (!scheduled) {
+      await refundQuota(receipt);
+      await deletePlan(planId);
+      return NextResponse.json({ error: "Generation limit reached. Please try again later." }, { status: 429 });
+    }
+    return NextResponse.json({ id: planId, async: true });
   } catch (error) {
     console.error("[generate]", error);
     if (error instanceof z.ZodError) return NextResponse.json({ error: error.issues.map((i) => i.message).join("; ") }, { status: 400 });
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Generate gagal" }, { status: 500 });
+    return NextResponse.json({ error: "Generation could not be started. Please try again." }, { status: 500 });
   }
 }
 

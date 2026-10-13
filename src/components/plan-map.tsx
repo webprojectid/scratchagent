@@ -1,7 +1,7 @@
 "use client";
 import { uiText as ui, useUiLanguage } from "@/lib/ui-text";
 
-import { memo, useEffect, useMemo, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import {
   Background,
   BackgroundVariant,
@@ -61,7 +61,7 @@ function MapNode({ data }: { data: MapNodeData }) {
           </span>
           <b className="text-[13px] leading-tight text-slate-50">{data.label}</b>
         </div>
-        <p className="mt-2 text-[10px] font-medium text-slate-500">Perencanaan</p>
+        <p className="mt-2 text-[10px] font-medium text-slate-500">{ui("Perencanaan")}</p>
       </div>
     );
   }
@@ -85,7 +85,7 @@ function MapNode({ data }: { data: MapNodeData }) {
           <b className="truncate text-[12px] leading-snug text-slate-100">{data.label}</b>
         </div>
         <div className="mt-2.5 flex items-center justify-between text-[10px] text-slate-500">
-          <span className="capitalize">{status}</span>
+          <span>{ui({ direncanakan: "Planned", berjalan: "In progress", selesai: "Done" }[status])}</span>
           <span className="font-mono tabular-nums">{data.done}/{data.total}</span>
         </div>
         <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-white/[.06]">
@@ -207,6 +207,7 @@ function FeaturePanel({ plan, index, onClose, onNav, isPro, onDeleteFeature, onD
 
   useEffect(() => {
     function handler(event: KeyboardEvent) {
+      if ((event.target as Element)?.closest?.("[data-task-panel]")) return;
       if (event.key === "Escape") onClose();
       if (event.key === "ArrowLeft") onNav(-1);
       if (event.key === "ArrowRight") onNav(1);
@@ -218,7 +219,7 @@ function FeaturePanel({ plan, index, onClose, onNav, isPro, onDeleteFeature, onD
   if (!feature) return null;
   const tasks = feature.subFeatures.flatMap((subFeature) => subFeature.tasks);
   const done = tasks.filter((task) => task.status === "done").length;
-  const statusLabel = feature.status.charAt(0).toUpperCase() + feature.status.slice(1);
+  const statusLabel = ui({ direncanakan: "Planned", berjalan: "In progress", selesai: "Done" }[feature.status]);
 
   return (
     <motion.aside
@@ -230,9 +231,9 @@ function FeaturePanel({ plan, index, onClose, onNav, isPro, onDeleteFeature, onD
     >
       <div className="sticky top-0 z-10 flex h-12 items-center justify-between border-b border-white/[.06] bg-[#0C0E10] px-3">
         <div className="flex items-center gap-1">
-          <button onClick={() => onNav(-1)} disabled={index === 0} className="grid size-7 place-items-center rounded border border-white/10 text-slate-400 transition hover:border-[#74FA6A]/60 hover:text-[#74FA6A] disabled:opacity-30" aria-label="Fitur sebelumnya"><ChevronLeft size={14} /></button>
+          <button onClick={() => onNav(-1)} disabled={index === 0} className="grid size-7 place-items-center rounded border border-white/10 text-slate-400 transition hover:border-[#74FA6A]/60 hover:text-[#74FA6A] disabled:opacity-30" aria-label={ui("Previous phase")}><ChevronLeft size={14} /></button>
           <span className="min-w-12 text-center text-[11px] text-slate-300">{index + 1} / {plan.features.length}</span>
-          <button onClick={() => onNav(1)} disabled={index === plan.features.length - 1} className="grid size-7 place-items-center rounded border border-white/10 text-slate-400 transition hover:border-[#74FA6A]/60 hover:text-[#74FA6A] disabled:opacity-30" aria-label="Fitur berikutnya"><ChevronRight size={14} /></button>
+          <button onClick={() => onNav(1)} disabled={index === plan.features.length - 1} className="grid size-7 place-items-center rounded border border-white/10 text-slate-400 transition hover:border-[#74FA6A]/60 hover:text-[#74FA6A] disabled:opacity-30" aria-label={ui("Next phase")}><ChevronRight size={14} /></button>
         </div>
         <div className="flex items-center gap-1 text-slate-500">
           <button disabled title="Segera" className="grid size-8 place-items-center rounded transition hover:bg-white/5 disabled:opacity-40" aria-label="Revisi fitur"><Pencil size={14} /></button>
@@ -243,7 +244,7 @@ function FeaturePanel({ plan, index, onClose, onNav, isPro, onDeleteFeature, onD
             className="grid size-8 place-items-center rounded transition hover:bg-white/5 hover:text-rose-400 disabled:opacity-40 disabled:hover:text-slate-500"
             aria-label={ui("Hapus fitur")}
           ><Trash2 size={14} /></button>
-          <button title="Perbesar panel" className="grid size-8 place-items-center rounded transition hover:bg-white/5 hover:text-[#74FA6A]" onClick={() => setExpanded(value => !value)} aria-expanded={expanded} aria-label={expanded ? "Collapse phase panel" : "Expand phase panel"}>{expanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />}</button>
+          <button className="hidden size-8 place-items-center rounded transition hover:bg-white/5 hover:text-[#74FA6A] sm:grid" onClick={() => setExpanded(value => !value)} aria-expanded={expanded} aria-label={expanded ? ui("Collapse phase panel") : ui("Expand phase panel")}>{expanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />}</button>
           <button onClick={onClose} className="grid size-8 place-items-center rounded transition hover:bg-white/5 hover:text-[#74FA6A]" aria-label={ui("Tutup")}><X size={15} /></button>
         </div>
       </div>
@@ -311,7 +312,7 @@ function FeaturePanel({ plan, index, onClose, onNav, isPro, onDeleteFeature, onD
               <button type="button" onClick={() => onTaskSelect(task.ref)} key={task.ref} className="flex w-full items-center gap-1.5 rounded px-1 py-2 text-left text-[10px] hover:bg-white/5">
                 {task.status === "done" ? <Check size={9} className="shrink-0 text-emerald-400" /> : task.status === "in_progress" ? <span className="size-2 shrink-0 animate-spin rounded-full border border-amber-400 border-r-transparent" /> : <Circle size={8} className="shrink-0 text-slate-500" />}
                 <span className={`min-w-0 flex-1 truncate ${task.status === "done" ? "line-through text-slate-500" : "text-slate-200"}`}>{task.title}</span>
-                <span className={`shrink-0 ${task.status === "in_progress" ? "text-amber-400" : "text-slate-500"}`}>{task.status === "done" ? ui("Selesai") : task.status === "in_progress" ? "Sedang" : task.status === "failed" ? ui("Gagal") : ui("Belum")}</span>
+                <span className={`shrink-0 ${task.status === "in_progress" ? "text-amber-400" : "text-slate-500"}`}>{ui({done: "Done", in_progress: "In progress", failed: "Failed", pending: "Not started"}[task.status])}</span>
               </button>
             ))}
           </div>
@@ -323,22 +324,29 @@ function FeaturePanel({ plan, index, onClose, onNav, isPro, onDeleteFeature, onD
 
 
 function RoadmapTaskPanel({ plan, taskRef, onSelect, onClose }: { plan: Plan; taskRef: string; onSelect: (ref: string) => void; onClose: () => void }) {
+  useUiLanguage();
+  const panel = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const trigger = document.activeElement as HTMLElement | null;
+    panel.current?.focus();
+    return () => { if (trigger?.isConnected) trigger.focus(); };
+  }, []);
   const [expanded, setExpanded] = useState(false);
   const entry = plan.features.flatMap(feature => feature.subFeatures.flatMap(sub => sub.tasks.map(task => ({ feature, sub, task })))).find(entry => entry.task.ref === taskRef);
   if (!entry) return null;
   const { task, feature, sub } = entry;
-  return <motion.aside aria-label="Task details" initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ type: "spring", damping: 28 }} className={`absolute inset-y-0 right-0 z-30 w-full min-w-0 overflow-x-hidden overflow-y-auto break-words border-l border-white/[.06] bg-[#0C0E10] shadow-xl shadow-black/30 ${expanded ? "sm:w-[600px] sm:max-w-[85vw]" : "sm:w-[430px] sm:max-w-[45vw]"}`}>
+  return <motion.aside ref={panel} tabIndex={-1} data-task-panel aria-label={ui("Task details")} onKeyDown={event => { if (event.key === "Escape") { event.stopPropagation(); onClose(); } }} initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ type: "spring", damping: 28 }} className={`absolute inset-y-0 right-0 z-30 w-full min-w-0 overflow-x-hidden overflow-y-auto break-words border-l border-white/[.06] bg-[#0C0E10] shadow-xl shadow-black/30 ${expanded ? "sm:w-[600px] sm:max-w-[85vw]" : "sm:w-[430px] sm:max-w-[45vw]"}`}>
     <header className="sticky top-0 flex h-12 items-center justify-between border-b border-white/10 bg-[#0C0E10] px-4">
-      <b className="text-xs">Task details</b>
-      <div className="flex gap-1"><button className="grid size-9 place-items-center rounded hover:bg-white/5" aria-label={expanded ? "Collapse task panel" : "Expand task panel"} aria-expanded={expanded} onClick={() => setExpanded(value => !value)}>{expanded ? <Minimize2 size={15}/> : <Maximize2 size={15}/>}</button><button className="grid size-9 place-items-center rounded hover:bg-white/5" aria-label="Close task details" onClick={onClose}><X size={15}/></button></div>
+      <b className="text-xs">{ui("Task details")}</b>
+      <div className="flex gap-1"><button className="hidden size-9 place-items-center rounded hover:bg-white/5 sm:grid" aria-label={expanded ? ui("Collapse task panel") : ui("Expand task panel")} aria-expanded={expanded} onClick={() => setExpanded(value => !value)}>{expanded ? <Minimize2 size={15}/> : <Maximize2 size={15}/>}</button><button className="grid size-9 place-items-center rounded hover:bg-white/5" aria-label={ui("Close task details")} onClick={onClose}><X size={15}/></button></div>
     </header>
     <div className="space-y-5 p-5">
       <p className="font-mono text-xs text-[#74FA6A]">{task.ref}</p>
       <h2 className="text-base font-semibold text-white">{task.title}</h2>
-      <dl className="grid grid-cols-[90px_minmax(0,1fr)] gap-3 text-xs text-slate-300"><dt>Status</dt><dd>{task.status.replaceAll("_", " ")}</dd><dt>Layer</dt><dd>{task.layer}</dd><dt>Phase</dt><dd>{feature.title}</dd><dt>Subfeature</dt><dd>{sub.title}</dd>{task.page && <><dt>Page</dt><dd>{task.page}</dd></>}</dl>
-      <section><h3 className="mb-2 text-xs font-semibold">Dependencies</h3>{task.deps.length ? task.deps.map(ref => <button key={ref} className="mr-2 rounded bg-white/5 px-3 py-2 font-mono text-xs text-[#74FA6A]" onClick={() => onSelect(ref)}>{ref}</button>) : <p className="text-xs text-slate-400">No dependencies</p>}</section>
+      <dl className="grid grid-cols-[90px_minmax(0,1fr)] gap-3 text-xs text-slate-300"><dt>{ui("Status")}</dt><dd>{ui(({ pending: "Belum dimulai", in_progress: "Dikerjakan", done: "Selesai", failed: "Gagal" })[task.status])}</dd><dt>{ui("Layer")}</dt><dd>{task.layer}</dd><dt>{ui("Phase")}</dt><dd>{feature.title}</dd><dt>{ui("Subfeature")}</dt><dd>{sub.title}</dd>{task.page && <><dt>{ui("Page")}</dt><dd>{task.page}</dd></>}</dl>
+      <section><h3 className="mb-2 text-xs font-semibold">{ui("Dependencies")}</h3>{task.deps.length ? task.deps.map(ref => <button key={ref} className="mr-2 rounded bg-white/5 px-3 py-2 font-mono text-xs text-[#74FA6A]" onClick={() => onSelect(ref)}>{ref}</button>) : <p className="text-xs text-slate-400">{ui("No dependencies")}</p>}</section>
       {(task.lastFailReason || task.failReason) && <p className="text-xs text-rose-300">{task.lastFailReason || task.failReason}</p>}
-      <section><h3 className="mb-2 text-xs font-semibold">Tasks in this subfeature</h3><div className="space-y-2">{sub.tasks.map(item => <button key={item.ref} onClick={() => onSelect(item.ref)} aria-pressed={item.ref === taskRef} className={`block w-full whitespace-normal break-words rounded-lg px-3 py-3 text-left text-xs ${item.ref === taskRef ? "bg-[#74FA6A]/10 text-[#74FA6A]" : "bg-white/5 text-slate-300"}`}>{item.title}</button>)}</div></section>
+      <section><h3 className="mb-2 text-xs font-semibold">{ui("Tasks in this subfeature")}</h3><div className="space-y-2">{sub.tasks.map(item => <button key={item.ref} onClick={() => onSelect(item.ref)} aria-pressed={item.ref === taskRef} className={`block w-full whitespace-normal break-words rounded-lg px-3 py-3 text-left text-xs ${item.ref === taskRef ? "bg-[#74FA6A]/10 text-[#74FA6A]" : "bg-white/5 text-slate-300"}`}>{item.title}</button>)}</div></section>
     </div>
   </motion.aside>;
 }

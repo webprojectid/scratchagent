@@ -1,9 +1,14 @@
+import { writeOriginGate } from "@/lib/write-origin";
+import { taskResponse } from "@/lib/task-response";
 import { apiText } from "@/lib/ui-messages";
 import { NextResponse } from "next/server";
 import { accessPlan, getRequestUser, unauthorized } from "@/lib/api-auth";
 import { retryTask } from "@/lib/tasks";
 
 export async function POST(request: Request, { params }: { params: Promise<{ ref: string }> }) {
+  const originGate = writeOriginGate(request);
+  if (originGate) return originGate;
+  return taskResponse(async () => {
   const user = await getRequestUser();
   if (!user) return unauthorized();
 
@@ -18,4 +23,5 @@ export async function POST(request: Request, { params }: { params: Promise<{ ref
   const task = await retryTask(planId, decoded);
   if (!task) return NextResponse.json({ error: apiText("Task tidak ditemukan") }, { status: 404 });
   return NextResponse.json({ ok: true, ref: decoded, status: task.status });
+  });
 }
