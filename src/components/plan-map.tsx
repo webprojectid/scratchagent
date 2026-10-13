@@ -236,7 +236,7 @@ function FeaturePanel({ plan, index, onClose, onNav, isPro, onDeleteFeature, onD
           <button onClick={() => onNav(1)} disabled={index === plan.features.length - 1} className="grid size-7 place-items-center rounded border border-white/10 text-slate-400 transition hover:border-[#74FA6A]/60 hover:text-[#74FA6A] disabled:opacity-30" aria-label={ui("Next phase")}><ChevronRight size={14} /></button>
         </div>
         <div className="flex items-center gap-1 text-slate-500">
-          <button disabled title="Segera" className="grid size-8 place-items-center rounded transition hover:bg-white/5 disabled:opacity-40" aria-label="Revisi fitur"><Pencil size={14} /></button>
+          <button disabled title={ui("Coming soon")} className="grid size-8 place-items-center rounded transition hover:bg-white/5 disabled:opacity-40" aria-label={ui("Revise phase")}><Pencil size={14} /></button>
           <button
             disabled={!isPro}
             onClick={() => isPro && onDeleteFeature?.(feature.slug, feature.title)}
@@ -291,9 +291,9 @@ function FeaturePanel({ plan, index, onClose, onNav, isPro, onDeleteFeature, onD
                     <button
                       disabled={!isPro || subActive}
                       onClick={() => isPro && onDeleteSubFeature?.(feature.slug, subFeature.title)}
-                      title={!isPro ? ui("Hapus struktur hanya untuk paket Pro") : subActive ? "Sub-fitur sedang dikerjakan agent" : `Hapus sub-fitur "${subFeature.title}"`}
+                      title={!isPro ? ui("Hapus struktur hanya untuk paket Pro") : subActive ? ui("An agent is working on this subfeature") : ui("Delete subfeature {0}", subFeature.title)}
                       className="grid size-4 place-items-center rounded text-slate-600 transition hover:bg-rose-400/10 hover:text-rose-400 disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-slate-600"
-                      aria-label={`Hapus sub-fitur ${subFeature.title}`}
+                      aria-label={ui("Delete subfeature {0}", subFeature.title)}
                     ><Trash2 size={9} /></button>
                   </span>
                 </div>

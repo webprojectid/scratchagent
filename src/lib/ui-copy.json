@@ -229,5 +229,9 @@
   ["Previous phase","Previous phase","Fase sebelumnya"],
   ["Next phase","Next phase","Fase berikutnya"],
   ["Collapse phase panel","Collapse phase panel","Perkecil panel fase"],
-  ["Expand phase panel","Expand phase panel","Perbesar panel fase"]
+  ["Expand phase panel","Expand phase panel","Perbesar panel fase"],
+  ["Coming soon","Coming soon","Segera hadir"],
+  ["Revise phase","Revise phase","Revisi fase"],
+  ["An agent is working on this subfeature","An agent is working on this subfeature","Agent sedang mengerjakan subfitur ini"],
+  ["Delete subfeature {0}","Delete subfeature {0}","Hapus subfitur {0}"]
 ]
