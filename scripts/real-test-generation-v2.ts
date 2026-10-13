@@ -7,7 +7,7 @@ import "./lib-env";
 
 // Force-set environment variables BEFORE importing generate.ts
 process.env.LLM_BASE_URL = 'http://localhost:20128/v1';
-process.env.LLM_API_KEY = 'process.env.LLM_API_KEY ?? ""';
+if (!process.env.LLM_API_KEY) throw new Error('Configure LLM_API_KEY locally before running this manual test');
 process.env.LLM_MODEL = 'qd/qmodel_38max';
 process.env.NODE_ENV = 'development';
 
@@ -19,7 +19,7 @@ console.log('\n' + '═'.repeat(80));
 console.log('REAL PLAN GENERATION TEST - v2');
 console.log('User Context: teguhends@gmail.com');
 console.log(`LLM: qd/qmodel_38max @ ${process.env.LLM_BASE_URL}`);
-console.log(`API Key: ${process.env.LLM_API_KEY?.substring(0, 15)}...${process.env.LLM_API_KEY?.slice(-4)}`);
+console.log(`API key configured: ${Boolean(process.env.LLM_API_KEY)}`);
 console.log('═'.repeat(80));
 
 const TEST_CONFIG = {

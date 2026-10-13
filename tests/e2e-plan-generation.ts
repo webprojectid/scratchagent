@@ -272,7 +272,7 @@ async function main() {
     }
     console.log(`✓ Base URL: ${envVars.LLM_BASE_URL}`);
     console.log(`✓ Model: ${envVars.LLM_MODEL}`);
-    console.log(`✓ API Key: ${envVars.LLM_API_KEY?.substring(0, 10)}...${envVars.LLM_API_KEY?.substring(envVars.LLM_API_KEY.length - 4)}`);
+    console.log(`✓ API key configured: ${Boolean(envVars.LLM_API_KEY)}`);
     
     // Run simulations
     const results = {
