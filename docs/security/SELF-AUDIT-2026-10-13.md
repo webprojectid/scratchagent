@@ -23,7 +23,7 @@ Additional compatible protections: same-origin browser write guards preserve aut
 
 ## Validation
 
-- 144 automated tests pass, including quota race, detached DB responses, task state/dependency/order, duplicate/stale worker claims, ban/watchdog gates, saved-provider entry, refund cleanup, scoped tiers, DNS rebinding and SSE preservation.
+- 145 automated tests pass, including quota race, detached DB responses, task state/dependency/order, duplicate/stale worker claims, ban/watchdog gates, saved-provider entry, refund cleanup, scoped tiers, DNS rebinding, SSE preservation and portable lint fingerprints.
 - TypeScript and a fresh independent Next.js 16.4.0 production build pass (38 generated pages). The Supabase CA is present in generated API traces. No paid LLM calls were made.
 - A live PostgreSQL fixture transaction verifies lease ownership/duplicate claim, locked task finalization, current task responses, attempt accounting and Free quota. The transaction is rolled back; a separate query confirms the fixture account/plan did not remain. Existing user data is untouched.
 - Drizzle generation produces no schema diff. This release requires no new database migration or table.

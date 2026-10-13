@@ -650,13 +650,13 @@
       "severity": 1,
       "count": 1
     },
-    "7aae3b4d4369dd104b697e34936b2be1466c6acdbc4566bc815f0570897ac649": {
+    "aa2b946be802b14e5d5909d1c751d5b7bbe318d10e0aa756b39b181c420fb36d": {
       "file": "src/app/new/page.tsx",
       "rule": "react-hooks/set-state-in-effect",
       "severity": 2,
       "count": 1
     },
-    "beb23d46b2a2906f797df22c7f9aa71de35917a069bc7198d14f580bd4bcb305": {
+    "c209692d3c622def929be2d170f71ec631d8acbcdfee0f43e9a7871b253bc87f": {
       "file": "src/app/new/prefs/page.tsx",
       "rule": "react-hooks/set-state-in-effect",
       "severity": 2,
@@ -782,37 +782,37 @@
       "severity": 2,
       "count": 1
     },
-    "2f3a521cc23f85da3155f8c3d629023012168e5ae6451b53ac668554b6963c22": {
+    "eb0c3396f239f0cd9a16d633fdfc422e7bfce0d216b74d259905b9e4563bba95": {
       "file": "src/components/account-workspace.tsx",
       "rule": "react-hooks/set-state-in-effect",
       "severity": 2,
       "count": 1
     },
-    "5162141f539059872ee3a33b8021a45fd7b58fa3422c28712d7e5f9df85022e9": {
+    "f905a8e455198878139b08cde0f36b74ee12a7617793a917d1dc30d9d1d100b7": {
       "file": "src/components/account-workspace.tsx",
       "rule": "react-hooks/set-state-in-effect",
       "severity": 2,
       "count": 1
     },
-    "6ee43dd78d2e055ceaabd9aaffdc1179f4e5ce7b2c14b12b131a649ee6dcc2bc": {
+    "1bda0bd892115c1aadee8b36b3ada8103518e7b928ba026728ea8b7d3f32d57e": {
       "file": "src/components/account-workspace.tsx",
       "rule": "react-hooks/purity",
       "severity": 2,
       "count": 1
     },
-    "aaaaf35175fc997c4c644931d256dd6abb49508d72b7b6ce635e1a112e61cf73": {
+    "6e1f8870a05bd62a157cf7bb0c2eaebc48a200875baa5b87795dcf7506729ad0": {
       "file": "src/components/account-workspace.tsx",
       "rule": "react-hooks/purity",
       "severity": 2,
       "count": 1
     },
-    "1d3f77deb079f56ef415ccd4fd173adf44799ea9a493d653ac5f7405fdf1d36e": {
+    "7bd9379c7e86e360393c6c46bf29b7e50efae5baafc2f9b71624b19454808f4a": {
       "file": "src/components/account-workspace.tsx",
       "rule": "react-hooks/purity",
       "severity": 2,
       "count": 1
     },
-    "78379d18443f0efe0ce6c4af6323e6006b677608e13fec7c54be68f193203bd0": {
+    "20ac2caeebddf6a0ce63e6f35c3654136570c48167faa598b5c7c1e96ba33eb9": {
       "file": "src/components/account-workspace.tsx",
       "rule": "react-hooks/purity",
       "severity": 2,
@@ -860,25 +860,25 @@
       "severity": 1,
       "count": 1
     },
-    "ce21cb88774bf8d7d33d15096384c67e0f44566ceb2491b34b36d65b9abe5c80": {
+    "df16f5cb5c57ccf76d7265c19f9a6b0bfeaa04fb00241cf9bc88906c54989645": {
       "file": "src/components/profile-overview.tsx",
       "rule": "react-hooks/set-state-in-effect",
       "severity": 2,
       "count": 1
     },
-    "a126855e80c59a279967955f1d293c3fa46d91aee93b1546f96d8f9aaa6a48e2": {
+    "0f22d5183b2b42e24543a19ddd215188d1292eac8b38c0166aa1eeda339fa378": {
       "file": "src/components/ui/border-beam-panel.tsx",
       "rule": "react-hooks/set-state-in-effect",
       "severity": 2,
       "count": 1
     },
-    "129dbe455deb7d19dd00fb3c68612d18de947b07c863fd2666387d4150c7b2b5": {
+    "ecb15c9e6eba8a84276f856249dc33b6e06aa269a85aa84548077c25e3fb3692": {
       "file": "src/components/ui/border-beam-panel.tsx",
       "rule": "react-hooks/set-state-in-effect",
       "severity": 2,
       "count": 1
     },
-    "05c174b47c19a1dbcc50471b74f9ff82dfb67853a67df8539e6dcf4bd5304603": {
+    "3afc5a0c075635958d305bb1d30549384765a2e6ed7192e482e57203793f834e": {
       "file": "src/components/ui/border-beam-panel.tsx",
       "rule": "react-hooks/refs",
       "severity": 2,

@@ -3,9 +3,10 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 
-export function fingerprint(file, message, source) {
+export function fingerprint(file, message, source, root = process.cwd()) {
   const line = source.split(/\r?\n/)[message.line - 1]?.trim() ?? "";
-  return createHash("sha256").update(JSON.stringify([file, message.ruleId, message.severity, message.message, line])).digest("hex");
+  const detail = message.message.replaceAll("\\", "/").replaceAll(root.replaceAll("\\", "/"), "<repo>");
+  return createHash("sha256").update(JSON.stringify([file, message.ruleId, message.severity, detail, line])).digest("hex");
 }
 
 export async function checkLint() {
