@@ -5,16 +5,16 @@ export function homeCopy(lang: Lang) {
   const en = lang === "en";
   return {
     banner: en
-      ? "Scratch Agent is free forever. Need more? Go Pro"
-      : "Scratch Agent gratis selamanya. Butuh lebih? Upgrade ke Pro",
+      ? "Start with Free. Compare Pro for larger plans."
+      : "Mulai dengan Free. Bandingkan Pro untuk plan lebih besar.",
 
     heroA: en ? "A clear plan." : "Rencana yang jelas.",
     heroB: en ? "An agent that keeps moving." : "Agent yang terus bergerak.",
     heroSub: en
       ? "Write a short brief. Get ordered tasks and ready-to-use context, so your agent can start on the next step right away."
       : "Tulis brief singkat, dapat task terurut dan konteks siap pakai. Agent tinggal jalan.",
-    heroStart: en ? "Start" : "Mulai",
-    heroDemo: en ? "Watch the demo" : "Lihat demo",
+    heroStart: en ? "Create a plan" : "Buat plan",
+    heroDemo: en ? "Open sample plan" : "Buka contoh plan",
 
     // Mission control mock
     mockPlanLabel: "plan",
@@ -41,13 +41,13 @@ export function homeCopy(lang: Lang) {
           { label: "PRD ENGINE", title: "Brief → ordered graph.", copy: "Assumptions enriched. Features, sub-features, tasks, deps." },
           { label: "AGENT-NATIVE RUNTIME", title: "Built for focused execution.", copy: "One active task. Status, layer, checkpoint all readable." },
           { label: "TASK GRAPH", title: "Deterministic ordering.", copy: "Frontend, backend, QA. The server decides the order." },
-          { label: "LIVE PROGRESS", title: "Watch the agent move.", copy: "Five second polling. Telemetry stays visible." },
+          { label: "LIVE PROGRESS", title: "Follow task progress.", copy: "Task status and checkpoints stay visible as the agent works." },
         ]
       : [
           { label: "PRD ENGINE", title: "Brief → ordered graph.", copy: "Assumptions diperkaya. Features, sub-features, tasks, deps." },
           { label: "AGENT-NATIVE RUNTIME", title: "Built for focused execution.", copy: "Satu task aktif. Status, layer, checkpoint terbaca." },
           { label: "TASK GRAPH", title: "Deterministic ordering.", copy: "Frontend, backend, QA. Server yang putusin urutan." },
-          { label: "LIVE PROGRESS", title: "Lihat agent gerak.", copy: "Polling 5 detik. Telemetry always terlihat." },
+          { label: "LIVE PROGRESS", title: "Ikuti progres task.", copy: "Status task dan checkpoint terlihat saat agent bekerja." },
         ],
 
     // Terminal mini copy
@@ -68,14 +68,14 @@ export function homeCopy(lang: Lang) {
       : "Dari side project sampe brief klien, Scratch Agent ubah ide jadi plan yang bisa langsung dijalanin agent.",
     solutions: en
       ? [
-          { label: "SOLO DEV", title: "Side projects never stall.", copy: "Write a short brief, get a complete plan. The agent works through the tasks one by one, you just review the results.", points: ["A 5 minute brief becomes an execution-ready plan", "Agent progress is visible live on the web", "Resume anytime without losing context"] },
+          { label: "SOLO DEV", title: "Give your side project a plan.", copy: "Write a brief, review the plan, and work through the tasks with your coding agent.", points: ["Define scope before you start coding", "Review agent progress on the web", "Continue from a saved checkpoint"] },
           { label: "FREELANCER / AGENCY", title: "Client briefs become professional PRDs.", copy: "Turn a client brief into a structured PRD with features, acceptance criteria, and a clear scope before coding starts.", points: ["PRD + task graph ready to present", "Measurable scope from features & sub-features", "Execution can be handed to a coding agent"] },
-          { label: "AGENT OPERATOR", title: "A coding agent that never gets confused.", copy: "Using OpenCode, Claude Code, or Cursor? Give them an ordered plan with dependencies and checkpoints, not guesses.", points: ["Deterministic task order from the server", "Checkpoints for manual verification", "Automatic retry when a task fails"] },
+          { label: "AGENT OPERATOR", title: "Give your agent the task context.", copy: "Use the plan with OpenCode, Claude Code, or Cursor. Review requirements, task dependencies, and checkpoints as you build.", points: ["Task order managed by the server", "Checkpoints for manual verification", "Review failed tasks before retrying"] },
         ]
       : [
-          { label: "SOLO DEV", title: "Side project gak mangkrak.", copy: "Tulis brief singkat, dapat plan lengkap. Agent kerjain task satu per satu, kamu tinggal review hasilnya.", points: ["Brief 5 menit jadi plan siap eksekusi", "Progress agent kelihatan live di web", "Lanjut kapan aja tanpa loss konteks"] },
+          { label: "SOLO DEV", title: "Susun plan untuk side project.", copy: "Tulis brief, review plan, lalu kerjakan task bersama agent coding.", points: ["Tentukan scope sebelum mulai coding", "Review progres agent di web", "Lanjut dari checkpoint tersimpan"] },
           { label: "FREELANCER / AGENCY", title: "Brief klien jadi PRD profesional.", copy: "Ubah brief klien jadi PRD terstruktur dengan features, acceptance criteria, scope jelas sebelum coding dimulai.", points: ["PRD + task graph siap dipresentasi", "Scope terukur dari features & sub-features", "Eksekusi bisa diserahkan ke coding agent"] },
-          { label: "AGENT OPERATOR", title: "Coding agent gak bingung.", copy: "Pakai OpenCode, Claude Code, atau Cursor? Kasih mereka ordered plan dengan dependencies & checkpoint, bukan tebak-tebakan.", points: ["Task order deterministik dari server", "Checkpoint buat verifikasi manual", "Auto retry kalo task gagal"] },
+          { label: "AGENT OPERATOR", title: "Beri agent konteks task.", copy: "Gunakan plan bersama OpenCode, Claude Code, atau Cursor. Review kebutuhan, dependensi task, dan checkpoint selama pengerjaan.", points: ["Urutan task dikelola server", "Checkpoint buat verifikasi manual", "Review task gagal sebelum mencoba lagi"] },
         ],
 
     // Agents section

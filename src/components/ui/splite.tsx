@@ -6,6 +6,8 @@ import type { Application } from "@splinetool/runtime";
 interface SplineSceneProps {
   scene: string;
   className?: string;
+  active?: boolean;
+  decorative?: boolean;
 }
 
 // Cache satu Promise per scene. React StrictMode me-mount effect dua kali di dev;
@@ -17,7 +19,8 @@ function getSceneBuffer(scene: string) {
   let promise = sceneBufferCache.get(scene);
   if (!promise) {
     promise = fetch(scene, { cache: "force-cache" }).then((response) => {
-      if (!response.ok) throw new Error(`Spline scene failed: ${response.status}`);
+      if (!response.ok)
+        throw new Error(`Spline scene failed: ${response.status}`);
       return response.arrayBuffer();
     });
     sceneBufferCache.set(scene, promise);
@@ -42,15 +45,43 @@ function optimizeRenderer(app: Application) {
 }
 
 export function SplineFallback() {
-  return <div className="size-full min-h-[420px] md:min-h-[560px] bg-transparent" aria-hidden="true" />;
+  return (
+    <div
+      className="size-full min-h-[420px] md:min-h-[560px] bg-transparent"
+      aria-hidden="true"
+    />
+  );
 }
 
-export function SplineScene({ scene, className }: SplineSceneProps) {
+export function SplineScene({
+  scene,
+  className,
+  active = true,
+  decorative = false,
+}: SplineSceneProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const appRef = useRef<Application | null>(null);
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
+  const activeRef = useRef(active);
+
+  useEffect(() => {
+    activeRef.current = active;
+    const app = appRef.current;
+    const rect = hostRef.current?.getBoundingClientRect();
+    if (app) {
+      if (
+        active &&
+        !document.hidden &&
+        rect &&
+        rect.bottom > 0 &&
+        rect.top < window.innerHeight
+      )
+        app.play();
+      else app.stop();
+    }
+  }, [active]);
 
   useEffect(() => {
     const host = hostRef.current;
@@ -75,31 +106,50 @@ export function SplineScene({ scene, className }: SplineSceneProps) {
     const intersectionObserver = new IntersectionObserver(
       (entries) => {
         if (!app) return;
-        if (entries[0].isIntersecting) app.play();
+        if (entries[0].isIntersecting && activeRef.current && !document.hidden)
+          app.play();
         else app.stop();
       },
-      { threshold: 0.01 }
+      { threshold: 0.01 },
     );
     intersectionObserver.observe(host);
 
-    void Promise.all([
-      import("@splinetool/runtime"),
-      getSceneBuffer(scene),
-    ])
+    const onVisibility = () => {
+      if (!app) return;
+      const rect = host.getBoundingClientRect();
+      if (
+        !document.hidden &&
+        activeRef.current &&
+        rect.bottom > 0 &&
+        rect.top < window.innerHeight
+      )
+        app.play();
+      else app.stop();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+
+    void Promise.all([import("@splinetool/runtime"), getSceneBuffer(scene)])
       .then(([{ Application }, sceneBuffer]) => {
         if (cancelled) return;
 
         app = new Application(canvas, { renderOnDemand: true });
         appRef.current = app;
         // slice() menjaga cached ArrayBuffer tetap reusable untuk remount.
-        app.start(sceneBuffer.slice(0), { interactive: true });
+        app.start(sceneBuffer.slice(0), { interactive: !decorative });
+        if (decorative) app.setGlobalEvents(false);
         resize();
         optimizeRenderer(app);
 
         // Watermark dan resize internal bisa masuk belakangan; re-apply sebentar,
         // lalu berhenti agar tidak menambah timer permanen.
         [100, 500, 1500, 2500].forEach((ms) => {
-          timers.push(window.setTimeout(() => app && optimizeRenderer(app), ms));
+          timers.push(
+            window.setTimeout(() => {
+              if (!app) return;
+              optimizeRenderer(app);
+              onVisibility();
+            }, ms),
+          );
         });
 
         const rect = host.getBoundingClientRect();
@@ -108,9 +158,11 @@ export function SplineScene({ scene, className }: SplineSceneProps) {
           rect.top < window.innerHeight &&
           rect.right > 0 &&
           rect.left < window.innerWidth;
-        if (!inView) app.stop();
+        if (!inView || !activeRef.current || document.hidden) app.stop();
 
-        (window as unknown as { __splineWatermark?: string }).__splineWatermark = "disabled";
+        (
+          window as unknown as { __splineWatermark?: string }
+        ).__splineWatermark = "disabled";
         setLoading(false);
       })
       .catch(() => {
@@ -125,18 +177,35 @@ export function SplineScene({ scene, className }: SplineSceneProps) {
       timers.forEach(clearTimeout);
       resizeObserver.disconnect();
       intersectionObserver.disconnect();
+      document.removeEventListener("visibilitychange", onVisibility);
       app?.dispose();
       appRef.current = null;
     };
-  }, [scene]);
+  }, [scene, decorative]);
 
   if (failed) {
+    if (decorative)
+      return (
+        <div className={`size-full ${className ?? ""}`} aria-hidden="true" />
+      );
     return (
       <div className="flex size-full items-center justify-center bg-[#0F1113]">
         <div className="text-center">
-          <div className="mx-auto grid size-10 place-items-center rounded-full border border-white/10 bg-white/[.04] font-mono text-[11px] text-white/45">〰</div>
-          <p className="mt-3 max-w-[18ch] font-mono text-[10px] leading-4 text-white/35">3D disabled. check adblock / canvas access.</p>
-          <button onClick={() => { setFailed(false); setLoading(true); }} className="mt-3 rounded-full border border-white/15 px-3 py-1 font-mono text-[10px] text-white/55 hover:border-[#74FA6A]/40 hover:text-white">retry</button>
+          <div className="mx-auto grid size-10 place-items-center rounded-full border border-white/10 bg-white/[.04] font-mono text-[11px] text-white/45">
+            〰
+          </div>
+          <p className="mt-3 max-w-[18ch] font-mono text-[10px] leading-4 text-white/35">
+            3D disabled. check adblock / canvas access.
+          </p>
+          <button
+            onClick={() => {
+              setFailed(false);
+              setLoading(true);
+            }}
+            className="mt-3 rounded-full border border-white/15 px-3 py-1 font-mono text-[10px] text-white/55 hover:border-[#74FA6A]/40 hover:text-white"
+          >
+            retry
+          </button>
         </div>
       </div>
     );
@@ -151,7 +220,8 @@ export function SplineScene({ scene, className }: SplineSceneProps) {
       <canvas
         ref={canvasRef}
         className={`${loading ? "hidden" : "block"} size-full bg-transparent`}
-        aria-label="Interactive 3D galaxy background"
+        aria-label={decorative ? undefined : "Interactive 3D scene"}
+        aria-hidden={decorative ? true : undefined}
       />
     </div>
   );

@@ -428,6 +428,47 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--accent); outline-of
     height: 340px; /* area visual yang dipakai setelah discale */
   }
 }
+[data-liquid-nav] > :not([data-vaso-root]) {
+  position: relative;
+  z-index: 1;
+}
+
+.landing-nav-button {
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 16px;
+  overflow: hidden;
+  border-radius: 16px;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  transition: color 150ms cubic-bezier(.4,0,.2,1);
+}
+.landing-nav-button > span { position: relative; z-index: 1; }
+.landing-nav-button::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  transform: translateY(50%) scale(0);
+  transition: transform 350ms cubic-bezier(.4,0,.2,1);
+  pointer-events: none;
+}
+.landing-nav-button-outline { border: 1px solid #e8f0e8; color: #e8f0e8; }
+.landing-nav-button-outline::before { background: #e8f0e8; }
+.landing-nav-button-solid { background: #e8f0e8; color: #10200f; }
+.landing-nav-button-solid::before { background: #74fa6a; }
+.landing-nav-button:is(:hover, :focus-visible)::before { transform: translateY(50%) scale(1.5,2.2); }
+.landing-nav-button-outline:is(:hover, :focus-visible) { color: #10200f; }
+.landing-nav-button:focus-visible { outline: 2px solid #74fa6a; outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) {
+  .landing-nav-button, .landing-nav-button::before { transition: none; }
+}
+
 @media (max-width: 480px) {
   .robot-scaler {
     transform: scale(min(0.56, calc((100vw - 32px) / 580 * 0.92)));
