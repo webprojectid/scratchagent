@@ -12,7 +12,7 @@ import { accountMenuLinks } from "@/lib/account-navigation";
 import { createClient } from "@/lib/supabase/client";
 import { getCurrentUser, refreshCurrentUser, supabaseConfigured, type CurrentUser } from "@/lib/current-user";
 
-export function UserNav() {
+export function UserNav({ landingButtons = false }: { landingButtons?: boolean }) {
   useUiLanguage();
   const router = useRouter();
   const [user, setUser] = useState<CurrentUser | null>(null);
@@ -57,8 +57,8 @@ export function UserNav() {
     return (
       <Link
         href="/login"
-        className="font-mono text-[12px] tracking-[0.02em] text-white/80 transition-colors hover:text-[#74FA6A]"
-      >{ui("Masuk")}</Link>
+        className={landingButtons ? "landing-nav-button landing-nav-button-outline" : "font-mono text-[12px] tracking-[0.02em] text-white/80 transition-colors hover:text-[#74FA6A]"}
+      ><span>{ui("Masuk")}</span></Link>
     );
   }
 

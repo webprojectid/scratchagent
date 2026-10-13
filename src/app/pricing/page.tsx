@@ -1,7 +1,6 @@
 "use client";
 
-import Link from "next/link";
-import { HeaderNav } from "@/components/header-nav";
+import { LandingNavbar } from "@/components/landing-navbar";
 import { useLang } from "@/lib/lang";
 import { pricingCopy } from "@/lib/copy-pricing";
 import { PricingCards } from "./pricing-cards";
@@ -13,15 +12,7 @@ export default function PricingPage() {
 
   return (
     <main className={styles.page}>
-      <header className={styles.header}>
-        <div className={styles.headerInner}>
-          <Link href="/" className={styles.brand} aria-label="ScratchAgent home">
-            <span className={styles.brandMark} aria-hidden="true"><i /><i /><i /></span>
-            ScratchAgent
-          </Link>
-          <HeaderNav links={["solutions", "docs"]} />
-        </div>
-      </header>
+      <LandingNavbar />
 
       <section className={styles.hero}>
         <p className={styles.eyebrow}>{c.eyebrow}</p>
@@ -34,7 +25,7 @@ export default function PricingPage() {
         </div>
       </section>
 
-      <section className={styles.plansSection} aria-labelledby="plans-heading">
+      <section id="plans" className={styles.plansSection} aria-labelledby="plans-heading">
         <div className={styles.sectionHeading}>
           <h2 id="plans-heading">{c.plansTitle}</h2>
           <p>{c.currencyNote}</p>

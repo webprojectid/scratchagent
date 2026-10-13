@@ -2,19 +2,20 @@
 import { uiText as ui, useUiLanguage, uiLocale } from "@/lib/ui-text";
 
 import Link from "next/link";
-import { animate, AnimatePresence, motion, useMotionValue, useSpring, useScroll } from "motion/react";
+import { LandingNavbar } from "@/components/landing-navbar";
+import { animate, AnimatePresence, motion, useMotionValue, useSpring } from "motion/react";
 import { ArrowUpDown, ArrowUpRight, Bike, BookOpen, ChevronLeft, Clock, CreditCard, Delete, Footprints, KeyRound, Lock, MoreHorizontal, PenLine, Play, QrCode, Rocket, Sparkles, Star, User, Users, Wind, X, Zap } from "lucide-react";
 import { memo, useEffect, useRef, useState } from "react";
 import DottedDemo from "@/components/ui/dotted-demo";
 import { IPhone17ShopDemo } from "@/components/ui/iphone17-shop-demo";
-import { getCurrentUser, refreshCurrentUser } from "@/lib/current-user";
-import { UserNav } from "@/components/user-nav";
+import { getCurrentUser } from "@/lib/current-user";
+
 import { SupportedAiTools } from "@/components/supported-ai-tools";
-import { BorderBeamPanel } from "@/components/ui/border-beam-panel";
+import { ClosingFooter } from "@/components/closing-footer";
 import { TestimonialsSection } from "@/components/testimonials-section";
 import { CreatorSection } from "@/components/creator-section";
 import { useLang } from "@/lib/lang";
-import { t } from "@/lib/i18n";
+
 import { homeCopy } from "@/lib/copy-home";
 import { LandingWorkspace } from "@/components/landing-workspace";
 import featureArt from "./feature-art.module.css";
@@ -57,50 +58,6 @@ function StackMarquee() {
   </section>;
 }
 
-function Navbar() {
-  useUiLanguage();
-  const lang = useLang();
-  const { scrollY } = useScroll();
-  const [scrolled, setScrolled] = useState(false);
-  const [mobileNav, setMobileNav] = useState(false);
-  const [loggedIn, setLoggedIn] = useState(false);
-  useEffect(() => { const unsub = scrollY.on("change", (y) => setScrolled(y > 16)); return () => unsub(); }, [scrollY]);
-  useEffect(() => { if (mobileNav) document.body.style.overflow = "hidden"; else document.body.style.overflow = ""; return () => { document.body.style.overflow = ""; }; }, [mobileNav]);
-  useEffect(() => {
-    let active = true;
-    const resolve = () => getCurrentUser().then((u) => { if (active) setLoggedIn(!!u); });
-    resolve();
-    const onFocus = () => { refreshCurrentUser(); resolve(); };
-    window.addEventListener("focus", onFocus);
-    window.addEventListener("storage", onFocus);
-    return () => {
-      active = false;
-      window.removeEventListener("focus", onFocus);
-      window.removeEventListener("storage", onFocus);
-    };
-  }, []);
-  return (
-    <>
-      <motion.nav className={`sticky top-3 z-40 mx-auto flex h-[54px] w-[calc(100%-28px)] max-w-[1300px] items-center justify-between rounded-full px-4 transition-all duration-300 md:top-4 md:px-5 ${scrolled ? "border border-white/[.08] bg-[rgba(10,10,10,0.8)] shadow-[0_12px_40px_rgba(0,0,0,.3)] backdrop-blur-[12px]" : "border border-white/[.06] bg-[#1D2223]"}`} initial={{ y: -16, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: .5, ease: [0.16, 1, 0.3, 1] }}>
-        <div className="flex items-center gap-8">
-          <Link href="/" className="flex items-center gap-2 text-[18px] font-semibold tracking-[-.04em] text-[#E8F0E8]"><span className="relative grid size-7 place-items-center overflow-hidden text-[#74FA6A]" aria-hidden="true"><span className="absolute left-0 top-[7px] h-3 w-2.5 -skew-x-[28deg] rounded-sm bg-[#74FA6A]" /><span className="absolute left-[8px] top-[3px] h-3 w-2.5 -skew-x-[28deg] rounded-sm bg-[#9AFF82]" /><span className="absolute left-[16px] top-[7px] h-3 w-2.5 -skew-x-[28deg] rounded-sm bg-[#4DDC62]" /></span>Scratch Agent</Link>
-          <div className="hidden items-center gap-9 md:flex"><Link href="/pricing" className="font-mono text-[12px] tracking-[0.02em] text-white/70 transition-colors duration-200 hover:text-[#74FA6A]">{t("nav", "pricing", lang)}</Link><Link href="/solutions" className="font-mono text-[12px] tracking-[0.02em] text-white/70 transition-colors duration-200 hover:text-[#74FA6A]">{t("nav", "solutions", lang)}</Link><Link href="/docs" className="font-mono text-[12px] tracking-[0.02em] text-white/70 transition-colors duration-200 hover:text-[#74FA6A]">{t("nav", "docs", lang)}</Link><a href="https://scratchagent.store/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 font-mono text-[12px] tracking-[0.02em] text-[#74FA6A] transition-colors duration-200 hover:text-[#A8FF9B]"><KeyRound size={13} strokeWidth={2.2} aria-hidden="true" />Api Key</a></div>
-        </div>
-        <div className="hidden items-center gap-6 md:flex">
-
-          <UserNav />
-          <Link href={loggedIn ? "/new" : "/login"} className="grid size-8 place-items-center rounded-full bg-[#74FA6A] text-black transition hover:scale-105 hover:bg-[#A8FF9B]" aria-label={ui("Mulai sekarang")}><ArrowUpRight size={16} /></Link>
-        </div>
-        <button className="grid size-8 place-items-center text-white md:hidden" onClick={() => setMobileNav((v) => !v)} aria-label="Navigasi"><span className="relative block h-3.5 w-5"><span className={`absolute left-0 top-0 block h-px w-full bg-white transition-all duration-300 ${mobileNav ? "translate-y-[7px] rotate-45" : ""}`} /><span className={`absolute left-0 top-[7px] block h-px w-full bg-white transition-opacity duration-200 ${mobileNav ? "opacity-0" : "opacity-100"}`} /><span className={`absolute left-0 top-[14px] block h-px w-full bg-white transition-all duration-300 ${mobileNav ? "translate-y-[-7px] -rotate-45" : ""}`} /></span></button>
-      </motion.nav>
-      <motion.div className="fixed inset-0 z-[60] flex flex-col bg-[#0A0A0A] md:hidden" initial={false} animate={mobileNav ? { opacity: 1, pointerEvents: "auto" } : { opacity: 0, pointerEvents: "none" }} transition={{ duration: .35, ease: [0.16, 1, 0.3, 1] }}>
-        <div className="flex h-[64px] items-center justify-between px-5"><span className="flex items-center gap-2 text-[18px] font-semibold tracking-[-.04em] text-[#E8F0E8]"><span className="size-6 skew-x-[-28deg] bg-[#74FA6A]" />Scratch Agent</span><div className="flex items-center gap-3"><button className="grid size-8 place-items-center text-white" onClick={() => setMobileNav(false)} aria-label={ui("Tutup")}><X size={18} /></button></div></div>
-        <div className="flex flex-1 flex-col justify-between px-5 py-12"><div className="space-y-1">{[{ href: "/pricing", label: t("nav", "pricing", lang) }, { href: "/solutions", label: t("nav", "solutions", lang) }, { href: "/docs", label: t("nav", "docs", lang) }, { href: "https://scratchagent.store/", label: "Api Key", external: true }, { href: "/project/demo", label: t("cta", "examplePlan", lang) }].map((link, i) => (<motion.a key={link.href} href={link.href} target={link.external ? "_blank" : undefined} rel={link.external ? "noopener noreferrer" : undefined} onClick={() => setMobileNav(false)} className={`block py-4 font-mono text-[14px] tracking-[0.08em] transition-colors hover:text-[#74FA6A] ${link.external ? "text-[#74FA6A]" : "text-white/70"}`} initial={{ opacity: 0, y: 16 }} animate={mobileNav ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }} transition={{ delay: 0.08 + i * 0.05, duration: .4, ease: [0.16, 1, 0.3, 1] }}>{link.label}</motion.a>))}</div><motion.div initial={{ opacity: 0, y: 16 }} animate={mobileNav ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }} transition={{ delay: 0.32, duration: .4, ease: [0.16, 1, 0.3, 1] }}><Link href={loggedIn ? "/new" : "/login"} onClick={() => setMobileNav(false)} className="flex w-full items-center justify-center rounded-full border border-[#74FA6A] px-6 py-3.5 font-mono text-[13px] tracking-[0.06em] text-[#74FA6A] transition-colors hover:bg-[#74FA6A] hover:text-black">{t("cta", "startFree", lang)}</Link><p className="mt-6 font-mono text-[11px] tracking-[.08em] text-white/30">{loggedIn ? <Link href="/profile" className="hover:text-[#74FA6A]">{t("nav", "profile", lang)}</Link> : t("cta", "login", lang)}</p></motion.div></div>
-      </motion.div>
-    </>
-  );
-}
-
 export default function Home() {
   useUiLanguage();
   const lang = useLang();
@@ -111,17 +68,15 @@ export default function Home() {
     getCurrentUser().then((u) => { if (active) setLoggedIn(!!u); });
     return () => { active = false; };
   }, []);
-  useEffect(() => { import("@splinetool/react-spline").catch(() => {}); }, []);
   return (
-    <main className="rv2-page relative isolate w-full max-w-full overflow-x-hidden bg-[#0A0A0A] text-[#E8EDEC] selection:bg-[#74FA6A]/30 selection:text-black">
-      <link rel="preload" href="https://prod.spline.design/kZDDjO5HuC9GJUM2/scene.splinecode" as="fetch" crossOrigin="anonymous" />
+    <main className="rv2-page relative isolate w-full max-w-full overflow-x-clip bg-[#0A0A0A] text-[#E8EDEC] selection:bg-[#74FA6A]/30 selection:text-black">
       <DottedDemo />
       <div className="pointer-events-none fixed inset-0 z-[70] opacity-[.055] mix-blend-soft-light" style={{ backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>")` }} />
       <a href="#agents" className="relative z-30 mb-3 flex min-h-8 items-center justify-center gap-2 bg-[#74FA6A] px-4 py-1.5 text-center text-[11px] font-medium leading-4 text-black transition-colors hover:bg-[#9AFF82] md:mb-4 md:text-[12px]">{hc.banner}<span aria-hidden="true">→</span></a>
-      <Navbar />
+      <LandingNavbar />
 
        <section className="relative mx-auto max-w-[980px] px-5 pb-14 pt-10 md:px-10 md:pb-18 md:pt-12">
-         <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .6, ease: [0.16, 1, 0.3, 1] }} className="relative z-10 mx-auto flex max-w-[760px] flex-col items-center text-center">
+         <motion.div initial={false} className="relative z-10 mx-auto flex max-w-[760px] flex-col items-center text-center">
            <h1 className="max-w-[16ch] text-balance text-[clamp(2.8rem,5.8vw,5rem)] font-medium leading-[.96] tracking-[-.065em] text-[#E8F8E5]"><span className="text-[#74FA6A]">{hc.heroA}</span><br />{hc.heroB}</h1>
            <p className="mt-5 max-w-[54ch] text-balance text-[15px] leading-[1.6] text-[#A9C5A7]">{hc.heroSub}</p>
            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
@@ -224,10 +179,7 @@ export default function Home() {
             {hc.solutions.map((sol, i) => (
               <motion.article
                 key={sol.label}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.2 }}
-                transition={{ duration: 0.5, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] }}
+                initial={false}
                 className={`relative flex flex-col p-7 md:p-9 ${i > 0 ? "blueprint-divider-v md:bg-left" : ""} ${i > 0 ? "border-t-[1.5px] border-t-dashed border-[#0F1A12]/30 md:border-t-0" : ""}`}
               >
                 {/* Small outline icon, no background */}
@@ -260,12 +212,7 @@ export default function Home() {
       <CreatorSection />
       <TestimonialsSection lang={lang} />
 
-      <section id="agents" className="mx-auto w-[calc(100%-32px)] max-w-[1280px] mb-8 mt-8 overflow-hidden rounded-[24px] border border-white/10 bg-[#111318] px-5 py-16 md:px-10 md:py-20">
-        <div className="mx-auto grid max-w-[1280px] gap-12 lg:grid-cols-2"><div><Eyebrow>{hc.agentsEyebrow}</Eyebrow><h2 className="mt-4 text-[clamp(2.1rem,4.8vw,3.8rem)] font-semibold leading-[.95] tracking-[-.06em] text-white">{hc.agentsTitleA}<br />{hc.agentsTitleB}</h2><p className="mt-5 max-w-[44ch] text-sm leading-6 text-[#8C97A5]">{hc.agentsSub}</p><Magnetic className="mt-8 inline-block"><a href="https://scratchagent.store/" target="_blank" rel="noopener noreferrer" className="btn-donate inline-flex items-center gap-2.5"><KeyRound size={18} strokeWidth={2.2} aria-hidden="true" /> {lang === "en" ? "Get your Api Key" : "Ambil Api Key kamu"}</a></Magnetic></div><BorderBeamPanel beams={2} thickness={2} radius={24} glow colors={["#74FA6A", "#3DDC97"]} reducedMotion={false} className="!bg-transparent !border-transparent !p-0 overflow-hidden"><DoubleBezel className="!shadow-none"><div className="rounded-[calc(24px-10px)] bg-[#0A0A0A] p-5 font-mono text-[12px] leading-7 text-[#C5CDD7]"><div className="mb-3 flex gap-1.5"><i className="size-2.5 rounded-full bg-[#FF5F56]" /><i className="size-2.5 rounded-full bg-[#FFBD2E]" /><i className="size-2.5 rounded-full bg-[#74FA6A]" /></div><PromptShowcase /></div></DoubleBezel></BorderBeamPanel></div>
-      </section>
-
-
-      <footer className="px-5 py-10 md:px-10"><div className="mx-auto flex max-w-[1360px] flex-col justify-between gap-8 border-t border-white/10 pt-8 md:flex-row"><div><div className="font-semibold text-[13px] tracking-[-.02em] text-white">Scratch Agent</div><p className="mt-2 font-mono text-[11px] text-[#5B6676]">{hc.footerTagline}</p></div><div className="flex flex-wrap gap-6 font-mono text-[11px] text-[#6C7787]"><Link href="/new">{hc.footerCreate}</Link><Link href="/project/demo">demo</Link><Link href="/docs">docs</Link><span>© 2026 Scratch Agent</span></div></div></footer>
+      <ClosingFooter createHref={loggedIn ? "/new" : "/login"} />
     </main>
   );
 }
@@ -399,7 +346,7 @@ function FeatureArtwork({ variant }: { variant: 0 | 1 | 2 | 3 }) {
 function FeatureCard({ artwork, label, title, copy, terminal }: { artwork: 0 | 1 | 2 | 3; label: string; title: string; copy: string; terminal: React.ReactNode }) {
   useUiLanguage();
   return (
-    <motion.article initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .2 }} transition={{ duration: .65, ease: [0.16, 1, 0.3, 1] }} className="group flex w-full flex-col overflow-hidden rounded-[16px] border border-white/15 bg-[#111413] transition-colors duration-300 hover:border-[#74FA6A]/45">
+    <motion.article initial={false} className="group flex w-full flex-col overflow-hidden rounded-[16px] border border-white/15 bg-[#111413] transition-colors duration-300 hover:border-[#74FA6A]/45">
       <div className="relative flex min-h-[272px] items-center justify-center overflow-hidden border-b border-white/10 bg-[#A7D6A1] p-5">
         <FeatureArtwork variant={artwork} />
         <div className="relative z-10 mx-auto flex min-h-[168px] w-full max-w-[408px] flex-col rounded-[14px] border-[6px] border-[#2B3539] bg-[#171918] p-4 font-mono text-[12px] leading-5 text-[#AAB3AE] shadow-[0_14px_36px_#0008]">
