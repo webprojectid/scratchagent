@@ -92,6 +92,7 @@ async function resolveDbUserId(userId: string): Promise<string | null> {
 export async function savePlan(plan: Plan, userId: string): Promise<void> {
   if (isMemoryMode()) return memorySavePlan(plan, userId);
   const dbUserId = await resolveDbUserId(userId);
+  if (!dbUserId) throw new Error("Cannot save a plan without a valid owner");
   const db = getDb();
   await db.insert(plans).values({
     id: plan.id,

@@ -1,3 +1,5 @@
+> Archived report from August 2026. Not a current security or test assessment. Earlier bugs may have been fixed; percentages and completion claims below are historical, not release guarantees. Credential references have been removed.
+
 # 🎉 FINAL REPORT - REAL PLAN GENERATION TEST
 
 **User Context:** teguhends@gmail.com  
@@ -12,7 +14,7 @@
 
 | Component | Status | Notes |
 |-----------|--------|-------|
-| **API Key Validation** | ✅ SUCCESS | `REMOVED_EXPOSED_API_KEY_REFERENCE` valid |
+| **API Key Validation** | ✅ SUCCESS | `[REMOVED_API_KEY_REFERENCE]` valid |
 | **Local Model Service** | ✅ RUNNING | `qd/qmodel_38max @ localhost:20128/v1` |
 | **HTTP Connection** | ✅ OK | Returns HTTP 200 |
 | **Response Format** | ⚠️ STREAMING | SSE format needs parser |

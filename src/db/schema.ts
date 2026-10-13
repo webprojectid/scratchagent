@@ -1,4 +1,4 @@
-import { pgEnum, pgTable, text, timestamp, uuid, varchar, integer, jsonb, boolean, unique } from "drizzle-orm/pg-core";
+import { pgEnum, pgTable, text, timestamp, uuid, varchar, integer, jsonb, boolean, unique, index } from "drizzle-orm/pg-core";
 
 export const planStatus = pgEnum("plan_status", ["generating", "ready", "implementing", "done"]);
 export const featureStatus = pgEnum("feature_status", ["direncanakan", "berjalan", "selesai"]);
@@ -13,7 +13,7 @@ export const users = pgTable("users", {
   tier: text().notNull().default("free"),
   bannedAt: timestamp("banned_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
+}).enableRLS();
 
 export const plans = pgTable("plans", {
   id: uuid().primaryKey().defaultRandom(),
@@ -24,7 +24,7 @@ export const plans = pgTable("plans", {
   assumptions: jsonb().$type<string[]>().notNull().default([]),
   status: planStatus().notNull().default("generating"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
+}).enableRLS();
 
 export const features = pgTable("features", {
   id: uuid().primaryKey().defaultRandom(),
@@ -38,7 +38,7 @@ export const features = pgTable("features", {
   priority: text(),
   status: featureStatus().notNull().default("direncanakan"),
   order: integer().notNull(),
-});
+}).enableRLS();
 
 export const subFeatures = pgTable("sub_features", {
   id: uuid().primaryKey().defaultRandom(),
@@ -47,7 +47,7 @@ export const subFeatures = pgTable("sub_features", {
   tujuan: text(),
   selesaiBila: jsonb("selesai_bila").$type<string[]>().notNull().default([]),
   order: integer().notNull(),
-});
+}).enableRLS();
 
 export const tasks = pgTable("tasks", {
   id: uuid().primaryKey().defaultRandom(),
@@ -69,7 +69,7 @@ export const tasks = pgTable("tasks", {
   order: integer().notNull(),
 }, (table) => [
   unique("tasks_plan_ref_unique").on(table.planId, table.ref),
-]);
+]).enableRLS();
 
 export const tokens = pgTable("tokens", {
   id: uuid().primaryKey().defaultRandom(),
@@ -78,7 +78,7 @@ export const tokens = pgTable("tokens", {
   label: text().notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   revokedAt: timestamp("revoked_at", { withTimezone: true }),
-});
+}).enableRLS();
 
 export const taskEvents = pgTable("task_events", {
   id: uuid().primaryKey().defaultRandom(),
@@ -88,7 +88,7 @@ export const taskEvents = pgTable("task_events", {
   meta: jsonb(),
   cliVersion: text("cli_version"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
+}).enableRLS();
 
 export const usageEvents = pgTable("usage_events", {
   id: uuid().primaryKey().defaultRandom(),
@@ -101,7 +101,7 @@ export const usageEvents = pgTable("usage_events", {
   /** Model LLM yang melayani generate ini (hasil failover, dipisah koma). */
   model: text("model"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
+}).enableRLS();
 
 /**
  * Log kejadian keamanan: jejak deteksi serangan (401/403/429, generate,
@@ -116,7 +116,10 @@ export const securityEvents = pgTable("security_events", {
   /** Ditandai admin sebagai false positive → tidak dihitung sebagai serangan. */
   dismissed: boolean("dismissed").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
+}, table => [
+  index("security_events_created_at_idx").on(table.createdAt),
+  index("security_events_type_idx").on(table.type),
+]).enableRLS();
 
 /**
  * IP yang diblokir admin dari Pusat Keamanan. Setiap request dari IP ini
@@ -129,7 +132,7 @@ export const blockedIps = pgTable("blocked_ips", {
   blockedBy: text("blocked_by"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   expiresAt: timestamp("expires_at", { withTimezone: true }),
-});
+}).enableRLS();
 
 /**
  * Riwayat langganan Pro. Satu baris per periode:
@@ -146,7 +149,7 @@ export const subscriptions = pgTable("subscriptions", {
   expiresAt: timestamp("expires_at", { withTimezone: true }),
   grantedBy: text("granted_by"),
   endedBy: text("ended_by"),
-});
+}).enableRLS();
 
 // Konfigurasi LLM runtime (single row, id=1). Dibaca generate.ts sebelum fallback ke env,
 // supaya token/model bisa diganti lewat Settings tanpa redeploy.
@@ -159,4 +162,4 @@ export const llmSettings = pgTable("llm_settings", {
   model: text("model"),
   providers: jsonb("providers").$type<Array<{ baseUrl: string; apiKey: string; models: string[] }>>().notNull().default([]),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-});
+}).enableRLS();

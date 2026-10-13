@@ -3,14 +3,10 @@
 import Link from "next/link";
 import { DocsToc } from "@/components/docs-toc";
 import { ConceptPipeline, PromptVisual, QuickstartVisual } from "@/components/docs-visuals";
-import { HeaderNav } from "@/components/header-nav";
+import { LandingNavbar } from "@/components/landing-navbar";
 import { PageHero } from "@/components/page-hero";
 import { useLang } from "@/lib/lang";
 import { docsCopy } from "@/lib/copy-docs";
-
-/* Gaya docs: Mintlify dark mode. Konten kolom tengah ~720px supaya
-   baris bacaan nyaman, border tipis 8% tanpa shadow berat, accent
-   lime dipakai hemat, heading tracking ketat dengan tiga weight saja. */
 
 function SectionLabel({ children }: { children: string }) {
   return <p className="text-[12px] font-medium uppercase tracking-[.08em] text-[#74FA6A]">{children}</p>;
@@ -31,27 +27,14 @@ export default function DocsPage() {
   const c = docsCopy(lang);
 
   return (
-    <main className="min-h-screen bg-[#0d0d0d] text-[#EDEDED] selection:bg-[#74FA6A]/30 selection:text-[#0d0d0d]">
-      {/* Nav */}
-      <header className="sticky top-0 z-40 border-b border-white/[.06] bg-[rgba(10,10,10,0.85)] backdrop-blur-[12px]">
-        <div className="mx-auto flex h-[54px] max-w-[1100px] items-center justify-between gap-3 px-5 max-lg:h-auto max-lg:min-h-[54px] max-lg:flex-wrap max-lg:py-2.5">
-          <Link href="/" className="flex items-center gap-2 text-[16px] font-semibold tracking-[-.04em] text-[#E8F0E8]">
-            <span className="relative grid size-6 place-items-center overflow-hidden text-[#74FA6A]" aria-hidden="true">
-              <span className="absolute left-0 top-[6px] h-2.5 w-2 -skew-x-[28deg] rounded-sm bg-[#74FA6A]" />
-              <span className="absolute left-[7px] top-[2.5px] h-2.5 w-2 -skew-x-[28deg] rounded-sm bg-[#9AFF82]" />
-              <span className="absolute left-[14px] top-[6px] h-2.5 w-2 -skew-x-[28deg] rounded-sm bg-[#4DDC62]" />
-            </span>
-            Scratch Agent
-          </Link>
-          <HeaderNav links={["solutions", "pricing"]} ctaHref="/new" ctaKey="createPlan" />
-        </div>
-      </header>
+    <main className="min-h-screen bg-[#0A0A0A] pt-4 text-[#EDEDED] selection:bg-[#74FA6A]/30 selection:text-[#0d0d0d]">
+      <LandingNavbar />
 
       {/* Hero seragam — satu spesifikasi via PageHero (sama dengan /solutions dan /pricing) */}
       <PageHero eyebrow={c.badge} title={c.heroTitle} sub={c.heroSub}>
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
           <a href="#quickstart" className="rounded-full bg-[#74FA6A] px-6 py-2.5 text-[13.5px] font-bold text-black transition hover:bg-[#A8FF9B]">{c.heroQuickstart}</a>
-          <a href="#konsep" className="rounded-full border border-white/[.12] bg-transparent px-6 py-2.5 text-[13.5px] font-medium text-white/70 transition-colors hover:border-white/25 hover:text-white">{c.heroConcepts}</a>
+          <a href="#konsep" className="rounded-full bg-transparent px-6 py-2.5 text-[13.5px] font-medium text-white/70 transition-colors hover:text-white">{c.heroConcepts}</a>
         </div>
       </PageHero>
 
@@ -71,7 +54,7 @@ export default function DocsPage() {
               <ConceptPipeline />
               <div className="grid gap-4 sm:grid-cols-2">
                 {c.concepts.map((item) => (
-                  <div key={item.t} className="rounded-2xl border border-white/[.08] bg-[#141414] p-6 transition-colors hover:border-white/[.14]">
+                  <div key={item.t} className="rounded-2xl bg-[#151918] p-6 transition-colors ">
                     <h3 className="text-[16px] font-semibold tracking-[-.01em] text-[#EDEDED]">{item.t}</h3>
                     <p className="mt-2 text-[14px] leading-[1.6] text-[#A0A0A0]">{item.d}</p>
                   </div>
@@ -85,7 +68,7 @@ export default function DocsPage() {
               <PromptVisual />
               <div className="grid gap-4 sm:grid-cols-2">
                 {c.promptCards.map((item) => (
-                  <div key={item.t} className="rounded-2xl border border-white/[.08] bg-[#141414] p-6 transition-colors hover:border-white/[.14]">
+                  <div key={item.t} className="rounded-2xl bg-[#151918] p-6 transition-colors ">
                     <h3 className="text-[16px] font-semibold tracking-[-.01em] text-[#EDEDED]">{item.t}</h3>
                     <p className="mt-2 text-[14px] leading-[1.6] text-[#A0A0A0]">{item.d}</p>
                   </div>
@@ -94,7 +77,7 @@ export default function DocsPage() {
             </div>
 
             {/* CTA */}
-            <div className="mt-20 rounded-2xl border border-white/[.08] bg-[#141414] p-8 text-center">
+            <div className="mt-20 rounded-2xl bg-[#151918] p-8 text-center">
               <p className="text-[18px] font-medium tracking-[-.01em] text-[#EDEDED]">{c.ctaTitle}</p>
               <p className="mx-auto mt-2 max-w-[44ch] text-[14px] leading-6 text-[#A0A0A0]">{c.ctaSub}</p>
               <Link href="/new" className="mt-6 inline-flex rounded-full bg-[#74FA6A] px-6 py-2.5 text-[15px] font-medium text-[#0d0d0d] transition-opacity hover:opacity-90">{c.ctaButton}</Link>
@@ -105,7 +88,7 @@ export default function DocsPage() {
         <DocsToc />
       </div>
 
-      <footer className="border-t border-white/[.08] px-6 py-10">
+      <footer className="px-6 py-10">
         <div className="mx-auto flex max-w-[1200px] flex-wrap items-center justify-between gap-4 text-[13px] text-[#737373]">
           <span>{c.footer}</span>
           <span className="flex gap-6">

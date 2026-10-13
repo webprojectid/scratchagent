@@ -1,6 +1,7 @@
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 import * as schema from "./schema";
+import * as accountSchema from "./account-schema";
 
 const globalDb = globalThis as unknown as { pool?: Pool };
 
@@ -23,5 +24,5 @@ export function getDb() {
       connectionTimeoutMillis: 15_000,
     });
   }
-  return drizzle(globalDb.pool, { schema });
+  return drizzle(globalDb.pool, { schema: { ...schema, ...accountSchema } });
 }

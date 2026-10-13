@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import { getDb } from "@/db";
 import { blockedIps, securityEvents } from "@/db/schema";
 import type { NextResponse } from "next/server";
+import { isDeveloperAdmin } from "./admin-access";
 
 /**
  * Lapisan keamanan aplikasi: rate limiting in-memory + audit log ke DB.
@@ -50,13 +51,7 @@ export function isAdminIp(ip: string | null | undefined): boolean {
 export function isWhitelistedAdmin(key: string): boolean {
   if (key.startsWith("u:")) {
     const identifier = key.slice(2).toLowerCase();
-    // Hanya allowlist eksplisit; jangan terima pattern "admin@*" (bisa dipalsukan
-    // lewat ?userId=admin@evil.tld untuk lolos dari rate limiting).
-    const adminEmails = (process.env.ADMIN_EMAILS ?? "")
-      .split(",")
-      .map((s) => s.trim().toLowerCase())
-      .concat(["teguhends@gmail.com", "teguends@gmail.com"]);
-    if (adminEmails.includes(identifier)) return true;
+    if (isDeveloperAdmin(identifier)) return true;
   }
   if (key.startsWith("ip:")) {
     const ip = key.slice(3);

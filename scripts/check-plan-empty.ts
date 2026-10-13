@@ -1,4 +1,5 @@
-process.env.DATABASE_URL = 'REMOVED_EXPOSED_DATABASE_CREDENTIAL';
+import "./lib-env";
+if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is required");
 
 import { eq } from "drizzle-orm";
 import { plans, features, subFeatures, tasks } from "../src/db/schema";

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence, useMotionValue, useTransform, useSpring, useMotionTemplate } from "framer-motion";
@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 import { useLang } from "@/lib/lang";
 import { createClient } from "@/lib/supabase/client";
 import { refreshCurrentUser, supabaseConfigured } from "@/lib/current-user";
-import { Turnstile } from "@marsidev/react-turnstile";
+import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 
 function Input({ className, type, ...props }: React.ComponentProps<"input">) {
   return (
@@ -46,6 +46,7 @@ export function SignInCard2() {
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const captcha = useRef<TurnstileInstance>(null);
 
   // Efek 3D card: rotasi mengikuti kursor, dibungkus useSpring supaya card
   // meluncur halus (tidak loncat di tiap mousemove). Tilt ±12 derajat, plus:
@@ -118,6 +119,10 @@ export function SignInCard2() {
     setInfo("");
     setIsLoading(true);
     try {
+      if (process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && !captchaToken) {
+        setError(en ? "Complete the CAPTCHA check first." : "Selesaikan verifikasi CAPTCHA terlebih dahulu.");
+        return;
+      }
       // Jalur utama: Supabase Auth (sama dengan Google/GitHub OAuth).
       if (supabaseConfigured()) {
         const supabase = createClient();
@@ -178,6 +183,10 @@ export function SignInCard2() {
       }
 
       // Fallback dev tanpa Supabase: akun lokal di localStorage.
+      if (process.env.NODE_ENV === "production") {
+        setError(en ? "Sign-in is temporarily unavailable." : "Login sementara tidak tersedia.");
+        return;
+      }
       if (mode === "signin") {
         const storedUsers = JSON.parse(localStorage.getItem("scratch_users") || "{}");
         const userKey = email.toLowerCase();
@@ -214,6 +223,8 @@ export function SignInCard2() {
       setError(en ? "Something went wrong. Try again." : "Terjadi kesalahan. Coba lagi.");
     } finally {
       setIsLoading(false);
+      setCaptchaToken(null);
+      captcha.current?.reset();
     }
   };
 
@@ -512,9 +523,11 @@ export function SignInCard2() {
                 {process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && (
                   <div className="flex justify-center my-2 w-full overflow-hidden">
                     <Turnstile
+                      ref={captcha}
                       siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
                       onSuccess={(token) => setCaptchaToken(token)}
-                      onError={() => setError(en ? "Captcha check failed. Refresh and try again." : "Verifikasi Captcha gagal. Coba refresh halaman.")}
+                      onExpire={() => setCaptchaToken(null)}
+                      onError={() => { setCaptchaToken(null); setError(en ? "Captcha check failed. Refresh and try again." : "Verifikasi Captcha gagal. Coba refresh halaman."); }}
                       options={{ theme: "dark", size: "normal" }}
                     />
                   </div>
