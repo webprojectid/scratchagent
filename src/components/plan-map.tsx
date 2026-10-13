@@ -24,6 +24,7 @@ import {
   FolderKanban,
   ListChecks,
   Maximize2,
+  Minimize2,
   Network,
   Pencil,
   Search,
@@ -36,7 +37,8 @@ type MapNodeData = {
   kind: "root" | "feature" | "sub-features" | "tasks";
   label: string;
   feature?: Feature;
-  items?: { label: string; status?: Task["status"] }[];
+  items?: { label: string; status?: Task["status"]; ref?: string }[];
+  onTaskSelect?: (ref: string) => void;
   total?: number;
   phase?: number;
   done?: number;
@@ -115,10 +117,10 @@ function MapNode({ data }: { data: MapNodeData }) {
       ) : (
         <div className="space-y-1">
           {data.items?.slice(0, 3).map((item, index) => (
-            <div key={`${item.label}-${index}`} className="flex min-w-0 items-center gap-1.5 rounded-lg border border-white/[.05] bg-white/[.02] px-2 py-1">
+            <button type="button" key={`${item.label}-${index}`} onClick={taskNode ? (event) => { event.stopPropagation(); if (item.ref) data.onTaskSelect?.(item.ref); } : undefined} className="flex min-w-0 items-center gap-1.5 rounded-lg border border-white/[.05] bg-white/[.02] px-2 py-1">
               {item.status === "done" ? <Check size={9} className="shrink-0 text-emerald-400" /> : item.status === "in_progress" ? <span className="size-1.5 shrink-0 animate-spin rounded-full border border-amber-400 border-r-transparent" /> : taskNode ? <Circle size={7} className="shrink-0 text-slate-600" /> : <span className="size-1 shrink-0 rounded-full bg-slate-600" />}
               <span className={`truncate text-[10px] ${item.status === "done" ? "text-slate-600 line-through" : "text-slate-300"}`}>{item.label}</span>
-            </div>
+            </button>
           ))}
         </div>
       )}
@@ -198,8 +200,9 @@ const AnimatedFlowEdge = memo(function AnimatedFlowEdge({
 
 const edgeTypes = { flow: AnimatedFlowEdge };
 
-function FeaturePanel({ plan, index, onClose, onNav, isPro, onDeleteFeature, onDeleteSubFeature }: { plan: Plan; index: number; onClose: () => void; onNav: (direction: number) => void; isPro?: boolean; onDeleteFeature?: (slug: string, title: string) => void; onDeleteSubFeature?: (slug: string, title: string) => void }) {
+function FeaturePanel({ plan, index, onClose, onNav, isPro, onDeleteFeature, onDeleteSubFeature, onTaskSelect }: { plan: Plan; index: number; onClose: () => void; onNav: (direction: number) => void; isPro?: boolean; onDeleteFeature?: (slug: string, title: string) => void; onDeleteSubFeature?: (slug: string, title: string) => void; onTaskSelect: (ref: string) => void }) {
   useUiLanguage();
+  const [expanded, setExpanded] = useState(false);
   const feature = plan.features[index];
 
   useEffect(() => {
@@ -223,7 +226,7 @@ function FeaturePanel({ plan, index, onClose, onNav, isPro, onDeleteFeature, onD
       animate={{ x: 0 }}
       exit={{ x: "-100%" }}
       transition={{ type: "spring", damping: 28 }}
-      className="absolute inset-y-0 left-0 z-20 w-full overflow-auto border-r border-white/[.06] bg-[#0C0E10] shadow-xl shadow-black/30 sm:w-[390px]"
+      className={`absolute inset-y-0 left-0 z-20 w-full min-w-0 overflow-x-hidden overflow-y-auto break-words border-r border-white/[.06] bg-[#0C0E10] shadow-xl shadow-black/30 ${expanded ? "sm:w-[600px] sm:max-w-[85vw]" : "sm:w-[430px] sm:max-w-[45vw]"}`}
     >
       <div className="sticky top-0 z-10 flex h-12 items-center justify-between border-b border-white/[.06] bg-[#0C0E10] px-3">
         <div className="flex items-center gap-1">
@@ -240,7 +243,7 @@ function FeaturePanel({ plan, index, onClose, onNav, isPro, onDeleteFeature, onD
             className="grid size-8 place-items-center rounded transition hover:bg-white/5 hover:text-rose-400 disabled:opacity-40 disabled:hover:text-slate-500"
             aria-label={ui("Hapus fitur")}
           ><Trash2 size={14} /></button>
-          <button title="Perbesar panel" className="grid size-8 place-items-center rounded transition hover:bg-white/5 hover:text-[#74FA6A]" onClick={() => document.querySelector('[data-feature-panel]')?.classList.toggle('sm:w-[560px]')} aria-label="Perbesar panel"><Maximize2 size={14} /></button>
+          <button title="Perbesar panel" className="grid size-8 place-items-center rounded transition hover:bg-white/5 hover:text-[#74FA6A]" onClick={() => setExpanded(value => !value)} aria-expanded={expanded} aria-label={expanded ? "Collapse phase panel" : "Expand phase panel"}>{expanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />}</button>
           <button onClick={onClose} className="grid size-8 place-items-center rounded transition hover:bg-white/5 hover:text-[#74FA6A]" aria-label={ui("Tutup")}><X size={15} /></button>
         </div>
       </div>
@@ -304,18 +307,40 @@ function FeaturePanel({ plan, index, onClose, onNav, isPro, onDeleteFeature, onD
             <b className="text-[10px] text-slate-200">Task ({tasks.length})</b>
           </div>
           <div className="mt-2 space-y-1.5">
-            {tasks.slice(0, 2).map((task) => (
-              <div key={task.ref} className="flex items-center gap-1.5 text-[9px]">
+            {tasks.map((task) => (
+              <button type="button" onClick={() => onTaskSelect(task.ref)} key={task.ref} className="flex w-full items-center gap-1.5 rounded px-1 py-2 text-left text-[10px] hover:bg-white/5">
                 {task.status === "done" ? <Check size={9} className="shrink-0 text-emerald-400" /> : task.status === "in_progress" ? <span className="size-2 shrink-0 animate-spin rounded-full border border-amber-400 border-r-transparent" /> : <Circle size={8} className="shrink-0 text-slate-500" />}
                 <span className={`min-w-0 flex-1 truncate ${task.status === "done" ? "line-through text-slate-500" : "text-slate-200"}`}>{task.title}</span>
                 <span className={`shrink-0 ${task.status === "in_progress" ? "text-amber-400" : "text-slate-500"}`}>{task.status === "done" ? ui("Selesai") : task.status === "in_progress" ? "Sedang" : task.status === "failed" ? ui("Gagal") : ui("Belum")}</span>
-              </div>
+              </button>
             ))}
           </div>
         </div>
       </div>
     </motion.aside>
   );
+}
+
+
+function RoadmapTaskPanel({ plan, taskRef, onSelect, onClose }: { plan: Plan; taskRef: string; onSelect: (ref: string) => void; onClose: () => void }) {
+  const [expanded, setExpanded] = useState(false);
+  const entry = plan.features.flatMap(feature => feature.subFeatures.flatMap(sub => sub.tasks.map(task => ({ feature, sub, task })))).find(entry => entry.task.ref === taskRef);
+  if (!entry) return null;
+  const { task, feature, sub } = entry;
+  return <motion.aside aria-label="Task details" initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ type: "spring", damping: 28 }} className={`absolute inset-y-0 right-0 z-30 w-full min-w-0 overflow-x-hidden overflow-y-auto break-words border-l border-white/[.06] bg-[#0C0E10] shadow-xl shadow-black/30 ${expanded ? "sm:w-[600px] sm:max-w-[85vw]" : "sm:w-[430px] sm:max-w-[45vw]"}`}>
+    <header className="sticky top-0 flex h-12 items-center justify-between border-b border-white/10 bg-[#0C0E10] px-4">
+      <b className="text-xs">Task details</b>
+      <div className="flex gap-1"><button className="grid size-9 place-items-center rounded hover:bg-white/5" aria-label={expanded ? "Collapse task panel" : "Expand task panel"} aria-expanded={expanded} onClick={() => setExpanded(value => !value)}>{expanded ? <Minimize2 size={15}/> : <Maximize2 size={15}/>}</button><button className="grid size-9 place-items-center rounded hover:bg-white/5" aria-label="Close task details" onClick={onClose}><X size={15}/></button></div>
+    </header>
+    <div className="space-y-5 p-5">
+      <p className="font-mono text-xs text-[#74FA6A]">{task.ref}</p>
+      <h2 className="text-base font-semibold text-white">{task.title}</h2>
+      <dl className="grid grid-cols-[90px_minmax(0,1fr)] gap-3 text-xs text-slate-300"><dt>Status</dt><dd>{task.status.replaceAll("_", " ")}</dd><dt>Layer</dt><dd>{task.layer}</dd><dt>Phase</dt><dd>{feature.title}</dd><dt>Subfeature</dt><dd>{sub.title}</dd>{task.page && <><dt>Page</dt><dd>{task.page}</dd></>}</dl>
+      <section><h3 className="mb-2 text-xs font-semibold">Dependencies</h3>{task.deps.length ? task.deps.map(ref => <button key={ref} className="mr-2 rounded bg-white/5 px-3 py-2 font-mono text-xs text-[#74FA6A]" onClick={() => onSelect(ref)}>{ref}</button>) : <p className="text-xs text-slate-400">No dependencies</p>}</section>
+      {(task.lastFailReason || task.failReason) && <p className="text-xs text-rose-300">{task.lastFailReason || task.failReason}</p>}
+      <section><h3 className="mb-2 text-xs font-semibold">Tasks in this subfeature</h3><div className="space-y-2">{sub.tasks.map(item => <button key={item.ref} onClick={() => onSelect(item.ref)} aria-pressed={item.ref === taskRef} className={`block w-full whitespace-normal break-words rounded-lg px-3 py-3 text-left text-xs ${item.ref === taskRef ? "bg-[#74FA6A]/10 text-[#74FA6A]" : "bg-white/5 text-slate-300"}`}>{item.title}</button>)}</div></section>
+    </div>
+  </motion.aside>;
 }
 
 function deriveFeatureStatus(feature: Feature): Feature["status"] {
@@ -329,6 +354,7 @@ function deriveFeatureStatus(feature: Feature): Feature["status"] {
 export function PlanMap({ plan, liveTasks, isPro, onRemoveStructure }: { plan: Plan; liveTasks?: Record<string, Task["status"]>; isPro?: boolean; onRemoveStructure?: (type: "feature" | "subfeature" | "task", params: Record<string, string>, label: string) => void }) {
   const language = useUiLanguage();
   const [selected, setSelected] = useState<number | null>(null);
+  const [taskRef, setTaskRef] = useState<string | null>(null);
   const mergedPlan: Plan = useMemo(() => liveTasks
     ? { ...plan, features: plan.features.map((feature) => ({ ...feature, subFeatures: feature.subFeatures.map((subFeature) => ({ ...subFeature, tasks: subFeature.tasks.map((task) => ({ ...task, status: liveTasks[task.ref] ?? task.status })) })) })) }
     : plan, [plan, liveTasks]);
@@ -381,7 +407,7 @@ const { nodes, edges } = useMemo(() => {
       nextNodes.push(
         { id: featureId, type: "mapNode", position: { x: 440, y }, data: { kind: "feature", label: feature.title, feature, phase, done, total: tasks.length }, initialWidth: 240, initialHeight: 112 },
         { id: subFeatureId, type: "mapNode", position: { x: 880, y: y - 8 }, initialWidth: 224, initialHeight: 132, data: { kind: "sub-features", label: ui("Sub fitur"), feature, items: feature.subFeatures.map((subFeature) => ({ label: subFeature.title, status: isSubDone(subFeature) ? "done" : isSubActive(subFeature) ? "in_progress" : "pending" })), total: feature.subFeatures.length, done: subsDone } },
-        { id: taskId, type: "mapNode", position: { x: 1280, y: y - 8 }, initialWidth: 224, initialHeight: 132, data: { kind: "tasks", label: ui("Tasks"), feature, items: tasks.map((task) => ({ label: task.title, status: task.status })), total: tasks.length, done, generating: plan.status === "generating" } },
+        { id: taskId, type: "mapNode", position: { x: 1280, y: y - 8 }, initialWidth: 224, initialHeight: 132, data: { kind: "tasks", label: ui("Tasks"), feature, items: tasks.map((task) => ({ label: task.title, status: task.status, ref: task.ref })), onTaskSelect: setTaskRef, total: tasks.length, done, generating: plan.status === "generating" } },
       );
       // Gaya konektor mengikuti referensi user: kelengkungan bezier (bukan siku
       // smoothstep yang kaku). Root -> fase garis halus penuh; lanjutan antar
@@ -411,17 +437,21 @@ const { nodes, edges } = useMemo(() => {
         fitViewOptions={{ padding: 0.12 }}
         onNodeClick={(_, node) => {
           const feature = node.data.feature;
-          if (feature) setSelected(displayPlan.features.findIndex((candidate) => candidate.slug === feature.slug));
+          if (node.data.kind === "tasks") {
+            setTaskRef(feature?.subFeatures.flatMap(sub => sub.tasks)[0]?.ref ?? null);
+          } else if (feature) setSelected(displayPlan.features.findIndex((candidate) => candidate.slug === feature.slug));
         }}
       >
         <Background variant={BackgroundVariant.Dots} gap={18} size={1.2} color="#282C33" />
         <Controls showInteractive={false} />
       </ReactFlow>
       <AnimatePresence>
+        {taskRef && <RoadmapTaskPanel key="task-detail" plan={displayPlan} taskRef={taskRef} onSelect={setTaskRef} onClose={() => setTaskRef(null)} />}
         {selected !== null && (
           <FeaturePanel
             plan={displayPlan}
             index={selected}
+            onTaskSelect={setTaskRef}
             onClose={() => setSelected(null)}
             isPro={isPro}
             onDeleteFeature={(slug, title) => {
