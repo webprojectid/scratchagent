@@ -39,3 +39,9 @@ The braces stack-exhaustion advisory currently has no patched release. It is in 
 The lint backlog remains visible and gated against new findings. Generic request rate limiting is still per-instance; generation cost budgeting and quota locks are persistent. This is not a guarantee against every attack or a complete manual review of every component. Tests do not exercise a paid purchase or paid LLM generation in production. Production account credentials, external clones/caches and upstream services remain outside the test fixture scope.
 
 The isolated release is the tested source. Unrelated local backend modules and CLI drafts were preserved separately and must not be mistaken for this validated release.
+
+## Publication evidence
+
+The approved remediation is published on GitHub main. The workflow is now published and an end-to-end Linux CI run passed typecheck, all 145 tests, lint regression, tracked/history scanning, runtime dependency audit and the production build: [run 38430560189](https://github.com/webprojectid/scratchagent/actions/runs/38430560189). Vercel reported deployment success for that revision, and the production demo showed the updated phase labels and task panel. Follow-up accessibility-label changes use the same CI workflow. The CLI test runner is an explicit pinned development dependency, rather than an accidental transitive dependency.
+
+Root workspace files were synchronized to the reviewed release, with backups and a merge preserving unrelated generation additions. Its unfinished backend/CLI work remains uncommitted; validation above refers to the isolated release and CI, not those drafts.
