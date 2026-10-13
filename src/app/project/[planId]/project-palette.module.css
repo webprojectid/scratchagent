@@ -1,0 +1,57 @@
+.workspace {
+  --background: #1a1a1a;
+  --foreground: #ededed;
+  --card: #282828;
+  --card-foreground: #ededed;
+  --popover: #282828;
+  --popover-foreground: #ededed;
+  --secondary: #333333;
+  --secondary-foreground: #ededed;
+  --muted: #333333;
+  --muted-foreground: #a3a3a3;
+  --border: #404040;
+  --color-slate-50: #fafafa;
+  --color-slate-100: #ededed;
+  --color-slate-200: #d4d4d4;
+  --color-slate-300: #bfbfbf;
+  --color-slate-400: #a3a3a3;
+  --color-slate-500: #858585;
+  --color-slate-600: #666666;
+  --color-slate-700: #404040;
+  --color-slate-800: #333333;
+  --color-slate-900: #282828;
+  --color-blue-300: #d4d4d4;
+  --color-blue-400: #a3a3a3;
+  --color-sky-300: #d4d4d4;
+  --color-sky-400: #a3a3a3;
+  --color-violet-300: #d4d4d4;
+  --color-violet-400: #a3a3a3;
+  min-height: 100vh;
+  background: #1a1a1a;
+  color: #ededed;
+}
+
+.workspace [class*="bg-[#14161A]"],
+.workspace [class*="bg-[#070A0D]"],
+.workspace [class*="bg-[#0A0A0A]"] { background-color: #1a1a1a; }
+
+.workspace [class*="bg-[#1C2330]"],
+.workspace [class*="bg-[#0C0E10]"],
+.workspace [class*="bg-[#12151A]"],
+.workspace [class*="bg-[#12161B]"],
+.workspace [class*="bg-[#0E1114]"],
+.workspace [class*="bg-[#0A0C0E]"],
+.workspace [class*="bg-[#0B0F0C]"],
+.workspace [class*="bg-[#070A08]"] { background-color: #282828; }
+
+.workspace :global(.react-flow__background) { background-color: #1a1a1a; }
+.workspace :global(.react-flow__background-pattern) { fill: #333333; }
+.workspace :global(.react-flow__edge-path) { stroke: #858585; }
+.workspace :global(.react-flow__handle) { border-color: #1a1a1a; }
+.workspace :global(.react-flow__controls-button) {
+  background: #282828;
+  border-color: #404040;
+  color: #ededed;
+  fill: #ededed;
+}
+.workspace :global(.react-flow__controls-button:hover) { background: #333333; }
