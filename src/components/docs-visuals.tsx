@@ -4,17 +4,10 @@ import { Check, Copy, Loader2 } from "lucide-react";
 import { useLang } from "@/lib/lang";
 import { docsCopy } from "@/lib/copy-docs";
 
-/* ============================================================
-   Visual docs, gaya Mintlify (dark mode): kalem, border tipis
-   8% opacity, radius 16px, tanpa shadow berat. Mockup produk
-   tetap ada biar pembaca "lihat" setiap langkah, tapi dibungkus
-   container yang tenang dan konsisten.
-   ============================================================ */
-
 function TerminalChrome({ title }: { title: string }) {
   // Traffic lights terminal: merah, kuning, hijau
   return (
-    <div className="flex h-10 items-center justify-between border-b border-white/[.08] px-4">
+    <div className="flex h-10 items-center justify-between px-4">
       <span className="flex items-center gap-1.5">
         <i className="size-2.5 rounded-full bg-[#FF5F57]" />
         <i className="size-2.5 rounded-full bg-[#FEBC2E]" />
@@ -25,7 +18,7 @@ function TerminalChrome({ title }: { title: string }) {
   );
 }
 
-const frame = "overflow-hidden rounded-2xl border border-white/[.08] bg-[#141414] transition-all duration-300 hover:border-white/20 hover:shadow-xl hover:shadow-[#74FA6A]/5";
+const frame = "overflow-hidden rounded-2xl bg-[#151918] transition-all duration-300 ";
 
 /** Step 1: mockup mini halaman /new, brief sedang diketik. */
 function MockBrief() {
@@ -36,7 +29,7 @@ function MockBrief() {
       <div className="p-5">
         <p className="text-[13px] font-medium uppercase tracking-[.06em] text-[#A0A0A0]">{c.mockNewMission}</p>
         <p className="mt-2.5 text-[16px] font-semibold tracking-[-.02em] text-[#EDEDED]">{c.mockQuestion}</p>
-        <div className="mt-4 rounded-xl border border-white/[.08] bg-[#0d0d0d] p-4">
+        <div className="mt-4 rounded-xl bg-[#0A0A0A] p-4">
           <p className="text-[14px] leading-6 text-[#EDEDED]">
             {c.mockBriefText}
             <span className="ml-1 inline-block h-[14px] w-[2px] animate-pulse bg-[#74FA6A] align-middle" />
@@ -68,7 +61,7 @@ function MockPrompt() {
           <p className="text-[#737373]">{c.mockPlanReady}</p>
           <p className="text-[#737373]">{c.mockTokenNote}</p>
         </div>
-        <p className="mt-4 rounded-xl border border-white/[.08] bg-[#0d0d0d] px-4 py-3 text-[13px] leading-6 text-[#A0A0A0]">
+        <p className="mt-4 rounded-xl bg-[#0A0A0A] px-4 py-3 text-[13px] leading-6 text-[#A0A0A0]">
           {c.mockPasteNote}
         </p>
       </div>
@@ -106,7 +99,7 @@ function MockProgress() {
             <span>{t2}</span>
           </div>
           <div className="flex items-center gap-2.5 text-[13px] text-[#737373]/60">
-            <span className="size-[14px] shrink-0 rounded-full border border-white/[.15]" />
+            <span className="size-[14px] shrink-0 rounded-full bg-[#3c4840]" />
             <span className="font-mono text-[12px]">F01-S01-T03</span>
             <span>{t3}</span>
           </div>
@@ -125,7 +118,7 @@ export function QuickstartVisual() {
         <div key={step.num} className="grid items-center gap-6 md:grid-cols-2 md:gap-10">
           <div>
             <div className="flex items-center gap-3">
-              <span className="grid size-7 shrink-0 place-items-center rounded-full border border-white/[.15] text-[13px] font-medium text-[#EDEDED]">
+              <span className="grid size-7 shrink-0 place-items-center rounded-full bg-[#222a24] text-[13px] font-medium text-[#EDEDED]">
                 {step.num}
               </span>
               <span className="text-[12px] font-medium uppercase tracking-[.08em] text-[#737373]">{c.stepOf} {step.num} / 3</span>
@@ -144,11 +137,11 @@ export function QuickstartVisual() {
 export function ConceptPipeline() {
   const c = docsCopy(useLang());
   return (
-    <div className="overflow-x-auto rounded-2xl border border-white/[.08] bg-[#141414] p-6 max-lg:p-4">
+    <div className="overflow-x-auto rounded-2xl bg-[#151918] p-6 max-lg:p-4">
       <div className="flex min-w-[560px] items-center gap-3 max-lg:min-w-0 max-lg:flex-col max-lg:items-stretch max-lg:gap-2">
         {c.pipelineNodes.map((node, i) => (
           <div key={node.label} className="flex flex-1 items-center gap-3">
-            <div className="flex-1 rounded-xl border border-white/[.08] bg-[#0d0d0d] px-4 py-4 text-center">
+            <div className="flex-1 rounded-xl bg-[#0A0A0A] px-4 py-4 text-center">
               <p className="text-[15px] font-semibold tracking-[-.01em] text-[#EDEDED]">{node.label}</p>
               <p className="mt-1 font-mono text-[11px] text-[#737373]">{node.sub}</p>
             </div>
@@ -167,7 +160,7 @@ export function ConceptPipeline() {
 export function PromptVisual() {
   const c = docsCopy(useLang());
   return (
-    <div className="overflow-hidden rounded-2xl border border-white/[.08] bg-[#0d0d0d]">
+    <div className="overflow-hidden rounded-2xl bg-[#0A0A0A]">
       <TerminalChrome title="mission loop" />
       <div className="space-y-2.5 p-5 font-mono text-[13px] leading-7 text-[#EDEDED]">
         <p className="text-[#737373]">{c.promptComment}</p>
@@ -177,7 +170,7 @@ export function PromptVisual() {
         <p className="text-[#737373]">{c.promptWorking}</p>
         <p><span className="text-[#74FA6A]">$</span> scratch-agent task complete F01-S01-T02</p>
         <p className="text-[#A0A0A0]">{`{ "done": false, "next": "F01-S01-T03" }`}</p>
-        <div className="border-t border-white/[.08] pt-3 text-[12px] leading-6 text-[#737373]">
+        <div className="pt-3 text-[12px] leading-6 text-[#737373]">
           <p>{c.promptFailNote}</p>
           <p>{c.promptCheckpointNote}</p>
         </div>

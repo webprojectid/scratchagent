@@ -18,8 +18,6 @@
  * });
  */
 
-import { jsonrepair } from "jsonrepair";
-
 /** Interface untuk parsed LLM response data */
 export interface ParsedLLMResponse {
   content: string;
@@ -40,220 +38,67 @@ export interface ParseOptions {
 }
 
 /** Helper untuk detect streaming response dari headers atau content */
-const detectStreamingMode = async (
-  response: Response,
-  options: ParseOptions
-): Promise<"streaming" | "json"> => {
-  // Check Content-Type header first
-  const contentType = response.headers.get("content-type") || "";
-  
-  if (options.logDebug) {
-    console.log(`[SSE Parser] Content-Type: ${contentType}`);
-  }
-  
-  // SSE/streaming indicators
-  const isSSE = contentType.includes("text/event-stream") || 
-                contentType.includes("application/x-ndjson");
-  
-  if (isSSE) {
-    return "streaming";
-  }
-  
-  // If user explicitly wants streaming, assume it even without header check
-  if (options.preferStreaming === true) {
-    if (options.logDebug) {
-      console.log("[SSE Parser] Force streaming mode enabled");
-    }
-    return "streaming";
-  }
-  
-  // Read first few bytes to check for SSE pattern
-  const reader = response.body?.getReader();
-  if (!reader) {
-    return "json";
-  }
-  
+const detectStreamingMode = async (response: Response, options: ParseOptions): Promise<"streaming" | "json"> => {
+  const contentType = response.headers.get("content-type") ?? "";
+  if (contentType.includes("application/json")) return "json";
+  if (contentType.includes("text/event-stream") || contentType.includes("application/x-ndjson") || options.preferStreaming) return "streaming";
+  // Sniff a clone so the parser still receives the first network chunk.
+  const reader = response.clone().body?.getReader();
+  if (!reader) return "json";
+  let preview = "";
+  const decoder = new TextDecoder();
   try {
-    const { value, done } = await reader.read();
-    if (done || !value) {
-      return "json";
+    for (let count = 0; count < 16 && preview.trim().length < 6; count++) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      preview += decoder.decode(value, { stream: true });
     }
-    
-    // Decode and check first chunk
-    const decoder = new TextDecoder("utf-8");
-    const text = decoder.decode(value, { stream: true });
-    
-    // SSE streaming starts with "data:" or contains "[DONE]" marker
-    const hasSSEPattern = text.startsWith("data:") || text.includes("[DONE]") || text.includes("choices");
-    
-    if (options.logDebug && hasSSEPattern) {
-      console.log("[SSE Parser] Detected streaming pattern:", text.substring(0, 100));
-    }
-    
-    if (hasSSEPattern) {
-      return "streaming";
-    } else {
-      // Put the chunk back by creating new readable stream
-      const restoredStream = new ReadableStream({
-        start(controller) {
-          controller.enqueue(value);
-          controller.close();
-        }
-      });
-      
-      Object.defineProperty(response, 'body', { value: restoredStream, configurable: true, writable: true });
-      
-      if (options.logDebug) {
-        console.log("[SSE Parser] Detected JSON mode:", text.substring(0, 50));
-      }
-    }
-    
-  } catch (error) {
-    if (options.logDebug) {
-      console.warn("[SSE Parser] Detection failed:", error);
-    }
+    return /^\s*(?:data:|event:|:)/.test(preview) ? "streaming" : "json";
   } finally {
+    void reader.cancel().catch(() => {});
     reader.releaseLock();
   }
-  
-  return "json";
 };
 
-/** Parse SSE streaming response */
-async function parseStream(
-  body: ReadableStream<Uint8Array>,
-  options: ParseOptions
-): Promise<ParsedLLMResponse> {
-  const decoder = new TextDecoder("utf-8");
-  let fullContent = "";
-  let usageInfo: Record<string, number> = {};
-  let lastChunkForUsage: Record<string, any> | null = null;
-  
-  if (options.logDebug) {
-    console.log("[SSE Parser] Starting streaming parse...");
-  }
-  
+async function parseStream(body: ReadableStream<Uint8Array>, options: ParseOptions): Promise<ParsedLLMResponse> {
+  const decoder = new TextDecoder();
   const reader = body.getReader();
-  const chunks: string[] = [];
-  // Buffer antar network chunk: satu event SSE bisa kepotong di tengah
-  // (umum via proxy/tunnel seperti Cloudflare). Tanpa buffer, JSON kepotong
-  // → parse gagal → chunk dibuang diam-diam → konten JSON bolong →
-  // 'JSON parsing gagal' di akhir pipeline.
-  let lineBuffer = "";
-  let streamDone = false;
-
+  let content = "", buffer = "", finished = false;
+  let usage: Partial<NonNullable<ParsedLLMResponse["usage"]>> = {};
+  const consumeLine = (line: string) => {
+    const trimmed = line.trim();
+    if (trimmed === "[DONE]" || trimmed === "data: [DONE]") { finished = true; return; }
+    const payload = trimmed.startsWith("data:") ? trimmed.slice(5).trim() : trimmed.startsWith("{") ? trimmed : "";
+    if (!payload) return;
+    let event: { choices?: { delta?: { content?: string }; message?: { content?: string } }[]; usage?: typeof usage };
+    try { event = JSON.parse(payload); }
+    catch { if (options.logDebug) console.warn("[SSE Parser] Skipped malformed SSE event"); return; }
+    const token = event.choices?.[0]?.delta?.content ?? event.choices?.[0]?.message?.content;
+    if (typeof token === "string") { content += token; options.onToken?.(token); }
+    if (event.usage) usage = event.usage;
+  };
   try {
-    while (!streamDone) {
-      const { done, value } = await reader.read();
-
+    while (!finished) {
+      const { value, done } = await reader.read();
       if (done) {
+        buffer += decoder.decode();
+        if (buffer.trim()) consumeLine(buffer);
         break;
       }
-
-      // Decode chunk
-      const text = decoder.decode(value, { stream: true });
-
-      // Gabung dengan sisa chunk sebelumnya, baru split per baris.
-      // Baris terakhir belum tentu utuh — simpan di buffer.
-      const combined = lineBuffer + text;
-      const lines = combined.split("\n");
-      lineBuffer = lines.pop() ?? "";
-
-      for (const line of lines) {
-        const trimmed = line.trim();
-
-        // Skip empty lines
-        if (!trimmed) continue;
-
-        // Check for [DONE] marker — hentikan SELURUH pembacaan stream
-        if (trimmed === "[DONE]" || trimmed === "data: [DONE]") {
-          if (options.logDebug) {
-            console.log("[SSE Parser] Stream completed");
-          }
-          streamDone = true;
-          break;
-        }
-        
-        // Parse SSE message (should start with "data:")
-        if (trimmed.startsWith('data:')) {
-          const jsonString = trimmed.slice(5).trim();
-          
-          // Skip empty or invalid JSON
-          if (!jsonString) continue;
-          
-          try {
-            const event = JSON.parse(jsonString);
-            
-            // Extract content from delta (streaming mode) or message (non-streaming)
-            const choice = event.choices?.[0];
-            if (choice) {
-              const contentDelta = choice.delta?.content || choice.message?.content;
-              
-              if (contentDelta) {
-                fullContent += contentDelta;
-                
-                // Call token callback if provided
-                if (options.onToken) {
-                  options.onToken(contentDelta);
-                }
-              }
-            }
-            
-            // Capture token usage from final events
-            if (event.usage) {
-              usageInfo = event.usage;
-            }
-            
-            // Also capture from choices.finish_reason events
-            if (lastChunkForUsage && !usageInfo.total_tokens) {
-              lastChunkForUsage = event;
-            }
-            
-          } catch (e) {
-            // Ignore malformed JSON (occasional during streaming)
-            if (options.logDebug) {
-              console.warn("[SSE Parser] Skipped malformed SSE event");
-            }
-          }
-        }
-      }
-      
-      chunks.push(text);
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() ?? "";
+      for (const line of lines) { consumeLine(line); if (finished) break; }
     }
-    
-    // Finalize usage info
-    const usage: Record<string, number> = {
-      prompt_tokens: usageInfo.prompt_tokens || 0,
-      completion_tokens: usageInfo.completion_tokens || 0,
-      total_tokens: usageInfo.total_tokens || 
-                    (usageInfo.prompt_tokens + usageInfo.completion_tokens)
-    };
-    
-    if (options.logDebug) {
-      console.log(`[SSE Parser] Streaming complete: ${fullContent.length} chars, ${usage.total_tokens.toLocaleString()} tokens`);
-      console.log(`[SSE Parser] Raw content preview: "${fullContent.substring(0, 200)}..."`);
-    }
-    
-    return {
-      content: fullContent,
-      usage: usage as ParsedLLMResponse['usage'],
-      mode: "streaming"
-    };
-    
+    if (finished) await reader.cancel();
+    const finite = (number: number | undefined) => typeof number === "number" && Number.isFinite(number) ? number : 0;
+    const prompt_tokens = finite(usage.prompt_tokens), completion_tokens = finite(usage.completion_tokens);
+    return { content, usage: { prompt_tokens, completion_tokens, total_tokens: finite(usage.total_tokens) || prompt_tokens + completion_tokens }, mode: "streaming" };
   } catch (error) {
-    const errorMsg = error instanceof Error ? error.message : String(error);
-    
-    if (options.onError) {
-      options.onError(new Error(`Streaming parse error: ${errorMsg}`));
-    } else {
-      console.error("[SSE Parser] Fatal streaming error:", error);
-    }
-    
-    throw new Error(`Failed to parse streaming response: ${errorMsg}`);
-    
-  } finally {
-    reader.releaseLock();
-  }
+    const message = error instanceof Error ? error.message : String(error);
+    options.onError?.(new Error(`Streaming parse error: ${message}`));
+    throw new Error(`Failed to parse streaming response: ${message}`);
+  } finally { reader.releaseLock(); }
 }
 
 /** Parse plain JSON response (non-streaming) */
@@ -376,5 +221,6 @@ export async function* streamLLMResponse(
     onProgress?: (current: string, complete: () => void) => void;
   } = {}
 ): AsyncGenerator<string, ParsedLLMResponse, unknown> {
+  void _options;
   throw new Error("streamLLMResponse is deprecated and not fully compatible yet");
 }

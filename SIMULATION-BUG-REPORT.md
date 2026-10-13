@@ -1,3 +1,5 @@
+> Archived report from August 2026. Not a current security or test assessment. Earlier bugs may have been fixed; percentages and completion claims below are historical, not release guarantees. Credential references have been removed.
+
 # 🔴 SCRATCH AGENT - SIMULATION BUG REPORT
 
 **Generated:** 2026-08-19  

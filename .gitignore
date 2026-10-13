@@ -57,6 +57,10 @@ nul
 /.*-id
 /.tmp-*
 
+# Personal generated assets and local review bundles
+/output/
+/artifacts/
+
 # script simulasi lokal (perlu password DB)
 scripts/simulasi-production.ts
 

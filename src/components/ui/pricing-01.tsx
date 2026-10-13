@@ -6,6 +6,7 @@ import type { MouseEvent, ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { RollingPrice } from "@/components/ui/rolling-price";
 import { cn } from "@/lib/utils";
 import styles from "./pricing-01.module.css";
 
@@ -28,7 +29,10 @@ export default function Pricing({ plans }: { plans: PricingPlan[] }) {
               {plan.controls && <div className={styles.controls}>{plan.controls}</div>}
             </div>
             <div className={styles.purchase}>
-              <p className={styles.price}><strong>{plan.price}</strong>{plan.period && <span>{plan.period}</span>}</p>
+              <p className={styles.price} aria-live={plan.highlighted ? "polite" : undefined} aria-atomic={plan.highlighted || undefined}>
+                <strong>{plan.highlighted ? <RollingPrice value={plan.price} /> : plan.price}</strong>
+                {plan.period && <span>{plan.period}</span>}
+              </p>
               <div className={styles.priceNote}>{plan.priceNote}</div>
               <Button asChild className={styles.action}>
                 <Link href={plan.href} onClick={plan.onChoose} aria-busy={plan.pending || undefined}>

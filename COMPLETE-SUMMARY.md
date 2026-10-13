@@ -1,3 +1,5 @@
+> Archived report from August 2026. Not a current security or test assessment. Earlier bugs may have been fixed; percentages and completion claims below are historical, not release guarantees. Credential references have been removed.
+
 # 🎉 FINAL SUMMARY - Real Test Complete
 
 **User Account:** teguhends@gmail.com  
@@ -11,7 +13,7 @@
 
 | Component | Status | Notes |
 |-----------|--------|-------|
-| **API Key Validation** | ✅ PASS | `REMOVED_EXPOSED_API_KEY_REFERENCE` |
+| **API Key Validation** | ✅ PASS | `[REMOVED_API_KEY_REFERENCE]` |
 | **Local Model Service** | ✅ RUNNING | `qd/qmodel_38max @ localhost:20128/v1` |
 | **HTTP Connection** | ✅ OK | HTTP 200 responses confirmed |
 | **Streaming Response** | ✅ PARSED | SSE format handled automatically |
@@ -178,9 +180,9 @@ When you generate a plan via web UI or CLI:
    ```bash
    # Ensure .env file has:
    LLM_BASE_URL=http://localhost:20128/v1
-   LLM_API_KEY=sk-*** (redacted)
+   LLM_API_KEY=[REMOVED_API_KEY_REFERENCE] (redacted)
    LLM_MODEL=qd/qmodel_38max
-   DATABASE_URL="postgresql://..." # Optional for history
+   DATABASE_URL="[REMOVED_DATABASE_CREDENTIAL]" # Optional for history
    ```
 
 3. **Monitor Token Usage**: Track actual consumption during live usage
@@ -218,7 +220,7 @@ When you generate a plan via web UI or CLI:
 ✅ Working API credentials  
 ✅ SSE streaming support (auto-detected)  
 ✅ JSON fallback capability  
-✅ Bug-free core logic  
+✅ core logic tested only within the historical scenarios below
 ✅ Comprehensive test suite  
 ✅ Production-ready codebase  
 

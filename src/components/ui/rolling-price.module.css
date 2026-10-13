@@ -1,0 +1,4 @@
+.price { display: inline-flex; align-items: center; white-space: pre; font-variant-numeric: tabular-nums; }
+.window { display: inline-block; width: .62em; height: 1.15em; overflow: hidden; contain: layout paint; letter-spacing: 0; }
+.track { display: block; }
+.digit { display: block; height: 1.15em; line-height: 1.15; text-align: center; }

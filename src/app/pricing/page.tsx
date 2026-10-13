@@ -57,7 +57,7 @@ export default function PricingPage() {
           <div className={styles.faqList}>
             {c.faqs.map((item, index) => (
               <details key={item.q} open={index === 0}>
-                <summary><span>{item.q}</span><span className={styles.faqIcon} aria-hidden="true">↗</span></summary>
+                <summary><span>{item.q}</span><span className={styles.faqIcon} aria-hidden="true" /></summary>
                 <p>{item.a}</p>
               </details>
             ))}

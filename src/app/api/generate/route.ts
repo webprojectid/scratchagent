@@ -70,7 +70,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: apiText("Akun ini telah diblokir secara permanen.") }, { status: 403 });
     }
     const tier = account?.tier ?? "free";
-    // Admin (ADMIN_EMAILS + daftar bawaan) bebas kuota harian: batas dilewati,
+    // Designated admin bypasses the daily quota limit,
     // tapi pemakaian tetap tercatat di usage_events dengan tier asli untuk
     // audit. Batas struktur PRD (jumlah fase/sub-fitur/task) tetap tier akun.
 

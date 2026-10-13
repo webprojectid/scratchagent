@@ -8,8 +8,6 @@ import { ensureQaPhase } from "@/lib/tasks";
 // Satu fitur bisa makan 1-3 menit dengan failover — beri jendela penuh.
 export const maxDuration = 300;
 
-const TUID = "701f135a-050a-4e08-bc97-b6d3ee91d7e5";
-
 interface FinalTask {
   ref: string;
   title: string;
@@ -37,6 +35,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ pla
     const user = await getRequestUser(legacyUserId);
     const { plan, error } = await accessPlan(planId, user, { write: true });
     if (error || !plan) return error;
+    if (!plan.userId || plan.userId === "shared") {
+      return NextResponse.json({ error: "Plan owner is missing" }, { status: 409 });
+    }
 
     const feature = (plan.features ?? [])[featureIndex];
     if (!feature) return NextResponse.json({ error: apiText("Feature tidak ditemukan") }, { status: 404 });
@@ -110,7 +111,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pla
       await updatePlanStatus(planId, "ready");
     }
 
-    await savePlan(plan, plan.userId ?? TUID);
+    await savePlan(plan, plan.userId);
     return NextResponse.json({ ok: true, featureIndex, tasksGenerated: tasks.length });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Generate tasks gagal" }, { status: 500 });

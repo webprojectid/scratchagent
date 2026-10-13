@@ -34,7 +34,7 @@ export function DocsToc() {
   return (
     <nav aria-label={c.tocTitle} className="sticky top-24 hidden w-48 shrink-0 self-start xl:block">
       <p className="text-[12px] font-medium uppercase tracking-[.08em] text-[#737373]">{c.tocTitle}</p>
-      <ul className="mt-4 space-y-0.5 border-l border-white/[.08]">
+      <ul className="mt-4 space-y-0.5">
         {c.tocItems.map((item) => {
           const isActive = active === item.id;
           return (
@@ -43,10 +43,10 @@ export function DocsToc() {
                 onClick={() => go(item.id)}
                 aria-current={isActive ? "location" : undefined}
                 className={cn(
-                  "-ml-px block w-full border-l-2 py-1.5 pl-4 pr-2 text-left text-[13px] leading-5 transition-colors",
+                  "block w-full rounded-md py-1.5 pl-4 pr-2 text-left text-[13px] leading-5 transition-colors",
                   isActive
-                    ? "border-[#74FA6A] font-medium text-[#EDEDED]"
-                    : "border-transparent text-[#A0A0A0] hover:text-[#EDEDED]",
+                    ? "bg-[#151918] font-medium text-[#74FA6A]"
+                    : "text-[#A0A0A0] hover:text-[#EDEDED]",
                 )}
               >
                 {item.label}
