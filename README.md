@@ -9,6 +9,7 @@ Use Node.js 22 or newer and npm. package-lock.json is the canonical web lockfile
 ```sh
 npm ci
 cp .env.example .env
+npm run hooks:install
 npm run dev
 ```
 
@@ -49,7 +50,11 @@ npm run build
 
 npm run lint rejects new findings against a fingerprinted baseline of unchanged existing code. npm run lint:full reports the entire backlog. The baseline is not a claim of lint-clean source and must not be regenerated to hide new errors. CI runs these checks without production credentials.
 
-The reachable-history scanner checks known credential patterns and private environment filenames. Passing it does not prove that every secret format, external clone or hosting cache is clean. See [the security report](docs/security/AUDIT-2026-10-13.md) and [the remediation report](docs/security/SELF-AUDIT-2026-10-13.md) for verified results and remaining limits.
+The credential gate reads both staged Git blobs and tracked working files, including large text files. It rejects private env/key files and ignored files that remain tracked. The only env template allowed is the root .env.example, with blank values except the documented quota default. Never put real credentials in a test fixture or report.
+
+npm run hooks:install enables local checks before commits and pushes, without replacing existing hooks. Each new clone needs this explicit setup. If a hook already exists, integrate the two scanner commands there. CI repeats these checks; CI runs after a push and cannot prevent the initial publication by itself. Hooks can be bypassed, so they are an extra guard rather than a guarantee.
+
+The history scanner checks all local reachable commit trees for known credential patterns and private filenames. It cannot inspect unreachable objects retained by GitHub, external clones or hosting caches. Passing it does not prove every secret format is clean. An old SHA that remains accessible requires credential revocation and, when appropriate, GitHub Support review. See [the October 14 follow-up](docs/security/ENV-FOLLOWUP-2026-10-14.md) for the current boundary between code remediation and external actions.
 
 ## Coding-agent handoff
 

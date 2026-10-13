@@ -5,3 +5,4 @@
 /.env* export-ignore
 /scripts/check-empty-fases.ts export-ignore
 /scripts/check-plan-empty.ts export-ignore
+.githooks/* text eol=lf

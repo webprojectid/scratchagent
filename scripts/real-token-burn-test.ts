@@ -252,7 +252,7 @@ async function main() {
     }
     console.log(`✓ Base URL: ${process.env.LLM_BASE_URL}`);
     console.log(`✓ Model: ${process.env.LLM_MODEL}`);
-    console.log(`✓ API Key present: ${process.env.LLM_API_KEY?.substring(0, 10)}...`);
+    console.log(`✓ API key configured: ${Boolean(process.env.LLM_API_KEY)}`);
     
     // Execute each plan
     for (let i = 0; i < REAL_TEST_CONFIG.PLANS_TO_GENERATE.length; i++) {

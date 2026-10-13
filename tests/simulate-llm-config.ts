@@ -29,8 +29,7 @@ try {
 }
 
 function maskKey(key: string): string {
-  if (key.length <= 8) return "***";
-  return `${key.slice(0, 4)}...${key.slice(-4)} (${key.length} char)`;
+  return key ? "Configured (value hidden)" : "Not configured";
 }
 
 interface ProbeResult {
