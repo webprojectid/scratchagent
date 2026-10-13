@@ -1,3 +1,4 @@
+import { hasProFeatures } from "@/lib/account-capabilities";
 import { apiText } from "@/lib/ui-messages";
 import { NextResponse } from "next/server";
 import { accessPlan, getRequestUser } from "@/lib/api-auth";
@@ -18,7 +19,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ plan
   if (!["md", "zip", "json"].includes(format)) return NextResponse.json({ error: apiText("Format ekspor tidak valid.") }, { status: 400 });
   if (format === "md" || format === "zip") {
     const account = user ? await getAccountState(user.userId) : null;
-    if ((account?.tier ?? "free") !== "pro") {
+    if (!hasProFeatures(user, account?.tier)) {
       return NextResponse.json({ error: apiText("Export PRD hanya untuk paket Pro.") }, { status: 403 });
     }
   }

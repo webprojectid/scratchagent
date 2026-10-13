@@ -1,3 +1,5 @@
+import { writeOriginGate } from "@/lib/write-origin";
+import { hasProFeatures } from "@/lib/account-capabilities";
 import { apiText } from "@/lib/ui-messages";
 import { NextResponse } from "next/server";
 import { accessPlan, getRequestUser } from "@/lib/api-auth";
@@ -14,6 +16,8 @@ import { RATE_LIMITS, clientKey, getClientIp, logSecurity, rateLimit, rateLimite
  * (in_progress) tidak boleh dihapus supaya tidak bentrok dengan agent CLI.
  */
 export async function DELETE(request: Request, { params }: { params: Promise<{ planId: string }> }) {
+  const originGate = writeOriginGate(request);
+  if (originGate) return originGate;
   const { planId } = await params;
   const searchParams = new URL(request.url).searchParams;
   const type = searchParams.get("type");
@@ -27,7 +31,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ p
   if (retryIn !== null) return rateLimitedResponse(clientKey(user?.userId, ip), retryIn, { ip, userId: user?.userId ?? null, route: "/api/plans/[id]/structure" });
 
   const account = user ? await getAccountState(user.userId) : undefined;
-  if ((account?.tier ?? "free") !== "pro") {
+  if (!hasProFeatures(user, account?.tier)) {
     await logSecurity("access_denied", { route: "/api/plans/[id]/structure", reason: "free tier" }, { ip, userId: user?.userId ?? null });
     return NextResponse.json(
       { error: apiText("Menghapus struktur plan hanya untuk paket Pro."), upgrade: "/pricing" },

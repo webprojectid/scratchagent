@@ -1,3 +1,5 @@
+import { writeOriginGate } from "@/lib/write-origin";
+import { hasProFeatures } from "@/lib/account-capabilities";
 import { apiText } from "@/lib/ui-messages";
 import { recordAccountActivity } from "@/lib/account-store";
 import { NextResponse } from "next/server";
@@ -52,12 +54,14 @@ export async function GET(_request: Request, { params }: { params: Promise<{ pla
 }
 
 export async function POST(request: Request, { params }: { params: Promise<{ planId: string }> }) {
+  const originGate = writeOriginGate(request);
+  if (originGate) return originGate;
   const { planId } = await params;
 
   // Gate 1: hanya Pro. Dicek sebelum plan di-load (hemat + pesan jelas).
   const user = await getRequestUser();
   const account = user ? await getAccountState(user.userId) : undefined;
-  if ((account?.tier ?? "free") !== "pro") {
+  if (!hasProFeatures(user, account?.tier)) {
     return NextResponse.json(
       { error: apiText("Kolom chat ide hanya untuk paket Pro."), upgrade: "/pricing" },
       { status: 403 },

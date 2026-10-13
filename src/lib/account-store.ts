@@ -107,7 +107,7 @@ export async function readNotifications(userId: string) {
 }
 export async function accountUsage(userId: string) {
   if (memoryMode()) return memoryListUsage(userId).slice(-100).reverse();
-  return getDb().select({ id: usageEvents.id, planId: usageEvents.planId, stage: usageEvents.stage, tier: usageEvents.tier, tokensIn: usageEvents.tokensIn, tokensOut: usageEvents.tokensOut, model: usageEvents.model, createdAt: usageEvents.createdAt }).from(usageEvents).where(eq(usageEvents.userId, userId)).orderBy(desc(usageEvents.createdAt)).limit(100);
+  return getDb().select({ id: usageEvents.id, planId: usageEvents.planId, stage: usageEvents.stage, tier: usageEvents.tier, tokensIn: usageEvents.tokensIn, tokensOut: usageEvents.tokensOut, model: usageEvents.model, createdAt: usageEvents.createdAt }).from(usageEvents).where(and(eq(usageEvents.userId, userId), ne(usageEvents.stage, "generation-attempt"))).orderBy(desc(usageEvents.createdAt)).limit(100);
 }
 export async function getTokenPolicy(hash: string): Promise<TokenPolicy> {
   if (memoryMode()) return memory.policy.get(hash) ?? { expiresAt: null, lastUsedAt: null, access: "write", projectIds: [] };

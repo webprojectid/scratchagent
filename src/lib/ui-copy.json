@@ -212,5 +212,22 @@
  ["1 kunjungan", "1 visit"], ["1 aktivitas kerja", "1 work event"],
  ["Terhambat", "Blocked"],
  ["Gaya warna", "Color style"],
- ["Satu warna aksen untuk seluruh antarmuka. Scratch Green adalah identitas default.", "One accent color across the interface. Scratch Green is the default brand color."]
+ ["Satu warna aksen untuk seluruh antarmuka. Scratch Green adalah identitas default.", "One accent color across the interface. Scratch Green is the default brand color."],
+  ["Task details","Task details","Detail task"],
+  ["Collapse task panel","Collapse task panel","Perkecil panel task"],
+  ["Expand task panel","Expand task panel","Perbesar panel task"],
+  ["Close task details","Close task details","Tutup detail task"],
+  ["Layer","Layer","Layer"],
+  ["Subfeature","Subfeature","Subfitur"],
+  ["Page","Page","Halaman"],
+  ["Dependencies","Dependencies","Dependensi"],
+  ["No dependencies","No dependencies","Tidak ada dependensi"],
+  ["Tasks in this subfeature","Tasks in this subfeature","Task dalam subfitur ini"],
+  ["Perencanaan","Planning"],
+  ["Planned","Planned","Direncanakan"],
+  ["Done","Done","Selesai"],
+  ["Previous phase","Previous phase","Fase sebelumnya"],
+  ["Next phase","Next phase","Fase berikutnya"],
+  ["Collapse phase panel","Collapse phase panel","Perkecil panel fase"],
+  ["Expand phase panel","Expand phase panel","Perbesar panel fase"]
 ]

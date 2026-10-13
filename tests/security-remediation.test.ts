@@ -39,19 +39,22 @@ function taskGeneration(owner?: string) {
   const savedOwners: string[] = [];
   const plan = { userId: owner, status: "generating", features: [{ title: "Feature", subFeatures: [{ title: "Sub", tasks: [] }] }] };
   const mocks: Record<string, unknown> = {
+    "@/lib/write-origin": { writeOriginGate: () => null },
+    "@/lib/generation-lease": { claimGeneration: async () => "lease", releaseGeneration: async () => {}, ownsGeneration: async () => true, reserveGenerationAttempt: async () => true },
+    "@/lib/generated-plan": { finalizeGeneratedPlan: async (_plan: unknown, owner: string) => { savedOwners.push(owner); return true; } },
     "next/server": { NextResponse }, "@/lib/ui-messages": { apiText: (value: string) => value },
     "@/lib/api-auth": { getRequestUser: async () => ({ userId: "acting-admin" }), accessPlan: async () => ({ plan }) },
     "@/lib/generate": { generateTasksForFeature: () => { throw new Error("Mock mode must not call an LLM"); }, buildTaskRef: (_fi: number, _si: number, number: number) => `F01-S01-T${number}`, assignTasksToSubFeatures: (items: unknown[]) => new Map([[0, items.map((_, index) => index)]]), sanitizeDeps: (nodes: { ref: string; deps: string[] }[]) => new Map(nodes.map(node => [node.ref, node.deps])) },
     "@/lib/storage": { savePlan: async (_plan: unknown, owner: string) => { savedOwners.push(owner); }, updatePlanStatus: async () => {} },
     "@/lib/tasks": { ensureQaPhase: () => ({ ready: false }) },
   };
-  const module = { exports: {} as { POST: (request: Request, context: unknown) => Promise<Response> } };
+  const fixtureModule = { exports: {} as { POST: (request: Request, context: unknown) => Promise<Response> } };
   const output = ts.transpileModule(readFileSync("src/app/api/plans/[planId]/generate-tasks/route.ts", "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
-  runInNewContext(output, { module, exports: module.exports, require: (name: string) => {
+  runInNewContext(output, { module: fixtureModule, exports: fixtureModule.exports, require: (name: string) => {
     if (!(name in mocks)) throw new Error(`Unexpected dependency: ${name}`);
     return mocks[name];
   }, process: { env: { MOCK_LLM: "1" } }, URL });
-  return { savedOwners, invoke: () => module.exports.POST(new Request("https://example.invalid/api", { method: "POST", body: JSON.stringify({ featureIndex: 0 }) }), { params: Promise.resolve({ planId: "fixture-plan" }) }) };
+  return { savedOwners, invoke: () => fixtureModule.exports.POST(new Request("https://example.invalid/api", { method: "POST", body: JSON.stringify({ featureIndex: 0 }) }), { params: Promise.resolve({ planId: "fixture-plan" }) }) };
 }
 
 test("task generation cannot assign an orphaned plan to a fallback account", async () => {

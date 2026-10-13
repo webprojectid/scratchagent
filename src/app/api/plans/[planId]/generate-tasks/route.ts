@@ -1,9 +1,10 @@
+import { writeOriginGate } from "@/lib/write-origin";
+import { claimGeneration, releaseGeneration, reserveGenerationAttempt } from "@/lib/generation-lease";
+import { finalizeGeneratedPlan } from "@/lib/generated-plan";
 import { apiText } from "@/lib/ui-messages";
 import { NextResponse } from "next/server";
 import { accessPlan, getRequestUser } from "@/lib/api-auth";
 import { generateTasksForFeature, buildTaskRef, sanitizeDeps, assignTasksToSubFeatures } from "@/lib/generate";
-import { savePlan, updatePlanStatus } from "@/lib/storage";
-import { ensureQaPhase } from "@/lib/tasks";
 
 // Satu fitur bisa makan 1-3 menit dengan failover — beri jendela penuh.
 export const maxDuration = 300;
@@ -28,6 +29,11 @@ function makeTask(ref: string, title: string, layer: "frontend" | "backend" | "q
 }
 
 export async function POST(request: Request, { params }: { params: Promise<{ planId: string }> }) {
+  const originGate = writeOriginGate(request);
+  if (originGate) return originGate;
+  let lease: string | null = null;
+  let leasedPlan = "";
+  let stage = "";
   try {
     const { planId } = await params;
     const { featureIndex } = await request.json();
@@ -39,13 +45,19 @@ export async function POST(request: Request, { params }: { params: Promise<{ pla
       return NextResponse.json({ error: "Plan owner is missing" }, { status: 409 });
     }
 
+    if (!Number.isInteger(featureIndex) || featureIndex < 0) return NextResponse.json({ error: "Invalid phase index" }, { status: 400 });
     const feature = (plan.features ?? [])[featureIndex];
     if (!feature) return NextResponse.json({ error: apiText("Feature tidak ditemukan") }, { status: 404 });
 
-    if ((feature.subFeatures ?? []).some((sf: any) => (sf.tasks ?? []).length > 0)) {
+    if ((feature.subFeatures ?? []).some((sf) => (sf.tasks ?? []).length > 0)) {
       return NextResponse.json({ skipped: true, message: "Tasks sudah ada" });
     }
 
+    stage = `feature-${featureIndex}`;
+    leasedPlan = planId;
+    lease = await claimGeneration(planId, stage);
+    if (!lease) return NextResponse.json({ ok: true, alreadyRunning: true });
+    if (!await reserveGenerationAttempt(user!.userId, plan.tier ?? "free")) return NextResponse.json({ error: "Generation limit reached. Please try again later." }, { status: 429, headers: { "Retry-After": "600" } });
     let tasks: { id: string; feature: string; sub_feature: string; title: string; layer: "frontend" | "backend" | "qa"; phase: number; page: string | null; deps: string[] }[] = [];
 
     if (process.env.MOCK_LLM === "1") {
@@ -63,7 +75,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pla
         });
       }
     } else {
-      const subTitles = (feature.subFeatures ?? []).map((sf: any) => sf.title);
+      const subTitles = (feature.subFeatures ?? []).map((sf) => sf.title);
       // Ide user (Pro, maks 2/project) WAJIB ikut terbaca AI sebagai referensi tambahan.
       const result = await generateTasksForFeature(plan.brief, feature.title, subTitles, featureIndex, plan.tier ?? "free", plan.features.length, plan.ideas, plan.generationSettings);
       tasks = result.tasks;
@@ -78,7 +90,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pla
     // (exact match dulu, lalu substring fallback; sisa masuk sub-fitur pertama).
     // Tanpa dedupe jumlah task membengkak dan melanggar batas tier.
     let taskNum = 0;
-    const assignment = assignTasksToSubFeatures(keyed, feature.subFeatures.map((sf: any) => sf.title));
+    const assignment = assignTasksToSubFeatures(keyed, feature.subFeatures.map((sf) => sf.title));
     for (const [subIndex, taskIndexes] of Array.from(assignment.entries()).sort(([a], [b]) => a - b)) {
       const sf = feature.subFeatures[subIndex];
       if (!sf) continue;
@@ -105,16 +117,14 @@ export async function POST(request: Request, { params }: { params: Promise<{ pla
     // Ready gate: plan baru boleh "ready" kalau SEMUA fitur sudah punya tasks.
     // Logika bersih-subfitur-QA-kosong + inject fase "QA & Integrasi" ada di
     // helper ensureQaPhase (dipakai bersama generate-all biar tidak dobel).
-    const { ready } = ensureQaPhase(plan);
-    if (ready) {
-      plan.status = "ready";
-      await updatePlanStatus(planId, "ready");
-    }
-
-    await savePlan(plan, plan.userId);
+    const saved = await finalizeGeneratedPlan(plan, plan.userId, { stage, token: lease });
+    if (!saved) return NextResponse.json({ error: "Generation was superseded. Refresh the plan." }, { status: 409 });
     return NextResponse.json({ ok: true, featureIndex, tasksGenerated: tasks.length });
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Generate tasks gagal" }, { status: 500 });
+    console.error("[generate-tasks]", error);
+    return NextResponse.json({ error: "Tasks could not be generated. Please try again." }, { status: 500 });
+  } finally {
+    if (lease) await releaseGeneration(leasedPlan, stage, lease);
   }
 }
 
@@ -125,11 +135,11 @@ export async function GET(request: Request, { params }: { params: Promise<{ plan
   const { plan, error } = await accessPlan(planId, user);
   if (error || !plan) return error;
 
-  const features = (plan.features ?? []).map((f: any, i) => ({
+  const features = (plan.features ?? []).map((f, i) => ({
     index: i,
     title: f.title,
-    hasTasks: (f.subFeatures ?? []).some((sf: any) => (sf.tasks ?? []).length > 0),
-    taskCount: (f.subFeatures ?? []).reduce((acc: number, sf: any) => acc + (sf.tasks ?? []).length, 0),
+    hasTasks: (f.subFeatures ?? []).some((sf) => (sf.tasks ?? []).length > 0),
+    taskCount: (f.subFeatures ?? []).reduce((acc: number, sf) => acc + (sf.tasks ?? []).length, 0),
   }));
 
   const allReady = plan.status === "ready";

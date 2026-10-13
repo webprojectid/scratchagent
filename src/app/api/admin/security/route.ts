@@ -1,3 +1,4 @@
+import { writeOriginGate } from "@/lib/write-origin";
 import { apiText } from "@/lib/ui-messages";
 import { after } from "next/server";
 import { NextResponse } from "next/server";
@@ -128,6 +129,8 @@ export async function GET(request: Request) {
  * Body: { action: "block_ip" | "unblock_ip" | "reset_user" | "dismiss_event", ... }
  */
 export async function POST(request: Request) {
+  const originGate = writeOriginGate(request);
+  if (originGate) return originGate;
   const user = await getRequestUser();
   const gate = await requireAdmin(user);
   const ip = await getClientIp(request);

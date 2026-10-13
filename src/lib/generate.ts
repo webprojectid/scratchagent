@@ -1,3 +1,4 @@
+import { publicProviderFetch } from "./provider-network";
 import { defaultHandoff, legacyHandoff, handoffInstructions, type HandoffSettings } from "./account-preferences";
 import { z } from "zod";
 import { jsonrepair } from "jsonrepair";
@@ -260,7 +261,7 @@ async function attemptOnce<T>(
   const start = Date.now();
   console.log(`[LLM] request ke ${baseUrl}/chat/completions (model: ${model}, siklus ${cycle + 1})`);
   try {
-    const res = await fetch(`${baseUrl}/chat/completions`, {
+    const res = await publicProviderFetch(`${baseUrl}/chat/completions`, {
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({

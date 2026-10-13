@@ -15,8 +15,8 @@
   --color-slate-200: #d4d4d4;
   --color-slate-300: #bfbfbf;
   --color-slate-400: #a3a3a3;
-  --color-slate-500: #858585;
-  --color-slate-600: #666666;
+  --color-slate-500: #999999;
+  --color-slate-600: #999999;
   --color-slate-700: #404040;
   --color-slate-800: #333333;
   --color-slate-900: #282828;
@@ -55,3 +55,6 @@
   fill: #ededed;
 }
 .workspace :global(.react-flow__controls-button:hover) { background: #333333; }
+
+.workspace [class~="text-white/30"],
+.workspace [class~="text-white/40"] { color: #999999; }

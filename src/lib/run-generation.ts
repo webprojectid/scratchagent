@@ -1,3 +1,4 @@
+import { claimGeneration, releaseGeneration, reserveGenerationAttempt, withGenerationLease } from "./generation-lease";
 import { recordAccountActivity } from "./account-store";
 import type { HandoffSettings } from "./account-preferences";
 import { after } from "next/server";
@@ -32,46 +33,57 @@ export interface GenerationJob {
  * gagal: kuota dikembalikan, kerangka plan dibuang. Aman dipanggil ulang
  * (retry) — retry memakai receipt tanpa eventId supaya kuota tidak dobel.
  */
-export function scheduleGeneration(job: GenerationJob, tryNo = 1) {
-  after(async () => {
-    try {
-      const result = await generatePlanStructure(job.brief, job.techPrefs, job.answers, job.tier, job.handoff);
-      await savePlan(
-        {
-          id: job.planId,
-          title: result.title,
-          brief: job.brief,
-          stack: result.stack,
-          techStack: result.techStack,
-          asumsi: result.asumsi,
-          requirements: result.requirements,
-          userFlow: result.userFlow,
-          architecture: result.architecture,
-          databaseSchema: result.databaseSchema,
-          status: "generating",
-          features: result.features as never,
-          warnings: result.warnings,
-          tier: job.tier,
-          createdAt: new Date().toISOString(),
-        },
-        job.ownerId,
-      );
-      await updatePlanTitle(job.planId, result.title);
-      // Receipt dengan eventId (percobaan pertama) di-finalize; retry watchdog
-      // tanpa eventId dicatat sebagai baris usage baru supaya model & token
-      // pemakaian yang berhasil tetap tercatat.
-      if (job.receipt.eventId) {
-        await finalizeQuota(job.receipt, job.planId, result.usage);
-      } else {
-        await recordUsage(job.userId, job.tier, job.planId, result.usage);
-      }
-      await recordAccountActivity(job.userId, "generation_complete", "Struktur PRD selesai disusun", job.planId, `generation:${job.planId}`);
-      await logSecurity("generate", { planId: job.planId, tier: job.tier, features: result.features.length, tokens: result.usage.tokensIn + result.usage.tokensOut, tryNo }, { ip: job.ip, userId: job.userId });
-    } catch (error) {
-      await refundQuota(job.receipt);
-      await recordAccountActivity(job.userId, "generation_failed", "Generate PRD gagal; kuota dikembalikan", null);
-      await deletePlan(job.planId);
-      console.error(`[generate][bg try${tryNo}]`, error);
+export async function scheduleGeneration(job: GenerationJob, tryNo = 1): Promise<boolean> {
+  const lease = await claimGeneration(job.planId, "structure", 4);
+  if (!lease) return false;
+  try {
+    if (!await reserveGenerationAttempt(job.userId, job.tier)) {
+      await releaseGeneration(job.planId, "structure", lease);
+      return false;
     }
-  });
+    after(async () => {
+      try {
+        const result = await generatePlanStructure(job.brief, job.techPrefs, job.answers, job.tier, job.handoff);
+        await withGenerationLease(job.planId, "structure", lease, async () => {
+          await savePlan({
+            id: job.planId,
+            title: result.title,
+            brief: job.brief,
+            stack: result.stack,
+            techStack: result.techStack,
+            asumsi: result.asumsi,
+            requirements: result.requirements,
+            userFlow: result.userFlow,
+            architecture: result.architecture,
+            databaseSchema: result.databaseSchema,
+            status: "generating",
+            features: result.features as never,
+            warnings: result.warnings,
+            tier: job.tier,
+            createdAt: new Date().toISOString(),
+          }, job.ownerId);
+          await updatePlanTitle(job.planId, result.title);
+          // Watchdog retries have no reservation event; record their successful
+          // model usage without finalizing the original reservation again.
+          if (job.receipt.eventId) await finalizeQuota(job.receipt, job.planId, result.usage);
+          else await recordUsage(job.userId, job.tier, job.planId, result.usage);
+          await recordAccountActivity(job.userId, "generation_complete", "Struktur PRD selesai disusun", job.planId, `generation:${job.planId}`);
+          await logSecurity("generate", { planId: job.planId, tier: job.tier, features: result.features.length, tokens: result.usage.tokensIn + result.usage.tokensOut, tryNo }, { ip: job.ip, userId: job.userId });
+        });
+      } catch (error) {
+        await withGenerationLease(job.planId, "structure", lease, async () => {
+          await refundQuota(job.receipt);
+          await recordAccountActivity(job.userId, "generation_failed", "Generate PRD gagal; kuota dikembalikan", null);
+          await deletePlan(job.planId);
+        });
+        console.error(`[generate][bg try${tryNo}]`, error);
+      } finally {
+        await releaseGeneration(job.planId, "structure", lease);
+      }
+    });
+  } catch (error) {
+    await releaseGeneration(job.planId, "structure", lease);
+    throw error;
+  }
+  return true;
 }

@@ -1,0 +1,1284 @@
+{
+  "source": "d13f7bfb96a02cd4046f7ddc11b0c7df59f56d8b",
+  "note": "Only unchanged, pre-existing findings are grandfathered. Regeneration is not a fix.",
+  "entries": {
+    "3b811cb9eaae56f7058237022a00d75bfed3a4f4dc559e165abd8e5785f6dd7f": {
+      "file": "scripts/battle-benchmark-models.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "e2e160b24fcc32251418d4ab91b2f20c97d829e5da2959de969e9827a9b58d48": {
+      "file": "scripts/bench-plan-list.mts",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "0fd12ad4503e83eb6ebddcab07774c1569b08eab50c23960911298cb2dfd2364": {
+      "file": "scripts/bench-plan-list.mts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "13ce6347bf6ca149d5a05469d14cfb446f8dc32de0b4e3c621c76460be78603d": {
+      "file": "scripts/bench-plan-list.mts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "5f2aea2eb3ec3126d09e9c8324386b3be02b880ef2fbb9917be6d63582a6d9fd": {
+      "file": "scripts/bench-qoder-models.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "f42f34b58b1e149bc79c40067d0d4798cd2554489ea98841ba8c68f447d76456": {
+      "file": "scripts/bench-tunnel-models.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "d57e242fb4a9e389a57a566110dcfba488dc6280e8cc86571145792a5443070e": {
+      "file": "scripts/bench-tunnel-models.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "003363318cf3d43e7ea1fb2f663da9aab0b75cefdc02fcfb04c37eca5a49c132": {
+      "file": "scripts/check-candidate-models.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "f4b9ad855ba8a4f8ae761ee73424d9167bf400011b3b12a8b0c881091fe7c765": {
+      "file": "scripts/check-empty-fases.ts",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "1e9b1f961ce00acd20a2429fa5e48df5d7c33e2ee53ca21fa7bd07ea978501cf": {
+      "file": "scripts/check-empty-fases.ts",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "6076fa8a3b8457553c977d2c346cd88602c93daf1b86b37660a497415fcb51fa": {
+      "file": "scripts/check-empty-fases.ts",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "1e545cd876d96f38f16322f92f158198531b9a267619c0a17088661ac8314bf1": {
+      "file": "scripts/check-empty-fases.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "530c4d59d7c8e9ba71b99473e31a8ba39ea866aedc17d94c3b65d68d9087ad10": {
+      "file": "scripts/check-plan-empty.ts",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "dd709b8edde9ea62d09fa9eaccbc87e85f4a9db974140ae32425ccde83336569": {
+      "file": "scripts/check-plan-empty.ts",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "46ba989a1bcf72d42d4adfe529b4eae39e2e55d6574250f17cee726a74648d46": {
+      "file": "scripts/check-plan-empty.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "e370791d3e3c7bb5fcd1caffee7779b61e2c1b46fde9b19508101c14b4b0470c": {
+      "file": "scripts/check-project.ts",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "03b5f78b61720a105578b668232f173fa8f70d2c5beac4b51ad39169cdbfe4dd": {
+      "file": "scripts/cleanup-and-finish.ts",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "0a3abc18419431ec68ea1ce81cb9875bc7592cac46b4af119c8b9901c8107604": {
+      "file": "scripts/cleanup-and-finish.ts",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "23dcfc9b23915fb66a5e9f233af9f3a831d88f89cbcabac373a857e3ecc42f4f": {
+      "file": "scripts/cleanup-and-finish.ts",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "a86a7f4121d9e640c155ce4d5e8215d9e2bf91583b684d66c04b26ea5cc51ef9": {
+      "file": "scripts/cleanup-and-finish.ts",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "72183307b249883d7adfd03b4935d47e487ca71085863b49c75e26422de207ea": {
+      "file": "scripts/cleanup-and-finish.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "04bd7650f6ed7c1b6c062b8e29f26824cca2637ebb050ce4390fa49eefc970b9": {
+      "file": "scripts/delete-plan.ts",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "6ce3f08cb804f9d18e737b07e356e02b0272e37a7875dde5a7add5f214df9f11": {
+      "file": "scripts/delete-plan.ts",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "2d874c91c6bcf7cc9a94a1e56f2a693e406741206161537cfad44080dd9b9c22": {
+      "file": "scripts/delete-plan.ts",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "b0e42a0da16c697043b42a2f12d52435e5a31e4b4cf3651d0a3163cc941da329": {
+      "file": "scripts/delete-plan.ts",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "00a9f53adc812d8caa32d19bef37f54ef63aa99ef308c41dee6b55fb4719a6f2": {
+      "file": "scripts/diagnose-plan.ts",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "e411fcec890e4f9613c9fc8dd865e8b831e78c1b7c9d3aa8f348b2f728f809e4": {
+      "file": "scripts/diagnose-plan.ts",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "e56399bb48dd417ab501ee75b9cc663e9f7dce7b5c4ba6c56f56c49773bc1fc6": {
+      "file": "scripts/diagnose-plan.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "64ebff207b71e376a23d892986e77809473183b3b72f611eec7de1c2b31a3d21": {
+      "file": "scripts/filter-proxy-models.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "37b841591756bbd7021d11e3aeb3517608532e70e294b6ffc621d196262d1b1c": {
+      "file": "scripts/find-working-models.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "c4e352762f8c82ece634dc6a2cc32bf792045d9f167c1bf20f4711a3339d0c8c": {
+      "file": "scripts/find-working-models.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "367e5d0657d905798d618aa8a4f0692e6c99e7fa33a7e2330e48bb64b63e82f4": {
+      "file": "scripts/generate-all-missing-tasks.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "b3a6d8b42199e4413bf286362bbe3b139e6d2f27c6c79a7b14e06e32561d1d31": {
+      "file": "scripts/generate-free-sim.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "b7942f4dcb2c3a8145528d1d6d9456a950b1da230fed5fda1fcbf96367448ada": {
+      "file": "scripts/generate-free-sim.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "b4ab369189e222d8cdf0b3611d3c7793f37e3bc517c3d1cea8ae6f7e6b7c7b55": {
+      "file": "scripts/inject-simulasi-plan.ts",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "e79e6ad6ebdcf0ccd61f8a1f57f06cc82e602a98b238fe921c5aabdfedede592": {
+      "file": "scripts/list-available-models.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "76ca3f8058f14affc0cc48375cc16e30259cec74b22e7a36b7864c137dba1a2b": {
+      "file": "scripts/model-adaptation-test.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "80c15094ba2ec9bf842851867bf5eb55507045197e12466a7ccc0ad8f16ae2a5": {
+      "file": "scripts/real-test-generation-v2.ts",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "0ab21eabbef57c5fe8b76fe2846f4a76944204757e7a50a5fb5b81bafa44f265": {
+      "file": "scripts/real-test-generation-v2.ts",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "2520bce1a81ebd10b4078336d54355a2a6893d643a0e150d06be2d7abb3e6d7e": {
+      "file": "scripts/real-test-generation-v2.ts",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "d0681be58598970b768de113c94d8035a45479e0abdf4aa03256524c86fe6cb6": {
+      "file": "scripts/real-test-generation-v2.ts",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "e5115abb0cdb1f5e8ea10af877052426f37a160b11fdd0d7e78650fd0d11c81f": {
+      "file": "scripts/real-test-generation-v2.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "6116e9241d8694309966edab1213fcf4cad87ca971babb150d8dbf163ca681f3": {
+      "file": "scripts/real-test-generation-v2.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "ecc59ed72f03c66d1de1c8206777ffab088a6629e5d28f96031faac445735d2a": {
+      "file": "scripts/real-test-generation-v2.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "3debf7da1514817aabb7768ede763a38bd670627fdf95e4d56390bee4078aad8": {
+      "file": "scripts/real-test-generation-v2.ts",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "8edf9037262a27ef2edc49edf9839a36883854b4c871f91b15f1ee160133cce5": {
+      "file": "scripts/real-test-generation-v2.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 2
+    },
+    "7d7465debd334ae1ca72a711fe624f74cfc546fedc9001e7cd82b1a77b682495": {
+      "file": "scripts/real-test-generation-v2.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "a0c7b9598893b63835cc2c69cf69c4160d11630cb21a5c297bbaf2838d405d0f": {
+      "file": "scripts/real-test-generation-v2.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "ed466781bf5d3ad9353441396702e769355614fed8a98cc242217c23fd67cfdc": {
+      "file": "scripts/real-test-generation-v2.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "49416e99e48d79d72cbb4d84042399da9a00e3bf5faccdd46f0173ca5363bd5e": {
+      "file": "scripts/real-token-burn-test.ts",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "78f7dc332f097d0bce42d03365618937bc6920f36c12b27de2e63cf5ff9ec6d1": {
+      "file": "scripts/real-token-burn-test.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "3e8f7a64aabe85a810036fbba5de9909918c3fb59b376c27816ec3b27c879f1c": {
+      "file": "scripts/real-token-burn-test.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "fe11212742a7db96b0bc96f65b5da3ba0bfe1ddefa97ec9c9ac40650347c1348": {
+      "file": "scripts/real-token-burn-test.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 2
+    },
+    "89e0f5a3e2898db8a00fe0af84b2760cadbe484d631282cb7b6707bd28586951": {
+      "file": "scripts/real-token-burn-test.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "0b90c5845d670c4006946e0d7d75920bda18b1d1620c56a137ba6d922221c6d2": {
+      "file": "scripts/repair-plan-tasks.ts",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "46bd13eb4661b7a4f3f3bd99e2cec2d24a2e4d200d1f523234b1dc3d7395a4df": {
+      "file": "scripts/repair-plan-tasks.ts",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "cdf728ff2043157b546b2d6d8fd96a9b65fa3a47297d7a92aadfe9aeecd37c87": {
+      "file": "scripts/repair-plan-tasks.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "eb1321c9408dd14dee5cbe8a1606b9b42177f2c20a35584e3947996117d8a61b": {
+      "file": "scripts/sim-light.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "922ec9bce93d4e840f5d5c90bb1494cc5ecd1254f4444682443f70d1aeb28d8c": {
+      "file": "scripts/sim-light.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "fbdb5d8a754f1f376707dbc963f746efd472ab62c9b8566da7811d461b180cf8": {
+      "file": "scripts/sim-light.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "456ed239a226561dd2832fff7e7a0dcd2c1029a602bad883e553ab421d440271": {
+      "file": "scripts/sim-light.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "f4aac566013b6c575328c0abaa628608e4c317305247d3d9b970b24d750fdda4": {
+      "file": "scripts/sim-light.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "ebfdf9bd78af821b4a179c9e3d7a2724c0bca8f5673531714f5ba4ce54b1d0d2": {
+      "file": "scripts/sim-light.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 2
+    },
+    "bd5582180d5437f12c9528e34f55239a676108f5c266b568702a185339a2030f": {
+      "file": "scripts/sim-light.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 2
+    },
+    "27a55c21addd9ff07a0185ec64a152ad96aa080332de520c90e0212892665cb3": {
+      "file": "scripts/sim-light.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 2
+    },
+    "4dc8120d26b524fd482a2c89dd01d94135c8bc95e8bcedcdbe183b7b9d07ca0e": {
+      "file": "scripts/simulasi-production.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 2
+    },
+    "fa7b4f8c2ba11135dca2eeae5f9bce031077b52197c55b1aceba1f3c6a610d6c": {
+      "file": "scripts/simulasi-production.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "085fe3ecd72d62e2de17afa0e758735a5ba8d15898a55397d7d2a2c5c5a3f47e": {
+      "file": "scripts/simulasi-production.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "8719c142c79da1522a40dbdb31848438f71c8de1a70e0a279e96dfe82df33695": {
+      "file": "scripts/simulasi-production.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 2
+    },
+    "cfed5862d5535741a4d2733b453086847767e6d0d653409d4bbcdd5abe6ee278": {
+      "file": "scripts/simulasi-production.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "d2f412111fa96ee947c7da308d0d66e707ae3e672937d9d2a4db7f459a40c228": {
+      "file": "scripts/simulasi-production.ts",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "cdbc42eb9a627328cbdc9ec25cebea4ade18798da8c9a95783908db64fa3dcce": {
+      "file": "scripts/simulasi-production.ts",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "1e5fc2d5876e1081c7abaaee9a23bfdf468af6e66224f2ba235dba99289263f1": {
+      "file": "scripts/simulate-e2e.mjs",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "460ba1d7de3f0095f6f2d15da0b1fbbb9e6ad4b5d0a7a4bb96b4864b356061e4": {
+      "file": "scripts/test-candidate-presets.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "991f305caaab4c958ba99ef7848691e85c7b7361a8d5a832f7d1a66c2f592542": {
+      "file": "scripts/test-model-endpoint.ts",
+      "rule": "prefer-const",
+      "severity": 2,
+      "count": 1
+    },
+    "4c758ec016ea9b421acb7b25d8c6577ac711527e22a4fa08d8817fc46c2f08ea": {
+      "file": "scripts/test-model-endpoint.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 2
+    },
+    "214989e9fae81fe20ac79ea5052cd0d0c5b814ee80d4da2d04fa38578d2e8749": {
+      "file": "scripts/test-model-endpoint.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "b76ae1474961482bef0575dbfe6587986e522cd240d7c98ad61eec6d0a86cdf2": {
+      "file": "scripts/test-model-endpoint.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "663a8400e39e3bbe65a6853362ba080ec9c6669ddc411416e962d4695f3bc219": {
+      "file": "scripts/test-plan.js",
+      "rule": "@typescript-eslint/no-require-imports",
+      "severity": 2,
+      "count": 1
+    },
+    "fa8e6603a69d256c2af7ec583f8b731eea44e293a55ed5231eb329f56b173ba9": {
+      "file": "scripts/test-single-qoder.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "383c7e723ecc82390fa4745139316bf4cd8b27cb59c4020edea7c0f2fd8c986e": {
+      "file": "scripts-e2e/checkgeo.js",
+      "rule": "@typescript-eslint/no-require-imports",
+      "severity": 2,
+      "count": 1
+    },
+    "f167397dd29c85d518c6b77f9bdfd6b191201d489b616945929973c481b69147": {
+      "file": "scripts-e2e/checktoken.js",
+      "rule": "@typescript-eslint/no-require-imports",
+      "severity": 2,
+      "count": 1
+    },
+    "b0acc960b0bb8bedd09b1cb7aae214046e7f5a4794245bbbb4a262f1efc639af": {
+      "file": "scripts-e2e/checktoken.js",
+      "rule": "@typescript-eslint/no-require-imports",
+      "severity": 2,
+      "count": 1
+    },
+    "b627dd5d4b4b98ac16baa32a53b63c9c74d109c5ede29b18335eb3c58dbb44ff": {
+      "file": "scripts-e2e/checktoken.js",
+      "rule": "@typescript-eslint/no-require-imports",
+      "severity": 2,
+      "count": 1
+    },
+    "9b610f7c21cfc0a99464b903eed2f63181dbe08b8a8659f6979ad6aac08bdf95": {
+      "file": "scripts-e2e/checktoken2.js",
+      "rule": "@typescript-eslint/no-require-imports",
+      "severity": 2,
+      "count": 1
+    },
+    "3e4fb6cc527f41b45a75bdd488c1d5a440cb94a08d90216a146c625fff6f76a6": {
+      "file": "scripts-e2e/checktoken2.js",
+      "rule": "@typescript-eslint/no-require-imports",
+      "severity": 2,
+      "count": 1
+    },
+    "e1da23a43d5aafc269fa4b0606a084c619f1e1a241c71250764ec0f29c0c3e12": {
+      "file": "scripts-e2e/checktoken2.js",
+      "rule": "@typescript-eslint/no-require-imports",
+      "severity": 2,
+      "count": 1
+    },
+    "0838191372c156815e5579beee08d2a433fe853e326dcbfd2b921151e31ddc46": {
+      "file": "scripts-e2e/cleanup-tokens.js",
+      "rule": "@typescript-eslint/no-require-imports",
+      "severity": 2,
+      "count": 1
+    },
+    "86a7673941d67f650e635885c1d2b59f1e8a2d5ca21a9939f103003022d88f94": {
+      "file": "scripts-e2e/cleanup-tokens.js",
+      "rule": "@typescript-eslint/no-require-imports",
+      "severity": 2,
+      "count": 1
+    },
+    "d9e36f100ce0a4a6cd6eb1f995c2a0b54b3db4b888ab3b4bcb0ad8dd39ee064e": {
+      "file": "scripts-e2e/e2e-final.js",
+      "rule": "@typescript-eslint/no-require-imports",
+      "severity": 2,
+      "count": 1
+    },
+    "aeac53d4b774069a4c599144269ba547a916f5e11a046ccd09c5f5a5d5c51bef": {
+      "file": "scripts-e2e/e2e-security.js",
+      "rule": "@typescript-eslint/no-require-imports",
+      "severity": 2,
+      "count": 1
+    },
+    "1cded8ae3f9a2762880d624016fb49c4f9ab27104a1a743c26012a9fea7430ff": {
+      "file": "scripts-e2e/e2e-security.js",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "5972180dac958ad2178a6d2020bb6532ca808f54548b7f502a7dd09d72c866d3": {
+      "file": "scripts-e2e/e2e-security.js",
+      "rule": "@typescript-eslint/no-require-imports",
+      "severity": 2,
+      "count": 1
+    },
+    "f4dfe71825953f5751af15733508d55227c9d5110a500827ce0598cec50ed373": {
+      "file": "scripts-e2e/e2e-security.js",
+      "rule": "@typescript-eslint/no-require-imports",
+      "severity": 2,
+      "count": 1
+    },
+    "0b3924d022bcfbacf6a896c191e080e8ce1220032c1666cefaa464022abc7b88": {
+      "file": "scripts-e2e/e2e-security.js",
+      "rule": "@typescript-eslint/no-require-imports",
+      "severity": 2,
+      "count": 1
+    },
+    "5830148fca8d838aa4302cd1b8d945a183446f08f4cb91866ca7478785b263fb": {
+      "file": "scripts-e2e/lastevents.js",
+      "rule": "@typescript-eslint/no-require-imports",
+      "severity": 2,
+      "count": 1
+    },
+    "0b0a861e55395212135ac0d02498d1ce7c6265621e925b93b90ec96e3940ee32": {
+      "file": "scripts-e2e/lastevents.js",
+      "rule": "@typescript-eslint/no-require-imports",
+      "severity": 2,
+      "count": 1
+    },
+    "4c12b260da4f3af72010c592a82e8d0e78cb5d2733899bd000da757ed4cb95c6": {
+      "file": "scripts-e2e/mktoken.js",
+      "rule": "@typescript-eslint/no-require-imports",
+      "severity": 2,
+      "count": 1
+    },
+    "19375945bf2ee2ca83136e7fcc174a5d131ce3bc8d40c30010c9603958aa092f": {
+      "file": "scripts-e2e/mktoken.js",
+      "rule": "@typescript-eslint/no-require-imports",
+      "severity": 2,
+      "count": 1
+    },
+    "d8377ea8a256b6c7257df035b94168b35f86538782b621c96cc22340661c62b3": {
+      "file": "scripts-e2e/mktoken.js",
+      "rule": "@typescript-eslint/no-require-imports",
+      "severity": 2,
+      "count": 1
+    },
+    "dd8ddb3d81a8c2136b79b2cae6d6bc07fd59dc4dae4f87dcbd300fa3794b8e2a": {
+      "file": "scripts-e2e/probe.js",
+      "rule": "@typescript-eslint/no-require-imports",
+      "severity": 2,
+      "count": 1
+    },
+    "7efdb31d0b12bdab44344e502cd4a88d188a9d2535ee3c1e375512d0f957f12b": {
+      "file": "scripts-e2e/recent.js",
+      "rule": "@typescript-eslint/no-require-imports",
+      "severity": 2,
+      "count": 1
+    },
+    "7010d8cd3caa9dbfd46a4a8d2cd162eab51729188d78f0c8411c7edca2a345c1": {
+      "file": "src/app/api/plans/[planId]/progress/route.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "c7709e8c9c57fd9433f1de35ddf89bc99376117f06e35f7944595eccb2da69cb": {
+      "file": "src/app/api/plans/[planId]/progress/route.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "0abf8c4dd462e52fdc56587f458e3f6c8df9f915149ee8201878d0ccc1fd04cd": {
+      "file": "src/app/api/plans/[planId]/progress/route.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "11ce6c7a2ab23038f6229ab5d47a1ebf6f6321219257257418418f22696745ae": {
+      "file": "src/app/new/page.tsx",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "6adaceb582cd4f3046390d1b676673ec37a21607c49c358482781ce97a945f5a": {
+      "file": "src/app/new/page.tsx",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "1e5b7c538f178f2158b7442fb6cb991c7c40e71ef217c0407ed0012c72c0b7b7": {
+      "file": "src/app/new/page.tsx",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "7aae3b4d4369dd104b697e34936b2be1466c6acdbc4566bc815f0570897ac649": {
+      "file": "src/app/new/page.tsx",
+      "rule": "react-hooks/set-state-in-effect",
+      "severity": 2,
+      "count": 1
+    },
+    "beb23d46b2a2906f797df22c7f9aa71de35917a069bc7198d14f580bd4bcb305": {
+      "file": "src/app/new/prefs/page.tsx",
+      "rule": "react-hooks/set-state-in-effect",
+      "severity": 2,
+      "count": 1
+    },
+    "5ecb5a743f3f795c413f687ab0f491e7b076c32d7e74f9c4b59b60f3f7cd0459": {
+      "file": "src/app/page.tsx",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "9c72e72b5c7fc3addffa1289c54481b25f29d6b8845e71c9833746b129f54b34": {
+      "file": "src/app/page.tsx",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "be4c24989c72cbdd5791a2eee843cbd18c6513bec3c30e6713a0a649295170d2": {
+      "file": "src/app/page.tsx",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "c12169e5caffe69b157d405df2ed2629b930f1e35bbc26f845d502d584da5331": {
+      "file": "src/app/page.tsx",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "6a56f8a870d3a2db017fabbc00bcc2846dc554ac369ab69a611f98b3f90f1304": {
+      "file": "src/app/page.tsx",
+      "rule": "@next/next/no-img-element",
+      "severity": 1,
+      "count": 1
+    },
+    "71ded5225a545c2835e80fe3ff41904c75dd26cf9c3474fd7260695ccedc65ec": {
+      "file": "src/app/page.tsx",
+      "rule": "@next/next/no-img-element",
+      "severity": 1,
+      "count": 1
+    },
+    "72c73bb5bf2461c2c66b4c838d16681b74f429b9ccea653248ecfe4fecd6d270": {
+      "file": "src/app/page.tsx",
+      "rule": "@next/next/no-img-element",
+      "severity": 1,
+      "count": 1
+    },
+    "04bb472c9505414062879faebb371febdd032a7a4b67b41482caeeb8b1c75307": {
+      "file": "src/app/page.tsx",
+      "rule": "@next/next/no-img-element",
+      "severity": 1,
+      "count": 1
+    },
+    "52547dd14639f38b6e30bbce96aff4d96bb6e8774020cf65a892221981857aa5": {
+      "file": "src/app/page.tsx",
+      "rule": "@next/next/no-img-element",
+      "severity": 1,
+      "count": 1
+    },
+    "45454ca843d6cb4b243a442052915777d044f47d19b341a739556cd300055913": {
+      "file": "src/app/page.tsx",
+      "rule": "@next/next/no-img-element",
+      "severity": 1,
+      "count": 1
+    },
+    "2e4875f8ffbcf07dd105029c6cfd8ad09a3960a4f283246874ca69f910764168": {
+      "file": "src/app/page.tsx",
+      "rule": "react-hooks/exhaustive-deps",
+      "severity": 1,
+      "count": 1
+    },
+    "7436ea2fc621723e873a0bc21dfd4dafd9d8bffae9119fea4e970cc3ced9593f": {
+      "file": "src/app/page.tsx",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "fe9795c9f05182437b0480dd093faa65c274856fde398cbd3fc49be1285dbd1d": {
+      "file": "src/app/page.tsx",
+      "rule": "react-hooks/exhaustive-deps",
+      "severity": 1,
+      "count": 1
+    },
+    "3a57fe1f1e47714dd4dafff884dd14d1185106ccf2bf67c7d38ba518a95f6cc7": {
+      "file": "src/app/page.tsx",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "6e6ca7f2ab16ac9969dacf4abe5ee9a9bdddbff7d663757922ca3e447694c442": {
+      "file": "src/app/page.tsx",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "f2a4d0eb7636fa6429575591ac43aeff7c447908d0a9fabadfbb555a8e029694": {
+      "file": "src/app/page.tsx",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "3196ccc1a5291c371c266162cb0d338a3bc74c90ea465b72b04a650ad209c7ee": {
+      "file": "src/app/page.tsx",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "4f274336f57d99060c1c0961f869cc7dca8e169c257678d70fb94d553de04d64": {
+      "file": "src/app/page.tsx",
+      "rule": "prefer-const",
+      "severity": 2,
+      "count": 1
+    },
+    "f9909aaf0f347355f0cedf5acb7eff68ea55973268555cfe852a8abea946bdcf": {
+      "file": "src/app/page.tsx",
+      "rule": "prefer-const",
+      "severity": 2,
+      "count": 1
+    },
+    "b2c2636975b15ea6902ad9a5bdea3ae232e98196750ab3f9999a11a5faf4235b": {
+      "file": "src/app/page.tsx",
+      "rule": "react/no-unescaped-entities",
+      "severity": 2,
+      "count": 1
+    },
+    "2f3a521cc23f85da3155f8c3d629023012168e5ae6451b53ac668554b6963c22": {
+      "file": "src/components/account-workspace.tsx",
+      "rule": "react-hooks/set-state-in-effect",
+      "severity": 2,
+      "count": 1
+    },
+    "5162141f539059872ee3a33b8021a45fd7b58fa3422c28712d7e5f9df85022e9": {
+      "file": "src/components/account-workspace.tsx",
+      "rule": "react-hooks/set-state-in-effect",
+      "severity": 2,
+      "count": 1
+    },
+    "6ee43dd78d2e055ceaabd9aaffdc1179f4e5ce7b2c14b12b131a649ee6dcc2bc": {
+      "file": "src/components/account-workspace.tsx",
+      "rule": "react-hooks/purity",
+      "severity": 2,
+      "count": 1
+    },
+    "aaaaf35175fc997c4c644931d256dd6abb49508d72b7b6ce635e1a112e61cf73": {
+      "file": "src/components/account-workspace.tsx",
+      "rule": "react-hooks/purity",
+      "severity": 2,
+      "count": 1
+    },
+    "1d3f77deb079f56ef415ccd4fd173adf44799ea9a493d653ac5f7405fdf1d36e": {
+      "file": "src/components/account-workspace.tsx",
+      "rule": "react-hooks/purity",
+      "severity": 2,
+      "count": 1
+    },
+    "78379d18443f0efe0ce6c4af6323e6006b677608e13fec7c54be68f193203bd0": {
+      "file": "src/components/account-workspace.tsx",
+      "rule": "react-hooks/purity",
+      "severity": 2,
+      "count": 1
+    },
+    "c8f8cc2007f09eca7fdd76634efcc8da7ff63f121861e31e1a5b06ce86b459a7": {
+      "file": "src/components/agent-modal.tsx",
+      "rule": "react-hooks/exhaustive-deps",
+      "severity": 1,
+      "count": 1
+    },
+    "3d56bd179f829fd322f661e8cc067aed33a1bf7330df884f2acbb4e6ff2ea62d": {
+      "file": "src/components/idea-chat.tsx",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "c0b8cc563b9c593bb4c475c83e4d7261ca02cea3cb9f3205452503638badd88f": {
+      "file": "src/components/plan-client.tsx",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "98471bc35b43bf09ada1da3ea4e5435572f1f24f2e1af3d25cd200783a5c4486": {
+      "file": "src/components/plan-client.tsx",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "47a15e5fc4d82faa0f9af08741be87ab2493c6357f0eb5faed9a148d308db168": {
+      "file": "src/components/plan-client.tsx",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "c116e3032c19c7e2c32b1f44b8082d738188a2fb75451ce1ace6f37481ccfc58": {
+      "file": "src/components/plan-client.tsx",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "1d2445038198e263511859c14f55e7830ecced4e6bace8bdf0509172e7be26ab": {
+      "file": "src/components/plan-client.tsx",
+      "rule": "react-hooks/exhaustive-deps",
+      "severity": 1,
+      "count": 1
+    },
+    "ce21cb88774bf8d7d33d15096384c67e0f44566ceb2491b34b36d65b9abe5c80": {
+      "file": "src/components/profile-overview.tsx",
+      "rule": "react-hooks/set-state-in-effect",
+      "severity": 2,
+      "count": 1
+    },
+    "a126855e80c59a279967955f1d293c3fa46d91aee93b1546f96d8f9aaa6a48e2": {
+      "file": "src/components/ui/border-beam-panel.tsx",
+      "rule": "react-hooks/set-state-in-effect",
+      "severity": 2,
+      "count": 1
+    },
+    "129dbe455deb7d19dd00fb3c68612d18de947b07c863fd2666387d4150c7b2b5": {
+      "file": "src/components/ui/border-beam-panel.tsx",
+      "rule": "react-hooks/set-state-in-effect",
+      "severity": 2,
+      "count": 1
+    },
+    "05c174b47c19a1dbcc50471b74f9ff82dfb67853a67df8539e6dcf4bd5304603": {
+      "file": "src/components/ui/border-beam-panel.tsx",
+      "rule": "react-hooks/refs",
+      "severity": 2,
+      "count": 1
+    },
+    "62b499719338393d350fb44283a21eae8de35c32c3a774d8192fbc2ce02b7bfc": {
+      "file": "src/components/ui/caleido-crm-demo.tsx",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "fabc729bfb94ed11d8a10c164e7360e4e9439942e2797cde82a06ba629929cd8": {
+      "file": "src/components/ui/caleido-crm-demo.tsx",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "694b440ff1f43fe54dae2dddf46fd8a28b484c285c8979481d05325e004607b1": {
+      "file": "src/components/ui/caleido-crm-demo.tsx",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "29d90fe2025d4ff3c2679a07ad07122d9746b76c02c36ab2185615627c2900e7": {
+      "file": "src/components/ui/caleido-crm-demo.tsx",
+      "rule": "@next/next/no-img-element",
+      "severity": 1,
+      "count": 1
+    },
+    "3b3a8e018cf8c53a311f0042cbce41d038fd006de6213768e357210e7decc72b": {
+      "file": "src/components/ui/caleido-crm-demo.tsx",
+      "rule": "@next/next/no-img-element",
+      "severity": 1,
+      "count": 1
+    },
+    "027e50a3996d040f4e5c066f8ffefc4146469b7a96d64e0ca869f85494e75c65": {
+      "file": "src/components/ui/circular-carousel.tsx",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "454a4f61bc8d175aecabb3b1fd4f4d12d0170e6b1d9f5247a2ca3015a0ae5368": {
+      "file": "src/components/ui/galaxy-interactive-hero-section.tsx",
+      "rule": "@next/next/no-img-element",
+      "severity": 1,
+      "count": 1
+    },
+    "fcf874a3bf527f7e45b37968a555fe0af3512b03260c5542133f91456c7f5334": {
+      "file": "src/components/ui/image-auto-slider.tsx",
+      "rule": "@next/next/no-img-element",
+      "severity": 1,
+      "count": 1
+    },
+    "57912b40a60e4628a104acd38773b1b947558195a9500d74e1a88278cf4f82ff": {
+      "file": "src/components/ui/saa-s-template.tsx",
+      "rule": "@next/next/no-img-element",
+      "severity": 1,
+      "count": 2
+    },
+    "a3f7a5dc172bb86f65b14e5294657fac96d534ff8dca3bedba36d4833e4f9e2e": {
+      "file": "src/lib/generate.ts",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "35187372279b92684db54e30e84100bf9fba13166384f5f03299cf217c60da7a": {
+      "file": "src/lib/generate.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "381ac87b878e7a7900d5607d70402e75ab146ab1027c6047cf5c89dfb4523c96": {
+      "file": "src/lib/generate.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "80938d669362fbcda01cad959e44827922db7efa0ea0092b8e80c54071aaeb2a": {
+      "file": "src/lib/generate.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "00d74ee57326da94181837f50e48c46c17842775754fc46b406e157da5c47852": {
+      "file": "src/lib/plan-limits.ts",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "f410066d226d672c2def51bc055f310599166803c7171e2c2a18a604f57f840c": {
+      "file": "src/lib/plan-limits.ts",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "c1dae2fef444a5eeb1a93d5d7ede03de1c64f4dc383af8ef27d9c40442a8ae65": {
+      "file": "src/lib/storage.ts",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "d5134fa02ac41b30a5e5d2705000d35f05f80157e22bd828f8183951c3d06888": {
+      "file": "src/lib/storage.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "05456fc94529a72c33a42d853dca7f816cae90a3d08d5aeba54327f746068a5f": {
+      "file": "src/lib/storage.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 2
+    },
+    "73d6f3b5912157486dba3a39cca85a03c847cb9402dadff6f22c2abaf53dae5b": {
+      "file": "src/lib/storage.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 4
+    },
+    "9d4dba14bb4f3688cb026164c8e15969bd0693cc99c03fc02d292d0997cc176c": {
+      "file": "src/lib/storage.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "1e212d3a585858209a359b808f1291fa4adc8e2899792548dca1a49a8e20e701": {
+      "file": "src/lib/storage.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "650dc4a1e76889029aac092d640074d3b0395dbe13cf69e21ba92065d3744b11": {
+      "file": "src/lib/storage.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "2c2a0e2081c2cc6165a585e28ccd48411688ff7d2bb4f6885e1dcecb43687695": {
+      "file": "src/lib/storage.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "6c3e4a3331a06e6521813dc81f2ee8300bcef9c78fb2e189de0c975b1186a085": {
+      "file": "src/lib/storage.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "feb1f10beeed387decf3ea4583cb85b447f91ae42f905067f713639469493506": {
+      "file": "src/lib/storage.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "cde90ea92b3abe469d416de3e522e668b04eb8173e5a6d0c333de3ed4ed0a469": {
+      "file": "src/lib/storage.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "1a59a977701a9c11919845050da27f999bf0bccba206d4206c421e12b45c7887": {
+      "file": "src/lib/storage.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "67d14e7dae9bfc20a85eef1b7d634dc37958f4885d299bea5f7a04e4810ec935": {
+      "file": "src/lib/storage.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "00d23b678290ce78d3d71395249b9f8106119211e29c7615fe0797d416f1c260": {
+      "file": "src/lib/storage.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "929c02a4dd9dd3d880274fdf571eab820e0306cc9d56df4d7ad8e586de6c7cfa": {
+      "file": "src/lib/storage.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "136bbd2676275b73a508bb373ac5b39d9625b8ce29e0d6511a927d18763e4fc3": {
+      "file": "src/lib/storage.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "45c5385eec7031699a3d96e42746aad67c8439523522a8fb109b9224dec9948f": {
+      "file": "src/lib/storage.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "99c404d4d0ad67d085ab9b5c07aac1899112345b468d97800b7dd8a77f4b7f6a": {
+      "file": "src/lib/storage.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "99471e3655190a7632398c1f2c057e27d9c2217986df417f390922f62787172c": {
+      "file": "src/lib/storage.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "afd4745a9e2b622fef3b6ebb6190ce2942f8b2ebfddfc1e2433d3df3bfc43760": {
+      "file": "src/lib/storage.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "5c06e120becf6b03ac97e17ff8d4161e9db4645ff7a09796be0946e3250bb846": {
+      "file": "src/lib/storage.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "8ad4b48cd53d3258fe97d09c9957402ada9e341058a030e3f1b3b04d1d834513": {
+      "file": "src/lib/storage.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "fbc8d870c2a0ae24e4782b4df329253f3727909f27e919efd1da40a7d8b4d77b": {
+      "file": "src/lib/storage.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "2d5bbbc9dd013b459e555416a7b790e36dbb2e2cd88bc2e3c992be62f4d5f8dc": {
+      "file": "tests/e2e-plan-generation.ts",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "6e4efb5e97a7957cdacd1addcee344edb3a591e8a0538a728e970f6e96951cae": {
+      "file": "tests/e2e-plan-generation.ts",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "74e2561395d00df4e51a83ed2e3d311f51a2931281b08b3a1de2de252608887a": {
+      "file": "tests/e2e-plan-generation.ts",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "b7f3c21cba4581724ec2449a14ab47665d517928214172606a13d3c25829bea0": {
+      "file": "tests/e2e-plan-generation.ts",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "4e48ded0314bb2e8ea8c60764992666b4fbe7a40fdf10618729817ddd80484a5": {
+      "file": "tests/e2e-plan-generation.ts",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "79eff36549fac599e9851c072380786e1aa43910773a4cb275a9f2f7eb0d65fd": {
+      "file": "tests/e2e-plan-generation.ts",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "fd7a7aca0c871bd529e9238ef39a5bd2961aec854b199c8270bcde8ed42a76d7": {
+      "file": "tests/e2e-plan-generation.ts",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "891eda4397e93948275b13c0a282aeb1f6e14f91823585cd96116d72ce56dc9a": {
+      "file": "tests/e2e-plan-generation.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "aaa7ebf5ede38c73be4ff27019f9080aeaba54dc16260efc273316491eecaa46": {
+      "file": "tests/e2e-plan-generation.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "b513c10aabcc74d9608a14cb8c56d813aee584f7d4d7b572e17c15a1e371affd": {
+      "file": "tests/e2e-plan-generation.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 2
+    },
+    "99371e922adf54eebd165befcb903d5fa4d6a8ccfbfb2afed18d0e02dbf43b0d": {
+      "file": "tests/e2e-plan-generation.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "b888cb1b6778ea4c759e81a12d768f3040ac873f0934279c47960ea7ae1c85ba": {
+      "file": "tests/e2e-plan-generation.ts",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "424aee7c6e28d96cab096353cd11f894f69cfcd8af355db8ce27a3c171ff063d": {
+      "file": "tests/e2e-plan-generation.ts",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "e7be44756864af3ba44e69997c7c0eb31f375c45d7a36e609a07c574ed42a72c": {
+      "file": "tests/e2e-plan-generation.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "a08174abd9e17907ed4dce26142b0c6f0680ca0db8827dafdd3d00b799064e15": {
+      "file": "tests/full-plan-simulation.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "874f37348dd111bcd8ed60c4bc711b8e25478795e578174b2bd88eabb68cd54f": {
+      "file": "tests/full-plan-simulation.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "5f4907a79357b6b5de45cf9d3ea88d5d8bae78b9488b964c8ea82a5a3d172017": {
+      "file": "tests/full-plan-simulation.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "e26b00e866668aaa9f8fa23d0dcbe410aabde48760db2782790e51165d8dfea9": {
+      "file": "tests/full-plan-simulation.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 2
+    },
+    "c14cf8adb9eed74b7f0f2d8ae5ed8a0392b8ce5914943dd0e42124e9ee5bf45e": {
+      "file": "tests/full-plan-simulation.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "8dcfa05c593eaa1fb73e7dc5eda2df0132d7f3339c1166df133165a9da496421": {
+      "file": "tests/full-plan-simulation.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "85642553457f539e1383bb2aee7d902f20b6f9588f402820ad64d6583f06e103": {
+      "file": "tests/full-plan-simulation.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 2
+    },
+    "403b5046a4d81a40d327fce3bef122c9b9899a0db098d8c41b3750d89d62dec8": {
+      "file": "tests/full-plan-simulation.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "17af8f07647b4e5fe856ead2cb1868aa2f3eee8b4feab678c714d7084801cce8": {
+      "file": "tests/full-plan-simulation.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "0aa3fedcc5ec17428280e96aab724274b5ac021ed0fdb73194ae11c1554d867b": {
+      "file": "tests/full-plan-simulation.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "26f7b5fc44e60dba906cee139026b5ec6f0d9d8cb3078b47b6a20379f00d4df3": {
+      "file": "tests/full-plan-simulation.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 2
+    },
+    "9b8a07e9a509c83cd1134c1a82fadf1c13c0b77d4e37efa63484da1b90f026b2": {
+      "file": "tests/full-plan-simulation.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "13e5930bf0c639bfde04d5ec85344521182d5b813dec543129671c03f705ca64": {
+      "file": "tests/full-plan-simulation.ts",
+      "rule": "@typescript-eslint/no-explicit-any",
+      "severity": 2,
+      "count": 1
+    },
+    "93eae4e49c1b0bbc1b4ed6de6984445f7c4df68719b2b6d8160b9ce86f4209ea": {
+      "file": "tests/plan-limits.test.ts",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    }
+  }
+}

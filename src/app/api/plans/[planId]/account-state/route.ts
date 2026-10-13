@@ -1,3 +1,4 @@
+import { writeOriginGate } from "@/lib/write-origin";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { accessPlan } from "@/lib/api-auth";
@@ -11,6 +12,8 @@ export async function GET(request: Request, context: Context) {
   } catch (error) { return accountError(error); }
 }
 export async function PATCH(request: Request, context: Context) {
+  const originGate = writeOriginGate(request);
+  if (originGate) return originGate;
   try { const { user, error } = await accountRequest(request, true); if (error) return error;
     const { planId } = await context.params; const access = await accessPlan(planId, user, { write: true }); if (access.error) return access.error;
     const input = await parseAccountBody(request, z.object({ favorite: z.boolean().optional(), archived: z.boolean().optional(), opened: z.literal(true).optional() }).strict());

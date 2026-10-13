@@ -1,8 +1,10 @@
+import { writeOriginGate } from "@/lib/write-origin";
+import { claimGeneration, releaseGeneration, ownsGeneration } from "@/lib/generation-lease";
+import { finalizeGeneratedPlan } from "@/lib/generated-plan";
 import { NextResponse } from "next/server";
 import { after } from "next/server";
 import { accessPlan, getRequestUser } from "@/lib/api-auth";
-import { getPlan, savePlan, updatePlanStatus } from "@/lib/storage";
-import { ensureQaPhase } from "@/lib/tasks";
+import { getPlan } from "@/lib/storage";
 
 // Generate SEMUA task di sisi server, digerakkan di background process —
 // bukan loop fetch di browser. Dulu loop di plan-client.tsx mati kalau tab
@@ -12,27 +14,24 @@ import { ensureQaPhase } from "@/lib/tasks";
 // Idempoten: kalau generate-all untuk plan ini sudah berjalan, langsung OK.
 // Progress tetap dipantau browser via polling /progress (sudah ada).
 
-// Registry in-process: planId -> status loop
-const running = new Map<string, { startedAt: number; done: boolean }>();
-
-function featureHasTasks(feature: any): boolean {
-  return (feature.subFeatures ?? []).some((sf: any) => (sf.tasks ?? []).length > 0);
+function featureHasTasks(feature: import("@/lib/types").Feature): boolean {
+  return (feature.subFeatures ?? []).some((sf) => (sf.tasks ?? []).length > 0);
 }
 
-async function generateAllTasks(planId: string, userId: string, authHeaders: Record<string, string>, origin: string) {
-  const state = running.get(planId)!;
+async function generateAllTasks(planId: string, userId: string, authHeaders: Record<string, string>, origin: string, lease: string) {
   try {
     // Loop sampai semua fitur terisi atau mentok maxBatch (anti infinity loop
     // kalau LLM/gateway konsisten gagal — fitur gagal dicoba lagi di batch berikut).
     const MAX_BATCH = 20;
     for (let batch = 0; batch < MAX_BATCH; batch++) {
+      if (!await ownsGeneration(planId, "tasks", lease)) break;
       const plan = await getPlan(planId);
       if (!plan) break;
 
       if (plan.status !== "generating") break;
 
       const pendingIdx: number[] = [];
-      (plan.features ?? []).forEach((f: any, i: number) => {
+      (plan.features ?? []).forEach((f, i: number) => {
         if (!featureHasTasks(f)) pendingIdx.push(i);
       });
 
@@ -42,11 +41,9 @@ async function generateAllTasks(planId: string, userId: string, authHeaders: Rec
         // tandai ready. plan di-fetch fresh di awal iterasi ini (setelah batch
         // sebelumnya tuntas), jadi snapshot-nya tidak basi — ini yang dulu
         // bikin QA & Integrasi bolong saat fitur digenerate paralel.
-        const anyTask = (plan.features ?? []).some((f: any) => featureHasTasks(f));
+        const anyTask = (plan.features ?? []).some((f) => featureHasTasks(f));
         if (anyTask) {
-          const { ready } = ensureQaPhase(plan);
-          if (ready) await updatePlanStatus(planId, "ready");
-          await savePlan(plan, userId);
+          await finalizeGeneratedPlan(plan, plan.userId ?? userId, { stage: "tasks", token: lease });
         }
         break;
       }
@@ -54,6 +51,7 @@ async function generateAllTasks(planId: string, userId: string, authHeaders: Rec
       // Ambil 8 fitur per batch: free tier maksimal 8 fitur, jadi umumnya satu
       // gelombang kelar semua (tidak ada nunggu gelombang kedua).
       const batchIdx = pendingIdx.slice(0, 8);
+      let rateLimited = false;
       await Promise.all(
         batchIdx.map(async (featureIndex) => {
           try {
@@ -67,6 +65,7 @@ async function generateAllTasks(planId: string, userId: string, authHeaders: Rec
               signal: AbortSignal.timeout(300_000),
             });
             const data = await res.json().catch(() => null);
+            if (res.status === 429) rateLimited = true;
             if (data?.error) {
               console.warn(`[generate-all] F${featureIndex + 1} error:`, data.error);
             }
@@ -75,9 +74,10 @@ async function generateAllTasks(planId: string, userId: string, authHeaders: Rec
           }
         }),
       );
+      if (rateLimited) break;
     }
   } finally {
-    state.done = true;
+    await releaseGeneration(planId, "tasks", lease);
   }
 }
 
@@ -85,20 +85,22 @@ async function generateAllTasks(planId: string, userId: string, authHeaders: Rec
 export const maxDuration = 300;
 
 export async function POST(request: Request, { params }: { params: Promise<{ planId: string }> }) {
+  const originGate = writeOriginGate(request);
+  if (originGate) return originGate;
   try {
     const { planId } = await params;
     const legacyUserId = new URL(request.url).searchParams.get("userId");
     const user = await getRequestUser(legacyUserId);
     const { plan, error } = await accessPlan(planId, user, { write: true });
     if (error || !plan) return error;
-    const ownerId = user?.userId ?? plan.userId ?? "";
+    const ownerId = plan.userId ?? "";
 
     if (plan.status !== "generating") {
       return NextResponse.json({ ok: true, alreadyDone: true, status: plan.status });
     }
 
-    const existing = running.get(planId);
-    if (existing && !existing.done) {
+    const lease = await claimGeneration(planId, "tasks");
+    if (!lease) {
       return NextResponse.json({ ok: true, alreadyRunning: true });
     }
 
@@ -110,12 +112,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ pla
     const cookie = request.headers.get("cookie");
     if (cookie) authHeaders.Cookie = cookie;
 
-    running.set(planId, { startedAt: Date.now(), done: false });
     // Fire-and-forget: loop jalan di server process, request balas langsung.
-    after(() => generateAllTasks(planId, ownerId, authHeaders, new URL(request.url).origin));
+    after(() => generateAllTasks(planId, ownerId, authHeaders, new URL(request.url).origin, lease));
 
     return NextResponse.json({ ok: true, started: true, features: (plan.features ?? []).length });
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Generate-all gagal" }, { status: 500 });
+    console.error("[generate-all]", error);
+    return NextResponse.json({ error: "Tasks could not be generated. Please try again." }, { status: 500 });
   }
 }

@@ -1,8 +1,8 @@
 import { getProjectGenerationSettings } from "./account-store";
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
-import { getDb } from "@/db";
+import { getDb, withDatabaseTransaction } from "@/db";
 import { plans, features, subFeatures, tasks, taskEvents, usageEvents, users } from "@/db/schema";
-import type { Plan } from "./types";
+import type { Plan, Task } from "./types";
 import { demoPlan } from "./demo";
 import {
   buildFallbackArchitecture,
@@ -90,6 +90,11 @@ async function resolveDbUserId(userId: string): Promise<string | null> {
 }
 
 export async function savePlan(plan: Plan, userId: string): Promise<void> {
+  if (isMemoryMode()) return persistPlan(plan, userId);
+  return withDatabaseTransaction(() => persistPlan(plan, userId));
+}
+
+async function persistPlan(plan: Plan, userId: string): Promise<void> {
   if (isMemoryMode()) return memorySavePlan(plan, userId);
   const dbUserId = await resolveDbUserId(userId);
   if (!dbUserId) throw new Error("Cannot save a plan without a valid owner");
@@ -117,7 +122,7 @@ export async function savePlan(plan: Plan, userId: string): Promise<void> {
     // onConflict update tech_prefs: metadata dinamis (ideas, tier, warnings)
     // hidup di tech_prefs dan HARUS ikut ter-update saat plan disimpan ulang
     // (contoh: submit ide dari kolom chat "Ide Kamu").
-    .onConflictDoUpdate({ target: plans.id, set: { techPrefs: sql`${JSON.stringify({ stack: plan.stack ?? [], techStack: plan.techStack ?? [], architecture: plan.architecture ?? "", databaseSchema: plan.databaseSchema ?? "", requirements: plan.requirements ?? { fungsional: [], nonFungsional: [] }, userFlow: plan.userFlow ?? [], warnings: plan.warnings ?? [], tier: plan.tier ?? "free", ideas: plan.ideas ?? [] })}::jsonb || jsonb_strip_nulls(jsonb_build_object('accountNotes', ${plans.techPrefs}->'accountNotes', 'accountNotesUpdatedAt', ${plans.techPrefs}->'accountNotesUpdatedAt'))` } });
+    .onConflictDoUpdate({ target: plans.id, set: { techPrefs: sql`${JSON.stringify({ stack: plan.stack ?? [], techStack: plan.techStack ?? [], architecture: plan.architecture ?? "", databaseSchema: plan.databaseSchema ?? "", requirements: plan.requirements ?? { fungsional: [], nonFungsional: [] }, userFlow: plan.userFlow ?? [], warnings: plan.warnings ?? [], tier: plan.tier ?? "free", ideas: plan.ideas ?? [] })}::jsonb || jsonb_build_object('generationLeases', coalesce(${plans.techPrefs}->'generationLeases', '{}'::jsonb)) || jsonb_strip_nulls(jsonb_build_object('accountNotes', ${plans.techPrefs}->'accountNotes', 'accountNotesUpdatedAt', ${plans.techPrefs}->'accountNotesUpdatedAt'))` } });
 
   // BATCH INSERT: fitur, sub-fitur, dan task dikumpulkan lalu ditulis masing-
   // masing SATU statement. Dulu tiap baris INSERT sendiri-sendiri â€” plan 90
@@ -479,22 +484,28 @@ export async function updatePlanStatus(planId: string, status: Plan["status"]): 
   await db.update(plans).set({ status } as any).where(eq(plans.id, planId));
 }
 
-export async function updateTask(planId: string, ref: string, patch: any): Promise<void> {
-  if (isMemoryMode()) return memoryUpdateTask(planId, ref, patch);
+export async function updateTask(planId: string, ref: string, patch: Partial<Task>, expectedStatus?: Task["status"]): Promise<boolean> {
+  if (isMemoryMode()) {
+    const found = memoryFindTask(planId, ref);
+    if (!found || expectedStatus && found.task.status !== expectedStatus) return false;
+    memoryUpdateTask(planId, ref, patch);
+    return true;
+  }
   const db = getDb();
   const taskRows = await db.select().from(tasks).where(and(eq(tasks.ref, ref), eq(tasks.planId, planId)));
   const task = taskRows[0];
-  if (!task) return;
+  if (!task) return false;
 
-  const updateData: any = {};
+  const updateData: Partial<typeof tasks.$inferInsert> = {};
   if (patch.status) updateData.status = patch.status;
-  if (patch.startedAt) updateData.startedAt = new Date(patch.startedAt);
-  if (patch.completedAt) updateData.completedAt = new Date(patch.completedAt);
+  if (patch.startedAt !== undefined) updateData.startedAt = patch.startedAt ? new Date(patch.startedAt) : null;
+  if (patch.completedAt !== undefined) updateData.completedAt = patch.completedAt ? new Date(patch.completedAt) : null;
   if (patch.lastFailReason !== undefined) updateData.lastFailReason = patch.lastFailReason;
   if (patch.failReason !== undefined) updateData.failReason = patch.failReason;
   if (patch.retryCount !== undefined) updateData.retryCount = patch.retryCount;
 
-  await db.update(tasks).set(updateData).where(eq(tasks.id, task.id));
+  const changed = await db.update(tasks).set(updateData).where(and(eq(tasks.id, task.id), expectedStatus ? eq(tasks.status, expectedStatus) : undefined)).returning({ id: tasks.id });
+  if (!changed.length) return false;
 
   await db.insert(taskEvents).values({
     planId,
@@ -502,7 +513,8 @@ export async function updateTask(planId: string, ref: string, patch: any): Promi
     type: patch.status ?? "update",
     meta: patch,
     cliVersion: "cli",
-  } as any);
+  });
+  return true;
 }
 
 // Sinkronkan status tiap fitur berdasarkan task-task-nya:

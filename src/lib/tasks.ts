@@ -1,3 +1,4 @@
+import { withPlanMutation } from "./plan-mutation";
 import type { Plan } from "./types";
 import { allTasks, findTask, getPlan, syncFeatureStatuses, updatePlanStatus, updateTask } from "./storage";
 
@@ -82,39 +83,41 @@ export async function getNextTask(planId: string, loadedPlan?: Plan): Promise<Ne
   };
 }
 
-export async function startTask(planId: string, ref: string): Promise<Task | null> {
-  const found = await findTask(planId, ref);
-  if (!found) return null;
-  await updateTask(planId, ref, { status: "in_progress", startedAt: new Date().toISOString() });
-  await syncFeatureStatuses(planId);
-  return found.task;
+export class TaskConflict extends Error {
+  constructor(message: string) { super(message); this.name = "TaskConflict"; }
 }
-
-export async function completeTask(planId: string, ref: string): Promise<Task | null> {
-  const found = await findTask(planId, ref);
-  if (!found) return null;
-  await updateTask(planId, ref, { status: "done", completedAt: new Date().toISOString() });
-  await syncFeatureStatuses(planId);
-  const plan = await getPlan(planId);
-  if (plan) await checkPlanComplete(planId, plan);
-  return found.task;
+async function transitionTask(planId: string, ref: string, action: "start" | "complete" | "fail" | "retry", reason?: string): Promise<Task | null> {
+  return withPlanMutation(planId, async () => {
+    const found = await findTask(planId, ref);
+    if (!found) return null;
+    const { task, plan } = found;
+    const target = { start: "in_progress", complete: "done", fail: "failed", retry: "pending" }[action] as Task["status"];
+    if (task.status === target) return task;
+    if (action === "start") {
+      if (task.status !== "pending") throw new TaskConflict("Only pending tasks can be started.");
+      if (plan.status === "generating") throw new TaskConflict("Wait for plan generation to finish.");
+      if (allTasks(plan).some(candidate => candidate.status === "in_progress" && candidate.ref !== ref)) throw new TaskConflict("Another task is already running.");
+      const next = await getNextTask(planId, plan);
+      if (next.task?.ref !== ref) throw new TaskConflict("Complete earlier tasks and dependencies before starting this task.");
+    } else if (action === "retry") {
+      if (task.status !== "failed") throw new TaskConflict("Only failed tasks can be retried.");
+    } else if (task.status !== "in_progress") throw new TaskConflict("Start the task before completing or failing it.");
+    const patch: Partial<Task> = { status: target };
+    if (action === "start") patch.startedAt = new Date().toISOString();
+    if (action === "complete") patch.completedAt = new Date().toISOString();
+    if (action === "fail") { patch.failReason = reason ?? "Task failed"; patch.lastFailReason = patch.failReason; }
+    if (action === "retry") { patch.failReason = null; patch.retryCount = (task.retryCount ?? 0) + 1; patch.startedAt = null; patch.completedAt = null; }
+    if (!await updateTask(planId, ref, patch, task.status)) throw new TaskConflict("Task changed. Refresh the plan and try again.");
+    await syncFeatureStatuses(planId);
+    if (action === "start" && plan.status === "ready") await updatePlanStatus(planId, "implementing");
+    if (action === "complete") { const current = await getPlan(planId); if (current) await checkPlanComplete(planId, current); }
+    return { ...task, ...patch };
+  });
 }
-
-export async function failTask(planId: string, ref: string, reason: string): Promise<Task | null> {
-  const found = await findTask(planId, ref);
-  if (!found) return null;
-  await updateTask(planId, ref, { status: "failed", failReason: reason, lastFailReason: reason });
-  await syncFeatureStatuses(planId);
-  return found.task;
-}
-
-export async function retryTask(planId: string, ref: string): Promise<Task | null> {
-  const found = await findTask(planId, ref);
-  if (!found) return null;
-  await updateTask(planId, ref, { status: "pending", failReason: null, retryCount: (found.task.retryCount ?? 0) + 1 });
-  await syncFeatureStatuses(planId);
-  return found.task;
-}
+export const startTask = (planId: string, ref: string) => transitionTask(planId, ref, "start");
+export const completeTask = (planId: string, ref: string) => transitionTask(planId, ref, "complete");
+export const failTask = (planId: string, ref: string, reason: string) => transitionTask(planId, ref, "fail", reason);
+export const retryTask = (planId: string, ref: string) => transitionTask(planId, ref, "retry");
 
 async function checkPlanComplete(planId: string, plan: Plan) {
   const tasks = allTasks(plan);
