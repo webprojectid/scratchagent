@@ -5,6 +5,7 @@ import { NextResponse } from "next/server";
 import { desc, eq, gte, sql } from "drizzle-orm";
 import { getRequestUser, requireAdmin } from "@/lib/api-auth";
 import { getDb } from "@/db";
+import { credentialStatus } from "@/lib/credential-status";
 import { blockedIps, securityEvents, tokens, users } from "@/db/schema";
 import {
   RATE_LIMITS,
@@ -42,6 +43,10 @@ export async function GET(request: Request) {
   const rl = RATE_LIMITS.admin;
   const retryIn = rateLimit(clientKey(user!.userId, ip), rl.limit, rl.windowMs);
   if (retryIn !== null) return rateLimitedResponse(clientKey(user!.userId, ip), retryIn, { ip, userId: user!.userId, route: "/api/admin/security" });
+
+  if (searchParams.get("view") === "credential-status") {
+    return NextResponse.json(credentialStatus(process.env), { headers: { "Cache-Control": "private, no-store" } });
+  }
 
   const typeFilter = searchParams.get("type") || undefined;
   const limit = Math.max(1, Math.min(Math.trunc(Number(searchParams.get("limit") ?? 100)) || 100, 500));

@@ -13,6 +13,7 @@
     "secrets:check": "node scripts/check-secrets.mjs",
     "secrets:history": "node scripts/check-secrets.mjs --history",
     "hooks:install": "node scripts/install-security-hooks.mjs",
+    "test:manual": "node scripts/run-manual-test.mjs",
     "test": "tsx --test --tsconfig tsconfig.json \"tests/*.test.ts\""
   },
   "dependencies": {

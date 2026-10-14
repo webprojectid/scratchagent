@@ -6,7 +6,7 @@
  *  - Plan MUDAH: Simple Todo App
  *  - Plan SULIT: Multi-vendor Marketplace with Real-time Inventory
  * 
- * Run: npx tsx tests/full-plan-simulation.ts
+ * Run: npm run test:manual -- full-plan --allow-live
  */
 
 import { generatePlanStructure, generateTasksForFeature, assignTasksToSubFeatures } from '../src/lib/generate';

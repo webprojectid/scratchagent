@@ -5,7 +5,7 @@
  * User: teguhends@gmail.com (based on account context)
  * History: Track all generations in database
  * 
- * Run: npx tsx tests/e2e-plan-generation.ts
+ * Run: npm run test:manual -- plan-generation --allow-live
  */
 
 import { getDb } from '../src/db';

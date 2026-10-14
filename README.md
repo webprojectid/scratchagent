@@ -58,6 +58,8 @@ The history scanner checks all local reachable commit trees for known credential
 
 ## Coding-agent handoff
 
+Standalone provider/plan simulations have a separate, explicitly opted-in runner. See [manual test instructions](tests/MANUAL.md). They are excluded from offline CI and do not reuse the application's database through that runner.
+
 Build the CLI separately:
 
 ```sh

@@ -8,7 +8,7 @@
  *    lalu klasifikasi hasilnya pakai isExhaustedError() yang sama dengan
  *    production — jadi kelihatan persis model mana yang akan di-failover.
  *
- * Jalankan: npx tsx --tsconfig tsconfig.json tests/simulate-llm-config.ts
+ * Jalankan: npm run test:manual -- providers --allow-live
  */
 import { resolveLlmConfig, isExhaustedError } from "@/lib/llm-config";
 import { readFileSync } from "node:fs";
