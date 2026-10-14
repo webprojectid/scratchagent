@@ -71,7 +71,7 @@ function MapNode({ data }: { data: MapNodeData }) {
     const status = data.feature?.status ?? "direncanakan";
     const rail = status === "selesai" ? "bg-[#74FA6A]" : status === "berjalan" ? "bg-amber-400" : "bg-white/20";
     return (
-      <div className="relative w-60 cursor-pointer overflow-hidden rounded-2xl border border-white/[.08] bg-[#1C2330] p-3.5 pl-4 shadow-lg shadow-black/30 transition hover:border-[#74FA6A]/40">
+      <div className="relative flex h-[112px] w-60 cursor-pointer flex-col overflow-hidden rounded-2xl border border-white/[.08] bg-[#1C2330] p-3.5 pl-4 shadow-lg shadow-black/30 transition hover:border-[#74FA6A]/40">
         <span className={`absolute inset-y-2 left-0 w-[3px] rounded-full ${rail}`} />
         <span className="pointer-events-none absolute right-2.5 top-1.5 select-none font-mono text-[28px] font-bold leading-none text-white/[.05]">
           {String(data.phase ?? 0).padStart(2, "0")}
@@ -82,9 +82,9 @@ function MapNode({ data }: { data: MapNodeData }) {
           <span className="grid size-6 shrink-0 place-items-center rounded-lg bg-white/[.05] text-slate-400">
             <FolderKanban size={12} />
           </span>
-          <b className="truncate text-[12px] leading-snug text-slate-100">{data.label}</b>
+          <b title={data.label} className="min-w-0 flex-1 truncate text-[12px] leading-snug text-slate-100">{data.label}</b>
         </div>
-        <div className="mt-2.5 flex items-center justify-between text-[10px] text-slate-500">
+        <div className="mt-auto flex items-center justify-between pt-2.5 text-[10px] text-slate-500">
           <span>{ui({ direncanakan: "Planned", berjalan: "In progress", selesai: "Done" }[status])}</span>
           <span className="font-mono tabular-nums">{data.done}/{data.total}</span>
         </div>
@@ -97,7 +97,7 @@ function MapNode({ data }: { data: MapNodeData }) {
 
   const taskNode = data.kind === "tasks";
   return (
-    <div className="w-56 cursor-pointer rounded-2xl border border-white/[.08] bg-[#1C2330] p-3 shadow-lg shadow-black/30 transition hover:border-white/[.16]">
+    <div className="relative flex h-[148px] w-56 cursor-pointer flex-col rounded-2xl border border-white/[.08] bg-[#1C2330] p-3 shadow-lg shadow-black/30 transition hover:border-white/[.16]">
       <Handle type="target" position={Position.Left} className="!size-2 !border-2 !border-[#14161A] !bg-slate-600" />
       {!taskNode && <Handle type="source" position={Position.Right} className="!size-2 !border-2 !border-[#14161A] !bg-slate-600" />}
       <div className="mb-2 flex items-center justify-between text-[9px] font-semibold tracking-wide text-slate-500">
@@ -117,14 +117,14 @@ function MapNode({ data }: { data: MapNodeData }) {
       ) : (
         <div className="space-y-1">
           {data.items?.slice(0, 3).map((item, index) => (
-            <button type="button" key={`${item.label}-${index}`} onClick={taskNode ? (event) => { event.stopPropagation(); if (item.ref) data.onTaskSelect?.(item.ref); } : undefined} className="flex min-w-0 items-center gap-1.5 rounded-lg border border-white/[.05] bg-white/[.02] px-2 py-1">
+            <button type="button" key={`${item.label}-${index}`} title={item.label} onClick={taskNode ? (event) => { event.stopPropagation(); if (item.ref) data.onTaskSelect?.(item.ref); } : undefined} className="flex w-full min-w-0 max-w-full items-center gap-1.5 overflow-hidden rounded-lg border border-white/[.05] bg-white/[.02] px-2 py-1 text-left">
               {item.status === "done" ? <Check size={9} className="shrink-0 text-emerald-400" /> : item.status === "in_progress" ? <span className="size-1.5 shrink-0 animate-spin rounded-full border border-amber-400 border-r-transparent" /> : taskNode ? <Circle size={7} className="shrink-0 text-slate-600" /> : <span className="size-1 shrink-0 rounded-full bg-slate-600" />}
-              <span className={`truncate text-[10px] ${item.status === "done" ? "text-slate-600 line-through" : "text-slate-300"}`}>{item.label}</span>
+              <span className={`min-w-0 flex-1 truncate text-[10px] ${item.status === "done" ? "text-slate-600 line-through" : "text-slate-300"}`}>{item.label}</span>
             </button>
           ))}
         </div>
       )}
-      <div className="mt-1.5 text-right text-[9px] text-slate-500">{ui("Lihat semua (")}{data.total ?? 0})
+      <div className="mt-auto pt-1.5 text-right text-[9px] text-slate-500">{ui("Lihat semua (")}{data.total ?? 0})
       </div>
     </div>
   );
@@ -141,7 +141,8 @@ const TRAIL_CSS = `
   from { stroke-dashoffset: 0; }
   to { stroke-dashoffset: -100; }
 }
-.edge-trail { animation: scratchTrail 1.3s linear infinite; }`;
+.edge-trail { animation: scratchTrail 1.3s linear infinite; }
+@media (prefers-reduced-motion: reduce) { .edge-trail { animation: none; opacity: 0; } }`;
 
 const AnimatedFlowEdge = memo(function AnimatedFlowEdge({
   id,
@@ -413,17 +414,14 @@ const { nodes, edges } = useMemo(() => {
       const taskId = `tasks-${featureIndex}`;
 
       nextNodes.push(
-        { id: featureId, type: "mapNode", position: { x: 440, y }, data: { kind: "feature", label: feature.title, feature, phase, done, total: tasks.length }, initialWidth: 240, initialHeight: 112 },
-        { id: subFeatureId, type: "mapNode", position: { x: 880, y: y - 8 }, initialWidth: 224, initialHeight: 132, data: { kind: "sub-features", label: ui("Sub fitur"), feature, items: feature.subFeatures.map((subFeature) => ({ label: subFeature.title, status: isSubDone(subFeature) ? "done" : isSubActive(subFeature) ? "in_progress" : "pending" })), total: feature.subFeatures.length, done: subsDone } },
-        { id: taskId, type: "mapNode", position: { x: 1280, y: y - 8 }, initialWidth: 224, initialHeight: 132, data: { kind: "tasks", label: ui("Tasks"), feature, items: tasks.map((task) => ({ label: task.title, status: task.status, ref: task.ref })), onTaskSelect: setTaskRef, total: tasks.length, done, generating: plan.status === "generating" } },
+        { id: featureId, type: "mapNode", position: { x: 440, y: y + 18 }, data: { kind: "feature", label: feature.title, feature, phase, done, total: tasks.length }, initialWidth: 240, initialHeight: 112 },
+        { id: subFeatureId, type: "mapNode", position: { x: 880, y }, initialWidth: 224, initialHeight: 148, data: { kind: "sub-features", label: ui("Sub fitur"), feature, items: feature.subFeatures.map((subFeature) => ({ label: subFeature.title, status: isSubDone(subFeature) ? "done" : isSubActive(subFeature) ? "in_progress" : "pending" })), total: feature.subFeatures.length, done: subsDone } },
+        { id: taskId, type: "mapNode", position: { x: 1280, y }, initialWidth: 224, initialHeight: 148, data: { kind: "tasks", label: ui("Tasks"), feature, items: tasks.map((task) => ({ label: task.title, status: task.status, ref: task.ref })), onTaskSelect: setTaskRef, total: tasks.length, done, generating: plan.status === "generating" } },
       );
-      // Gaya konektor mengikuti referensi user: kelengkungan bezier (bukan siku
-      // smoothstep yang kaku). Root -> fase garis halus penuh; lanjutan antar
-      // kolom putus-putus titik-titik, jadi terbaca sebagai "aliran rencana".
       nextEdges.push(
         { id: `root-${featureId}`, source: "root", target: featureId, type: "flow", style: { stroke: "#6b7280", strokeWidth: 1.8 } },
-        { id: `${featureId}-${subFeatureId}`, source: featureId, target: subFeatureId, type: "flow", style: { stroke: "#7b8595", strokeWidth: 2.2, strokeDasharray: "0.1 7", strokeLinecap: "round" } },
-        { id: `${subFeatureId}-${taskId}`, source: subFeatureId, target: taskId, type: "flow", style: { stroke: "#7b8595", strokeWidth: 2.2, strokeDasharray: "0.1 7", strokeLinecap: "round" } },
+        { id: `${featureId}-${subFeatureId}`, source: featureId, target: subFeatureId, type: "flow", style: { stroke: "#7b8595", strokeWidth: 1.8 } },
+        { id: `${subFeatureId}-${taskId}`, source: subFeatureId, target: taskId, type: "flow", style: { stroke: "#7b8595", strokeWidth: 1.8 } },
       );
     });
 

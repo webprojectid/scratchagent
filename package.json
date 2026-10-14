@@ -2,7 +2,9 @@
   "name": "scratchagent",
   "version": "0.1.0",
   "private": true,
-  "engines": { "node": ">=22.0.0" },
+  "engines": {
+    "node": "24.x"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -73,5 +75,10 @@
     "@esbuild-kit/core-utils": {
       "esbuild": "^0.28.2"
     }
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true,
+    "esbuild@0.25.12": true,
+    "unrs-resolver@1.12.2": true
   }
 }
