@@ -16,6 +16,14 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_TURNSTILE_SITE_KEY:
       process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "0x4AAAAAAEnBHa0BVZ4egzVD",
   },
+  async rewrites() {
+    return [
+      {
+        source: "/creator/teguh-adhi-wibowo-transparent.gif",
+        destination: "/creator/teguh-adhi-wibowo-animated.gif",
+      },
+    ];
+  },
   async headers() {
     return [
       {
