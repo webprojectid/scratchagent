@@ -1,4 +1,6 @@
 import { withPlanMutation } from "./plan-mutation";
+import { structureLimits } from "./plan-limits";
+import { isAutomaticQaSubFeature, isAutomaticQaTaskTitle, QA_COPY } from "./qa-labels";
 import type { Plan } from "./types";
 import { allTasks, findTask, getPlan, syncFeatureStatuses, updatePlanStatus, updateTask } from "./storage";
 
@@ -43,7 +45,7 @@ export async function getNextTask(planId: string, loadedPlan?: Plan): Promise<Ne
   }
 
   const everyFeatureHasTasks = (plan.features ?? []).every((f) =>
-    (f.subFeatures ?? []).some((sf) => (sf.tasks ?? []).length > 0),
+    (f.subFeatures ?? []).some((sf) => !isAutomaticQaSubFeature(sf.title) && (sf.tasks ?? []).length > 0),
   );
   if (tasks.length > 0 && everyFeatureHasTasks && tasks.every((t) => t.status === "done")) {
     return { done: true, blocked: false, failedTasks: [], task: null, progress: { phase: { current: 0, total: 0 }, layer: "qa", page: null, checkpoint: false, remainingInLayer: 0 } };
@@ -126,67 +128,95 @@ async function checkPlanComplete(planId: string, plan: Plan) {
   // di browser mati di tengah) tidak boleh dihitung tuntas — dulu bug ini
   // bikin plan 8 fitur dengan 2 fitur berisi dianggap "done".
   const everyFeatureHasTasks = (plan.features ?? []).every((f) =>
-    (f.subFeatures ?? []).some((sf) => (sf.tasks ?? []).length > 0),
+    (f.subFeatures ?? []).some((sf) => !isAutomaticQaSubFeature(sf.title) && (sf.tasks ?? []).length > 0),
   );
   if (tasks.length > 0 && everyFeatureHasTasks && tasks.every((t) => t.status === "done")) {
     await updatePlanStatus(planId, "done");
   }
 }
 
-const QA_TITLES = [
-  "Jalankan aplikasi end-to-end",
-  "Uji setiap alur utama terhadap selesai bila",
-  "Perbaiki bug yang ditemukan",
-  "Bersihkan sisa stub dan console.log",
-];
+function setQaCapacityWarning(plan: Plan, active: boolean): boolean {
+  const warnings = plan.warnings ?? [];
+  const next = warnings.filter((warning) => warning !== QA_COPY.id.capacityWarning && warning !== QA_COPY.en.capacityWarning);
+  if (active) next.push(plan.generationSettings?.language === "en" ? QA_COPY.en.capacityWarning : QA_COPY.id.capacityWarning);
+  if (next.length === warnings.length && next.every((warning, index) => warning === warnings[index])) return false;
+  plan.warnings = next;
+  return true;
+}
 
 /**
- * Finalisasi struktur plan: bersihkan sub-fitur "QA & Integrasi" kosong yang
- * duplikat (sisa race/retry), lalu inject fase QA & Integrasi berisi 4 task QA
- * kalau SEMUA fitur sudah punya task. Idempoten: tidak melakukan apa-apa kalau
- * sub-fitur QA sudah ada atau masih ada fitur yang kosong.
- * Return `ready` = plan baru saja memenuhi syarat ready (dipakai caller untuk
- * updatePlanStatus); mutasi fitur dilakukan in-place (caller yang savePlan).
+ * Finalisasi struktur plan dengan QA pada fitur/fase terakhir. Task yang sudah
+ * ada tidak dipotong untuk membuka ruang. `ready` berarti setiap fitur punya
+ * task reguler dan keempat task QA muat dalam batas paket; caller menyimpan
+ * mutasi dan hanya mengubah status ke ready jika nilai ini true.
  */
 export function ensureQaPhase(plan: Plan): { changed: boolean; ready: boolean } {
-  let changed = false;
-  for (const f of plan.features ?? []) {
-    const before = (f.subFeatures ?? []).length;
-    f.subFeatures = (f.subFeatures ?? []).filter(
-      (sf) => !(sf.title === "QA & Integrasi" && (sf.tasks ?? []).length === 0),
-    );
-    if (f.subFeatures.length !== before) changed = true;
-  }
-
   const features = plan.features ?? [];
-  const allFeaturesHaveTasks = features.every((f) =>
-    (f.subFeatures ?? []).some((sf) => (sf.tasks ?? []).length > 0),
+  if (features.length === 0 || features.some((feature) =>
+    !(feature.subFeatures ?? []).some((sub) => !isAutomaticQaSubFeature(sub.title) && (sub.tasks ?? []).length > 0)
+  )) return { changed: false, ready: false };
+
+  const limits = structureLimits(plan.tier);
+  const qaCopy = plan.generationSettings?.language === "en" ? QA_COPY.en : QA_COPY.id;
+  const lastFeature = features.at(-1)!;
+  const subFeatures = lastFeature.subFeatures ?? [];
+  const qaSubFeature = subFeatures.find((sub) => isAutomaticQaSubFeature(sub.title));
+  let changed = false;
+  if (qaSubFeature && !Array.isArray(qaSubFeature.tasks)) {
+    qaSubFeature.tasks = [];
+    changed = true;
+  }
+  // Repair the old off-by-one QA phase without replacing its tasks or status.
+  for (const task of qaSubFeature?.tasks ?? []) {
+    if (task.layer === "qa" && isAutomaticQaTaskTitle(task.title) && task.phase !== features.length) {
+      task.phase = features.length;
+      changed = true;
+    }
+  }
+  const existingTitles = new Set((qaSubFeature?.tasks ?? []).filter((task) => task.layer === "qa").map((task) => task.title));
+  const missingTitles = qaCopy.tasks.filter((_, index) =>
+    !existingTitles.has(QA_COPY.id.tasks[index]) && !existingTitles.has(QA_COPY.en.tasks[index])
   );
-  const alreadyHasQa = features.some((f) =>
-    (f.subFeatures ?? []).some((sf) => sf.title === "QA & Integrasi"),
-  );
-  if (!allFeaturesHaveTasks || alreadyHasQa || features.length === 0) {
-    return { changed, ready: false };
+  const taskCount = subFeatures.reduce((sum, sub) => sum + (sub.tasks ?? []).length, 0);
+  const hasCapacity = features.length <= limits.features[1]
+    && subFeatures.length + (qaSubFeature ? 0 : 1) <= limits.subFeatures[1]
+    && taskCount + missingTitles.length <= limits.tasks[1];
+
+  if (!hasCapacity) {
+    return { changed: setQaCapacityWarning(plan, true) || changed, ready: false };
   }
 
-  const qaPhase = features.length + 1;
-  const lastFeature = features.at(-1)!;
-  lastFeature.subFeatures.push({
-    title: "QA & Integrasi",
-    tasks: QA_TITLES.map((title, i) => ({
-      ref: `F${String(features.length).padStart(2, "0")}-S99-T${String(i + 1).padStart(2, "0")}`,
+  changed = setQaCapacityWarning(plan, false) || changed;
+  let target = qaSubFeature;
+  if (!target) {
+    target = { title: qaCopy.subFeature, tasks: [] };
+    subFeatures.push(target);
+    changed = true;
+  }
+
+  const refs = new Set(features.flatMap((feature) => (feature.subFeatures ?? []).flatMap((sub) => (sub.tasks ?? []).map((task) => task.ref))));
+  let nextRef = 1;
+  for (const title of missingTitles) {
+    let ref: string;
+    do {
+      ref = `F${String(features.length).padStart(2, "0")}-S99-T${String(nextRef++).padStart(2, "0")}`;
+    } while (refs.has(ref));
+    refs.add(ref);
+    target.tasks.push({
+      ref,
       title,
-      layer: "qa" as const,
-      phase: qaPhase,
+      layer: "qa",
+      phase: features.length,
       page: null,
       deps: [],
-      status: "pending" as const,
+      status: "pending",
       retryCount: 0,
       lastFailReason: null,
       failReason: null,
       startedAt: null,
       completedAt: null,
-    })),
-  });
-  return { changed: true, ready: true };
+    });
+    changed = true;
+  }
+  return { changed, ready: true };
 }

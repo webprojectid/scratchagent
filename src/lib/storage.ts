@@ -4,6 +4,7 @@ import { getDb, withDatabaseTransaction } from "@/db";
 import { plans, features, subFeatures, tasks, taskEvents, usageEvents, users } from "@/db/schema";
 import type { Plan, Task } from "./types";
 import { demoPlan } from "./demo";
+import { isAutomaticQaSubFeature } from "./qa-labels";
 import {
   buildFallbackArchitecture,
   buildFallbackDatabaseSchema,
@@ -30,6 +31,19 @@ import {
 
 function isMemoryMode() {
   return !process.env.DATABASE_URL;
+}
+
+/** Refs of the old injected QA tasks after ensureQaPhase fixes their phase in memory. */
+export function legacyQaPhaseRefs(plan: Pick<Plan, "features">): string[] {
+  const phase = plan.features.length;
+  const finalFeature = plan.features.at(-1);
+  if (!finalFeature) return [];
+  const prefix = `F${String(phase).padStart(2, "0")}-S99-T`;
+  return (finalFeature.subFeatures ?? [])
+    .filter((sub) => isAutomaticQaSubFeature(sub.title))
+    .flatMap((sub) => sub.tasks ?? [])
+    .filter((task) => task.layer === "qa" && task.phase === phase && task.ref.startsWith(prefix) && /^\d+$/.test(task.ref.slice(prefix.length)))
+    .map((task) => task.ref);
 }
 
 /**
@@ -148,7 +162,7 @@ async function persistPlan(plan: Plan, userId: string): Promise<void> {
       selesaiBila: Array.isArray(feature.selesaiBila) ? feature.selesaiBila : [],
       priority: feature.priority ?? null,
       status: feature.status ?? "direncanakan",
-      order: feature.order ?? 0,
+      order: feature.order ?? index,
     } as any);
   }
   if (featureRows.length > 0) {
@@ -167,7 +181,7 @@ async function persistPlan(plan: Plan, userId: string): Promise<void> {
 
   for (const [index, feature] of (plan.features as any[]).entries()) {
     const fid = fidByIndex.get(index)!;
-    for (const subFeature of (feature.subFeatures as any[])) {
+    for (const [subIndex, subFeature] of feature.subFeatures.entries()) {
       const sid = subFeature.id || titleToSid.get(`${fid}::${subFeature.title}`) || crypto.randomUUID();
       titleToSid.set(`${fid}::${subFeature.title}`, sid);
       subRows.push({
@@ -176,7 +190,7 @@ async function persistPlan(plan: Plan, userId: string): Promise<void> {
         title: subFeature.title,
         tujuan: subFeature.tujuan ?? null,
         selesaiBila: subFeature.selesaiBila ?? [],
-        order: 0,
+        order: subIndex,
       } as any);
 
       const subTasks = Array.isArray(subFeature.tasks)
@@ -237,6 +251,41 @@ async function persistPlan(plan: Plan, userId: string): Promise<void> {
   if (taskRows.length > 0) {
     await db.insert(tasks).values(taskRows).onConflictDoNothing();
   }
+  const qaRefs = legacyQaPhaseRefs(plan);
+  if (qaRefs.length > 0) {
+    // savePlan never overwrites existing tasks. Repair only the old N+1 QA
+    // phase bug, leaving task status, dependencies, and all other fields intact.
+    await db.update(tasks).set({ phase: plan.features.length }).where(and(
+      eq(tasks.planId, plan.id),
+      inArray(tasks.ref, qaRefs),
+      eq(tasks.phase, plan.features.length + 1),
+    ));
+  }
+}
+
+/** Keep feature indexes fixed while tasks are being generated in parallel. */
+export function orderPlanFeatures<T extends {
+  id: string;
+  order?: number | null;
+  subFeatures: { tasks: { phase: number }[] }[];
+}>(items: readonly T[], status: Plan["status"]): T[] {
+  const phaseOf = (feature: T): number => {
+    const phases = feature.subFeatures.flatMap((sub) => sub.tasks.map((task) => task.phase)).filter(Number.isFinite);
+    return phases.length ? Math.min(...phases) : Number.POSITIVE_INFINITY;
+  };
+  return [...items].sort((a, b) => {
+    const orderDifference = (a.order ?? 0) - (b.order ?? 0);
+    if (orderDifference) return orderDifference;
+    // Older plans stored every feature with order=0. Once generation is done,
+    // their task phases can restore the displayed order. During generation,
+    // using those phases would move completed features ahead of pending ones.
+    if (status !== "generating") {
+      const phaseA = phaseOf(a);
+      const phaseB = phaseOf(b);
+      if (phaseA !== phaseB) return phaseA < phaseB ? -1 : 1;
+    }
+    return a.id.localeCompare(b.id);
+  });
 }
 
 export async function getPlan(planId: string): Promise<Plan | undefined> {
@@ -249,7 +298,7 @@ export async function getPlan(planId: string): Promise<Plan | undefined> {
   const [plan] = await db.select().from(plans).where(eq(plans.id, planId));
   if (!plan) return undefined;
 
-  const featuresRows = await db.select().from(features).where(eq(features.planId, planId));
+  const featuresRows = await db.select().from(features).where(eq(features.planId, planId)).orderBy(features.order, features.id);
   const [allSubs, allTaskRows] = featuresRows.length ? await Promise.all([
     db.select().from(subFeatures).where(inArray(subFeatures.featureId, featuresRows.map(f => f.id))).orderBy(subFeatures.order, subFeatures.id),
     db.select().from(tasks).where(eq(tasks.planId, planId)).orderBy(tasks.order, tasks.ref),
@@ -295,26 +344,7 @@ export async function getPlan(planId: string): Promise<Plan | undefined> {
     };
   });
 
-  // Urutan fase: (1) kolom order; plan lama punya order=0 semua, jadi
-  // tiebreak (2) phase terkecil dari task di dalamnya (= posisi asli fitur
-  // saat generate); tiebreak (3) urutan insert dari DB. Fase baru dari
-  // kolom chat ide dapat order = posisi akhir, sehingga selalu tampil akhir.
-  resultFeatures
-    .map((f, i) => ({ f, i }))
-    .sort((a, b) => {
-      const orderA = a.f.order ?? 0;
-      const orderB = b.f.order ?? 0;
-      if (orderA !== orderB) return orderA - orderB;
-      const phaseOf = (x: { f: typeof a.f }) => {
-        const phases = x.f.subFeatures.flatMap((sf) => sf.tasks.map((t) => t.phase)).filter((p) => Number.isFinite(p));
-        return phases.length ? Math.min(...phases) : Number.POSITIVE_INFINITY;
-      };
-      const pa = phaseOf(a);
-      const pb = phaseOf(b);
-      if (pa !== pb) return pa - pb;
-      return a.i - b.i;
-    })
-    .forEach((entry, idx) => { resultFeatures[idx] = entry.f; });
+  const orderedFeatures = orderPlanFeatures(resultFeatures, plan.status as Plan["status"]);
 
   const savedMeta = plan.techPrefs && !Array.isArray(plan.techPrefs) ? plan.techPrefs as any : {};
   const savedStack = Array.isArray(plan.techPrefs) ? plan.techPrefs as any[] : savedMeta.stack ?? [];
@@ -330,7 +360,7 @@ export async function getPlan(planId: string): Promise<Plan | undefined> {
     userFlow: savedMeta.userFlow ?? [],
     architecture: savedMeta.architecture ?? "",
     databaseSchema: savedMeta.databaseSchema ?? "",
-    features: resultFeatures,
+    features: orderedFeatures,
     status: plan.status as any,
     createdAt: plan.createdAt?.toISOString(),
     userId: plan.userId ?? undefined,

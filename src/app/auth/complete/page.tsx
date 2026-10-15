@@ -1,5 +1,6 @@
 "use client";
 
+import { uiText as ui, useUiLanguage } from "@/lib/ui-text";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -9,6 +10,7 @@ import { Loader2 } from "lucide-react";
 // lalu lanjut. Client sekarang membaca session Supabase langsung (via
 // getCurrentUser), jadi tidak perlu lagi menulis scratch_user ke localStorage.
 export default function AuthComplete() {
+  useUiLanguage();
   const router = useRouter();
   const [error, setError] = useState("");
 
@@ -18,14 +20,14 @@ export default function AuthComplete() {
       .getUser()
       .then(({ data, error: err }) => {
         if (err || !data.user) {
-          setError(err?.message ?? "Session tidak ditemukan");
+          setError(err?.message ?? ui("Session tidak ditemukan"));
           setTimeout(() => router.push("/login"), 1500);
           return;
         }
         router.push("/new");
       })
       .catch(() => {
-        setError("Gagal membaca session");
+        setError(ui("Gagal membaca session"));
         setTimeout(() => router.push("/login"), 1500);
       });
   }, [router]);
@@ -37,7 +39,7 @@ export default function AuthComplete() {
       ) : (
         <>
           <Loader2 className="h-6 w-6 animate-spin text-[#74FA6A]" />
-          <p className="text-slate-400 text-sm">Lagi masuk… sebentar ya.</p>
+          <p className="text-slate-400 text-sm">{ui("Lagi masuk… sebentar ya.")}</p>
         </>
       )}
     </div>

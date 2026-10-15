@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { KeyRound } from "lucide-react";
 import { LanguageToggle } from "@/components/lang-toggle";
 import { UserNav } from "@/components/user-nav";
 import { useLang } from "@/lib/lang";
@@ -37,15 +36,6 @@ export function HeaderNav({
           {t("nav", key, lang)}
         </Link>
       ))}
-      <a
-        href={API_KEY_STORE_URL}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="flex items-center gap-1.5 text-[#74FA6A] transition-colors hover:text-[#A8FF9B]"
-      >
-        <KeyRound size={13} strokeWidth={2.2} aria-hidden="true" />
-        Api Key
-      </a>
       {loggedIn && <UserNav />}
       <LanguageToggle />
       <Link

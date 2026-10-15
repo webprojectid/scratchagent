@@ -1,0 +1,598 @@
+[
+  {
+    "name": "tabler",
+    "repo": "tabler/tabler-icons",
+    "revision": "a4ce1404bc6d24d3c365afe7b258d6bf6f48d62d",
+    "prefix": "icons/outline/",
+    "license": "MIT",
+    "licensePath": "/icons/tabler/LICENSE.txt",
+    "icons": [
+      {
+        "name": "activity",
+        "sha256": "2279e7a64688d1e730e42a7b277792350fbfade1fd3b992ad3971737e88ccde8"
+      },
+      {
+        "name": "adjustments",
+        "sha256": "46ee742d7cdec46bacd05374a8322f6dae1ccca41b4e09e3c52456ef70af014d"
+      },
+      {
+        "name": "api",
+        "sha256": "c7b398994488e1e865ecd5d9162e0604bf7d4c63740a46041552c61dbd208b23"
+      },
+      {
+        "name": "ball-football",
+        "sha256": "8890c599c511f2393b46be9b78a7d9f68dfd765868dae5f563f10fa2575a235d"
+      },
+      {
+        "name": "barbell",
+        "sha256": "c5fbfe4fc69a80eb784d4e187110668720d26a43298ebb12399a918caa15abf1"
+      },
+      {
+        "name": "barcode",
+        "sha256": "97e093a25470a5b6963c0f5de021e3a08b434b0a66efbcac80d0e629841b322d"
+      },
+      {
+        "name": "bell",
+        "sha256": "7ef4f0c56a58fc7ea27ded1c2ee5bc753d63f8851ce85b33da48ddeefe53faf8"
+      },
+      {
+        "name": "book",
+        "sha256": "1f55b129a72746a98e1aaffc55ae7b43d004db036968afb022b3f9fbd7da87c9"
+      },
+      {
+        "name": "brain",
+        "sha256": "0075dfb728a3b28fddf35c0e0129733874d8eee9e4d745b2079a9adbef2797f5"
+      },
+      {
+        "name": "briefcase",
+        "sha256": "66fb45dd412e45ad436bb88702c047c3bf883ba4b4c6859ae140fb6a3599130b"
+      },
+      {
+        "name": "building",
+        "sha256": "023a6b0aa318d0983884ae9429b8594f09a1d9359d9914e53850943b8ee20d8f"
+      },
+      {
+        "name": "building-store",
+        "sha256": "ecd2b1d0e458f6c5ef2db21571c8bc1d3650af4e1f505b7c43e218c9fa299be2"
+      },
+      {
+        "name": "calendar",
+        "sha256": "4861f170e9b1fa72eaa7cdefc3c7ca64ca6a10b9c2e3a13e1aceb4725f266d8d"
+      },
+      {
+        "name": "calendar-cancel",
+        "sha256": "ccdef4ee6c6b85c7572692336eb93a2760a2c355715f789cc772970cae4045f6"
+      },
+      {
+        "name": "calendar-check",
+        "sha256": "3aab7a8575db0178f863f444712e387a419a353246021f851565cc98e68a45e1"
+      },
+      {
+        "name": "calendar-cog",
+        "sha256": "a1f97788ca1553b41eb11cc090379985a83a6d6e7f88da9115c4d92ed7354ee8"
+      },
+      {
+        "name": "calendar-event",
+        "sha256": "380f9ad3022a78c9ca76a33d4dc909bc7ab646c7e5b43ac182367fbc85742d1f"
+      },
+      {
+        "name": "calendar-time",
+        "sha256": "4d9b70807803de811d97a8988e46618e6faea354aca30795dcb95c5ce515040f"
+      },
+      {
+        "name": "camera",
+        "sha256": "a87eae819b9c5a98b07e635c5a52fd2aaed392000ce62bb8724cd5f5baba4bc7"
+      },
+      {
+        "name": "cash",
+        "sha256": "44c594f2a032747c28ab77ae13ddee9b4fa9026104c25969f6333bdcbaeaa316"
+      },
+      {
+        "name": "certificate",
+        "sha256": "77507ab592e71c6057f85d87c046502fd8009cd0cff05689854eb9380b50300a"
+      },
+      {
+        "name": "chart-bar",
+        "sha256": "ca1d3717da5007a46a2cf7521f9df558fd6e159874696dd400626809ead41162"
+      },
+      {
+        "name": "chart-line",
+        "sha256": "91ae4d96cfc8926df2c715438bd539da2703dc158828336c227ce23e62ca7cb4"
+      },
+      {
+        "name": "chart-pie",
+        "sha256": "cf800f8dc1b3d6474dc79f6914c168b299e67752d1ff6e6bf653774d185e5f1f"
+      },
+      {
+        "name": "check",
+        "sha256": "e206067a7d570997b5b3a7d30ab287c0b15a492787649a8b96dff8fad2862fbe"
+      },
+      {
+        "name": "clipboard-check",
+        "sha256": "c723c87b4402db5d3dd8335466d4d0f838a7d95a0fd8e1a111513bacfa9afb34"
+      },
+      {
+        "name": "cloud-download",
+        "sha256": "b6cd43fb37d332319972f4eb6bb05198249a06b1f47d14a4941d0b1fee1474af"
+      },
+      {
+        "name": "cloud-upload",
+        "sha256": "550140ff0374e9ef66ee534a7a432dcfa8f1d9832cb79873b5469fa8d73d1cdf"
+      },
+      {
+        "name": "code",
+        "sha256": "ff3d40c83c1a908bc3aa173671232e5015dba2f7f3538edc23fa2218a3d329e2"
+      },
+      {
+        "name": "coffee",
+        "sha256": "755728c2ee5189f2f06d295edf1d64c816e4065becf657e36eee8b7811226fce"
+      },
+      {
+        "name": "coins",
+        "sha256": "be086092d708837fdbb732e5a4341d082ed57dc246749ef6b163c8ca06f9f9d8"
+      },
+      {
+        "name": "credit-card",
+        "sha256": "09493e923408fa6ab3fc19f84f6ca4ab221c937e19265b3723f9ac9cb04253f5"
+      },
+      {
+        "name": "currency-dollar",
+        "sha256": "c456e09790fc05deb056626aaea4c8ccca960a2d9fd4b1607b03b59f332cecb4"
+      },
+      {
+        "name": "database",
+        "sha256": "7cdcca11c1555d48e19c2fcd2fce4420cbec734f3fa3d28274f8167a796ee0d6"
+      },
+      {
+        "name": "device-desktop",
+        "sha256": "2fdd2150904a844185250f26453a02f31ee9d77a1f936a1df9c2ecd77cfc788d"
+      },
+      {
+        "name": "device-gamepad",
+        "sha256": "dbaf54ac19df124f36684831664dcaaea6bea7eaebf6ff183d1973cfee60a772"
+      },
+      {
+        "name": "device-mobile",
+        "sha256": "2f9d4b1a140f3b9c9057efa5964bc8a7a135ce5d32dfe4752ebdad9d086d5413"
+      },
+      {
+        "name": "feather",
+        "sha256": "e7a6c3b498aa3e4bcfdf2e3cbc6de205c9cafcaa0680727862cc95e6a9e4b2aa"
+      },
+      {
+        "name": "file-analytics",
+        "sha256": "ddeaadb5d9c90e66d3b5e6969e66e68d386e21d2cd9a069662ed577f707dbfac"
+      },
+      {
+        "name": "file-description",
+        "sha256": "1db30f85efbd331fa3035d638c61deb2f346eac8c5d301aafff11bdecbe6c679"
+      },
+      {
+        "name": "file-export",
+        "sha256": "0e3f251271b59c97bc61dc755f815c18f662f062b53ae0cd6030a93d709fe48d"
+      },
+      {
+        "name": "files",
+        "sha256": "ef444c8a7c4945e0be33c9f93cb6118fd2fcaaee0100f017339e57e6a620747e"
+      },
+      {
+        "name": "fingerprint",
+        "sha256": "cd1ff19081e56af42bd183a98eec4ba68d7a7affbfc37775b10604824489a96b"
+      },
+      {
+        "name": "flag",
+        "sha256": "91c224b828fd0716ef8617633a714ef6764a16618fe222becbcf0a4b83b35b9e"
+      },
+      {
+        "name": "flask",
+        "sha256": "28459e1fcdf7e9d8b0664aa3fe350995c4df3dda6ee9823351df3ea0f5714d17"
+      },
+      {
+        "name": "flower",
+        "sha256": "fc0e05fd927e64dd04b35fdb0332ad9e09771d3a9add0a38bb9d9eb67efa3536"
+      },
+      {
+        "name": "focus",
+        "sha256": "12a7cac7d8bd201fee5c679f2b299fd6919a17ad38a859e0ca9802ecb50c14b5"
+      },
+      {
+        "name": "gauge",
+        "sha256": "e7284d4e0f7e83f1b20ff31bd5254e4bd019ce89007e2b3c8f8b69358c9950e9"
+      },
+      {
+        "name": "git-branch",
+        "sha256": "7c45a13d2b0e6a6915730471345ebf7fbe0374bcd61d19679d59c5ffa38a234b"
+      },
+      {
+        "name": "headset",
+        "sha256": "1515622dbddd3bd3bb0090a6e4fb203a06b77b1a0c0a760ce22397d614039d09"
+      },
+      {
+        "name": "heart",
+        "sha256": "332be1c5c3a67df766c69da053a0eb29a11aa74a262f4422b82bceaaf098b1e8"
+      },
+      {
+        "name": "heart-handshake",
+        "sha256": "4e09c9d7f50207b355ce2d8c2ca9249d78a33baa18d213071ed85771705995a3"
+      },
+      {
+        "name": "heartbeat",
+        "sha256": "972d5c0d0db24614275521fe93b3c98e375ececec25b087d139d83cb9221e8e7"
+      },
+      {
+        "name": "home",
+        "sha256": "069600f461f3e967685765723a851af7b35f24b715e03d41a2928152cf75644c"
+      },
+      {
+        "name": "key",
+        "sha256": "2aed9dbae011d377c94cfee3ea68326fa98a7510964a9995dfe59c6610219046"
+      },
+      {
+        "name": "layout-dashboard",
+        "sha256": "8210661405d0e6b7b5ea671a136c59e3e8fcc5e708a9fa332601bbf4a3d2b91a"
+      },
+      {
+        "name": "layout-kanban",
+        "sha256": "0009b26e3296e5d7f2fddacf61261ef89c3372b5bb600d0b1ac2a3ec8393e314"
+      },
+      {
+        "name": "leaf",
+        "sha256": "ca3b92ae35e9b8e7e94746cc4e51301ee2f85b4760a03a62250eb418f39a063a"
+      },
+      {
+        "name": "lifebuoy",
+        "sha256": "ac285292098b9bcc6256f759ce776151eda2919c92137e665c2960a8684c5dbb"
+      },
+      {
+        "name": "list",
+        "sha256": "79565264d22054914ebbe856931325cb5118fabd6fc75409628d7f4bd2f623a0"
+      },
+      {
+        "name": "list-check",
+        "sha256": "4cfa2fdc8047843508e96ac637e758911359be76142ca492bbc02cf2727ddd18"
+      },
+      {
+        "name": "lock",
+        "sha256": "407856048124fdd63239f75a3640ca8f20a9acbc1f49cac9de0bcdb1cb42ec5f"
+      },
+      {
+        "name": "luggage",
+        "sha256": "4f95b9d0328b92a7a322b842eda037c5a569cb80b21b6a27fbe3f6c87f1e5357"
+      },
+      {
+        "name": "mail",
+        "sha256": "94ca7eed1a9b89c7d3345e7c62a622060a502645b4ae10b7ed160294583d3c33"
+      },
+      {
+        "name": "map-pin",
+        "sha256": "682a0c629579341afd218175d96489747a35bf0a75e3177616f819320cb69f67"
+      },
+      {
+        "name": "message-circle",
+        "sha256": "b91882d50b30e3884b289a51c2f1134464844fbd5bb5f61633d2d068db2d57a0"
+      },
+      {
+        "name": "messages",
+        "sha256": "eb7841d7719e9b16fdad1810dbe15ddc9f247f69becbb5ee13299e46bd997c84"
+      },
+      {
+        "name": "microphone",
+        "sha256": "21aacc5c6cc7b28b03a179053a7aaf69eb6d23d333ab4b40504f2873fb07a5f8"
+      },
+      {
+        "name": "movie",
+        "sha256": "c060349bd89cf44c1542de982d06c61f81240868a336eb5ce670d048f564554f"
+      },
+      {
+        "name": "music",
+        "sha256": "afd2fe98e580e1d4e9bf45d88165894b0e683e9141f63c312585d778b73d02c5"
+      },
+      {
+        "name": "notebook",
+        "sha256": "7230c7c41218940e2d1521ac29f0aacb196329dbfa6752eb07bede82169a3990"
+      },
+      {
+        "name": "package",
+        "sha256": "b489f941e44e8208631608bdcd0ec89d252455ada2f29cf0318fa14abfb86c69"
+      },
+      {
+        "name": "palette",
+        "sha256": "d9c39bf1ce00d10694015d9d736ae6006a7e7b2f0df776dd206e1058a9a700a7"
+      },
+      {
+        "name": "photo",
+        "sha256": "67d9b3ec02867e98ad17739380919a2d82287d15d3463161f450e17047ed319b"
+      },
+      {
+        "name": "pig-money",
+        "sha256": "13f101b354402e8df14ef1be3cf1277684a072137ed4900edda939edefd9412e"
+      },
+      {
+        "name": "plane",
+        "sha256": "7cb6e6178e90920f87b2bba22886921457ffbb84a5719db8b870d72d03803bf7"
+      },
+      {
+        "name": "planet",
+        "sha256": "f5deee6a208d67e2163b206ccf88670d35bc2a0aca98011a28e558327a167754"
+      },
+      {
+        "name": "plant-2",
+        "sha256": "1919d015b66b571c01d85361aafda26d1abcd88353135e400e1e1e4af7db7c3c"
+      },
+      {
+        "name": "plug",
+        "sha256": "b6df03adcf16818c31c1a96f1006557634da1f5a2aa4846cdc6dbcba713e3c6b"
+      },
+      {
+        "name": "puzzle",
+        "sha256": "b51d3edacb69bde36e0914ba64998fe47875f25f0699a599a5407adf3ba6d14c"
+      },
+      {
+        "name": "qrcode",
+        "sha256": "386c3e0e05c0fc80ecc36b754a644e2ed495c3722f0aeba0f086a15e291d8a4c"
+      },
+      {
+        "name": "radio",
+        "sha256": "00acf7fb7ce7af1dbea0d62e7274fcf5e134216b25edc276df0275edbfcd8773"
+      },
+      {
+        "name": "receipt",
+        "sha256": "9110d664d9a6d5aa81041e106e495ca29ea29424df2a0f9be26404fb50cb10d2"
+      },
+      {
+        "name": "receipt-refund",
+        "sha256": "0ddb88e0364c46bf05035b548ee7f11642c330fb674eb2d383f96982fa85ff9d"
+      },
+      {
+        "name": "repeat",
+        "sha256": "c018576502a5f4c2e3738d5537ef514ceb88ace4ae3b3b85ce98fe7eebcbc711"
+      },
+      {
+        "name": "report-analytics",
+        "sha256": "eb2c36226f43949a8ce75413d6b4ce8a1d84d23631fe2e20c6f119e4366252ce"
+      },
+      {
+        "name": "rocket",
+        "sha256": "ea5f8a0922691d4c36d56c61c6e5c1dab1ae11ff5856a1036430f26d0eb23214"
+      },
+      {
+        "name": "route",
+        "sha256": "383e4d1290ea525748767973343b3f20ea979b3638f9b3896b417e032c6ebe6f"
+      },
+      {
+        "name": "route-2",
+        "sha256": "4c4ce635285bb37b109e9764cc66325ca42055c118a97ae754781bb289d59910"
+      },
+      {
+        "name": "scan",
+        "sha256": "4e64112a98f6efa9ddfcb6486aa12d25867cf9d7eb13e51c8608d8bc12740586"
+      },
+      {
+        "name": "school",
+        "sha256": "8817457400645445cc584dcb45315cc01c7bd0dd07e1ac9791fd176328d29edb"
+      },
+      {
+        "name": "scissors",
+        "sha256": "a2e396becae03724ba9272489b293c94f96d3583e7a2c16c79c139cfe8427659"
+      },
+      {
+        "name": "search",
+        "sha256": "3dd53b9606283dfa0adcb0b10a7d9a4432369d4bebcfacf67f80fbe358381c34"
+      },
+      {
+        "name": "send",
+        "sha256": "b4e589d1ed7ad6f20045017728cf8d4504db5870b38214deefa03ed01fea1f57"
+      },
+      {
+        "name": "settings",
+        "sha256": "ef9cf42d822c00b4fad5bc5eeceddd4e1ec3774bb7ddd09891d0fba274bc3e95"
+      },
+      {
+        "name": "shield-check",
+        "sha256": "7d12a28bb5b8ba69445a94118aa96b57a513f8d45e23974665f25c597eaccc30"
+      },
+      {
+        "name": "shield-lock",
+        "sha256": "9fc37c3b11a297a81371652d89407b2bd19c17dfdffe0ff500d3426d96236d13"
+      },
+      {
+        "name": "shopping-bag",
+        "sha256": "6fa8439d3f0fbe988cbf906da5b6cf865f8d1bd683eeed9894d68c57bec14aeb"
+      },
+      {
+        "name": "shopping-cart",
+        "sha256": "01e6dbbc101a0e84c59831992b97838cf932f3007d6fa0dbc8c0c954fcbec233"
+      },
+      {
+        "name": "sitemap",
+        "sha256": "42405d5439295b654dcc699790f74968c579d4b1982664e2c556ad1bc743251c"
+      },
+      {
+        "name": "speakerphone",
+        "sha256": "a742c28463202e453e7bdf342fce6032451005734f85356b86f5ceb51481feba"
+      },
+      {
+        "name": "stethoscope",
+        "sha256": "56338f40a275333f74f1b59f84e5dbe77818aabd7b243584c8b6f54681be7982"
+      },
+      {
+        "name": "table",
+        "sha256": "4e5361445165142336fe34566d43906a323765906bfc3bb26571121807ace3f7"
+      },
+      {
+        "name": "target",
+        "sha256": "1874e1180c0fbe2a570c59986adfbed4e4eb9e839f7dd100bc871e08f5aabb1d"
+      },
+      {
+        "name": "telescope",
+        "sha256": "d2ab005c08cc123e0c67de981c6a4986766e93ddf6118de5dc58daaaf130d5b4"
+      },
+      {
+        "name": "terminal",
+        "sha256": "f654db64a14e86aee1b3e39e707907e83431ad1671fa2844d0496955b512a225"
+      },
+      {
+        "name": "test-pipe",
+        "sha256": "a5c9c02ec36e4582ef9145e4fb1d8afc714963b73d53b4ab904ef4fb341d5015"
+      },
+      {
+        "name": "ticket",
+        "sha256": "1701090b4772a41cda13bb58289b1785cec488e3c8783ad890e88fa39da24340"
+      },
+      {
+        "name": "tool",
+        "sha256": "f812b6a05026dd0b242533272ff99f3e05eab6fc647063d8a322707c25558e6e"
+      },
+      {
+        "name": "tools-kitchen",
+        "sha256": "4152b5fead9012714d69dfdcb988ee6e75ddf68849b76fcf71467e426a076f37"
+      },
+      {
+        "name": "tools-kitchen-2",
+        "sha256": "9d106a7352a9086cc72c5d5525e85572a6505001031e52aa9949918d5eebabe3"
+      },
+      {
+        "name": "topology-star-3",
+        "sha256": "2efd030918ca6926432855703b7267603a0c10d7502e07d80e417b6806b3ba24"
+      },
+      {
+        "name": "trophy",
+        "sha256": "1c1168d9b0656d1c19797a199e19bd5f2bda185f818b46d67ce6f66db0ece666"
+      },
+      {
+        "name": "truck",
+        "sha256": "3d29f880c0fb71ae772e5354bc2f1e116de91060ee1d8039e912d1792bd2b27a"
+      },
+      {
+        "name": "user",
+        "sha256": "63554429f551522ea578a9bf72d1d350bd0ffdb8ede3af92a05e92d71cab6b9c"
+      },
+      {
+        "name": "user-check",
+        "sha256": "bbbea83573b85525e35cac636928032ba27d830bee9cbfd229319bff5ccf2251"
+      },
+      {
+        "name": "user-plus",
+        "sha256": "a4f4b02f49405ab616511ccf30def5f511e211ddeaba9cb023e510ac914503a8"
+      },
+      {
+        "name": "users",
+        "sha256": "a9892bcba1adad20184c0b50641b1a96a56fb9ef5135ff60462c664874021cc3"
+      },
+      {
+        "name": "video",
+        "sha256": "dd2b56843d8eb7cca074e63a74f6394a787f55bc2f19d0500d2c496d877bd567"
+      },
+      {
+        "name": "wallet",
+        "sha256": "1cfac2833c5f65a9e3d3309ccc21c6c1cebec4fabf49a30ab75987cf09fb9a38"
+      },
+      {
+        "name": "wash-machine",
+        "sha256": "ac42d3b56992993e10c9f1b3d865ba46723f768d99e921e5f860979a3afbd084"
+      },
+      {
+        "name": "world",
+        "sha256": "d0dfc538f966d03b72a9fe872fbb567d5e84db9d24b95af032305404ef71f587"
+      }
+    ]
+  },
+  {
+    "name": "iconoir",
+    "repo": "iconoir-icons/iconoir",
+    "revision": "962357a0ee20d44acc1dca2383d067feffe67029",
+    "prefix": "icons/regular/",
+    "license": "MIT",
+    "licensePath": "/icons/iconoir/LICENSE.txt",
+    "icons": [
+      {
+        "name": "bell",
+        "sha256": "ca69a7e35657312381b90b0d45174fd8ffa43614120eb8ba49d3f71a049e392d"
+      },
+      {
+        "name": "book",
+        "sha256": "0d19a68dd66e61f0784e821f86a12b7a8707114d8a5689d7fafe0e099a64e364"
+      },
+      {
+        "name": "box",
+        "sha256": "aa0d7d37e61310ea84289eb624142bf7e1e656c37ee6a1ee4af6222ea167d15c"
+      },
+      {
+        "name": "calendar",
+        "sha256": "8ae89c6d771ae5371a978ee43b348c44313109780510ca9195a7fe989d24adbb"
+      },
+      {
+        "name": "cart",
+        "sha256": "4cba3e3edd7c069ed02cc28adf64c3cd1a915e58498162c2e42380c2b4a5caa7"
+      },
+      {
+        "name": "credit-card",
+        "sha256": "3d3b6647ca7d00591ea70a39b283ce1bf5f5010d9fb1dbffec42ef65f96654a0"
+      },
+      {
+        "name": "dashboard",
+        "sha256": "1a434fc9bffd3da889f584258dbd26a2d3721255555e7e7ed6ae53ab5d27a58b"
+      },
+      {
+        "name": "database",
+        "sha256": "98e4d50c9a868f9e1f3e184faf92cf739a0479b0462c0cded514912be17f45ba"
+      },
+      {
+        "name": "fingerprint",
+        "sha256": "b7d7167e5108b8ade494b64034286914b4b28ef40a4e90cb143a01a0f1a74baa"
+      },
+      {
+        "name": "graph-up",
+        "sha256": "88124635d5fa4ed652af9255b909838eae90c7fcf823c3c3f4b23821160979b1"
+      },
+      {
+        "name": "home",
+        "sha256": "360a96ce45f0405be951a4655a55df1576fa2aa4b040d64d17180cb6648b4b11"
+      },
+      {
+        "name": "journal",
+        "sha256": "60010e3b21ed98f1614f8f80fe84e6196b866d82806a6fe4770db1d225769c15"
+      },
+      {
+        "name": "key",
+        "sha256": "54efe17feba7bcdf9f2f6384909bc3662560f994e3142032d4133d861bab4437"
+      },
+      {
+        "name": "lock",
+        "sha256": "e5cb326521f8f4964b27b5ef119f44b7497b20c423dc4647d1cf62177d0679a5"
+      },
+      {
+        "name": "map",
+        "sha256": "c2711d6cefc8277b6efe7db608f91d94ff0e1bff7833e904ba7bdee49bcc88e8"
+      },
+      {
+        "name": "reports",
+        "sha256": "bd32a12666a580b8d10bc5e77c19b92220fc840d32e12e645e45a415410202ff"
+      },
+      {
+        "name": "search",
+        "sha256": "86e877c0a40c0e4a0055c580bd7aef2424a269658b669af159fb8d340afae7f2"
+      },
+      {
+        "name": "settings",
+        "sha256": "437c253a1c11ff214c490c766f2a3cdcf8547399fd0be48a7d222bf0703aefb5"
+      },
+      {
+        "name": "shield-check",
+        "sha256": "fcd0f7aaf49be11d89eccf2486165e0bdfafb0b9c7d05f659f084bbf1dbe8823"
+      },
+      {
+        "name": "task-list",
+        "sha256": "5700f48d763355bf15c7258e05a0daaa9de4308505fb2f967811288ac8234cc6"
+      },
+      {
+        "name": "user",
+        "sha256": "53e6505904aafd797da6ea432aa148b7858104454e4e9b65895a879e74451ea3"
+      },
+      {
+        "name": "wallet",
+        "sha256": "d2609a4dc57df6071d9124754eeb3ca9d49788efda838583bba0a854507229b1"
+      }
+    ]
+  }
+]

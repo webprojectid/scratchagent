@@ -6,6 +6,7 @@ test("project identity recognizes Indonesian and English product titles without 
   for (const [title, category] of [
     ["Aplikasi HabitKu", "habit"], ["Sistem Klinik Sehat", "health"],
     ["Keuangan Keluarga", "finance"], ["Learning platform", "education"],
+    ["Celengan Digital", "finance"], ["FutsalGo", "sports"],
     ["Booking Hotel", "travel"], ["Kopi Nusantara", "food"],
     ["Toko Online", "commerce"], ["Inventori Gudang", "logistics"],
     ["Sewa Rumah", "property"], ["Password manager", "security"],

@@ -1,208 +1,34 @@
 "use client";
 import { uiText as ui, useUiLanguage } from "@/lib/ui-text";
 
-import { memo, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Background,
   BackgroundVariant,
-  BaseEdge,
   Controls,
-  Handle,
-  Position,
   ReactFlow,
-  getBezierPath,
   type Edge,
-  type EdgeProps,
   type Node,
+  type ReactFlowInstance,
 } from "@xyflow/react";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
-  Check,
   ChevronLeft,
   ChevronRight,
-  Circle,
-  FolderKanban,
-  ListChecks,
   Maximize2,
   Minimize2,
-  Network,
   Pencil,
-  Search,
   Trash2,
   X,
 } from "lucide-react";
 import type { Feature, Plan, Task } from "@/lib/types";
+import { PhaseIcon } from "./stock-icon";
+import { roadmapNodeTypes, roadmapEdgeTypes, type MapNodeData } from "./roadmap-node";
+import { roadmapLayout, roadmapRowPositions } from "@/lib/roadmap-layout";
 
-type MapNodeData = {
-  kind: "root" | "feature" | "sub-features" | "tasks";
-  label: string;
-  feature?: Feature;
-  items?: { label: string; status?: Task["status"]; ref?: string }[];
-  onTaskSelect?: (ref: string) => void;
-  total?: number;
-  phase?: number;
-  done?: number;
-  generating?: boolean;
-};
-
-function MapNode({ data }: { data: MapNodeData }) {
+function FeaturePanel({ plan, index, onClose, onNav, isPro, onDeleteFeature, onDeleteSubFeature }: { plan: Plan; index: number; onClose: () => void; onNav: (direction: number) => void; isPro?: boolean; onDeleteFeature?: (slug: string, title: string) => void; onDeleteSubFeature?: (slug: string, title: string) => void }) {
   useUiLanguage();
-  // Bahasa visual peta versi Scratch Agent sendiri (sengaja menjauh dari
-  // referensi awal): rel status di sisi kiri kartu (hijau=selesai, amber=berjalan,
-  // abu=belum), angka fase besar transparan di pojok, dan trail cahaya di garis.
-  if (data.kind === "root") {
-    return (
-      <div className="relative w-56 overflow-hidden rounded-2xl border border-white/[.08] bg-[#1C2330] p-4 pl-5 shadow-lg shadow-black/30">
-        <span className="absolute inset-y-2 left-0 w-[3px] rounded-full bg-[#74FA6A]" />
-        <Handle type="source" position={Position.Right} className="!size-2.5 !border-2 !border-[#14161A] !bg-[#74FA6A]" />
-        <div className="flex items-center gap-2.5">
-          <span className="grid size-8 shrink-0 place-items-center rounded-xl bg-[#74FA6A]/12 text-[#74FA6A]">
-            <Network size={15} />
-          </span>
-          <b className="text-[13px] leading-tight text-slate-50">{data.label}</b>
-        </div>
-        <p className="mt-2 text-[10px] font-medium text-slate-500">{ui("Perencanaan")}</p>
-      </div>
-    );
-  }
-
-  if (data.kind === "feature") {
-    const pct = data.total ? Math.round(((data.done ?? 0) / data.total) * 100) : 0;
-    const status = data.feature?.status ?? "direncanakan";
-    const rail = status === "selesai" ? "bg-[#74FA6A]" : status === "berjalan" ? "bg-amber-400" : "bg-white/20";
-    return (
-      <div className="relative flex h-[112px] w-60 cursor-pointer flex-col overflow-hidden rounded-2xl border border-white/[.08] bg-[#1C2330] p-3.5 pl-4 shadow-lg shadow-black/30 transition hover:border-[#74FA6A]/40">
-        <span className={`absolute inset-y-2 left-0 w-[3px] rounded-full ${rail}`} />
-        <span className="pointer-events-none absolute right-2.5 top-1.5 select-none font-mono text-[28px] font-bold leading-none text-white/[.05]">
-          {String(data.phase ?? 0).padStart(2, "0")}
-        </span>
-        <Handle type="target" position={Position.Left} className="!size-2 !border-2 !border-[#14161A] !bg-slate-500" />
-        <Handle type="source" position={Position.Right} className="!size-2 !border-2 !border-[#14161A] !bg-slate-500" />
-        <div className="flex min-w-0 items-center gap-2">
-          <span className="grid size-6 shrink-0 place-items-center rounded-lg bg-white/[.05] text-slate-400">
-            <FolderKanban size={12} />
-          </span>
-          <b title={data.label} className="min-w-0 flex-1 truncate text-[12px] leading-snug text-slate-100">{data.label}</b>
-        </div>
-        <div className="mt-auto flex items-center justify-between pt-2.5 text-[10px] text-slate-500">
-          <span>{ui({ direncanakan: "Planned", berjalan: "In progress", selesai: "Done" }[status])}</span>
-          <span className="font-mono tabular-nums">{data.done}/{data.total}</span>
-        </div>
-        <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-white/[.06]">
-          <div className="h-full rounded-full bg-[#74FA6A]/70 transition-all duration-500" style={{ width: `${pct}%` }} />
-        </div>
-      </div>
-    );
-  }
-
-  const taskNode = data.kind === "tasks";
-  return (
-    <div className="relative flex h-[148px] w-56 cursor-pointer flex-col rounded-2xl border border-white/[.08] bg-[#1C2330] p-3 shadow-lg shadow-black/30 transition hover:border-white/[.16]">
-      <Handle type="target" position={Position.Left} className="!size-2 !border-2 !border-[#14161A] !bg-slate-600" />
-      {!taskNode && <Handle type="source" position={Position.Right} className="!size-2 !border-2 !border-[#14161A] !bg-slate-600" />}
-      <div className="mb-2 flex items-center justify-between text-[9px] font-semibold tracking-wide text-slate-500">
-        <span className="flex items-center gap-1"><ListChecks size={10} />{taskNode ? "TASKS" : ui("Sub fitur").toUpperCase()}</span>
-        <span className="font-mono tabular-nums">{data.done ?? 0}/{data.total ?? 0}</span>
-      </div>
-      {taskNode && (!data.items || data.items.length === 0) && data.generating ? (
-        <div className="space-y-1.5">
-          {[0, 1, 2].map((i) => (
-            <div key={i} className="flex items-center gap-1.5 rounded-lg border border-white/[.05] bg-white/[.02] px-2 py-1">
-              <div className="size-1.5 animate-pulse rounded-full bg-white/20" />
-              <div className="h-1.5 w-20 animate-pulse rounded bg-white/10" />
-            </div>
-          ))}
-          <p className="pt-0.5 text-center text-[9px] text-slate-500">Menyusun...</p>
-        </div>
-      ) : (
-        <div className="space-y-1">
-          {data.items?.slice(0, 3).map((item, index) => (
-            <button type="button" key={`${item.label}-${index}`} title={item.label} onClick={taskNode ? (event) => { event.stopPropagation(); if (item.ref) data.onTaskSelect?.(item.ref); } : undefined} className="flex w-full min-w-0 max-w-full items-center gap-1.5 overflow-hidden rounded-lg border border-white/[.05] bg-white/[.02] px-2 py-1 text-left">
-              {item.status === "done" ? <Check size={9} className="shrink-0 text-emerald-400" /> : item.status === "in_progress" ? <span className="size-1.5 shrink-0 animate-spin rounded-full border border-amber-400 border-r-transparent" /> : taskNode ? <Circle size={7} className="shrink-0 text-slate-600" /> : <span className="size-1 shrink-0 rounded-full bg-slate-600" />}
-              <span className={`min-w-0 flex-1 truncate text-[10px] ${item.status === "done" ? "text-slate-600 line-through" : "text-slate-300"}`}>{item.label}</span>
-            </button>
-          ))}
-        </div>
-      )}
-      <div className="mt-auto pt-1.5 text-right text-[9px] text-slate-500">{ui("Lihat semua (")}{data.total ?? 0})
-      </div>
-    </div>
-  );
-}
-
-const nodeTypes = { mapNode: MapNode };
-
-// Light trail pada konektor: segmen cahaya putih->hijau meluncur dari judul ke
-// tasks, looping. Animasi CSS murni (stroke-dashoffset, GPU) + pathLength={100}
-// supaya trail selalu menyapu penuh apa pun panjang garisnya. Delay tiap edge
-// dibedakan dari hash id biar ngalir organik, tidak serempak.
-const TRAIL_CSS = `
-@keyframes scratchTrail {
-  from { stroke-dashoffset: 0; }
-  to { stroke-dashoffset: -100; }
-}
-.edge-trail { animation: scratchTrail 1.3s linear infinite; }
-@media (prefers-reduced-motion: reduce) { .edge-trail { animation: none; opacity: 0; } }`;
-
-const AnimatedFlowEdge = memo(function AnimatedFlowEdge({
-  id,
-  sourceX,
-  sourceY,
-  targetX,
-  targetY,
-  sourcePosition,
-  targetPosition,
-  style,
-}: EdgeProps) {
-  useUiLanguage();
-  const [path] = getBezierPath({ sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition });
-  const gradId = `trail-grad-${id}`;
-  let hash = 0;
-  for (const ch of id) hash = (hash * 31 + ch.charCodeAt(0)) % 1000;
-  const delay = (-(hash / 1000) * 1.3).toFixed(2);
-  const gradient = `url(#${gradId})`;
-  const dash = "10 90";
-  return (
-    <>
-      <defs>
-        <linearGradient id={gradId} gradientUnits="userSpaceOnUse" x1={sourceX} y1={sourceY} x2={targetX} y2={targetY}>
-          <stop offset="0%" stopColor="#FFFFFF" />
-          <stop offset="100%" stopColor="#74FA6A" />
-        </linearGradient>
-      </defs>
-      <BaseEdge path={path} style={style} />
-      {/* glow lebar transparan di bawah trail inti, murah tanpa filter blur */}
-      <path
-        d={path}
-        pathLength={100}
-        fill="none"
-        stroke={gradient}
-        strokeWidth={3.4}
-        strokeLinecap="round"
-        strokeDasharray={dash}
-        opacity={0.3}
-        className="edge-trail"
-        style={{ animationDelay: `${delay}s` }}
-      />
-      <path
-        d={path}
-        pathLength={100}
-        fill="none"
-        stroke={gradient}
-        strokeWidth={1.8}
-        strokeLinecap="round"
-        strokeDasharray={dash}
-        className="edge-trail"
-        style={{ animationDelay: `${delay}s` }}
-      />
-    </>
-  );
-});
-
-const edgeTypes = { flow: AnimatedFlowEdge };
-
-function FeaturePanel({ plan, index, onClose, onNav, isPro, onDeleteFeature, onDeleteSubFeature, onTaskSelect }: { plan: Plan; index: number; onClose: () => void; onNav: (direction: number) => void; isPro?: boolean; onDeleteFeature?: (slug: string, title: string) => void; onDeleteSubFeature?: (slug: string, title: string) => void; onTaskSelect: (ref: string) => void }) {
-  useUiLanguage();
+  const reducedMotion = useReducedMotion();
   const [expanded, setExpanded] = useState(false);
   const feature = plan.features[index];
 
@@ -224,17 +50,17 @@ function FeaturePanel({ plan, index, onClose, onNav, isPro, onDeleteFeature, onD
 
   return (
     <motion.aside
-      initial={{ x: "-100%" }}
-      animate={{ x: 0 }}
-      exit={{ x: "-100%" }}
-      transition={{ type: "spring", damping: 28 }}
+      initial={{ x: reducedMotion ? 0 : "-100%", opacity: 0 }}
+      animate={{ x: 0, opacity: 1 }}
+      exit={{ x: reducedMotion ? 0 : "-100%", opacity: 0 }}
+      transition={{ type: "tween", duration: reducedMotion ? 0 : 0.38, ease: [0.22, 1, 0.36, 1] }}
       className={`absolute inset-y-0 left-0 z-20 w-full min-w-0 overflow-x-hidden overflow-y-auto break-words border-r border-white/[.06] bg-[#0C0E10] shadow-xl shadow-black/30 ${expanded ? "sm:w-[600px] sm:max-w-[85vw]" : "sm:w-[430px] sm:max-w-[45vw]"}`}
     >
       <div className="sticky top-0 z-10 flex h-12 items-center justify-between border-b border-white/[.06] bg-[#0C0E10] px-3">
         <div className="flex items-center gap-1">
-          <button onClick={() => onNav(-1)} disabled={index === 0} className="grid size-7 place-items-center rounded border border-white/10 text-slate-400 transition hover:border-[#74FA6A]/60 hover:text-[#74FA6A] disabled:opacity-30" aria-label={ui("Previous phase")}><ChevronLeft size={14} /></button>
+          <button onClick={() => onNav(-1)} disabled={index === 0} className="grid size-7 place-items-center rounded border border-white/10 text-slate-400 transition hover:border-white/30 hover:text-slate-200 disabled:opacity-30" aria-label={ui("Previous phase")}><ChevronLeft size={14} /></button>
           <span className="min-w-12 text-center text-[11px] text-slate-300">{index + 1} / {plan.features.length}</span>
-          <button onClick={() => onNav(1)} disabled={index === plan.features.length - 1} className="grid size-7 place-items-center rounded border border-white/10 text-slate-400 transition hover:border-[#74FA6A]/60 hover:text-[#74FA6A] disabled:opacity-30" aria-label={ui("Next phase")}><ChevronRight size={14} /></button>
+          <button onClick={() => onNav(1)} disabled={index === plan.features.length - 1} className="grid size-7 place-items-center rounded border border-white/10 text-slate-400 transition hover:border-white/30 hover:text-slate-200 disabled:opacity-30" aria-label={ui("Next phase")}><ChevronRight size={14} /></button>
         </div>
         <div className="flex items-center gap-1 text-slate-500">
           <button disabled title={ui("Coming soon")} className="grid size-8 place-items-center rounded transition hover:bg-white/5 disabled:opacity-40" aria-label={ui("Revise phase")}><Pencil size={14} /></button>
@@ -245,13 +71,13 @@ function FeaturePanel({ plan, index, onClose, onNav, isPro, onDeleteFeature, onD
             className="grid size-8 place-items-center rounded transition hover:bg-white/5 hover:text-rose-400 disabled:opacity-40 disabled:hover:text-slate-500"
             aria-label={ui("Hapus fitur")}
           ><Trash2 size={14} /></button>
-          <button className="hidden size-8 place-items-center rounded transition hover:bg-white/5 hover:text-[#74FA6A] sm:grid" onClick={() => setExpanded(value => !value)} aria-expanded={expanded} aria-label={expanded ? ui("Collapse phase panel") : ui("Expand phase panel")}>{expanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />}</button>
-          <button onClick={onClose} className="grid size-8 place-items-center rounded transition hover:bg-white/5 hover:text-[#74FA6A]" aria-label={ui("Tutup")}><X size={15} /></button>
+          <button className="hidden size-8 place-items-center rounded transition hover:bg-white/5 hover:text-slate-200 sm:grid" onClick={() => setExpanded(value => !value)} aria-expanded={expanded} aria-label={expanded ? ui("Collapse phase panel") : ui("Expand phase panel")}>{expanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />}</button>
+          <button onClick={onClose} className="grid size-8 place-items-center rounded transition hover:bg-white/5 hover:text-slate-200" aria-label={ui("Tutup")}><X size={15} /></button>
         </div>
       </div>
-      <div data-feature-panel className="p-4 transition-[width]">
+      <div data-feature-panel className="p-4 pb-8">
         <div className="flex items-center gap-2">
-          <Search size={15} className="shrink-0 text-slate-300" />
+          <PhaseIcon phase={feature} size={18} className="shrink-0 text-slate-300" />
           <h2 className="text-sm font-bold text-white">{feature.title}</h2>
         </div>
         <p className="mt-2 text-[11px] leading-4 text-slate-400">{feature.description}</p>
@@ -298,26 +124,13 @@ function FeaturePanel({ plan, index, onClose, onNav, isPro, onDeleteFeature, onD
                     ><Trash2 size={9} /></button>
                   </span>
                 </div>
-                {subTasks.length > 0 && <p className="mt-0.5 truncate text-[8px] text-slate-500">{subTasks[0].title}</p>}
+                {subFeature.tujuan && <p className="mt-1 text-[10px] leading-4 text-slate-400">{subFeature.tujuan}</p>}
               </div>
             );
           })}
         </div>
 
-        <div className="mt-5 rounded-lg border border-white/[.06] bg-[#0C0E10] p-2.5">
-          <div className="flex items-center justify-between">
-            <b className="text-[10px] text-slate-200">Task ({tasks.length})</b>
-          </div>
-          <div className="mt-2 space-y-1.5">
-            {tasks.map((task) => (
-              <button type="button" onClick={() => onTaskSelect(task.ref)} key={task.ref} className="flex w-full items-center gap-1.5 rounded px-1 py-2 text-left text-[10px] hover:bg-white/5">
-                {task.status === "done" ? <Check size={9} className="shrink-0 text-emerald-400" /> : task.status === "in_progress" ? <span className="size-2 shrink-0 animate-spin rounded-full border border-amber-400 border-r-transparent" /> : <Circle size={8} className="shrink-0 text-slate-500" />}
-                <span className={`min-w-0 flex-1 truncate ${task.status === "done" ? "line-through text-slate-500" : "text-slate-200"}`}>{task.title}</span>
-                <span className={`shrink-0 ${task.status === "in_progress" ? "text-amber-400" : "text-slate-500"}`}>{ui({done: "Done", in_progress: "In progress", failed: "Failed", pending: "Not started"}[task.status])}</span>
-              </button>
-            ))}
-          </div>
-        </div>
+
       </div>
     </motion.aside>
   );
@@ -326,28 +139,29 @@ function FeaturePanel({ plan, index, onClose, onNav, isPro, onDeleteFeature, onD
 
 function RoadmapTaskPanel({ plan, taskRef, onSelect, onClose }: { plan: Plan; taskRef: string; onSelect: (ref: string) => void; onClose: () => void }) {
   useUiLanguage();
+  const reducedMotion = useReducedMotion();
   const panel = useRef<HTMLElement>(null);
   useEffect(() => {
     const trigger = document.activeElement as HTMLElement | null;
-    panel.current?.focus();
-    return () => { if (trigger?.isConnected) trigger.focus(); };
+    panel.current?.focus({ preventScroll: true });
+    return () => { if (trigger?.isConnected) trigger.focus({ preventScroll: true }); };
   }, []);
   const [expanded, setExpanded] = useState(false);
   const entry = plan.features.flatMap(feature => feature.subFeatures.flatMap(sub => sub.tasks.map(task => ({ feature, sub, task })))).find(entry => entry.task.ref === taskRef);
   if (!entry) return null;
   const { task, feature, sub } = entry;
-  return <motion.aside ref={panel} tabIndex={-1} data-task-panel aria-label={ui("Task details")} onKeyDown={event => { if (event.key === "Escape") { event.stopPropagation(); onClose(); } }} initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ type: "spring", damping: 28 }} className={`absolute inset-y-0 right-0 z-30 w-full min-w-0 overflow-x-hidden overflow-y-auto break-words border-l border-white/[.06] bg-[#0C0E10] shadow-xl shadow-black/30 ${expanded ? "sm:w-[600px] sm:max-w-[85vw]" : "sm:w-[430px] sm:max-w-[45vw]"}`}>
+  return <motion.aside ref={panel} tabIndex={-1} data-task-panel aria-label={ui("Task details")} onKeyDown={event => { if (event.key === "Escape") { event.stopPropagation(); onClose(); } }} initial={{ x: reducedMotion ? 0 : "100%", opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: reducedMotion ? 0 : "100%", opacity: 0 }} transition={{ type: "tween", duration: reducedMotion ? 0 : 0.38, ease: [0.22, 1, 0.36, 1] }} className={`absolute inset-y-0 right-0 z-30 w-full min-w-0 overflow-x-hidden overflow-y-auto break-words border-l border-white/[.06] bg-[#0C0E10] shadow-xl shadow-black/30 ${expanded ? "sm:w-[600px] sm:max-w-[85vw]" : "sm:w-[430px] sm:max-w-[45vw]"}`}>
     <header className="sticky top-0 flex h-12 items-center justify-between border-b border-white/10 bg-[#0C0E10] px-4">
       <b className="text-xs">{ui("Task details")}</b>
       <div className="flex gap-1"><button className="hidden size-9 place-items-center rounded hover:bg-white/5 sm:grid" aria-label={expanded ? ui("Collapse task panel") : ui("Expand task panel")} aria-expanded={expanded} onClick={() => setExpanded(value => !value)}>{expanded ? <Minimize2 size={15}/> : <Maximize2 size={15}/>}</button><button className="grid size-9 place-items-center rounded hover:bg-white/5" aria-label={ui("Close task details")} onClick={onClose}><X size={15}/></button></div>
     </header>
     <div className="space-y-5 p-5">
-      <p className="font-mono text-xs text-[#74FA6A]">{task.ref}</p>
+      <p className="font-mono text-xs text-slate-200">{task.ref}</p>
       <h2 className="text-base font-semibold text-white">{task.title}</h2>
       <dl className="grid grid-cols-[90px_minmax(0,1fr)] gap-3 text-xs text-slate-300"><dt>{ui("Status")}</dt><dd>{ui(({ pending: "Belum dimulai", in_progress: "Dikerjakan", done: "Selesai", failed: "Gagal" })[task.status])}</dd><dt>{ui("Layer")}</dt><dd>{task.layer}</dd><dt>{ui("Phase")}</dt><dd>{feature.title}</dd><dt>{ui("Subfeature")}</dt><dd>{sub.title}</dd>{task.page && <><dt>{ui("Page")}</dt><dd>{task.page}</dd></>}</dl>
-      <section><h3 className="mb-2 text-xs font-semibold">{ui("Dependencies")}</h3>{task.deps.length ? task.deps.map(ref => <button key={ref} className="mr-2 rounded bg-white/5 px-3 py-2 font-mono text-xs text-[#74FA6A]" onClick={() => onSelect(ref)}>{ref}</button>) : <p className="text-xs text-slate-400">{ui("No dependencies")}</p>}</section>
+      <section><h3 className="mb-2 text-xs font-semibold">{ui("Dependencies")}</h3>{task.deps.length ? task.deps.map(ref => <button key={ref} className="mr-2 rounded bg-white/5 px-3 py-2 font-mono text-xs text-slate-200" onClick={() => onSelect(ref)}>{ref}</button>) : <p className="text-xs text-slate-400">{ui("No dependencies")}</p>}</section>
       {(task.lastFailReason || task.failReason) && <p className="text-xs text-rose-300">{task.lastFailReason || task.failReason}</p>}
-      <section><h3 className="mb-2 text-xs font-semibold">{ui("Tasks in this subfeature")}</h3><div className="space-y-2">{sub.tasks.map(item => <button key={item.ref} onClick={() => onSelect(item.ref)} aria-pressed={item.ref === taskRef} className={`block w-full whitespace-normal break-words rounded-lg px-3 py-3 text-left text-xs ${item.ref === taskRef ? "bg-[#74FA6A]/10 text-[#74FA6A]" : "bg-white/5 text-slate-300"}`}>{item.title}</button>)}</div></section>
+      <section><h3 className="mb-2 text-xs font-semibold">{ui("Tasks in this subfeature")}</h3><div className="space-y-2">{sub.tasks.map(item => <button key={item.ref} onClick={() => onSelect(item.ref)} aria-pressed={item.ref === taskRef} className={`block w-full whitespace-normal break-words rounded-lg px-3 py-3 text-left text-xs ${item.ref === taskRef ? "bg-white/10 text-slate-200" : "bg-white/5 text-slate-300"}`}>{item.title}</button>)}</div></section>
     </div>
   </motion.aside>;
 }
@@ -364,6 +178,24 @@ export function PlanMap({ plan, liveTasks, isPro, onRemoveStructure }: { plan: P
   const language = useUiLanguage();
   const [selected, setSelected] = useState<number | null>(null);
   const [taskRef, setTaskRef] = useState<string | null>(null);
+  const canvas = useRef<HTMLDivElement>(null);
+  const flow = useRef<ReactFlowInstance<Node<MapNodeData>, Edge> | null>(null);
+  useEffect(() => {
+    const element = canvas.current;
+    if (!element) return;
+    let width = element.clientWidth;
+    let height = element.clientHeight;
+    let frame = 0;
+    const observer = new ResizeObserver(() => {
+      if (width === element.clientWidth && height === element.clientHeight) return;
+      width = element.clientWidth;
+      height = element.clientHeight;
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => { void flow.current?.fitView({ padding: 0.12, duration: 0 }); });
+    });
+    observer.observe(element);
+    return () => { observer.disconnect(); cancelAnimationFrame(frame); };
+  }, []);
   const mergedPlan: Plan = useMemo(() => liveTasks
     ? { ...plan, features: plan.features.map((feature) => ({ ...feature, subFeatures: feature.subFeatures.map((subFeature) => ({ ...subFeature, tasks: subFeature.tasks.map((task) => ({ ...task, status: liveTasks[task.ref] ?? task.status })) })) })) }
     : plan, [plan, liveTasks]);
@@ -381,6 +213,8 @@ const structureKey = useMemo(
   () => JSON.stringify({
     f: displayPlan.features.map((f) => ({
       i: f.slug,
+      title: f.title,
+      icon: f.icon,
       s: f.status,
       sf: f.subFeatures.map((sf) => ({ t: sf.title, k: sf.tasks.map((t) => [t.ref, t.status]) })),
     })),
@@ -388,18 +222,18 @@ const structureKey = useMemo(
   [displayPlan],
 );
 const { nodes, edges } = useMemo(() => {
-    const rowGap = 230;
-    const top = 40;
+    const positions = roadmapRowPositions(displayPlan.features.length);
+    const dimensions = ({ width, height }: { width: number; height: number }) => ({ style: { width, height }, initialWidth: width, initialHeight: height });
     const nextNodes: Node<MapNodeData>[] = [{
       id: "root",
       type: "mapNode",
-      position: { x: 0, y: top + ((displayPlan.features.length - 1) * rowGap) / 2 },
-      data: { kind: "root", label: plan.title }, initialWidth: 224, initialHeight: 100,
+      position: positions.root,
+      data: { kind: "root", label: plan.title }, ...dimensions(roadmapLayout.root),
     }];
     const nextEdges: Edge[] = [];
 
     displayPlan.features.forEach((feature, featureIndex) => {
-      const y = top + featureIndex * rowGap;
+      const row = positions.rows[featureIndex];
       const tasks = feature.subFeatures.flatMap((subFeature) => subFeature.tasks);
       const done = tasks.filter((task) => task.status === "done").length;
       const isSubDone = (subFeature: Feature["subFeatures"][number]) =>
@@ -414,14 +248,14 @@ const { nodes, edges } = useMemo(() => {
       const taskId = `tasks-${featureIndex}`;
 
       nextNodes.push(
-        { id: featureId, type: "mapNode", position: { x: 440, y: y + 18 }, data: { kind: "feature", label: feature.title, feature, phase, done, total: tasks.length }, initialWidth: 240, initialHeight: 112 },
-        { id: subFeatureId, type: "mapNode", position: { x: 880, y }, initialWidth: 224, initialHeight: 148, data: { kind: "sub-features", label: ui("Sub fitur"), feature, items: feature.subFeatures.map((subFeature) => ({ label: subFeature.title, status: isSubDone(subFeature) ? "done" : isSubActive(subFeature) ? "in_progress" : "pending" })), total: feature.subFeatures.length, done: subsDone } },
-        { id: taskId, type: "mapNode", position: { x: 1280, y }, initialWidth: 224, initialHeight: 148, data: { kind: "tasks", label: ui("Tasks"), feature, items: tasks.map((task) => ({ label: task.title, status: task.status, ref: task.ref })), onTaskSelect: setTaskRef, total: tasks.length, done, generating: plan.status === "generating" } },
+        { id: featureId, type: "mapNode", position: row.feature, ...dimensions(roadmapLayout.feature), data: { kind: "feature", label: feature.title, feature, phase, done, total: tasks.length } },
+        { id: subFeatureId, type: "mapNode", position: row.subfeatures, ...dimensions(roadmapLayout.subfeatures), data: { kind: "sub-features", label: ui("Sub fitur"), feature, onOpen: () => setSelected(featureIndex), items: feature.subFeatures.map((subFeature) => ({ label: subFeature.title, status: isSubDone(subFeature) ? "done" : isSubActive(subFeature) ? "in_progress" : "pending" })), total: feature.subFeatures.length, done: subsDone } },
+        { id: taskId, type: "mapNode", position: row.tasks, ...dimensions(roadmapLayout.tasks), data: { kind: "tasks", label: ui("Tasks"), feature, onOpen: () => setTaskRef(tasks[0]?.ref ?? null), items: tasks.map((task) => ({ label: task.title, status: task.status, ref: task.ref })), onTaskSelect: setTaskRef, total: tasks.length, done, generating: plan.status === "generating" } },
       );
       nextEdges.push(
-        { id: `root-${featureId}`, source: "root", target: featureId, type: "flow", style: { stroke: "#6b7280", strokeWidth: 1.8 } },
-        { id: `${featureId}-${subFeatureId}`, source: featureId, target: subFeatureId, type: "flow", style: { stroke: "#7b8595", strokeWidth: 1.8 } },
-        { id: `${subFeatureId}-${taskId}`, source: subFeatureId, target: taskId, type: "flow", style: { stroke: "#7b8595", strokeWidth: 1.8 } },
+        { id: `root-${featureId}`, source: "root", target: featureId, type: "flow" },
+        { id: `${featureId}-${subFeatureId}`, source: featureId, target: subFeatureId, type: "flow" },
+        { id: `${subFeatureId}-${taskId}`, source: subFeatureId, target: taskId, type: "flow" },
       );
     });
 
@@ -430,14 +264,14 @@ const { nodes, edges } = useMemo(() => {
 }, [structureKey, plan.status, plan.title, language]);
 
   return (
-    <div className="relative h-[calc(100vh-150px)] min-h-[620px] bg-[#14161A]">
-      <style>{TRAIL_CSS}</style>
+    <div ref={canvas} className="relative h-[calc(100dvh-113px)] min-h-[360px] overflow-hidden bg-[#14161A] md:h-[calc(100dvh-65px)]">
       <ReactFlow
         nodes={nodes}
         edges={edges}
-        nodeTypes={nodeTypes}
-        edgeTypes={edgeTypes}
-        minZoom={0.25}
+        nodeTypes={roadmapNodeTypes}
+        edgeTypes={roadmapEdgeTypes}
+        onInit={instance => { flow.current = instance; }}
+        minZoom={0.15}
         maxZoom={1.5}
         fitView
         fitViewOptions={{ padding: 0.12 }}
@@ -448,7 +282,7 @@ const { nodes, edges } = useMemo(() => {
           } else if (feature) setSelected(displayPlan.features.findIndex((candidate) => candidate.slug === feature.slug));
         }}
       >
-        <Background variant={BackgroundVariant.Dots} gap={18} size={1.2} color="#282C33" />
+        <Background variant={BackgroundVariant.Dots} gap={18} size={1.35} color="#3B3B3B" />
         <Controls showInteractive={false} />
       </ReactFlow>
       <AnimatePresence>
@@ -457,7 +291,6 @@ const { nodes, edges } = useMemo(() => {
           <FeaturePanel
             plan={displayPlan}
             index={selected}
-            onTaskSelect={setTaskRef}
             onClose={() => setSelected(null)}
             isPro={isPro}
             onDeleteFeature={(slug, title) => {

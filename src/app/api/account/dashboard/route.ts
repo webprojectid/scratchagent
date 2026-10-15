@@ -5,7 +5,8 @@ import { dashboardDays } from "@/lib/account-dashboard";
 export async function GET(request: Request) {
   try {
     const { user, error } = await accountRequest(request); if (error) return error;
-    const [rows, settings] = await Promise.all([dashboardActivity(user.userId), getAccountSettings(user.userId)]);
+    const settings = await getAccountSettings(user.userId);
+    const rows = await dashboardActivity(user.userId, settings.display.timezone);
     return NextResponse.json({ days: dashboardDays(rows, settings.display.timezone), timezone: settings.display.timezone }, { headers: { "Cache-Control": "private, no-store" } });
   } catch (error) { return accountError(error); }
 }

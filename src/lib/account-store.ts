@@ -89,13 +89,13 @@ export async function listActivity(userId: string): Promise<ActivityItem[]> {
   const rows = await getDb().select().from(accountActivity).where(and(eq(accountActivity.userId, userId), ne(accountActivity.kind, "site_visit"))).orderBy(desc(accountActivity.createdAt)).limit(100);
   return rows.map(row => ({ ...row, readAt: row.readAt?.toISOString() ?? null, createdAt: row.createdAt.toISOString() }));
 }
-export async function dashboardActivity(userId: string) {
-  const since = new Date(Date.now() - 32 * 86400_000);
+export async function dashboardActivity(userId: string, timezone = "UTC") {
+  const since = new Date(Date.now() - 367 * 86400_000);
   if (memoryMode()) return Array.from(memory.activity.values()).filter(row => row.userId === userId && Date.parse(row.createdAt) >= since.getTime()).map(row => ({ kind: row.kind, createdAt: row.createdAt }));
-  // Quarter-hour buckets preserve local-day boundaries, including quarter-hour time zones.
-  const bucket = sql<Date>`to_timestamp(floor(extract(epoch from ${accountActivity.createdAt}) / 900) * 900)`;
-  const rows = await getDb().select({ kind: accountActivity.kind, createdAt: bucket, count: sql<number>`count(*)::int` }).from(accountActivity).where(and(eq(accountActivity.userId, userId), gte(accountActivity.createdAt, since))).groupBy(accountActivity.kind, bucket);
-  return rows.map(row => ({ kind: row.kind, createdAt: new Date(row.createdAt).toISOString(), count: row.count }));
+  const localDate = sql<string>`to_char(${accountActivity.createdAt} AT TIME ZONE ${timezone}, 'YYYY-MM-DD')`;
+  // Position 2 reuses the selected local date without binding the timezone twice.
+  const rows = await getDb().select({ kind: accountActivity.kind, date: localDate, count: sql<number>`count(*)::int` }).from(accountActivity).where(and(eq(accountActivity.userId, userId), gte(accountActivity.createdAt, since))).groupBy(accountActivity.kind, sql`2`);
+  return rows.map(row => ({ kind: row.kind, date: row.date, count: row.count }));
 }
 export async function recordSiteVisit(userId: string) {
   const bucket = Math.floor(Date.now() / 1800_000);

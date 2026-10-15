@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from "node:test";
+import { describe, it } from "node:test";
 import assert from "node:assert";
 import { 
   detectBusinessRules, 
@@ -106,10 +106,10 @@ describe("Business Rules Detection System (Item #36)", () => {
         assert.ok(firstRule.ruleId, "Must have rule ID");
         assert.ok(firstRule.displayName, "Must have display name");
         assert.ok(firstRule.description, "Must have description");
-        Array.isArray(firstRule.triggers), "Must have triggers array";
-        Array.isArray(firstRule.constraints), "Must have constraints array";
+        assert.ok(Array.isArray(firstRule.triggers), "Must have triggers array");
+        assert.ok(Array.isArray(firstRule.constraints), "Must have constraints array");
         assert.ok(firstRule.enforcement, "Must have enforcement strategy");
-        Array.isArray(firstRule.testCases), "Must have test cases array";
+        assert.ok(Array.isArray(firstRule.testCases), "Must have test cases array");
       }
     });
   });

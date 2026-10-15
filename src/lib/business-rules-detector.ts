@@ -287,7 +287,7 @@ export function detectBusinessRules(brief: string): DetectedRule[] {
 export function generateBusinessRulesPrompt(context: {
   brief: string;
   assumptions?: string[];
-  techPrefs?: Record<string, any>;
+  techPrefs?: Record<string, unknown>;
 }): string {
   const detected = detectBusinessRules(context.brief);
   

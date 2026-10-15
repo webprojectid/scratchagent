@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import type { Plan } from "@/lib/types";
 import { DiagramWithDetails } from "@/components/mermaid";
+import { PhaseIcon } from "@/components/stock-icon";
 
 interface Section {
   id: string;
@@ -254,6 +255,7 @@ function buildSections(plan: Plan): Section[] {
                     className="rounded-xl border border-white/[.06] bg-white/[.02] p-4 transition-colors hover:border-white/[.12]"
                   >
                     <div className="flex flex-wrap items-center gap-2">
+                      <PhaseIcon phase={f} size={18} className="shrink-0 text-[#A9B3AE]" />
                       <span className="text-[15px] font-semibold text-white">{f.title}</span>
                       {f.priority && (
                         <span
@@ -304,7 +306,7 @@ function buildSections(plan: Plan): Section[] {
 
                     {f.subFeatures.length > 0 && (
                       <div className="mt-3 border-t border-white/[.05] pt-3">
-                        <Label>Sub-fitur</Label>
+                        <Label>{ui("Sub-fitur")}</Label>
                         <div className="mt-2 flex flex-wrap gap-1.5">
                           {f.subFeatures.map((sf) => (
                             <span
@@ -520,13 +522,13 @@ export function PrdView({ plan }: { plan: Plan }) {
                 {ui(chip.label)}
               </span>
               {createdAt && (
-                <span className="font-mono text-[11px] tabular-nums text-slate-500">dibuat {createdAt}</span>
+                <span className="font-mono text-[11px] tabular-nums text-slate-500">{ui("Dibuat {0}", createdAt)}</span>
               )}
             </div>
 
             <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-              <Stat label="Fitur" value={String(plan.features.length)} />
-              <Stat label="Sub-fitur" value={String(stats.subTotal)} />
+              <Stat label={ui("Fitur")} value={String(plan.features.length)} />
+              <Stat label={ui("Sub-fitur")} value={String(stats.subTotal)} />
               <Stat label={ui("Task selesai")} value={`${stats.doneTotal}/${stats.taskTotal}`} />
               <Stat label={ui("Fase")} value={String(new Set(plan.features.flatMap((f) => f.subFeatures.flatMap((sf) => sf.tasks.map((t) => t.phase)))).size || 1)} />
             </div>

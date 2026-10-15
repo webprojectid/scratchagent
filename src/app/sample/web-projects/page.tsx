@@ -2,10 +2,9 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useLang } from "@/lib/lang";
-import { HeaderNav } from "@/components/header-nav";
+import { LandingNavbar } from "@/components/landing-navbar";
 
 // demos
 import { SafariFrame } from "@/components/ui/safari-browser-frame";
@@ -114,18 +113,6 @@ function DotBar({ count, active }: { count: number; active: number }) {
 
 // ─── Logo ─────────────────────────────────────────────────────────────────────
 
-function Logo() {
-  return (
-    <Link href="/" className="flex items-center gap-2 text-[16px] font-semibold tracking-[-.04em] text-[#E8F0E8]">
-      <span className="relative grid size-6 place-items-center overflow-hidden" aria-hidden="true">
-        <span className="absolute left-0 top-[6px] h-2.5 w-2 -skew-x-[28deg] rounded-sm bg-[#74FA6A]" />
-        <span className="absolute left-[7px] top-[2.5px] h-2.5 w-2 -skew-x-[28deg] rounded-sm bg-[#9AFF82]" />
-        <span className="absolute left-[14px] top-[6px] h-2.5 w-2 -skew-x-[28deg] rounded-sm bg-[#4DDC62]" />
-      </span>
-      Scratch Agent
-    </Link>
-  );
-}
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -151,27 +138,22 @@ export default function WebProjectsPage() {
   }, [go]);
 
   return (
-    <main className="min-h-screen bg-[#0A0A0A] text-[#E8EDEC]">
-      <header className="sticky top-0 z-40 border-b border-white/[.06] bg-[rgba(10,10,10,0.85)] backdrop-blur-[12px]">
-        <div className="mx-auto flex h-[54px] max-w-[1100px] items-center justify-between px-5">
-          <Logo />
-          <HeaderNav links={["solutions", "docs"]} ctaHref="/login" ctaKey="login" />
-        </div>
-      </header>
+    <main className="sample-page min-h-screen bg-[#0A0A0A] text-[#E8EDEC]">
+      <LandingNavbar />
 
-      <section className="w-full px-3 py-14 md:px-5 md:py-20">
+      <section className="sample-gallery-section">
 
         {/* Arrow pojok | teks berdampingan Safari | arrow pojok */}
-        <div className="flex w-full items-center gap-5 md:gap-7">
+        <div className="sample-gallery">
 
           {/* Arrow pojok kiri */}
-          <div className="flex shrink-0 flex-col items-center gap-2">
+          <div className="sample-gallery-prev flex shrink-0 flex-col items-center gap-2">
             <ArrowBtn dir="left" onClick={() => go(-1)} />
             <span className="font-mono text-[8px] uppercase tracking-[.18em] text-white/35">Prev</span>
           </div>
 
           {/* Teks kiri + Safari kanan, tetap berdampingan */}
-          <div className="mx-auto grid min-w-0 w-full max-w-[1320px] flex-1 items-center gap-5 lg:grid-cols-[minmax(235px,300px)_minmax(0,1fr)]">
+          <div className="sample-gallery-content">
 
             {/* Meta + prompt */}
             <div className="min-w-0">
@@ -187,10 +169,10 @@ export default function WebProjectsPage() {
                   <p className="font-mono text-[10px] uppercase tracking-[.2em] text-[#9CA9B8]">
                     web project {meta.num}
                   </p>
-                  <div className="mt-1 text-[15px] font-medium leading-[1.25] tracking-[-.025em] text-[#F0F3F5]">
+                  <h1 className="mt-3 text-[clamp(1.4rem,2vw,1.875rem)] font-medium leading-[1.2] tracking-[-.035em] text-[#F0F3F5]">
                     {meta.title}
-                  </div>
-                  <p className="mt-0.5 text-[11px] font-medium text-[#5C6A7A]">{meta.type}</p>
+                  </h1>
+                  <p className="mt-3 text-[14px] font-medium text-[#9CA9A0]">{meta.type}</p>
                   <div className="mt-4">
                     <DotBar count={DEMOS.length} active={index} />
                   </div>
@@ -199,8 +181,7 @@ export default function WebProjectsPage() {
               </AnimatePresence>
             </div>
 
-            {/* Safari frame — 15% lebih kecil */}
-            <div className="min-w-0 w-[85%] justify-self-center">
+            <div className="sample-gallery-preview min-w-0 w-full">
               <AnimatePresence mode="wait" custom={dir}>
                 <motion.div
                   key={index + "-demo"}
@@ -218,7 +199,7 @@ export default function WebProjectsPage() {
           </div>
 
           {/* Arrow pojok kanan */}
-          <div className="flex shrink-0 flex-col items-center gap-2">
+          <div className="sample-gallery-next flex shrink-0 flex-col items-center gap-2">
             <ArrowBtn dir="right" onClick={() => go(1)} />
             <span className="font-mono text-[8px] uppercase tracking-[.18em] text-white/35">Next</span>
           </div>
