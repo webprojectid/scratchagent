@@ -59,15 +59,17 @@ export async function POST(request: Request, { params }: { params: Promise<{ pla
     if (!lease) return NextResponse.json({ ok: true, alreadyRunning: true });
     if (!await reserveGenerationAttempt(user!.userId, plan.tier ?? "free")) return NextResponse.json({ error: "Generation limit reached. Please try again later." }, { status: 429, headers: { "Retry-After": "600" } });
     let tasks: { id: string; feature: string; sub_feature: string; title: string; layer: "frontend" | "backend" | "qa"; phase: number; page: string | null; deps: string[] }[] = [];
+    const reservedQa = featureIndex === plan.features.length - 1;
 
     if (process.env.MOCK_LLM === "1") {
       const layers: ("frontend" | "backend" | "qa")[] = ["frontend", "backend", "qa"];
-      for (let i = 0; i < 6; i++) {
+      const count = Math.max(feature.subFeatures.length, (plan.tier === "pro" ? 15 : 8) - (reservedQa ? 4 : 0));
+      for (let i = 0; i < count; i++) {
         tasks.push({
           id: `t${i + 1}`,
           feature: feature.title,
-          sub_feature: feature.subFeatures[0]?.title ?? "Umum",
-          title: `Mock task ${i + 1} untuk ${feature.title}`,
+          sub_feature: feature.subFeatures[i % feature.subFeatures.length]?.title ?? "Umum",
+          title: `Implement mock workflow ${i + 1} for ${feature.title}`,
           layer: layers[i % 3],
           phase: featureIndex + 1,
           page: null,
@@ -77,7 +79,15 @@ export async function POST(request: Request, { params }: { params: Promise<{ pla
     } else {
       const subTitles = (feature.subFeatures ?? []).map((sf) => sf.title);
       // Ide user (Pro, maks 2/project) WAJIB ikut terbaca AI sebagai referensi tambahan.
-      const result = await generateTasksForFeature(plan.brief, feature.title, subTitles, featureIndex, plan.tier ?? "free", plan.features.length, plan.ideas, plan.generationSettings);
+      const result = await generateTasksForFeature(plan.brief, feature.title, subTitles, featureIndex, plan.tier ?? "free", plan.features.length, plan.ideas, plan.generationSettings, {
+        featureDescription: feature.description,
+        featureGoal: feature.tujuan,
+        featureCriteria: feature.selesaiBila,
+        subFeatures: feature.subFeatures.map(sub => ({ title: sub.title, tujuan: sub.tujuan, selesaiBila: sub.selesaiBila })),
+        requirements: plan.requirements,
+        stack: plan.stack,
+        reservedQa,
+      });
       tasks = result.tasks;
     }
 

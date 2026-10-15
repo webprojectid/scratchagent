@@ -111,7 +111,7 @@ export function Sidebar() {
                   href="/new"
                   className="flex items-center justify-center gap-2 rounded-[10px] border border-[#74FA6A]/20 bg-[#74FA6A]/[.05] px-3 py-2.5 font-mono text-[11px] font-medium tracking-[.02em] text-[#74FA6A] transition hover:border-[#74FA6A]/40 hover:bg-[#74FA6A]/[.1] active:scale-[.99]"
                 >
-                  <Plus size={13} /> plan baru
+                  <Plus size={13} /> {ui("plan baru")}
                 </Link>
               </div>
 

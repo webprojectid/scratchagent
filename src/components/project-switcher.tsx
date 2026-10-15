@@ -70,7 +70,7 @@ export function ProjectSwitcher({ currentId, fallbackTitle }: { currentId?: stri
         aria-haspopup="listbox"
         aria-expanded={open}
       >
-        {currentId ? <ProjectIcon project={{ id: currentId, title: current?.title ?? fallbackTitle ?? "" }} className="!size-6 !rounded-md" size={14}/> : <Folder size={13} className="shrink-0 text-white/40" />}
+        {currentId ? <ProjectIcon neutral project={{ id: currentId, title: current?.title ?? fallbackTitle ?? "" }} className="!size-6 !rounded-md" size={14}/> : <Folder size={13} className="shrink-0 text-white/40" />}
         <span className="max-w-[200px] truncate">{current?.title ?? fallbackTitle ?? "Project"}</span>
         <ChevronDown size={13} className={`shrink-0 text-white/40 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
       </button>
@@ -89,7 +89,7 @@ export function ProjectSwitcher({ currentId, fallbackTitle }: { currentId?: stri
               <span className="font-mono text-[10px] uppercase tracking-[.14em] text-white/30">Project history</span>
               <Link
                 href="/new"
-                className="flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] text-[#74FA6A] transition hover:bg-[#74FA6A]/10"
+                className="flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] text-slate-200 transition hover:bg-white/10"
               >
                 <Plus size={11} />{ui("baru")}</Link>
             </div>
@@ -107,10 +107,10 @@ export function ProjectSwitcher({ currentId, fallbackTitle }: { currentId?: stri
                       role="option"
                       aria-selected={active}
                       className={`group flex items-center gap-2.5 rounded-lg px-2.5 py-2 transition ${
-                        active ? "bg-[#74FA6A]/[.06]" : "hover:bg-white/[.04]"
+                        active ? "bg-white/[.06]" : "hover:bg-white/[.04]"
                       }`}
                     >
-                      <ProjectIcon project={p} className="!size-8 !rounded-lg" size={18}/>
+                      <ProjectIcon neutral project={p} className="!size-8 !rounded-lg" size={18}/>
                       <span className="min-w-0 flex-1">
                         <span className={`block truncate text-[12px] font-medium leading-tight ${active ? "text-white" : "text-slate-300"}`}>
                           {p.title}
@@ -119,7 +119,7 @@ export function ProjectSwitcher({ currentId, fallbackTitle }: { currentId?: stri
                           {ui(statusLabel[p.status] ?? p.status)} · {p.taskCount} task
                         </span>
                       </span>
-                      {active && <Check size={13} className="shrink-0 text-[#74FA6A]" />}
+                      {active && <Check size={13} className="shrink-0 text-slate-200" />}
                     </Link>
                   );
                 })

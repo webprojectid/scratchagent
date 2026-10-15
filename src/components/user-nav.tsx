@@ -6,11 +6,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { AccountBadges } from "@/components/account-badges";
-import { User, Settings, LogOut, BookOpen, Cpu } from "lucide-react";
+import { User, UserRound, Settings, LogOut, BookOpen, Cpu } from "lucide-react";
 import { isDeveloperAdmin } from "@/lib/admin-access";
 import { accountMenuLinks } from "@/lib/account-navigation";
 import { createClient } from "@/lib/supabase/client";
 import { getCurrentUser, refreshCurrentUser, supabaseConfigured, type CurrentUser } from "@/lib/current-user";
+import styles from "./user-nav.module.css";
 
 export function UserNav({ landingButtons = false }: { landingButtons?: boolean }) {
   useUiLanguage();
@@ -62,14 +63,6 @@ export function UserNav({ landingButtons = false }: { landingButtons?: boolean }
     );
   }
 
-  const initials = (user.name || user.email || "U")
-    .split(" ")
-    .map((n) => n[0])
-    .filter(Boolean)
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
-
   const menuIcons = { profile: User, settings: Settings, docs: BookOpen };
 
   return (
@@ -78,14 +71,9 @@ export function UserNav({ landingButtons = false }: { landingButtons?: boolean }
         <button
           type="button"
           aria-label={ui("Menu Akun")}
-          className="group relative flex size-8 items-center justify-center rounded-full border border-white/15 bg-white/[.06] text-white/80 transition hover:border-[#74FA6A]/50 hover:bg-[#74FA6A]/10 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#a5ef7d]"
+          className={styles.trigger}
         >
-          {initials ? (
-            <span className="font-mono text-[11px] font-bold text-[#74FA6A]">{initials}</span>
-          ) : (
-            <User size={15} />
-          )}
-          <span className="absolute -bottom-0.5 -right-0.5 size-2 rounded-full border border-[#1D2223] bg-[#74FA6A]" />
+          <UserRound size={19} strokeWidth={1.75} aria-hidden="true" />
         </button>
       </DropdownMenu.Trigger>
 

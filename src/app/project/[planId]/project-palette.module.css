@@ -45,7 +45,7 @@
 .workspace [class*="bg-[#070A08]"] { background-color: #282828; }
 
 .workspace :global(.react-flow__background) { background-color: #1a1a1a; }
-.workspace :global(.react-flow__background-pattern) { fill: #333333; }
+.workspace :global(.react-flow__background-pattern) { fill: #414141; }
 .workspace :global(.react-flow__edge-path) { stroke: #858585; }
 .workspace :global(.react-flow__handle) { border-color: #1a1a1a; }
 .workspace :global(.react-flow__controls-button) {

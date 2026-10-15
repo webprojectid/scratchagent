@@ -1,23 +1,10 @@
 "use client";
 
-import Link from "next/link";
-import { HeaderNav } from "@/components/header-nav";
+import { LandingNavbar } from "@/components/landing-navbar";
 import { DemoSaas } from "@/components/ui/auto-finance-demo";
 import { CopyPrompt } from "@/components/ui/copy-prompt";
 import { useLang } from "@/lib/lang";
 
-function Logo() {
-  return (
-    <Link href="/" className="flex items-center gap-2 text-[16px] font-semibold tracking-[-.04em] text-[#E8F0E8]">
-      <span className="relative grid size-6 place-items-center overflow-hidden text-[#74FA6A]" aria-hidden="true">
-        <span className="absolute left-0 top-[6px] h-2.5 w-2 -skew-x-[28deg] rounded-sm bg-[#74FA6A]" />
-        <span className="absolute left-[7px] top-[2.5px] h-2.5 w-2 -skew-x-[28deg] rounded-sm bg-[#9AFF82]" />
-        <span className="absolute left-[14px] top-[6px] h-2.5 w-2 -skew-x-[28deg] rounded-sm bg-[#4DDC62]" />
-      </span>
-      Scratch Agent
-    </Link>
-  );
-}
 
 const PROMPT_EN = `Build a vehicle purchase and financing web app on a dark navy gradient background. Top nav with logo, Vehicles / Application / Profile links and Help / Logout. Main content in a white card: vehicle header showing year/make/model, a heart icon, key specs (mileage, transmission, MPG, fuel) in columns, monthly payment price, and a Select CTA button. Below: left column with an interactive image gallery (main photo + 4 thumbnails + prev/next arrows) and collapsible accordion sections (Vehicle Overview with full spec list, Features, Safety). Right column with a Financing breakdown table (sales price, fees, warranty, GAP, cash price, trade, rebate, down payment, loan balance, term, APR, fine print) and a Dealer Info card (name, address, phone, email, Contact Dealer button). Stack: React, Tailwind CSS, TypeScript.`;
 
@@ -28,13 +15,8 @@ export default function SampleWebProjectThreePage() {
   const lang = useLang();
 
   return (
-    <main className="min-h-screen bg-[#0A0A0A] text-[#E8EDEC] selection:bg-[#74FA6A]/30 selection:text-black">
-      <header className="sticky top-0 z-40 border-b border-white/[.06] bg-[rgba(10,10,10,0.85)] backdrop-blur-[12px]">
-        <div className="mx-auto flex h-[54px] max-w-[1100px] items-center justify-between px-5">
-          <Logo />
-          <HeaderNav links={["solutions", "docs"]} ctaHref="/login" ctaKey="login" />
-        </div>
-      </header>
+    <main className="sample-page min-h-screen bg-[#0A0A0A] text-[#E8EDEC] selection:bg-[#74FA6A]/30 selection:text-black">
+      <LandingNavbar />
 
       <section className="w-full px-6 py-14 md:px-10 md:py-20">
         <div className="sample-project-layout">

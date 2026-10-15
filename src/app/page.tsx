@@ -50,7 +50,7 @@ function StackMarquee() {
   useUiLanguage();
   const repeated = (row: typeof stackRows[number]) => [...row, ...row, ...row];
 
-  return <section className="relative top-12 mx-auto mt-24 w-full overflow-hidden py-5 md:top-20 md:mt-32 md:py-8" aria-label="Scratch Agent stack">
+  return <section className="landing-stack relative mx-auto w-[calc(100%-28px)] max-w-[1300px] overflow-hidden" aria-label="Scratch Agent stack">
     <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-24 bg-gradient-to-r from-[#0A0A0A] to-transparent md:w-48" />
     <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-24 bg-gradient-to-l from-[#0A0A0A] to-transparent md:w-48" />
     <div className="stack-row"><div className="stack-track stack-track-right">{[0, 1].map((copy) => <div key={copy} className="stack-group">{repeated(stackRows[0]).map((item, i) => <span key={`${item.name}-${i}`} className="stack-brand"><img src={`https://cdn.simpleicons.org/${item.slug}/B7C8B9`} alt="" />{item.name}</span>)}</div>)}</div></div>
@@ -75,18 +75,20 @@ export default function Home() {
       <a href="#agents" className="relative z-30 mb-3 flex min-h-8 items-center justify-center gap-2 bg-[#74FA6A] px-4 py-1.5 text-center text-[11px] font-medium leading-4 text-black transition-colors hover:bg-[#9AFF82] md:mb-4 md:text-[12px]">{hc.banner}<span aria-hidden="true">→</span></a>
       <LandingNavbar />
 
-       <section className="relative mx-auto max-w-[980px] px-5 pb-14 pt-10 md:px-10 md:pb-18 md:pt-12">
+      <div className="landing-intro">
+       <section className="landing-hero relative mx-auto w-full max-w-[980px] px-5 md:px-10">
          <motion.div initial={false} className="relative z-10 mx-auto flex max-w-[760px] flex-col items-center text-center">
-           <h1 className="max-w-[16ch] text-balance text-[clamp(2.8rem,5.8vw,5rem)] font-medium leading-[.96] tracking-[-.065em] text-[#E8F8E5]"><span className="text-[#74FA6A]">{hc.heroA}</span><br />{hc.heroB}</h1>
-           <p className="mt-5 max-w-[54ch] text-balance text-[15px] leading-[1.6] text-[#A9C5A7]">{hc.heroSub}</p>
-           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-               <Magnetic><Link href={loggedIn ? "/new" : "/login"} className="rv2-button min-w-[146px] bg-[#74FA6A] text-black hover:bg-[#A8FF9B] group">{hc.heroStart} <span className="grid size-6 place-items-center rounded-full bg-black/10 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5"><ArrowUpRight size={12} /></span></Link></Magnetic>
-             <Link href="/project/demo" prefetch={true} className="rv2-button light min-w-[146px]"><Play size={13} fill="currentColor" /> {hc.heroDemo}</Link>
+           <h1 className="landing-hero-title max-w-[16ch] text-balance font-medium leading-[.96] tracking-[-.065em] text-[#E8F8E5]"><span className="text-[#74FA6A]">{hc.heroA}</span><br />{hc.heroB}</h1>
+           <p className="landing-hero-description mt-5 max-w-[54ch] text-balance text-[15px] leading-[1.6] text-[#A9C5A7]">{hc.heroSub}</p>
+           <div className="landing-hero-actions mt-6 flex flex-wrap items-center justify-center gap-3">
+               <Magnetic><Link href={loggedIn ? "/new" : "/login"} className="rv2-button bg-[#74FA6A] text-black hover:bg-[#A8FF9B] group">{hc.heroStart} <span className="grid size-6 place-items-center rounded-full bg-black/10 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5"><ArrowUpRight size={12} /></span></Link></Magnetic>
+             <Link href="/project/demo" prefetch={true} className="rv2-button light"><Play size={13} fill="currentColor" /> {hc.heroDemo}</Link>
            </div>
         </motion.div>
       </section>
 
        <StackMarquee />
+      </div>
        <LandingWorkspace lang={lang} />
 
       <section id="product" className="mx-auto max-w-[1360px] px-5 pb-24 pt-24 md:px-10 md:pb-32 md:pt-28">

@@ -55,7 +55,8 @@
 .session { width: 100%; display: block; text-align: left; padding: 11px 8px; border: 1px solid transparent; border-radius: 6px; color: #dce7dc; background: transparent; }
 .session:hover { background: #232a26; }
 .session[aria-pressed=true] { background: #233327; border-color: #3c6841; }
-.session strong { display: block; font-size: 11px; line-height: 1.5; font-weight: 500; margin: 4px 0; }
+.session strong { display: flex; align-items: flex-start; gap: 6px; font-size: 11px; line-height: 1.5; font-weight: 500; margin: 4px 0; }
+.session strong svg { flex: none; margin-top: 1px; }
 .sessionMeta { display: flex; align-items: center; gap: 4px; color: #a8b7aa; font-size: 9px; }
 .sessionMeta>span:last-child { margin-left: auto; }
 .activeDot { width: 5px; height: 5px; background: #74fa6a; border-radius: 50%; }

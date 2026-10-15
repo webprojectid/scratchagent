@@ -18,8 +18,16 @@ const geistMono = Geist_Mono({
 const display = Space_Grotesk({ variable: "--font-display", subsets: ["latin"] });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://www.scratchagent.web.id"),
   title: "Scratch Agent",
   description: "Hire your AI agent.",
+  openGraph: {
+    type: "website",
+    siteName: "Scratch Agent",
+    title: "Scratch Agent",
+    description: "Hire your AI agent.",
+  },
+  twitter: { card: "summary_large_image" },
   icons: { icon: "/favicon.svg", shortcut: "/favicon.svg" },
 };
 

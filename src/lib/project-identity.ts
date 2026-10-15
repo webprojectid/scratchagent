@@ -1,7 +1,8 @@
 const categories = [
   { key: "habit", words: /\b(habit\w*|kebiasaan|routine|rutinitas|mindful\w*|meditasi)\b/, icons: ["Sprout", "Leaf", "Flower2"] },
   { key: "health", words: /\b(health\w*|sehat|kesehatan|clinic\w*|klinik|medical|medis|fitness|gym|workout|olahraga)\b/, icons: ["HeartPulse", "Activity", "Dumbbell"] },
-  { key: "finance", words: /\b(finance|finansial|keuangan|budget\w*|anggaran|invoice\w*|akuntansi|accounting|payment\w*|pembayaran|wallet|dompet|bank\w*)\b/, icons: ["Wallet", "Receipt", "ChartNoAxesCombined"] },
+  { key: "finance", words: /\b(finance|finansial|keuangan|celengan|tabungan|menabung|setoran|budget\w*|anggaran|invoice\w*|akuntansi|accounting|payment\w*|pembayaran|wallet|dompet|bank\w*)\b/, icons: ["Wallet", "Receipt", "ChartNoAxesCombined"] },
+  { key: "sports", words: /\b(futsal\w*|football|soccer|sepak\s+bola)\b/, icons: ["BallFootball"] },
   { key: "education", words: /\b(learn\w*|belajar|education|edukasi|pendidikan|school|sekolah|course\w*|kursus|tutor\w*|quiz|kuis)\b/, icons: ["BookOpen", "GraduationCap", "NotebookPen"] },
   { key: "travel", words: /\b(travel\w*|wisata|trip|liburan|hotel\w*|booking|reservasi|tour\w*)\b/, icons: ["Plane", "MapPinned", "Luggage"] },
   { key: "food", words: /\b(food|makanan|kuliner|restaurant|restoran|resep|recipe\w*|katering|catering|cafe|coffee|kopi)\b/, icons: ["Utensils", "CookingPot", "Coffee"] },

@@ -194,7 +194,7 @@ export function AgentPromptModal({ planId, onClose }: { planId: string; onClose:
               </button>
             </div>
             {tier !== "pro" && (
-              <p className="mt-2 text-center text-[11px] leading-4 text-slate-600">{ui("Export PRD terkunci untuk paket Free.")}<Link href="/pricing" className="text-[#74FA6A]/80 underline-offset-2 hover:underline">Upgrade ke Pro</Link>{ui("untuk membukanya.")}</p>
+              <p className="mt-2 text-center text-[11px] leading-4 text-slate-600">{ui("Export PRD terkunci untuk paket Free.")}<Link href="/pricing" className="text-[#74FA6A]/80 underline-offset-2 hover:underline">{ui("Upgrade ke Pro")}</Link>{ui("untuk membukanya.")}</p>
             )}
 
             <p className="mt-3 text-center text-[10.5px] leading-4 text-slate-600">{ui("Prompt mengandung token pribadi. Paste hanya ke agent yang kamu percaya.")}</p>

@@ -177,9 +177,9 @@ function TaskCard({ task, compact, onDelete }: { task: BoardTask; compact?: bool
           {onDelete && (
             <button
               onClick={onDelete}
-              title={`Hapus task ${task.ref}`}
+              title={ui("Hapus task {0}", task.ref)}
               className="grid size-5 place-items-center rounded text-slate-600 opacity-0 transition group-hover:opacity-100 hover:bg-rose-400/10 hover:text-rose-400"
-              aria-label={`Hapus task ${task.ref}`}
+              aria-label={ui("Hapus task {0}", task.ref)}
             ><Trash2 size={10} /></button>
           )}
         </span>

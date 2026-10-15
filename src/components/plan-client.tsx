@@ -2,8 +2,7 @@
 import { uiText as ui, useUiLanguage } from "@/lib/ui-text";
 
 import { useEffect, useState, useCallback, useRef, startTransition } from "react";
-import { AnimatePresence, motion } from "motion/react";
-import { Lightbulb, Map, FileText, ListChecks } from "lucide-react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Shell, Brand } from "@/components/brand";
 import dynamic from "next/dynamic";
 
@@ -45,9 +44,9 @@ const statusMessages = [
 ];
 
 const viewTabs = [
-  { key: "struktur", label: "Roadmap", icon: Map },
-  { key: "prd", label: "PRD", icon: FileText },
-  { key: "task", label: "Tasks", icon: ListChecks },
+  { key: "struktur", label: "Roadmap" },
+  { key: "prd", label: "PRD" },
+  { key: "task", label: "Tasks" },
 ] as const;
 
 type ViewKey = (typeof viewTabs)[number]["key"];
@@ -66,30 +65,28 @@ function FallbackWarningBanner({ warnings }: { warnings?: string[] }) {
 
 function ViewTabs({ view, setView, pillId }: { view: ViewKey; setView: (v: ViewKey) => void; pillId: string }) {
   useUiLanguage();
+  const reducedMotion = useReducedMotion();
   return (
-    <div role="tablist" className="flex items-center gap-1 rounded-2xl border border-white/[.08] bg-white/[.03] p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] backdrop-blur-xl">
+    <div role="tablist" className="flex items-center gap-1 rounded-lg border border-white/[.06] bg-white/[.025] p-1">
       {viewTabs.map((t) => {
         const active = view === t.key;
-        const Icon = t.icon;
         return (
           <motion.button
             key={t.key}
             role="tab"
             aria-selected={active}
             onClick={() => setView(t.key)}
-            whileTap={{ scale: 0.95 }}
             className={`relative flex min-w-[106px] items-center justify-center gap-1.5 rounded-xl px-4 py-2 text-[12.5px] font-semibold transition-colors duration-300 ${
-              active ? "text-[#07120A]" : "text-slate-400 hover:text-slate-100"
+              active ? "text-white" : "text-slate-400 hover:text-slate-100"
             }`}
           >
             {active && (
               <motion.span
                 layoutId={pillId}
-                className="absolute inset-0 rounded-xl bg-[#74FA6A] shadow-[0_2px_16px_rgba(116,250,106,0.35)]"
-                transition={{ type: "spring", stiffness: 420, damping: 32 }}
+                className="absolute inset-0 rounded-md bg-white/10"
+                transition={reducedMotion ? { duration: 0 } : { type: "spring", stiffness: 380, damping: 34 }}
               />
             )}
-            <Icon size={13} className="relative z-10" />
             <span className="relative z-10">{t.label}</span>
           </motion.button>
         );
@@ -100,6 +97,7 @@ function ViewTabs({ view, setView, pillId }: { view: ViewKey; setView: (v: ViewK
 
 export function PlanClient({ plan: initialPlan, tier = "free" }: { plan: Plan; tier?: "free" | "pro" }) {
   useUiLanguage();
+  const reducedMotion = useReducedMotion();
   const [plan, setPlan] = useState(initialPlan);
   const [liveTasks, setLiveTasks] = useState<Record<string, Task["status"]> | undefined>(undefined);
   const [showModal, setShowModal] = useState(false);
@@ -353,14 +351,14 @@ export function PlanClient({ plan: initialPlan, tier = "free" }: { plan: Plan; t
               </span>
             )}
             <button
-              className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[.03] px-3 py-1.5 text-xs font-medium text-white/70 transition hover:border-[#74FA6A]/40 hover:text-white"
+              className="landing-nav-button landing-nav-button-outline"
               onClick={() => setShowIdeas((v) => !v)}
               aria-pressed={showIdeas}
               title={ui("Kolom chat ide — fitur Pro, maksimal 2 kali per project")}
             >
-              <Lightbulb size={13} className={showIdeas ? "text-[#74FA6A]" : undefined} />{ui("Ide Kamu")}</button>
-            <button className="btn min-h-0 px-3.5 py-1.5 text-xs" onClick={() => setShowModal(true)} disabled={generatingTasks}>
-              {generatingTasks ? "Menyusun task..." : ui("Mulai implementasi")}
+              <span>{ui("Ide Kamu")}</span></button>
+            <button className="landing-nav-button landing-nav-button-solid disabled:cursor-wait disabled:opacity-60" onClick={() => setShowModal(true)} disabled={generatingTasks}>
+              <span>{generatingTasks ? ui("Menyusun task...") : ui("Mulai implementasi")}</span>
             </button>
           </div>
 
@@ -378,16 +376,16 @@ export function PlanClient({ plan: initialPlan, tier = "free" }: { plan: Plan; t
         <div className="border-b border-rose-400/20 bg-rose-400/[.06] px-4 py-2 md:px-6">
           <p className="text-[11px] leading-relaxed text-rose-200/90">
             <span className="font-semibold">✕</span> {notice}{" "}
-            {!isPro && <a href="/pricing" className="underline hover:text-white">Upgrade ke Pro</a>}
+            {!isPro && <a href="/pricing" className="underline hover:text-white">{ui("Upgrade ke Pro")}</a>}
           </p>
         </div>
       )}
 
-      <div className="min-w-0 flex-1">
+      <motion.div key={view} initial={reducedMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: reducedMotion ? 0 : 0.2, ease: "easeOut" }} className="min-w-0 flex-1">
         {view === "struktur" && <PlanMap plan={plan} liveTasks={liveTasks} isPro={isPro} onRemoveStructure={removeStructure} />}
         {view === "prd" && <PrdView plan={plan} />}
         {view === "task" && <TaskBoard plan={plan} liveTasks={liveTasks} isPro={isPro} onRemoveTask={(ref, label) => removeStructure("task", { ref }, label)} />}
-      </div>
+      </motion.div>
 
       {showModal && <AgentPromptModal planId={plan.id} onClose={() => setShowModal(false)} />}
     </Shell>

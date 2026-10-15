@@ -8,8 +8,13 @@ import {
   hasMermaidDiagram,
   normalizeMermaidFences,
 } from "./arch-fallback";
-import { isExhaustedError, resolveLlmProviders } from "./llm-config";
+import { isExhaustedError, resolveLlmProviders, type LlmProvider } from "./llm-config";
 import { structureLimits, taskRangePerFeature, trimToMax, type Tier } from "./plan-limits";
+import { removeVagueCriteria, validateFeatureDraft, validateSubfeatureDraft, validateTaskDraft } from "./generation-quality";
+import { validateRequirementsDraft } from "./requirements-quality";
+import { removeUnrequestedCriteria, validateScopeClaims } from "./scope-quality";
+import { validateArchitectureDraft, validateDatabaseSchemaDraft } from "./architecture-quality";
+import { QA_COPY } from "./qa-labels";
 import type { PlanIdea } from "./types";
 import { parseLLMResponse } from "./sse-parser"; // NEW: Dual-mode SSE/JSON parser
 
@@ -215,7 +220,7 @@ function extractJson(value: string): string {
     JSON.parse(fixed);
     return fixed;
   } catch {
-    throw new Error(`JSON parsing gagal. Raw: ${last.slice(0, 500)}...`);
+    throw new Error("JSON parsing gagal: respons model tidak membentuk objek JSON yang valid.");
   }
 }
 
@@ -226,11 +231,31 @@ interface LlmUsage {
   models: string[];
 }
 
-// Entri failover (provider x model) yang terakhir sukses / sedang dipakai.
-// Kalau satu entri kehabisan quota, kursor maju ke entri berikutnya dan tetap
-// di situ sampai habis lagi, jadi kita tidak bolak-balik nabrak entri yang
-// sudah pasti exhausted.
-let entryCursor = 0;
+type GenerationStage = "outline" | "subfeatures" | "architecture" | "database" | "requirements" | "tasks" | "diagram" | "idea";
+
+interface LlmCallOptions<T> {
+  stage?: GenerationStage;
+  validate?: (value: T) => string[];
+  providers?: LlmProvider[];
+}
+
+class QualityError extends Error {
+  constructor(readonly issues: string[]) {
+    super(issues.join("; "));
+    this.name = "QualityError";
+  }
+}
+
+const stageRoles: Record<GenerationStage, string> = {
+  outline: "You are a senior product manager writing a faithful, testable product plan.",
+  subfeatures: "You are a product architect decomposing one product area into distinct, testable capabilities.",
+  architecture: "You are a solution architect. Ground every component and trade-off in this product's requirements.",
+  database: "You are a database architect. Ground tables, relationships, and constraints in this product's requirements.",
+  requirements: "You are a product manager writing concrete user flows and verifiable requirements.",
+  tasks: "You are a technical lead writing executable, traceable implementation tasks.",
+  diagram: "You are an architect drawing an accurate diagram from the supplied product context.",
+  idea: "You are a product manager extending an existing product plan without losing its scope.",
+};
 
 /** Helper untuk cek quota exhaustion dari HTTP status + response body */
 const isQuotaExhausted = (status: number, body: string): boolean => {
@@ -247,15 +272,22 @@ async function attemptOnce<T>(
   cfg: { baseUrl: string; apiKey: string; model: string },
   usage: LlmUsage | undefined,
   cycle: number,
+  options: LlmCallOptions<T>,
+  feedback?: string[],
 ): Promise<T> {
   const { baseUrl, apiKey, model } = cfg;
-  const timeoutMs = Number(process.env.LLM_TIMEOUT_MS) || 120_000;
+  const configuredTimeout = Number(process.env.LLM_TIMEOUT_MS);
+  const timeoutMs = Number.isFinite(configuredTimeout) && configuredTimeout > 0
+    ? configuredTimeout
+    : options.stage === "architecture" || options.stage === "database" || options.stage === "requirements"
+      ? 120_000
+      : 60_000;
   // Siklus kedua pakai varian prompt: hindari replay respons rusak yang
   // di-cache proxy, sekaligus mengarahkan model menulis ulang JSON dengan
   // benar. Nonce bikin varian unik supaya gak ikut ter-cache.
   const userContent = cycle === 0
     ? prompt
-    : `${prompt}\n\nPerhatian: percobaan sebelumnya menghasilkan output TIDAK VALID. Tulis ulang SEKARANG: HANYA JSON valid di dalam triple backtick json, tanpa teks lain di luarnya. (coba-${cycle + 1}-${Date.now()}-${Math.random().toString(36).slice(2, 8)})`;
+    : `${prompt}\n\nThe previous answer failed these checks: ${(feedback ?? ["Invalid JSON or missing required fields"]).join("; ")}. Regenerate this section in full with concrete product-specific details and valid JSON. Do not invent facts. (retry-${Date.now()})`;
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
   const start = Date.now();
@@ -267,11 +299,12 @@ async function attemptOnce<T>(
       body: JSON.stringify({
         model,
         messages: [
-          { role: "system", content: "Kamu adalah coding assistant. Output HANYA JSON valid di dalam triple backtick dengan kata json. Jangan gunakan reasoning_content, jangan tulis penjelasan, jangan tambah teks di luar JSON. JSON harus valid: double-quoted field names dan string, tanpa trailing comma, tanpa komentar, tanpa single quote. String boleh mengandung newline." },
+          { role: "system", content: `${stageRoles[options.stage ?? "outline"]} Return one valid JSON object only. Use double-quoted keys and strings, with no prose, Markdown fences, comments, or trailing commas. Preserve confirmed user facts, chosen language, and the exact requested field names.` },
           { role: "user", content: userContent },
         ],
         temperature: 0.2,
-        max_tokens: 16384,
+        max_tokens: options.stage === "subfeatures" || options.stage === "tasks" ? 8192 :
+          options.stage === "database" || options.stage === "requirements" ? 6144 : 4096,
         // Streaming: parser SSE auto-detect dan fallback ke JSON, jadi aman
         // untuk gateway yang mengabaikan flag ini. Manfaat: token pertama
         // langsung mengalir (progress), dan gateway tidak menahan seluruh
@@ -283,11 +316,11 @@ async function attemptOnce<T>(
     const elapsed = Date.now() - start;
     if (!res.ok) {
       const text = await res.text();
-      console.error(`[LLM] ${model} error ${res.status} in ${elapsed}ms: ${text.slice(0, 200)}`);
+      console.error(`[LLM] ${model} error ${res.status} in ${elapsed}ms`);
       if (isQuotaExhausted(res.status, text)) {
         throw new Error(`Quota habis untuk model ${model} (${res.status})`);
       }
-      throw new Error(`LLM gagal: ${res.status} ${text.slice(0, 200)}`);
+      throw new Error(`LLM gagal: HTTP ${res.status} dari ${model}`);
     }
     const parsed = await parseLLMResponse(res, { logDebug: false });
     if (usage && parsed.usage) {
@@ -295,56 +328,61 @@ async function attemptOnce<T>(
       usage.tokensOut += parsed.usage.completion_tokens ?? 0;
     }
     const raw = JSON.parse(extractJson(parsed.content ?? ""));
-    console.log(`[LLM] ${model} OK in ${elapsed}ms`);
-    return schema.parse(normalize(raw));
+    const value = schema.parse(normalize(raw));
+    const issues = options.validate?.(value) ?? [];
+    if (issues.length > 0) {
+      throw new QualityError(issues);
+    }
+    console.log(`[LLM] ${model} OK in ${Date.now() - start}ms`);
+    return value;
   } finally {
     clearTimeout(timeout);
   }
 }
 
 /**
- * Panggil LLM dengan failover berlapis dan cepat: SATU percobaan per entri
- * (provider x model), gagal langsung pindah ke entri berikutnya. Setelah
- * seluruh entri dicoba satu kali, semua entri yang belum kehabisan quota
- * dicoba sekali lagi (siklus 2, pakai varian prompt). Dulu tiap model di-retry
- * 3x dengan timeout panjang sebelum pindah — di hari upstream sakit, satu call
- * bisa buang 5+ menit cuma buat nembak model yang jelas-jelas mati.
+ * Coba model utama lebih dulu. Bila responsnya rusak atau dangkal, minta satu
+ * perbaikan dari model yang sama sebelum beralih ke model cadangan.
  */
-async function callLlm<T>(schema: z.ZodType<T>, prompt: string, usage?: LlmUsage): Promise<T> {
-  const providers = await resolveLlmProviders();
+async function callLlm<T>(schema: z.ZodType<T>, prompt: string, usage?: LlmUsage, options: LlmCallOptions<T> = {}): Promise<T> {
+  const providers = options.providers ?? await resolveLlmProviders();
   if (providers.length === 0) throw new Error("Konfigurasi LLM belum lengkap (isi lewat Settings atau env)");
   const entries = providers.flatMap((p) => p.models.map((model) => ({ baseUrl: p.baseUrl, apiKey: p.apiKey, model })));
   if (entries.length === 0) throw new Error("Konfigurasi LLM belum lengkap: tidak ada model di daftar provider");
 
-  if (entryCursor >= entries.length) entryCursor = 0;
-  const exhausted = new Set<string>();
   let lastError: unknown;
-  let exhaustedAll = true;
-  for (let cycle = 0; cycle < 2; cycle++) {
-    for (let i = 0; i < entries.length; i++) {
-      const entry = entries[(entryCursor + i) % entries.length];
-      const key = `${entry.baseUrl}|${entry.model}`;
-      if (exhausted.has(key)) continue;
+  let exhaustedCount = 0;
+  for (const entry of entries) {
+    let feedback: string[] | undefined;
+    for (let cycle = 0; cycle < 2; cycle++) {
       try {
-        const result = await attemptOnce(schema, prompt, entry, usage, cycle);
+        const result = await attemptOnce(schema, prompt, entry, usage, cycle, options, feedback);
         if (usage && !usage.models.includes(entry.model)) usage.models.push(entry.model);
-        entryCursor = (entryCursor + i) % entries.length;
         return result;
       } catch (error) {
         lastError = error;
-        const why = isExhaustedError(error)
-          ? "kehabisan quota"
-          : error instanceof Error && error.name === "AbortError"
-            ? "timeout"
-            : "gagal";
-        console.warn(`[LLM] ${entry.model} (${entry.baseUrl}) ${why}, pindah ke entri berikutnya`);
-        if (isExhaustedError(error)) exhausted.add(key);
+        if (isExhaustedError(error)) {
+          exhaustedCount++;
+          console.warn(`[LLM] ${entry.model} kehabisan quota, pindah ke entri berikutnya`);
+          break;
+        }
+        const repairable = error instanceof QualityError || error instanceof z.ZodError ||
+          (error instanceof Error && error.message.startsWith("JSON parsing gagal"));
+        if (repairable && cycle === 0) {
+          feedback = error instanceof QualityError ? error.issues : ["Invalid JSON or missing required fields"];
+          console.warn(`[LLM] ${entry.model} ${options.stage ?? "outline"} gagal validasi, coba perbaiki bagian ini`);
+          continue;
+        }
+        if (entries.length === 1 && cycle === 0 && error instanceof Error && error.name !== "AbortError") {
+          feedback = ["The previous request failed. Return complete valid JSON"];
+          continue;
+        }
+        console.warn(`[LLM] ${entry.model} ${options.stage ?? "outline"} gagal, pindah ke entri berikutnya`);
+        break;
       }
     }
-    exhaustedAll = exhausted.size >= entries.length;
-    if (exhaustedAll) break;
   }
-  if (exhaustedAll && entries.length > 1) {
+  if (exhaustedCount === entries.length && entries.length > 1) {
     throw new Error(`Semua model (${entries.map((e) => e.model).join(", ")}) kehabisan quota. Coba lagi nanti atau tambah provider/model di Settings.`);
   }
   throw lastError instanceof Error ? lastError : new Error("Semua model gagal");
@@ -363,6 +401,7 @@ async function regenerateDiagram(
   narrative: string,
   usage: LlmUsage,
   handoff: HandoffSettings = legacyHandoff,
+  providers?: LlmProvider[],
 ): Promise<string | null> {
   try {
     const kindPrompt =
@@ -373,6 +412,7 @@ async function regenerateDiagram(
       diagramSchema,
       `Produk: ${context.title}\nStack: ${JSON.stringify(context.stack)}\nFitur: ${JSON.stringify(context.featureTitles)}\n\nBerikut narasi ${kind === "architecture" ? "arsitektur" : "database schema"} yang sudah dibuat:\n---\n${narrative.slice(0, 6000)}\n---\n\n${kindPrompt}\n${handoffInstructions(handoff)}\nDiagram WAJIB spesifik untuk produk ini, dilarang memakai struktur generik (mis. node "CDN / Edge Cache" -> frontend -> backend -> database yang sama untuk semua project). HANYA isi JSON: {"mermaid":"flowchart TD\\n..."} atau {"mermaid":"erDiagram\\n..."}, teks mermaid TANPA pagar backtick.`,
       usage,
+      { stage: "diagram", providers },
     );
     const clean = result.mermaid.trim();
     if (!clean) return null;
@@ -455,20 +495,37 @@ const STYLE_RULE = `ATURAN GAYA PENULISAN:
    - Gunakan "node tree" (JANGAN "pohon node" atau "pohon hirarki")
    - Gunakan "data stream" (JANGAN "pipa aliran data")
    - Gunakan "file log" (JANGAN "berkas log")
-   - Gunakan "endpoint", "browser", "link", "cache", "cookie", "setup", "deploy", "auth", "login", "dashboard", dll apa adanya.`;
+   - Gunakan "endpoint", "browser", "link", "cache", "cookie", "setup", "deploy", "auth", "login", "dashboard", dll apa adanya.
+4. Tulis dengan suara profesional yang modern dan mudah dipindai pembaca Gen Z: kalimat aktif, singkat, jelas, tanpa slang, hype, pujian kosong, atau jargon pemasaran. Detail teknis dan kriteria uji tetap lengkap.`;
 
 // FIX v2: Enforce tier limits BEFORE calling LLM to avoid wasted tokens
 function getEnforcedBrief(brief: string, tier: Tier | string | null | undefined): string {
-  const maxFeatures = structureLimits(tier).features[1]; // Get hard limit for features
-  const truncatedText = brief.length > 2000 ? brief.slice(0, 2000) + `\n\nCATATAN: Fokus pada ${maxFeatures} fitur utama saja, jangan terlalu banyak detail.` : brief;
-  
-  return `${truncatedText}\n\nPRIORITY CONSTRAINT: Buat maksimal ${maxFeatures} fitur untuk product ini (hard limit). Jangan melebihi batas ini.`;
+  const [minFeatures, maxFeatures] = structureLimits(tier).features;
+  const minSubfeatures = structureLimits(tier).subFeatures[0];
+  return `${brief}\n\nPRIORITY CONSTRAINT: Buat ${minFeatures} sampai ${maxFeatures} fase berbeda berdasarkan workflow dan aktor yang diminta, bukan sekadar mengejar jumlah minimum. Tambah fase saat satu alur penting seperti administrasi, pembayaran, atau operasional pemilik tidak cocok di bawah fase lain. Cakup seluruh kebutuhan eksplisit dalam brief; jangan sembunyikan moderasi admin di bawah laporan pemilik, dan jangan mengarang kebutuhan baru. Promosi, diskon, loyalty, membership, rating, ulasan, referral, ekspor, dan social sharing hanya boleh muncul jika secara eksplisit diminta pengguna; daftar ini bukan saran fitur. Tiap fase harus cukup luas untuk ${minSubfeatures} kemampuan produk atau operasional berbeda yang dapat diuji. Jangan jadikan satu aturan seperti timezone, RBAC, double-booking prevention, QA, testing, dokumentasi, atau monitoring sebagai fase tersendiri. Double-booking belongs inside booking or checkout as a testable invariant. Gabungkan fase yang terlalu sempit ke workflow terkait.`;
 }
 
 /** Jawaban klarifikasi user yang sudah diratakan jadi string, siap masuk prompt. */
 export interface ContextAnswer {
   question: string;
   answer: string;
+}
+
+function confirmedScopeForValidation(brief: string, answers: readonly ContextAnswer[]): string {
+  const decisions = answers.map(({ question, answer }) => {
+    const reply = answer.trim();
+    if (/^(?:no|nope|not now|later|tidak|nggak|enggak|bukan|nanti|belum)\b/i.test(reply)) {
+      return `Do not include this proposed capability: ${question}`;
+    }
+    return `${question}: ${reply}`;
+  });
+  return [brief, ...decisions].join("\n");
+}
+
+function affirmativeScopeForValidation(brief: string, answers: readonly ContextAnswer[]): string {
+  return [brief, ...answers.filter(({ answer }) =>
+    !/^(?:no|nope|not now|later|tidak|nggak|enggak|bukan|nanti|belum)\b/i.test(answer.trim()),
+  ).map(({ question, answer }) => `${question}: ${answer}`)].join("\n");
 }
 
 export async function generatePlanStructure(
@@ -480,6 +537,7 @@ export async function generatePlanStructure(
 ): Promise<GenerateResult> {
   const styleRule = STYLE_RULE + "\n" + handoffInstructions(handoff);
   const usage: LlmUsage = { tokensIn: 0, tokensOut: 0, models: [] };
+  const providers = await resolveLlmProviders();
   // Batas struktur per tier: fase (fitur), sub-fitur per fitur, total task.
   const limits = structureLimits(tier);
   const structureWarnings: string[] = [];
@@ -500,12 +558,35 @@ export async function generatePlanStructure(
     : "";
 
   // FIX v2: Enforce limits BEFORE calling LLM
+  const confirmedScope = confirmedScopeForValidation(brief, contextAnswers ?? []);
+  const affirmativeScope = affirmativeScopeForValidation(brief, contextAnswers ?? []);
   const enforcedBrief = getEnforcedBrief(brief, tier);
 
   const one = await callLlm(
     stage1Schema,
-    `${enforcedBrief}\n${stackHint}${answersBlock}\n\nKamu adalah product manager senior. Buat PRD awal yang mendalam:\n${styleRule}\n1. Judul produk WAJIB nama brand yang catchy, modern, dan kreatif: ikuti bahasa output yang dipilih dan pertahankan nama brand yang diberikan pengguna (satu kata, maksimal dua kata, misal FutsalGo, KedaiPay, AutoKopi, QuickKasir, CariLapangan, BotPintar, dll). Mudah diingat, ringkas, dan relevan dengan fungsi produk. DILARANG menempelkan deskripsi panjang atau tanda titik dua seperti "NamaBrand: Aplikasi Apa".\n2. Asumsi wajar (min 5): bisnis, teknis, perilaku pengguna. Jika ada jawaban klarifikasi dari user, gunakan itu dan JANGAN jadikan hal yang sudah dijawab sebagai asumsi.\n3. Stack teknologi yang cocok.\n4. Daftar fitur: buat maksimal ${limits.features[1]} fitur. CAKUPAN WAJIB: setiap subsistem, komponen, atau fungsi yang disebut di brief harus tercover; bila subsistem melebihi jumlah maksimum, gabungkan subsistem yang serumpun ke satu fitur dan jelaskan penggabungannya di field description. JANGAN menghapus, melewati, atau mengabaikan subsistem apa pun.\n5. Untuk tiap fitur: deskripsi 1-2 kalimat, tujuan bisnis yang terukur, dan 3-5 kriteria "selesai bila" yang spesifik dan bisa diuji.\n\nWAJIB gunakan field PERSIS: title, assumptions, stack, features (title, icon, description, tujuan, selesai_bila, priority). Format: {"title":"...","assumptions":[],"stack":[],"features":[{"title":"...","icon":"...","description":"...","tujuan":"...","selesai_bila":[],"priority":"high"}]}}`,
+     `${enforcedBrief}\n${stackHint}${answersBlock}\n\nKamu adalah product manager senior. Buat PRD awal yang mendalam:\n${styleRule}\n1. Judul produk WAJIB nama brand yang diberikan pengguna jika ada. Bila belum ada, pilih nama singkat sesuai bahasa output. Jangan tempelkan deskripsi pada judul.\n2. Pisahkan fakta dari asumsi; jangan mengulang jawaban klarifikasi sebagai asumsi atau mengarang angka.\n3. Pilih stack teknologi yang sesuai kebutuhan dan batas biaya.\n4. Daftar ${limits.features[0]} sampai ${limits.features[1]} fase. Pilih jumlah yang cukup untuk setiap workflow eksplisit; jangan paksa jumlah minimum bila hasilnya menggabungkan dua aktor atau alur yang tidak serumpun. Setiap kebutuhan eksplisit di brief harus terwakili dan tidak boleh ditambah fitur yang tidak diminta. Tulis satu tanggung jawab produk utama tepat satu kali; jangan duplikasi checkout/pembayaran sebagai fase terpisah bila alurnya sama.\n5. Untuk tiap fitur: deskripsi spesifik, tujuan yang bisa diamati, dan 2-8 kriteria selesai yang dapat diuji. Detail implementasi diuraikan pada subfitur; jangan mengisi kriteria fase dengan filler atau klaim yang tidak didukung brief. Jangan sebut opsi yang secara tegas dikecualikan brief, bahkan sebagai kriteria negatif.\n\nWAJIB gunakan field PERSIS: title, assumptions, stack, features (title, icon, description, tujuan, selesai_bila, priority). Format: {"title":"...","assumptions":[],"stack":[],"features":[{"title":"...","icon":"...","description":"...","tujuan":"...","selesai_bila":[],"priority":"high"}]}}`,
     usage,
+    { stage: "outline", providers, validate: (draft) => {
+      for (const feature of draft.features) {
+        feature.selesai_bila = removeVagueCriteria(
+          removeUnrequestedCriteria(feature.selesai_bila, { brief, confirmedAnswers: contextAnswers ?? [] }, 2),
+          2,
+        );
+      }
+      return [
+        ...validateFeatureDraft(draft.features, tier, affirmativeScope),
+        ...validateScopeClaims({
+        brief,
+        confirmedAnswers: contextAnswers ?? [],
+        candidates: draft.features.flatMap((feature, index) => [
+          { path: `features[${index}].title`, text: feature.title },
+          { path: `features[${index}].description`, text: feature.description },
+          { path: `features[${index}].tujuan`, text: feature.tujuan },
+          ...feature.selesai_bila.map((text, criterion) => ({ path: `features[${index}].selesai_bila[${criterion}]`, text })),
+        ]),
+        }),
+      ];
+    } },
   );
 
   // Hard cutoff AFTER validation but still warn
@@ -521,40 +602,190 @@ export async function generatePlanStructure(
   }
   const featureTitles = stage1Features.map((f) => f.title);
 
-  // Stage-2 (dekomposisi sub-fitur), architecture, database schema, dan requirements
-  // semuanya HANYA butuh output stage-1 (judul fitur + stack) — bukan satu sama lain.
-  // Dulu stage-2 di-await dulu baru arch/db/req paralel = satu panggilan serial
-  // terbuang (±2 menit). Sekarang 4-way paralel.
-  const [two, archDataRaw, dbDataRaw, reqDataRaw] = await Promise.all([
-    callLlm(
-      stage2Schema,
-      `Brief: ${brief}\nFitur: ${JSON.stringify(featureTitles)}\n\nKamu adalah arsitek produk. Untuk setiap fitur, lakukan dekomposisi kritis:\n${styleRule}\n1. Untuk tiap fitur identifikasi ${limits.subFeatures[0]} sampai ${limits.subFeatures[1]} sub-fitur yang saling eksklusif namun collectively exhaustive, pilih aspek paling penting dari tiap fitur.\n2. Tiap sub-fitur pecahkan SATU masalah spesifik.\n3. Tujuan terukur.\n4. Selesai_bila berisi acceptance criteria konkret (min 2).\n5. Tandai sub-fitur risiko tinggi atau dependency eksternal.\n\nWAJIB field: title, sub_features (title, tujuan, selesai_bila). Format: {"features":[{"title":"...","sub_features":[{"title":"...","tujuan":"...","selesai_bila":["..."]}]}]}}`,
-      usage,
-    ),
+  // Setiap bagian menerima konteks produk yang sama. Dekomposisi Pro dibuat
+  // per fase agar model murah dapat menyelesaikan satu domain dengan utuh.
+  let sharedContext = JSON.stringify({
+    brief,
+    confirmedAnswers: contextAnswers ?? [],
+    product: brandTitle,
+    assumptions: one.assumptions,
+    stack: one.stack,
+    clientPlatformRule: "Keep the delivery platform from the brief and confirmed answers. A responsive website is not a native mobile app. For web-only products, label the client Browser or Web Client in prose and diagrams; do not introduce a native app or a future mobile roadmap.",
+    qualityRules: "Every sub-feature must be a distinct requested product or operational capability. Never invent functionality excluded by the brief or confirmed answers. Do not pad with documentation, training, support, feedback, improvement, maintenance, testing, QA, SEO, social sharing, analytics, monitoring, accessibility, performance, or generic error handling unless explicitly requested. Put relevant cross-cutting work inside concrete capabilities and tasks. Treat technology and third-party providers not specified by the user as assumptions, never confirmed facts.",
+    features: stage1Features.map(({ title, description, tujuan, selesai_bila }) => ({ title, description, tujuan, selesai_bila })),
+  });
+  type SubfeatureCandidate = z.infer<typeof stage2Schema>["features"][number]["sub_features"][number];
+  const cleanSubfeatures = (
+    feature: z.infer<typeof featureSchema>,
+    candidates: SubfeatureCandidate[],
+    reservedQa: boolean,
+    existing: readonly SubfeatureCandidate[] = [],
+  ): SubfeatureCandidate[] => {
+    const seenTitles = new Set(existing.map((sub) => sub.title.trim().toLocaleLowerCase()));
+    const seenGoals = new Set(existing.map((sub) => sub.tujuan.trim().toLocaleLowerCase()));
+    const accepted: SubfeatureCandidate[] = [];
+    for (const candidate of candidates) {
+      candidate.selesai_bila = removeVagueCriteria(
+        removeUnrequestedCriteria(candidate.selesai_bila, { brief, confirmedAnswers: contextAnswers ?? [] }, 2),
+        2,
+      );
+      const title = candidate.title.trim().toLocaleLowerCase();
+      const goal = candidate.tujuan.trim().toLocaleLowerCase();
+      if (seenTitles.has(title) || seenGoals.has(goal)) continue;
+      if (validateSubfeatureDraft(feature, [candidate], tier, {
+        reservedQa,
+        brief: confirmedScope,
+        allowUnderMin: true,
+      }).length > 0) continue;
+      if (validateScopeClaims({
+        brief,
+        confirmedAnswers: contextAnswers ?? [],
+        candidates: [
+          { path: "title", text: candidate.title },
+          { path: "tujuan", text: candidate.tujuan },
+          ...candidate.selesai_bila.map((text, index) => ({ path: `selesai_bila[${index}]`, text })),
+        ],
+      }).length > 0) continue;
+      seenTitles.add(title);
+      seenGoals.add(goal);
+      accepted.push(candidate);
+    }
+    return accepted;
+  };
+  const batchSize = tier === "pro" ? 2 : 4;
+  const subfeatureGroups = Array.from({ length: Math.ceil(stage1Features.length / batchSize) }, (_, index) =>
+    stage1Features.slice(index * batchSize, (index + 1) * batchSize),
+  );
+  let nextGroup = 0;
+  const subfeatureResults: Array<z.infer<typeof stage2Schema>> = new Array(subfeatureGroups.length);
+  const subfeaturesPromise = Promise.all(Array.from({ length: Math.min(3, subfeatureGroups.length) }, async () => {
+    while (nextGroup < subfeatureGroups.length) {
+      const groupIndex = nextGroup++;
+      const group = subfeatureGroups[groupIndex];
+      const requested = group.map((feature) => {
+        const index = stage1Features.indexOf(feature);
+        return { ...feature, subfeatureTarget: limits.subFeatures[0] - (index === stage1Features.length - 1 ? 1 : 0), subfeatureRange: index === stage1Features.length - 1
+          ? [limits.subFeatures[0] - 1, limits.subFeatures[1] - 1]
+          : limits.subFeatures };
+      });
+      subfeatureResults[groupIndex] = await callLlm(
+        stage2Schema,
+        `Product context: ${sharedContext}\n\nGenerate sub-features ONLY for these phases: ${JSON.stringify(requested)}. Keep each feature title exactly unchanged. Aim for each phase's subfeatureTarget (the tier minimum), adding more only when explicitly requested capabilities cannot fit naturally. Respect phase ownership: a capability implemented under another phase may be referenced as a dependency here, but must not become a second sub-feature. A user-facing control can stand alone only if it has distinct product rules and acceptance criteria; do not split selection, validation, persistence, refresh, and layout of the same action into separate capabilities. The final phase reserves one slot for ${QA_COPY[handoff.language].subFeature}, which the server adds automatically. Do not emit that QA sub-feature or any separate testing/QA sub-feature. Every sub-feature must solve a distinct problem with a measurable goal and at least two testable acceptance criteria. Each criterion should identify a trigger, observable outcome, or meaningful failure case; "handled safely", "sent in a timely manner", and restatements of the title are insufficient. Preserve all explicit requirements and confirmed answers, but omit explicitly excluded options completely. Avoid generic modules or optional add-ons not requested.\n${styleRule}\nReturn {"features":[{"title":"exact title","sub_features":[{"title":"...","tujuan":"...","selesai_bila":["...","..."]}]}]}.`,
+        usage,
+        { stage: "subfeatures", providers, validate: (draft) => {
+          const issues: string[] = [];
+          if (draft.features.length !== group.length) issues.push(`Expected ${group.length} phases in this batch`);
+          for (const feature of group) {
+            const matched = draft.features.find((item) => item.title.trim().toLowerCase() === feature.title.trim().toLowerCase());
+            if (!matched) { issues.push(`Missing phase: ${feature.title}`); continue; }
+            const reservedQa = stage1Features.indexOf(feature) === stage1Features.length - 1;
+            matched.sub_features = cleanSubfeatures(feature, matched.sub_features, reservedQa);
+            if (matched.sub_features.length === 0) issues.push(`${feature.title}: no grounded subfeatures remained`);
+            issues.push(...validateSubfeatureDraft(feature, matched.sub_features, tier, {
+              reservedQa,
+              brief: confirmedScope,
+              allowUnderMin: true,
+            }));
+          }
+          return issues;
+        } },
+      );
+      for (const feature of group) {
+        const matched = subfeatureResults[groupIndex].features.find((item) => item.title.trim().toLowerCase() === feature.title.trim().toLowerCase());
+        if (!matched) throw new Error(`Sub-feature generation omitted phase: ${feature.title}`);
+        const reservedQa = stage1Features.indexOf(feature) === stage1Features.length - 1;
+        const target = limits.subFeatures[0] - (reservedQa ? 1 : 0);
+        for (let attempt = 0; matched.sub_features.length < target && attempt < 3; attempt++) {
+          const missing = target - matched.sub_features.length;
+          const extra = await callLlm(
+            stage2Schema,
+            `Product context: ${sharedContext}\n\nComplete ONLY phase ${JSON.stringify(feature.title)} with exactly ${missing} NEW distinct capabilities grounded in the user brief. Existing accepted capabilities: ${JSON.stringify(matched.sub_features.map(({ title, tujuan }) => ({ title, tujuan })))}. Do not repeat these or invent optional features. A distinct customer or operator outcome is required; error handling, tests, documentation and technical quality are task details unless explicitly requested. Each new capability needs a specific goal and two acceptance criteria with observable results. ${styleRule}\nReturn {"features":[{"title":${JSON.stringify(feature.title)},"sub_features":[{"title":"...","tujuan":"...","selesai_bila":["...","..."]}]}]}.`,
+            usage,
+            { stage: "subfeatures", providers, validate: (draft) => {
+              const supplement = draft.features.find((item) => item.title.trim().toLowerCase() === feature.title.trim().toLowerCase());
+              if (!supplement) return [`Missing phase: ${feature.title}`];
+              supplement.sub_features = cleanSubfeatures(feature, supplement.sub_features, reservedQa, matched.sub_features);
+              return supplement.sub_features.length ? [] : [`${feature.title}: no distinct grounded supplements returned`];
+            } },
+          );
+          const supplement = extra.features.find((item) => item.title.trim().toLowerCase() === feature.title.trim().toLowerCase());
+          matched.sub_features.push(...(supplement?.sub_features ?? []).slice(0, missing));
+        }
+        const finalIssues = validateSubfeatureDraft(feature, matched.sub_features, tier, { reservedQa, brief: confirmedScope });
+        if (finalIssues.length) throw new QualityError(finalIssues);
+      }
+    }
+  })).then(() => subfeatureResults.flatMap((result) => result.features));
+
+  const subfeatureDrafts = await subfeaturesPromise;
+  const detailedContext = JSON.stringify({
+    product: brandTitle,
+    brief,
+    confirmedAnswers: contextAnswers ?? [],
+    assumptions: one.assumptions,
+    stack: one.stack,
+    qualityRules: "Never invent optional features or present unconfirmed durations, refund percentages, performance goals, providers, or implementation choices as user facts. Use configurable expiry and venue policy instead of numeric business defaults. Keep booking/payment state names consistent between flows and schema. The database section should be a concise PRD blueprint of 10-16 primary tables, not full SQL migrations; list essential columns, keys, constraints and relationships once. Requirements should contain at most 20 functional and 12 nonfunctional items, merging repetition.",
+    features: stage1Features.map(({ title, tujuan }) => ({ title, tujuan })),
+    subfeatures: subfeatureDrafts.map((phase) => ({
+      phase: phase.title,
+      capabilities: phase.sub_features.map(({ title }) => title),
+    })),
+  });
+  sharedContext = detailedContext;
+  const pruneScopeExtras = (draft: z.infer<typeof reqSchema>): void => {
+    for (const flow of draft.user_flow) {
+      flow.steps = removeUnrequestedCriteria(flow.steps, { brief, confirmedAnswers: contextAnswers ?? [] }, 2);
+    }
+    const groundedFlows = draft.user_flow.filter((flow) => validateScopeClaims({
+      brief, confirmedAnswers: contextAnswers ?? [], candidates: [{ path: "title", text: flow.title }],
+    }).length === 0);
+    if (groundedFlows.length >= 2) draft.user_flow = groundedFlows;
+    draft.requirements.fungsional = removeUnrequestedCriteria(draft.requirements.fungsional, { brief, confirmedAnswers: contextAnswers ?? [] }, 6);
+    draft.requirements.non_fungsional = removeUnrequestedCriteria(draft.requirements.non_fungsional, { brief, confirmedAnswers: contextAnswers ?? [] }, 4);
+  };
+  const [archDataRaw, dbDataRaw, reqDataRaw] = await Promise.all([
     callLlm(
       archSchema,
-      `Brief: ${brief}\nFitur: ${JSON.stringify(featureTitles)}\nStack: ${JSON.stringify(one.stack ?? [])}\n\nKamu adalah solution architect. Buat architecture detail untuk produk ini.\n${styleRule} Jelaskan komponen utama, alur data end-to-end, keputusan arsitektur, trade-off (monolith vs microservices, SSR vs CSR, SQL vs NoSQL), error handling, caching, auth, dan skalabilitas. Narasi 2-3 paragraf. WAJIB sertakan diagram mermaid flowchart TD di dalam triple backtick.\n\nFormat: {"architecture":"narasi detail lalu mermaid flowchart TD di triple backtick"}}`,
+      `Product context: ${sharedContext}\n\nKamu adalah solution architect. Buat architecture yang spesifik untuk kebutuhan produk ini.\n${styleRule} Jelaskan komponen utama, alur data end-to-end, keputusan arsitektur, trade-off yang relevan, error handling, auth, dan skalabilitas. Explain the handoff between real product components, not a generic catalog of technology or repeated paragraphs. For every brief requirement around concurrency, retries, callbacks, timezones, or authorization, explain the actual mechanism instead of a generic promise. A checkout hold must be persisted with owner and expiry; a row lock lasts only inside its transaction. If a hold duration is unspecified, call it configurable and do not invent a number. Explain how a late bank-transfer webhook is reconciled after expiry without confirming a slot held by someone else. Mark vendors and integrations not specified by the user as assumptions. Narasi 2-3 paragraf yang masing-masing punya tanggung jawab berbeda. Sertakan diagram mermaid flowchart TD di dalam field architecture.\n\nFormat: {"architecture":"detailed narrative followed by a mermaid flowchart TD in triple backticks"}}`,
       usage,
-    ).catch((error) => {
-      console.warn("[generate] architecture gagal, pakai fallback:", error instanceof Error ? error.message : error);
-      return null;
-    }),
+      { stage: "architecture", providers, validate: (draft) => [
+        ...validateArchitectureDraft(draft.architecture, { brief: affirmativeScope, featureTitles }),
+        ...validateScopeClaims({ brief, confirmedAnswers: contextAnswers ?? [], candidates: [{ path: "architecture", text: draft.architecture }] }),
+      ] },
+    ),
     callLlm(
       dbSchema,
-      `Brief: ${brief}\nFitur: ${JSON.stringify(featureTitles)}\nStack: ${JSON.stringify(one.stack ?? [])}\n\nKamu adalah database architect. Buat database schema lengkap untuk produk ini.\n${styleRule} Daftar SEMUA tabel utama. Untuk tiap tabel: nama kolom, tipe data, constraint (PK/FK/UNIQUE/INDEX), dan alasan pemilihan tipe. Identifikasi N+1 query risk dan hot path. WAJIB sertakan ERD mermaid di dalam triple backtick.\n\nFormat: {"database_schema":"### Tabel... lalu mermaid erDiagram di triple backtick"}}`,
+      `Product context: ${sharedContext}\n\nKamu adalah database architect. Buat database schema yang sesuai seluruh kemampuan produk di context.\n${styleRule} Jelaskan tabel utama, kolom dan tipe, PK/FK/UNIQUE/INDEX yang diperlukan, serta keputusan penyimpanan yang tidak jelas dari brief sebagai asumsi. Show the data-level invariant behind each requested concurrency guarantee, callback idempotency, authorization boundary, and timezone rule; a generic claim is insufficient. For concurrent bookings, persist hold owner and expiry, then reject collisions with a database-enforced active-slot rule. With PostgreSQL and overlapping intervals, write an explicit EXCLUDE USING gist constraint on court/resource ID and tstzrange(start,end) WHERE status IN active booking states; alternatively describe an atomic conditional UPDATE of a canonical slot row that checks status and verifies one affected row. A plain lookup followed by insert is not safe. If the user gave no hold duration, make it configurable and do not invent a number. For payment callbacks, persist a UNIQUE provider_event_id or a durable atomic payment-state guard, including late settlement after a hold expires. State how time is stored and displayed, and where ownership policies are enforced. Keep schema names and state names consistent with flows. Identifikasi hot path. Sertakan ERD mermaid di field database_schema.\n\nFormat: {"database_schema":"### Tables... followed by a mermaid erDiagram in triple backticks"}}`,
       usage,
-    ).catch((error) => {
-      console.warn("[generate] database_schema gagal, pakai fallback:", error instanceof Error ? error.message : error);
-      return null;
-    }),
+      { stage: "database", providers, validate: (draft) => [
+        ...validateDatabaseSchemaDraft(draft.database_schema, { brief: affirmativeScope, featureTitles }),
+        ...validateScopeClaims({ brief, confirmedAnswers: contextAnswers ?? [], candidates: [{ path: "database_schema", text: draft.database_schema }] }),
+      ] },
+    ),
     callLlm(
       reqSchema,
-      `Brief: ${brief}\nFitur: ${JSON.stringify(featureTitles)}\n\nKamu adalah product manager. Buat user flow, requirements, dan tech stack untuk produk ini.\n${styleRule}\n1. User Flow: 2-4 alur utama (happy path + 1 unhappy path per fitur penting), tiap langkah actionable.\n2. Requirements: fungsional (min 6) dan non-fungsional (min 4: performance, security, reliability, scalability).\n3. Tech Stack: tiap teknologi ada alasan 1 kalimat dan alternatif yang dipertimbangkan.\n\nFormat: {"user_flow":[{"title":"...","steps":["..."]}],"requirements":{"fungsional":[],"non_fungsional":[]},"tech_stack":[{"name":"...","desc":"..."}]}}`,
+      `Product context: ${sharedContext}\n\nKamu adalah product manager. Buat user flow, requirements, dan tech stack yang konsisten dengan fitur dan subfitur final di atas.\n${styleRule}\n1. User flow: 2-4 alur utama, termasuk error path yang relevan.\n2. Requirements: minimal 6 fungsional dan 4 non-fungsional yang spesifik dan dapat diuji. Each item must name a concrete actor, observable behavior, or measurable invariant. A functional item defines what the user or system does; a nonfunctional item must explain an enforceable mechanism or observable failure behavior. "Reliable", "accurate", "consistent", "timely", "secure", or "roles enforced" alone are not testable. Describe the actual check, record, retry, permission boundary, or failure response without inventing a numeric SLA. Never add optional features absent from the brief or confirmed answers. Do not mention explicitly excluded features even in a negative or future-scope statement here; leave them out of flows and requirements entirely. For unspecified vendors, mark the choice as an assumption. Any duration, SLA, throughput, or performance target not supplied by the user must be clearly labeled proposed or assumed and require user confirmation; never present it as a fixed commitment.\n3. Tech stack: alasan singkat untuk tiap teknologi, sesuai stack yang dipilih. Do not present recommendations as user-confirmed choices.\n\nFormat: {"user_flow":[{"title":"...","steps":["..."]}],"requirements":{"fungsional":[],"non_fungsional":[]},"tech_stack":[{"name":"...","desc":"..."}]}}`,
       usage,
-    ).catch((error) => {
-      console.warn("[generate] requirements gagal, pakai default:", error instanceof Error ? error.message : error);
-      return null;
-    }),
+      { stage: "requirements", providers, validate: (draft) => {
+        pruneScopeExtras(draft);
+        return [
+        ...validateRequirementsDraft(draft, {
+          brief,
+          confirmedAnswers: contextAnswers ?? [],
+          stack: one.stack,
+          language: handoff.language,
+        }),
+        ...validateScopeClaims({
+          brief,
+          confirmedAnswers: contextAnswers ?? [],
+          candidates: [
+            ...draft.user_flow.map((flow, index) => ({ path: `user_flow[${index}]`, text: [flow.title, ...flow.steps].join(". ") })),
+            ...draft.requirements.fungsional.map((item, index) => ({ path: `requirements.fungsional[${index}]`, text: item })),
+            ...draft.requirements.non_fungsional.map((item, index) => ({ path: `requirements.non_fungsional[${index}]`, text: item })),
+          ],
+        }),
+      ]; } },
+    ),
   ]);
 
   const archData = {
@@ -566,15 +797,11 @@ export async function generatePlanStructure(
   };
 
   let subFeatureTrimmed = false;
-  const featureListFromTwo = Array.isArray(two?.features) ? two.features : (Array.isArray(two) ? (two as any) : []);
+  const featureListFromTwo = subfeatureDrafts;
   const features = stage1Features.map((f) => {
     const mapped = featureListFromTwo.find((x: any) => x?.title === f.title || String(x?.title ?? "").toLowerCase().trim() === f.title.toLowerCase().trim());
-    const rawSubs = (mapped?.sub_features && mapped.sub_features.length > 0)
-      ? mapped.sub_features
-      : [
-          { title: `${f.title} - ${handoff.language === "en" ? "Core components" : "Komponen utama"}`, tujuan: handoff.language === "en" ? `Implement the architecture and core components for ${f.title}` : `Implementasi arsitektur dan komponen utama untuk ${f.title}`, selesai_bila: handoff.language === "en" ? ["Core components function as expected", "Modules integrate successfully"] : ["Komponen terpasang dan berfungsi", "Integrasi antar modul berhasil"] },
-          { title: `${f.title} - ${handoff.language === "en" ? "Integration & validation" : "Integrasi & validasi"}`, tujuan: handoff.language === "en" ? `Test and validate ${f.title}` : `Pengujian dan validasi operasional untuk ${f.title}`, selesai_bila: handoff.language === "en" ? ["Inputs and outputs are validated", "Error handling is verified"] : ["Validasi input output berhasil", "Error handling aktif"] },
-        ];
+    if (!mapped) throw new Error(`Sub-feature generation omitted phase: ${f.title}`);
+    const rawSubs = mapped.sub_features;
     if (rawSubs.length > limits.subFeatures[1]) subFeatureTrimmed = true;
     // Enforce keras batas sub-fitur per fitur.
     const subFeatures = trimToMax(rawSubs, limits.subFeatures[1]).map((sf: any) => ({
@@ -594,6 +821,12 @@ export async function generatePlanStructure(
     : techPrefs.mode === "custom"
       ? [techPrefs.frontend, techPrefs.backend, techPrefs.database, techPrefs.deployment].filter((s): s is string => !!s)
       : ["Next.js", "PostgreSQL", "Railway"];
+  const stackDecision = handoff.language === "en"
+    ? "The tech stack is an AUTO-mode recommendation and has not been confirmed by the user."
+    : "Tech stack adalah rekomendasi mode AUTO dan belum dikonfirmasi pengguna.";
+  const assumptions = techPrefs.mode === "auto"
+    ? [...one.assumptions.filter((item) => !/stack.*(?:recommend|rekomendasi)|(?:recommend|rekomendasi).*stack/i.test(item)), stackDecision]
+    : one.assumptions;
 
   // Normalisasi fence tanpa label + deteksi dini diagram yang hilang: kalau LLM
   // ngasih narasi tapi TANPA diagram mermaid, minta LLM gambar ulang diagramnya
@@ -603,8 +836,8 @@ export async function generatePlanStructure(
   const ctx = { title: brandTitle, stack: resolvedStack, featureTitles: featureTitles };
 
   const [archDiagram, dbDiagram] = await Promise.all([
-    archRaw && !hasMermaidDiagram(archRaw) ? regenerateDiagram("architecture", ctx, archRaw, usage, handoff) : Promise.resolve(null),
-    dbRaw && !hasMermaidDiagram(dbRaw) ? regenerateDiagram("database", ctx, dbRaw, usage, handoff) : Promise.resolve(null),
+    archRaw && !hasMermaidDiagram(archRaw) ? regenerateDiagram("architecture", ctx, archRaw, usage, handoff, providers) : Promise.resolve(null),
+    dbRaw && !hasMermaidDiagram(dbRaw) ? regenerateDiagram("database", ctx, dbRaw, usage, handoff, providers) : Promise.resolve(null),
   ]);
 
   const { architecture, databaseSchema, usedFallback } = applyArchFallback(
@@ -634,7 +867,7 @@ export async function generatePlanStructure(
     brief,
     stack: resolvedStack,
     techStack: archData.techStack,
-    asumsi: one.assumptions,
+    asumsi: assumptions,
     requirements: { fungsional: archData.requirements.fungsional, nonFungsional: archData.requirements.non_fungsional },
     userFlow: archData.userFlow,
     architecture,
@@ -655,11 +888,23 @@ export async function generateTasksForFeature(
   /** Ide user dari kolom chat (Pro). WAJIB dibaca AI sebagai referensi tambahan. */
   ideas?: PlanIdea[] | null,
   handoff: HandoffSettings = legacyHandoff,
+  context?: {
+    featureDescription?: string;
+    featureGoal?: string;
+    featureCriteria?: string[];
+    subFeatures?: Array<{ title: string; tujuan?: string; selesaiBila?: string[] }>;
+    requirements?: { fungsional?: string[]; nonFungsional?: string[] };
+    stack?: string[];
+    reservedQa?: boolean;
+  },
 ): Promise<{ tasks: Omit<GenerateTask, "ref">[]; usage: LlmUsage }> {
   const styleRule = STYLE_RULE + "\n" + handoffInstructions(handoff);
   const usage: LlmUsage = { tokensIn: 0, tokensOut: 0, models: [] };
   // Budget task per fitur berlaku per unit fitur/sub-fitur sesuai batas tier.
-  const [minTasks, maxTasks] = taskRangePerFeature(tier, featureCount, subFeatures.length);
+  const [fullMinTasks, fullMaxTasks] = taskRangePerFeature(tier, featureCount, subFeatures.length);
+  const reservedQa = context?.reservedQa === true;
+  const minTasks = Math.max(subFeatures.length, fullMinTasks - (reservedQa ? 4 : 0));
+  const maxTasks = fullMaxTasks - (reservedQa ? 4 : 0);
   const taskBudgetRule = `Buat ${minTasks} sampai ${maxTasks} task untuk fitur ini (WAJIB tidak melebihi ${maxTasks}). Pastikan SETIAP sub-fitur memiliki alokasi task (minimal frontend, backend, atau QA).`;
   // Ide user (fitur Pro) disuntikkan ke prompt AI sebagai referensi wajib:
   // kalau ada ide yang relevan dengan fitur ini, task-nya HARUS mengakomodasi
@@ -669,8 +914,9 @@ export async function generateTasksForFeature(
     : "";
   const result = await callLlm(
     stage3Schema,
-    `Brief: ${brief}\nFitur: ${featureTitle}\nSub-fitur: ${JSON.stringify(subFeatures)}\n${ideaBlock}\nKamu adalah tech lead senior. Buat task untuk fitur ini saja dengan pendekatan kritis:\n${styleRule}\n1. ${taskBudgetRule} Tiap task harus spesifik dan actionable.\n2. Setiap sub-fitur harus ada task (frontend, backend, dan/atau QA/testing).\n3. Tiap task title WAJIB singkat dan padat, MAKSIMAL 60 karakter, diawali kata kerja (Buat, Integrasikan, Uji, Deploy, Refactor, dll). Tanpa menyebut nama fitur.\n4. Sertakan task untuk: validasi input, error handling, state management, integrasi antar komponen, unit/integration test, accessibility/perf jika relevan.\n5. Beri SETIAP task id unik berurutan: "t1", "t2", "t3", dst.\n6. Dependency (deps): isi dengan id task lain yang harus selesai LEBIH DULU (hanya id dari daftar task ini, mis. ["t1","t3"]). Jangan membuat ketergantungan melingkar. Task yang bisa dikerjakan paralel tanpa prasyarat diberi deps [].\n7. Urutan logis layer: frontend -> backend -> qa.\n8. Setiap task wajib field: id, sub_feature (judul sub-fitur persis dari daftar), title, layer (frontend/backend/qa), phase, page (null atau path), deps (array id). JANGAN tulis field feature.\n\nFormat: {"tasks":[{"id":"t1","sub_feature":"${subFeatures[0] ?? "..."}","title":"...","layer":"frontend","phase":${featureIndex + 1},"page":null,"deps":[]},{"id":"t2","sub_feature":"${subFeatures[0] ?? "..."}","title":"...","layer":"backend","phase":${featureIndex + 1},"page":null,"deps":["t1"]}]}`,
+    `Product context: ${JSON.stringify({ brief, featureTitle, featureDescription: context?.featureDescription, featureGoal: context?.featureGoal, featureCriteria: context?.featureCriteria, subFeatures: context?.subFeatures ?? subFeatures.map((title) => ({ title })), requirements: context?.requirements, stack: context?.stack })}\n${ideaBlock}\nKamu adalah tech lead senior. Buat task untuk fitur ini saja dengan pendekatan kritis:\n${styleRule}\n1. ${taskBudgetRule} Tiap task harus spesifik dan menelusur ke tujuan serta kriteria selesai subfitur yang bersangkutan.${reservedQa ? ` Four ${QA_COPY[handoff.language].subFeature} tasks are added by the server afterward; do not count them in this response.` : ""}\n2. Setiap sub-fitur harus mendapat minimal satu task yang relevan.\n3. Tiap judul task maksimal 60 karakter, diawali kata kerja, tanpa mengulang nama fitur.\n4. Sertakan validasi, error path, integrasi dan pengujian yang relevan, tanpa task generik yang hanya mengisi jumlah.\n5. Beri SETIAP task id unik berurutan: t1, t2, t3, dst.\n6. Dependency hanya merujuk task dalam daftar ini yang harus selesai lebih dulu, tanpa siklus. Task paralel memakai deps [].\n7. Urutan logis layer: frontend -> backend -> qa.\n8. Setiap task wajib field: id, sub_feature (judul sub-fitur persis dari daftar), title, layer (frontend/backend/qa), phase, page (null atau path), deps (array id). JANGAN tulis field feature.\n\nFormat: {"tasks":[{"id":"t1","sub_feature":"${subFeatures[0] ?? "..."}","title":"...","layer":"frontend","phase":${featureIndex + 1},"page":null,"deps":[]}]}`,
     usage,
+    { stage: "tasks", validate: (draft) => validateTaskDraft(draft.tasks, subFeatures, tier, { reservedQa }) },
   );
   // Enforce keras: potong task berlebih dari LLM ke budget maksimum.
   return { tasks: trimToMax(result.tasks, maxTasks), usage };

@@ -14,12 +14,12 @@ export function CopyPrompt({ prompt }: { prompt: string }) {
   };
 
   return (
-    <div className="mt-8 rounded-xl border border-white/[.08] bg-white/[.04] p-4">
-      <p className="mb-2 font-mono text-[9px] uppercase tracking-[.18em] text-[#5C6A7A]">Sample Prompt</p>
-      <p className="text-[12px] leading-[1.65] text-[#8C97A5]">{prompt}</p>
+    <div className="mt-6 rounded-xl border border-white/[.08] bg-white/[.04] p-5">
+      <p className="mb-3 font-mono text-[10px] uppercase tracking-[.18em] text-[#9CA9A0]">Sample Prompt</p>
+      <p className="text-[14px] leading-[1.65] text-[#A9B3AE]">{prompt}</p>
       <button
         onClick={handleCopy}
-        className={`mt-3 flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[11px] font-medium transition-all duration-200 ${
+        className={`mt-4 flex min-h-11 items-center gap-1.5 rounded-md px-3 py-2 text-[12px] font-medium transition-all duration-200 ${
           copied
             ? "bg-[#74FA6A]/15 text-[#74FA6A]"
             : "bg-white/[.06] text-[#9CA9B8] hover:bg-white/[.10] hover:text-[#E8F0E8]"

@@ -88,9 +88,6 @@ export function ClosingFooter({ createHref }: { createHref: string }) {
                 <Link href="/project/demo" className={s.secondary}>
                   {en ? "Open sample plan" : "Buka contoh plan"}
                 </Link>
-                <Link href="/docs#quickstart" className={s.secondary}>
-                  {en ? "CLI setup" : "Panduan CLI"}
-                </Link>
               </div>
             </div>
             <div
@@ -147,19 +144,9 @@ export function ClosingFooter({ createHref }: { createHref: string }) {
           <nav aria-label={en ? "Resource links" : "Link panduan"}>
             <h3>{en ? "Resources" : "Panduan"}</h3>
             <Link href="/docs">{en ? "Documentation" : "Dokumentasi"}</Link>
-            <Link href="/docs#quickstart">
-              {en ? "CLI setup" : "Panduan CLI"}
-            </Link>
             <Link href="/sample/web-projects">
               {en ? "Website samples" : "Contoh website"}
             </Link>
-            <a
-              href="https://scratchagent.store/"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              API keys <span aria-hidden="true">↗</span>
-            </a>
           </nav>
         </div>
         <div className={s.footerBottom}>

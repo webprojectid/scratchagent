@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowUpRight, Check, ChevronRight, Circle, FileText, Folder, GitBranch, ListChecks, Map, Minus, Pause, Play, RotateCcw, Search, Terminal, X } from "lucide-react";
 import { landingSessions } from "@/lib/landing-demo";
 import { workspaceCopy } from "@/lib/copy-workspace";
+import { PhaseIcon } from "@/components/stock-icon";
 import styles from "./landing-workspace.module.css";
 
 type Tab = "roadmap" | "prd" | "tasks";
@@ -123,7 +124,7 @@ export function LandingWorkspace({ lang = "en" }: { lang?: "id" | "en" }) {
               <div className={styles.sessionList}>
                 {matching.map(({ item, index }) => <button key={item.slug} className={styles.session} aria-pressed={state.feature === index} onClick={() => dispatch({ type: "feature", index })}>
                   <span className={styles.sessionMeta}>{w.phaseLabel} {index + 1}<span>{item.tasks.length} {w.tasksCount}</span></span>
-                  <strong>{item.title}</strong>
+                  <strong><PhaseIcon phase={item} size={14} /><span>{item.title}</span></strong>
                   <span className={styles.sessionMeta}>{state.feature === index ? <><span className={styles.activeDot} /> {w.sessionSelected}</> : w.viewPlan}</span>
                 </button>)}
                 {matching.length === 0 && <p className={styles.empty}>{label("Fitur tidak ditemukan. Coba kata lain.", "No features found. Try another search.")}</p>}

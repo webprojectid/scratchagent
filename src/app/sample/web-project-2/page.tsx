@@ -1,23 +1,10 @@
 "use client";
 
-import Link from "next/link";
-import { HeaderNav } from "@/components/header-nav";
+import { LandingNavbar } from "@/components/landing-navbar";
 import { DemoOne } from "@/components/ui/caleido-crm-demo";
 import { CopyPrompt } from "@/components/ui/copy-prompt";
 import { useLang } from "@/lib/lang";
 
-function Logo() {
-  return (
-    <Link href="/" className="flex items-center gap-2 text-[16px] font-semibold tracking-[-.04em] text-[#E8F0E8]">
-      <span className="relative grid size-6 place-items-center overflow-hidden text-[#74FA6A]" aria-hidden="true">
-        <span className="absolute left-0 top-[6px] h-2.5 w-2 -skew-x-[28deg] rounded-sm bg-[#74FA6A]" />
-        <span className="absolute left-[7px] top-[2.5px] h-2.5 w-2 -skew-x-[28deg] rounded-sm bg-[#9AFF82]" />
-        <span className="absolute left-[14px] top-[6px] h-2.5 w-2 -skew-x-[28deg] rounded-sm bg-[#4DDC62]" />
-      </span>
-      Scratch Agent
-    </Link>
-  );
-}
 
 const PROMPT_EN = `Build a light-mode CRM sales dashboard called "Caleido". Layout: left sidebar with welcome greeting, 2×3 stat cards (Appointment, Qualified, Presentation, Proposal, Closed Won, Closed Lost), and task progress bars (Calls, To-do, Emails). Center panel: orange gradient banner, activity feed tabs (Activity, Notes, Emails, Calls, Tasks, Meetings), and a vertical timeline of CRM events — deal moves, meeting recordings with audio waveform player, scheduled meetings, and emails. Right panel: contact detail view with profile photo, role badge, action buttons (Meeting, Note, Email, Call, Task), and deal metadata rows. Accent color orange (#ef672f). Stack: React, Tailwind CSS, TypeScript.`;
 
@@ -28,13 +15,8 @@ export default function SampleWebProjectTwoPage() {
   const lang = useLang();
 
   return (
-    <main className="min-h-screen bg-[#0A0A0A] text-[#E8EDEC] selection:bg-[#74FA6A]/30 selection:text-black">
-      <header className="sticky top-0 z-40 border-b border-white/[.06] bg-[rgba(10,10,10,0.85)] backdrop-blur-[12px]">
-        <div className="mx-auto flex h-[54px] max-w-[1100px] items-center justify-between px-5">
-          <Logo />
-          <HeaderNav links={["solutions", "docs"]} ctaHref="/login" ctaKey="login" />
-        </div>
-      </header>
+    <main className="sample-page min-h-screen bg-[#0A0A0A] text-[#E8EDEC] selection:bg-[#74FA6A]/30 selection:text-black">
+      <LandingNavbar />
 
       <section className="w-full px-6 py-14 md:px-10 md:py-20">
         <div className="sample-project-layout">
