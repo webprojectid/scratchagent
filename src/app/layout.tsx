@@ -5,6 +5,7 @@ import "./globals.css";
 import "./color-styles.css";
 import { Providers } from "@/components/providers";
 import { langInitScript } from "@/lib/lang";
+import { SHARE_IMAGE, SITE_ORIGIN, siteOpenGraph } from "@/lib/site-metadata";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -18,16 +19,11 @@ const geistMono = Geist_Mono({
 const display = Space_Grotesk({ variable: "--font-display", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://www.scratchagent.web.id"),
+  metadataBase: new URL(SITE_ORIGIN),
   title: "Scratch Agent",
   description: "Hire your AI agent.",
-  openGraph: {
-    type: "website",
-    siteName: "Scratch Agent",
-    title: "Scratch Agent",
-    description: "Hire your AI agent.",
-  },
-  twitter: { card: "summary_large_image" },
+  openGraph: siteOpenGraph,
+  twitter: { card: "summary_large_image", images: [{ url: SHARE_IMAGE.url, alt: SHARE_IMAGE.alt }] },
   icons: { icon: "/favicon.svg", shortcut: "/favicon.svg" },
 };
 
@@ -39,6 +35,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       suppressHydrationWarning
     >
       <head>
+        <link rel="image_src" href={SHARE_IMAGE.url} />
         <script dangerouslySetInnerHTML={{ __html: langInitScript }} />
         <script dangerouslySetInnerHTML={{ __html: "try{var p=JSON.parse(localStorage.getItem('scratch_account_preferences')||'{}');if(['scratch','blue','violet','amber','rose'].includes(p.colorStyle))document.documentElement.dataset.colorStyle=p.colorStyle}catch(e){}" }} />
       </head>

@@ -662,126 +662,6 @@
       "severity": 2,
       "count": 1
     },
-    "5ecb5a743f3f795c413f687ab0f491e7b076c32d7e74f9c4b59b60f3f7cd0459": {
-      "file": "src/app/page.tsx",
-      "rule": "@typescript-eslint/no-unused-vars",
-      "severity": 1,
-      "count": 1
-    },
-    "9c72e72b5c7fc3addffa1289c54481b25f29d6b8845e71c9833746b129f54b34": {
-      "file": "src/app/page.tsx",
-      "rule": "@typescript-eslint/no-unused-vars",
-      "severity": 1,
-      "count": 1
-    },
-    "be4c24989c72cbdd5791a2eee843cbd18c6513bec3c30e6713a0a649295170d2": {
-      "file": "src/app/page.tsx",
-      "rule": "@typescript-eslint/no-unused-vars",
-      "severity": 1,
-      "count": 1
-    },
-    "c12169e5caffe69b157d405df2ed2629b930f1e35bbc26f845d502d584da5331": {
-      "file": "src/app/page.tsx",
-      "rule": "@typescript-eslint/no-unused-vars",
-      "severity": 1,
-      "count": 1
-    },
-    "6a56f8a870d3a2db017fabbc00bcc2846dc554ac369ab69a611f98b3f90f1304": {
-      "file": "src/app/page.tsx",
-      "rule": "@next/next/no-img-element",
-      "severity": 1,
-      "count": 1
-    },
-    "71ded5225a545c2835e80fe3ff41904c75dd26cf9c3474fd7260695ccedc65ec": {
-      "file": "src/app/page.tsx",
-      "rule": "@next/next/no-img-element",
-      "severity": 1,
-      "count": 1
-    },
-    "72c73bb5bf2461c2c66b4c838d16681b74f429b9ccea653248ecfe4fecd6d270": {
-      "file": "src/app/page.tsx",
-      "rule": "@next/next/no-img-element",
-      "severity": 1,
-      "count": 1
-    },
-    "04bb472c9505414062879faebb371febdd032a7a4b67b41482caeeb8b1c75307": {
-      "file": "src/app/page.tsx",
-      "rule": "@next/next/no-img-element",
-      "severity": 1,
-      "count": 1
-    },
-    "52547dd14639f38b6e30bbce96aff4d96bb6e8774020cf65a892221981857aa5": {
-      "file": "src/app/page.tsx",
-      "rule": "@next/next/no-img-element",
-      "severity": 1,
-      "count": 1
-    },
-    "45454ca843d6cb4b243a442052915777d044f47d19b341a739556cd300055913": {
-      "file": "src/app/page.tsx",
-      "rule": "@next/next/no-img-element",
-      "severity": 1,
-      "count": 1
-    },
-    "2e4875f8ffbcf07dd105029c6cfd8ad09a3960a4f283246874ca69f910764168": {
-      "file": "src/app/page.tsx",
-      "rule": "react-hooks/exhaustive-deps",
-      "severity": 1,
-      "count": 1
-    },
-    "7436ea2fc621723e873a0bc21dfd4dafd9d8bffae9119fea4e970cc3ced9593f": {
-      "file": "src/app/page.tsx",
-      "rule": "@typescript-eslint/no-unused-vars",
-      "severity": 1,
-      "count": 1
-    },
-    "fe9795c9f05182437b0480dd093faa65c274856fde398cbd3fc49be1285dbd1d": {
-      "file": "src/app/page.tsx",
-      "rule": "react-hooks/exhaustive-deps",
-      "severity": 1,
-      "count": 1
-    },
-    "3a57fe1f1e47714dd4dafff884dd14d1185106ccf2bf67c7d38ba518a95f6cc7": {
-      "file": "src/app/page.tsx",
-      "rule": "@typescript-eslint/no-unused-vars",
-      "severity": 1,
-      "count": 1
-    },
-    "6e6ca7f2ab16ac9969dacf4abe5ee9a9bdddbff7d663757922ca3e447694c442": {
-      "file": "src/app/page.tsx",
-      "rule": "@typescript-eslint/no-unused-vars",
-      "severity": 1,
-      "count": 1
-    },
-    "f2a4d0eb7636fa6429575591ac43aeff7c447908d0a9fabadfbb555a8e029694": {
-      "file": "src/app/page.tsx",
-      "rule": "@typescript-eslint/no-unused-vars",
-      "severity": 1,
-      "count": 1
-    },
-    "3196ccc1a5291c371c266162cb0d338a3bc74c90ea465b72b04a650ad209c7ee": {
-      "file": "src/app/page.tsx",
-      "rule": "@typescript-eslint/no-unused-vars",
-      "severity": 1,
-      "count": 1
-    },
-    "4f274336f57d99060c1c0961f869cc7dca8e169c257678d70fb94d553de04d64": {
-      "file": "src/app/page.tsx",
-      "rule": "prefer-const",
-      "severity": 2,
-      "count": 1
-    },
-    "f9909aaf0f347355f0cedf5acb7eff68ea55973268555cfe852a8abea946bdcf": {
-      "file": "src/app/page.tsx",
-      "rule": "prefer-const",
-      "severity": 2,
-      "count": 1
-    },
-    "b2c2636975b15ea6902ad9a5bdea3ae232e98196750ab3f9999a11a5faf4235b": {
-      "file": "src/app/page.tsx",
-      "rule": "react/no-unescaped-entities",
-      "severity": 2,
-      "count": 1
-    },
     "eb0c3396f239f0cd9a16d633fdfc422e7bfce0d216b74d259905b9e4563bba95": {
       "file": "src/components/account-workspace.tsx",
       "rule": "react-hooks/set-state-in-effect",
@@ -1278,6 +1158,126 @@
       "file": "tests/plan-limits.test.ts",
       "rule": "@typescript-eslint/no-unused-vars",
       "severity": 1,
+      "count": 1
+    },
+    "95fb1d274e93d66bfb0387143a35e00d5472be82bcd645d41bca70620d737ce0": {
+      "file": "src/components/home-page.tsx",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "c6f9895613f7e0371c799bb394e002d8a645edbbb559075fe148249149f75785": {
+      "file": "src/components/home-page.tsx",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "74614a2aa283bed2605a5a84abdc84e6e6a49c60b5406ef6e4afa83707cd8bc3": {
+      "file": "src/components/home-page.tsx",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "fb9c16c97fb3ab8d22ed0ca965cf626e360a6013d8b10fc891de7daee63ae3ce": {
+      "file": "src/components/home-page.tsx",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "93fd0d70e1e9120dfe15cbf0f80702507292a4981befae61b3e9605b16139163": {
+      "file": "src/components/home-page.tsx",
+      "rule": "@next/next/no-img-element",
+      "severity": 1,
+      "count": 1
+    },
+    "ac6815538b1a959935be5ce1140711d1c65cfccb0d53a54358b9d45ae02fb156": {
+      "file": "src/components/home-page.tsx",
+      "rule": "@next/next/no-img-element",
+      "severity": 1,
+      "count": 1
+    },
+    "97cd698ea87d4a10ba8d2033e8b1714bb6a849b8a79fc23d94bd9851a74a9a5c": {
+      "file": "src/components/home-page.tsx",
+      "rule": "@next/next/no-img-element",
+      "severity": 1,
+      "count": 1
+    },
+    "988963396b0986022cccf7f4fbea4cf5deeaa190eeac647f8b13b1806646df92": {
+      "file": "src/components/home-page.tsx",
+      "rule": "@next/next/no-img-element",
+      "severity": 1,
+      "count": 1
+    },
+    "55b26622374dc3e60ae266bee18b62e842915cca7ead4f3bdacc5d1ef2b88f0f": {
+      "file": "src/components/home-page.tsx",
+      "rule": "@next/next/no-img-element",
+      "severity": 1,
+      "count": 1
+    },
+    "85424989a7878be34fc0c438cac51831a01aa2f9b72709b829613831b0d17f8e": {
+      "file": "src/components/home-page.tsx",
+      "rule": "@next/next/no-img-element",
+      "severity": 1,
+      "count": 1
+    },
+    "0880c51a42bffbfad2df91177fe4ba3e13e6a79857317b270c315f7992550f25": {
+      "file": "src/components/home-page.tsx",
+      "rule": "react-hooks/exhaustive-deps",
+      "severity": 1,
+      "count": 1
+    },
+    "b2392619e34cfd7f982a2667935e4a0b8bd2b14a313ba119d7cd8bb0e5dd4f45": {
+      "file": "src/components/home-page.tsx",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "c8f908c14412657cd27d6dd33ab6604e503efa5cd862bc2a0adb236c788e3079": {
+      "file": "src/components/home-page.tsx",
+      "rule": "react-hooks/exhaustive-deps",
+      "severity": 1,
+      "count": 1
+    },
+    "865b6fd3221911c5b22dfa28aec65fad6a78f702ac21141878b5dd6385fe4e66": {
+      "file": "src/components/home-page.tsx",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "949df853cc22da4785f1303462cde1cde56b1ef60cbbc0c91afc77dbf7c5e661": {
+      "file": "src/components/home-page.tsx",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "4c6e7985b5e94a9f621e2097ffc79875377ebe6640d3e3610d5a22f6d6334a49": {
+      "file": "src/components/home-page.tsx",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "3b3d65157c7274293797c8b9c54d80132a67979b77cc50097493fd8160268c7c": {
+      "file": "src/components/home-page.tsx",
+      "rule": "@typescript-eslint/no-unused-vars",
+      "severity": 1,
+      "count": 1
+    },
+    "c6c1e59358c49078e0a97945609852a88cceb14a9c9392673bc6314861f8f330": {
+      "file": "src/components/home-page.tsx",
+      "rule": "prefer-const",
+      "severity": 2,
+      "count": 1
+    },
+    "764d48a68696f8af466ce36cc819be4c2b7fee8cfbdb6c3c3a565e2d69578d04": {
+      "file": "src/components/home-page.tsx",
+      "rule": "prefer-const",
+      "severity": 2,
+      "count": 1
+    },
+    "776a09cf0a0a7d49f1b745cb629e4cb8daa59f0c3c0123fc233cb5609d7b667f": {
+      "file": "src/components/home-page.tsx",
+      "rule": "react/no-unescaped-entities",
+      "severity": 2,
       "count": 1
     }
   }
