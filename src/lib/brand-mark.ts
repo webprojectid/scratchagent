@@ -1,4 +1,5 @@
 export const BRAND_MARK_VIEW_BOX = "144 278 1004 698";
+export const BRAND_MARK_COLOR = "#74FA6A";
 
 export const BRAND_MARK_PATH = [
   "M153 968 578 286 654 409 302 968Z",

@@ -6,7 +6,8 @@ The approved mark is the green symbol supplied on 16 October 2026. The five shap
 - `public/brand/scratch-agent-mark.svg` is the transparent downloadable vector. The 2048-pixel PNG is rendered from this SVG with real alpha.
 - `public/brand/scratch-agent-icon.svg` and its PNG sizes center the same symbol on a transparent square for browser and device icons. `/favicon.svg` also serves the new mark for old references.
 - The legacy favicon lives in `public/favicon.svg`: `favicon.svg` is not a supported Next.js app-directory convention, so keeping it in `src/app` would return 404.
-- The mark uses `#49ff14`, sampled from the supplied green. Existing page palettes, type, controls, and navigation remain in place.
+- The mark uses Scratch Green `#74FA6A`, matching the website's primary brand token. `BRAND_MARK_COLOR` controls every shared UI mark, so caller text colors cannot accidentally change the brand. SVG/PNG downloads and favicons use the same green.
+- Favicon metadata points to the `scratch-agent-icon-v2` files to refresh cached browser icons. Earlier asset URLs also serve the corrected green.
 
 Design read: a focused brand replacement within the existing dark product interface. ENERGY 2 / RHYTHM 2 / MOTION 1 for this change. Preserve the existing logo slots and page hierarchy; add no animation to a static identity asset. The vector keeps the mark crisp at navbar and favicon sizes, and a shared component prevents separate logo versions from drifting.
 
