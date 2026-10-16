@@ -1,8 +1,8 @@
 export const SITE_ORIGIN = "https://www.scratchagent.web.id";
 
 export const SHARE_IMAGE = {
-  url: `${SITE_ORIGIN}/social/scratch-agent-share-v2.jpg`,
-  secureUrl: `${SITE_ORIGIN}/social/scratch-agent-share-v2.jpg`,
+  url: `${SITE_ORIGIN}/social/scratch-agent-share-v3.jpg`,
+  secureUrl: `${SITE_ORIGIN}/social/scratch-agent-share-v3.jpg`,
   width: 1200,
   height: 630,
   type: "image/jpeg",

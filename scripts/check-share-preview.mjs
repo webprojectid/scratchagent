@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 
 const origin = new URL(process.argv[2] ?? "http://localhost:3137").origin;
 const site = "https://www.scratchagent.web.id";
-const imagePath = "/social/scratch-agent-share-v2.jpg";
+const imagePath = "/social/scratch-agent-share-v3.jpg";
 const agents = ["Mozilla/5.0", "Twitterbot/1.0", "facebookexternalhit/1.1", "meta-externalagent/1.1", "WhatsApp/2.24.0", "LinkedInBot/1.0", "redditbot/1.0"];
 
 const meta = (head, key) => [...head.matchAll(/<meta\b[^>]*>/g)]
@@ -34,7 +34,6 @@ async function checkPage(path, agent) {
 
 try {
   for (const agent of agents) await checkPage("/", agent);
-  await checkPage("/?share=brand-v2", agents[2]);
   await checkPage("/pricing", agents[2]);
   const response = await fetch(origin + imagePath, { signal: AbortSignal.timeout(30000) });
   assert.equal(response.status, 200);
@@ -43,10 +42,12 @@ try {
   const expected = readFileSync(new URL("../public" + imagePath, import.meta.url));
   const hash = value => createHash("sha256").update(value).digest("hex");
   assert.equal(hash(bytes), hash(expected), "hosted image matches the selected brand asset");
-  for (const path of ["/opengraph-image.jpg", "/twitter-image.jpg"]) {
-    const legacy = await fetch(origin + path + "?previous-preview=1", { signal: AbortSignal.timeout(30000) });
+  for (const path of ["/opengraph-image.jpg", "/twitter-image.jpg", "/social/scratch-agent-share-v2.jpg"]) {
+    const legacy = await fetch(origin + path, { signal: AbortSignal.timeout(30000) });
     assert.equal(legacy.status, 200, "legacy image URLs remain accessible");
-    await legacy.arrayBuffer();
+    const legacyBytes = Buffer.from(await legacy.arrayBuffer());
+    const legacyExpected = readFileSync(new URL("../public" + path, import.meta.url));
+    assert.equal(hash(legacyBytes), hash(legacyExpected), "legacy image URL serves the current revised artwork");
   }
   console.log(`Share image and legacy URLs passed; image size ${bytes.length} bytes.`);
 } catch (error) {
