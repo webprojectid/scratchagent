@@ -14,13 +14,16 @@ test("credential diagnostics distinguish missing, placeholder and repeated auth 
   }
 });
 
-test("credential status route remains owner-session-only and returns no secrets or database rows", async () => {
+test("credential status route remains owner-session-only and returns no secrets or database rows", async (context) => {
+  const original = process.env.ADMIN_EMAILS;
+  process.env.ADMIN_EMAILS = "diagnostic-admin@example.test";
+  context.after(() => { if (original === undefined) delete process.env.ADMIN_EMAILS; else process.env.ADMIN_EMAILS = original; });
   const identities: Array<[AuthUser | null, number]> = [
     [null, 401],
-    [{ userId: "fixture", email: "teguhends@gmail.com", via: "token" }, 403],
+    [{ userId: "fixture", email: "diagnostic-admin@example.test", via: "token" }, 403],
     [{ userId: "fixture", email: "free@example.test", via: "session" }, 403],
     [{ userId: "fixture", email: "pro@example.test", via: "session" }, 403],
-    [{ userId: "fixture", email: "teguhends@gmail.com", via: "session" }, 200],
+    [{ userId: "fixture", email: "diagnostic-admin@example.test", via: "session" }, 200],
   ];
   const secretKey = ["AUTH", "SECRET"].join("_");
   const source = readFileSync("src/app/api/admin/security/route.ts", "utf8");

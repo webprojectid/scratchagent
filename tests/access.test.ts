@@ -51,8 +51,11 @@ test("accessPlan: owner boleh akses", async () => {
   assert.equal(error, undefined);
 });
 
-test("accessPlan: admin superuser boleh akses plan siapa pun", async () => {
-  const admin: AuthUser = { userId: "uuid-admin", email: "teguhends@gmail.com", via: "session" };
+test("accessPlan: configured administrator can access another owner's plan", async (context) => {
+  const original = process.env.ADMIN_EMAILS;
+  process.env.ADMIN_EMAILS = "access-admin@example.test";
+  context.after(() => { if (original === undefined) delete process.env.ADMIN_EMAILS; else process.env.ADMIN_EMAILS = original; });
+  const admin: AuthUser = { userId: "uuid-admin", email: "access-admin@example.test", via: "session" };
   const { plan, error } = await accessPlan("plan-alice", admin);
   assert.ok(plan, "admin mendapat plan orang lain");
   assert.equal(error, undefined);

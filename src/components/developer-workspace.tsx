@@ -5,7 +5,6 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { Cpu, Shield, Users } from "lucide-react";
 import { uiText as ui, useUiLanguage } from "@/lib/ui-text";
-import { isDeveloperAdmin } from "@/lib/admin-access";
 import { Shell } from "./brand";
 import s from "./account-workbench.module.css";
 
@@ -18,7 +17,6 @@ export function DeveloperWorkspace({ email, initialTab }: { email: string; initi
   useUiLanguage();
   const [tab, setTab] = useState(initialTab);
   const [llmOpened, setLlmOpened] = useState(initialTab === "llm");
-  if (!isDeveloperAdmin(email)) return null;
   const tabs = [{ id: "llm" as const, title: "LLM Engine", icon: Cpu }, { id: "users" as const, title: ui("Pengguna"), icon: Users }, { id: "security" as const, title: ui("Keamanan"), icon: Shield }];
   function select(next: Tab) {
     setTab(next);

@@ -1,4 +1,7 @@
 [
+ ["Silakan masuk kembali atau gunakan token akses yang valid.","Please sign in again or use a valid access token."],
+ ["Body harus berupa JSON yang valid.","The request body must contain valid JSON."],
+ ["Ukuran permintaan terlalu besar.","The request is too large."],
  ["Agent menunggu penyelesaian dependensi","The agent is waiting for task dependencies."],
  ["Checkpoint agent perlu ditinjau","The agent checkpoint needs your review."],
  ["Plan diekspor sebagai Markdown","The plan was exported as Markdown."],

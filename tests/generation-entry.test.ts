@@ -6,6 +6,7 @@ import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import ts from "typescript";
+import { readRequestJson, RequestJsonError } from "@/lib/request-json";
 
 function routeFixture(file: string, mocks: Record<string, unknown>) {
   const fixtureModule = { exports: {} as Record<string, (request: Request, context?: unknown) => Promise<Response>> };
@@ -17,9 +18,11 @@ function routeFixture(file: string, mocks: Record<string, unknown>) {
   return fixtureModule.exports;
 }
 
-function generationEntry(schedulingFails = false) {
+function generationEntry(schedulingFails = false, options: { authenticated?: boolean; legacy?: boolean; tier?: "free" | "pro"; emailVerified?: boolean } = {}) {
   const calls: string[] = [];
-  const user = { userId: randomUUID(), email: "fixture@example.test" };
+  const identities: (string | undefined)[] = [];
+  let charged = 0;
+  const user = { userId: randomUUID(), email: "fixture@example.test", via: "session", emailVerified: options.emailVerified };
   const routes = routeFixture("src/app/api/generate/route.ts", {
     "@/lib/write-origin": { writeOriginGate: () => null },
     "@/lib/llm-config": { resolveLlmProviders: async () => [{ baseUrl: "https://provider.example/v1", apiKey: "fixture", models: ["model"] }] },
@@ -28,14 +31,56 @@ function generationEntry(schedulingFails = false) {
     "@/lib/account-preferences": { handoffSettingsSchema: z.object({}), resolveHandoff: () => ({}), effectiveTechPrefs: (prefs: unknown) => prefs },
     "next/server": { NextResponse }, zod: { z }, crypto: { randomUUID },
     "@/lib/run-generation": { scheduleGeneration: async () => { calls.push("schedule"); if (schedulingFails) throw new Error("Fixture scheduling failure"); return true; } },
-    "@/lib/api-auth": { getRequestUser: async () => user, planOwnerKey: () => user.userId },
+    "@/lib/api-auth": { getRequestUser: async (id?: string) => { identities.push(id); return options.authenticated === false ? null : user; }, legacyDevMode: () => !!options.legacy, planOwnerKey: () => user.userId, unauthorized: () => NextResponse.json({ error: "Please sign in again or use a valid access token.", code: "AUTH_REQUIRED" }, { status: 401 }) },
+    "@/lib/request-json": { readRequestJson, RequestJsonError },
     "@/lib/storage": { savePlan: async () => calls.push("save"), deletePlan: async () => calls.push("delete") },
-    "@/lib/quota": { consumeQuota: async () => ({ userId: user.userId, tier: "free", eventId: "fixture" }), refundQuota: async () => calls.push("refund") },
-    "@/lib/billing": { getAccountState: async () => ({ tier: "free" }), isAdminEmail: () => false },
+    "@/lib/quota": { consumeQuota: async () => { charged++; return { userId: user.userId, tier: options.tier ?? "free", eventId: "fixture" }; }, refundQuota: async () => calls.push("refund") },
+    "@/lib/billing": { getAccountState: async () => ({ tier: options.tier ?? "free" }), isAdminEmail: () => false },
     "@/lib/security": { getClientIp: async () => "fixture", blockedIpResponse: async () => null, RATE_LIMITS: { generate: { limit: 10, windowMs: 600000 } }, rateLimit: () => null, clientKey: () => "fixture", logSecurity: async () => {} },
   });
-  return { calls, invoke: () => routes.POST(new Request("https://example.test/api/generate", { method: "POST", body: JSON.stringify({ brief: "Fixture plan", techPrefs: { mode: "auto" } }) })) };
+  return { calls, identities, charged: () => charged, invoke: (body = JSON.stringify({ brief: "Fixture plan", techPrefs: { mode: "auto" } })) => routes.POST(new Request("https://example.test/api/generate", { method: "POST", body })) };
 }
+
+test("unauthenticated generation rejects valid, malformed and empty bodies before parsing or charging", async () => {
+  for (const body of ["{}", "{broken", ""]) {
+    const fixture = generationEntry(false, { authenticated: false });
+    const response = await fixture.invoke(body);
+    assert.equal(response.status, 401);
+    assert.equal((await response.json()).code, "AUTH_REQUIRED");
+    assert.equal(fixture.charged(), 0);
+    assert.deepEqual(fixture.calls, []);
+  }
+});
+
+test("authenticated malformed, invalid and oversized input never starts or charges generation", async () => {
+  for (const [body, status, code] of [["{broken", 400, "INVALID_JSON"], ["{}", 400, "INVALID_INPUT"], ["x".repeat(65_537), 413, "PAYLOAD_TOO_LARGE"]] as const) {
+    const fixture = generationEntry();
+    const response = await fixture.invoke(body);
+    assert.equal(response.status, status);
+    assert.equal((await response.json()).code, code);
+    assert.equal(fixture.charged(), 0);
+    assert.deepEqual(fixture.calls, []);
+  }
+});
+
+test("body identity is ignored in production and remains available only in legacy development", async () => {
+  const body = JSON.stringify({ brief: "Fixture", techPrefs: { mode: "auto" }, userId: "spoof@example.test" });
+  const normal = generationEntry();
+  assert.equal((await normal.invoke(body)).status, 200);
+  assert.deepEqual(normal.identities, [undefined]);
+  const legacy = generationEntry(false, { legacy: true });
+  assert.equal((await legacy.invoke(body)).status, 200);
+  assert.deepEqual(legacy.identities, ["spoof@example.test"]);
+});
+
+test("email verification remains unchanged for both Free and Pro generation", async () => {
+  for (const tier of ["free", "pro"] as const) {
+    const fixture = generationEntry(false, { tier, emailVerified: false });
+    assert.equal((await fixture.invoke()).status, 200);
+    assert.equal(fixture.charged(), 1);
+    assert.deepEqual(fixture.calls, ["save", "schedule"]);
+  }
+});
 
 test("a saved provider configuration starts generation without LLM environment values", async () => {
   const fixture = generationEntry();
