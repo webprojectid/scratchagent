@@ -24,7 +24,14 @@ export const metadata: Metadata = {
   description: SITE_DESCRIPTION,
   openGraph: siteOpenGraph,
   twitter: { card: "summary_large_image", images: [{ url: SHARE_IMAGE.url, alt: SHARE_IMAGE.alt }] },
-  icons: { icon: "/favicon.svg", shortcut: "/favicon.svg" },
+  icons: {
+    icon: [
+      { url: "/brand/scratch-agent-icon.svg", type: "image/svg+xml", sizes: "any" },
+      { url: "/brand/scratch-agent-icon-32.png", type: "image/png", sizes: "32x32" },
+    ],
+    shortcut: "/brand/scratch-agent-icon.svg",
+    apple: { url: "/brand/scratch-agent-icon-180.png", sizes: "180x180", type: "image/png" },
+  },
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useInView } from "motion/react";
 import { CircleCheck, Loader, ThumbsUp } from "lucide-react";
 import { useLang } from "@/lib/lang";
+import { BrandMark } from "@/components/brand-mark";
 import styles from "./creator-section.module.css";
 
 const CREATOR = {
@@ -12,16 +13,6 @@ const CREATOR = {
   id: "PMT2200021",
   onboard: "16 Sep 2022",
 };
-
-function ScratchMark({ className = "" }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 32 28" fill="none" className={className} aria-hidden="true">
-      <path d="M6 9h9l-6 13H0z" fill="#74FA6A" />
-      <path d="M16 4h9l-6 13h-9z" fill="#9AFF82" />
-      <path d="M23 9h9l-6 13h-9z" fill="#4DDC62" />
-    </svg>
-  );
-}
 
 /** QoderWake composition, with Scratch Agent's existing palette and real workflow.
  * The creator badge uses the supplied artwork and animation.
@@ -103,7 +94,7 @@ export function CreatorSection() {
             </svg>
             <div className={styles.profile}>
               <div className={styles.profileHeader}>
-                <span className={styles.avatar}><ScratchMark /></span>
+                <span className={styles.avatar}><BrandMark /></span>
                 <span className={styles.like} aria-hidden="true"><ThumbsUp size={17} /></span>
               </div>
               <h3 className={styles.profileTitle}>{en ? "Your project planning partner" : "Partner perencanaan project kamu"}</h3>
