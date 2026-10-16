@@ -14,7 +14,7 @@ import {
   memorySetUserTier,
 } from "@/lib/memory-store";
 
-import { DEVELOPER_ADMIN_EMAIL, isDeveloperAdmin } from "./admin-access";
+import { developerAdminEmails, isDeveloperAdmin } from "./admin-access";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const GENERATE_STAGE = "generate";
@@ -103,8 +103,8 @@ function normalizeSub(row: {
   };
 }
 
-/** The owner is the sole administrator, regardless of subscription tier. */
-export function adminEmails(): string[] { return [DEVELOPER_ADMIN_EMAIL]; }
+/** Subscription tier never grants administrator access. */
+export function adminEmails(): string[] { return developerAdminEmails(); }
 export const isAdminEmail = isDeveloperAdmin;
 
 /** Langganan Pro yang benar-benar aktif: belum ditutup dan belum lewat masa berlakunya. */

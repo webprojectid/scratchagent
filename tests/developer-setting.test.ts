@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { isDeveloperAdmin } from "@/lib/admin-access";
+import { developerAdminEmails, isDeveloperAdmin } from "@/lib/admin-access";
 import { requireAdmin } from "@/lib/api-auth";
 import { resolveAccountRoute, settingsTabs } from "@/lib/account-navigation";
 import { resolveProviderKeys } from "@/lib/llm-provider-input";
@@ -8,17 +8,23 @@ import { landingSessions } from "@/lib/landing-demo";
 import { defaultAccountSettings } from "@/lib/account-preferences";
 import { saveAccountSettings, getAccountSettings, saveLibrary, listLibrary } from "@/lib/account-store";
 
-test("only the designated admin with a browser session can enter Developer Setting", async () => {
-  process.env.ADMIN_EMAILS = "other@example.test";
-  assert.ok(isDeveloperAdmin("TEGUHENDS@gmail.com"));
-  for (const email of ["teguends@gmail.com", "admin@example.test", "other@example.test", "", null]) assert.equal(isDeveloperAdmin(email), false);
-  delete process.env.ADMIN_EMAILS;
+test("only configured admins with browser sessions can enter Developer Setting", async (context) => {
+  const original = process.env.ADMIN_EMAILS;
+  context.after(() => { if (original === undefined) delete process.env.ADMIN_EMAILS; else process.env.ADMIN_EMAILS = original; });
+  process.env.ADMIN_EMAILS = " owner@example.test, OPS@example.test, owner@example.test, invalid ";
+  assert.deepEqual(developerAdminEmails(), ["owner@example.test", "ops@example.test"]);
+  assert.ok(isDeveloperAdmin(" OWNER@EXAMPLE.TEST "));
+  assert.ok(isDeveloperAdmin("ops@example.test"));
+  for (const email of ["ownerx@example.test", "admin@example.test", "other@example.test", "", null]) assert.equal(isDeveloperAdmin(email), false);
   assert.equal((await requireAdmin(null))?.status, 401);
-  const user = { userId: "test-admin", email: "teguhends@gmail.com", via: "session" as const };
+  const user = { userId: "test-admin", email: "owner@example.test", via: "session" as const };
   assert.equal(await requireAdmin(user), null);
   assert.equal((await requireAdmin({ ...user, via: "token" }))?.status, 403);
   assert.equal((await requireAdmin({ ...user, via: "legacy-dev" }))?.status, 403);
   assert.equal((await requireAdmin({ ...user, email: "other@example.test" }))?.status, 403);
+  delete process.env.ADMIN_EMAILS;
+  assert.deepEqual(developerAdminEmails(), []);
+  assert.equal((await requireAdmin(user))?.status, 403);
 });
 
 test("old LLM links redirect to the protected developer page without preview bypasses", () => {

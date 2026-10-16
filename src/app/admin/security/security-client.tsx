@@ -4,7 +4,7 @@ import { uiText as ui, useUiLanguage, uiLocale } from "@/lib/ui-text";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Ban, Bot, Globe2, RefreshCw, ShieldAlert, UserX, Undo2 } from "lucide-react";
-import { isDeveloperAdmin } from "@/lib/admin-access";
+
 import { Shell } from "@/components/brand";
 import { AccountWorkbench } from "@/components/account-workbench";
 import adminStyles from "@/components/account-workbench.module.css";
@@ -165,7 +165,7 @@ export default function AdminSecurityPage({ preview = false, embedded = false }:
         router.replace("/login");
         return;
       }
-      if (u.role !== "admin" || !isDeveloperAdmin(u.email)) {
+      if (u.role !== "admin") {
         setAllowed(false);
         router.replace("/profile");
         return;

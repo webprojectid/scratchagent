@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { AccountBadges } from "@/components/account-badges";
 import { User, UserRound, Settings, LogOut, BookOpen, Cpu } from "lucide-react";
-import { isDeveloperAdmin } from "@/lib/admin-access";
+
 import { accountMenuLinks } from "@/lib/account-navigation";
 import { createClient } from "@/lib/supabase/client";
 import { getCurrentUser, refreshCurrentUser, supabaseConfigured, type CurrentUser } from "@/lib/current-user";
@@ -90,7 +90,7 @@ export function UserNav({ landingButtons = false }: { landingButtons?: boolean }
           </div>
 
           <div className="py-1">
-            {user.role === "admin" && isDeveloperAdmin(user.email) && <DropdownMenu.Item asChild><Link href="/developer-settings" className="flex min-h-11 items-center gap-2 rounded-lg px-2.5 py-2 text-[12.5px] text-white/80 outline-none data-[highlighted]:bg-white/[.07] data-[highlighted]:text-[#74FA6A]"><Cpu size={14}/>Developer Setting</Link></DropdownMenu.Item>}
+            {user.role === "admin" && <DropdownMenu.Item asChild><Link href="/developer-settings" className="flex min-h-11 items-center gap-2 rounded-lg px-2.5 py-2 text-[12.5px] text-white/80 outline-none data-[highlighted]:bg-white/[.07] data-[highlighted]:text-[#74FA6A]"><Cpu size={14}/>Developer Setting</Link></DropdownMenu.Item>}
             {accountMenuLinks.map(({ label, href, icon }) => {
               const Icon = menuIcons[icon];
               return <DropdownMenu.Item key={href} asChild>

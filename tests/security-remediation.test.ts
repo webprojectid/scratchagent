@@ -25,14 +25,15 @@ test("retired debug endpoints cannot mutate plans in any environment", async () 
   } finally { if (original === undefined) delete process.env.NODE_ENV; else process.env.NODE_ENV = original; }
 });
 
-test("rate-limit admin whitelist matches the designated owner", () => {
-  process.env.ADMIN_EMAILS = "other@example.test";
+test("rate-limit administrator whitelist uses the configured email list", () => {
+  const original = process.env.ADMIN_EMAILS;
+  process.env.ADMIN_EMAILS = "rate-admin@example.test";
   try {
-    assert.equal(isWhitelistedAdmin("u:TEGUHENDS@gmail.com"), true);
-    assert.equal(isWhitelistedAdmin("u:teguends@gmail.com"), false);
+    assert.equal(isWhitelistedAdmin("u:RATE-ADMIN@EXAMPLE.TEST"), true);
+    assert.equal(isWhitelistedAdmin("u:rate-admin-extra@example.test"), false);
     assert.equal(isWhitelistedAdmin("u:other@example.test"), false);
     assert.equal(isWhitelistedAdmin("u:admin@example.test"), false);
-  } finally { delete process.env.ADMIN_EMAILS; }
+  } finally { if (original === undefined) delete process.env.ADMIN_EMAILS; else process.env.ADMIN_EMAILS = original; }
 });
 
 function taskGeneration(owner?: string) {

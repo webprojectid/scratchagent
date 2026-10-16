@@ -134,7 +134,7 @@ export function ownsPlan(plan: Pick<Plan, "userId">, user: AuthUser): boolean {
 }
 
 export function unauthorized() {
-  return NextResponse.json({ error: apiText("Token tidak valid atau telah dicabut") }, { status: 401 });
+  return NextResponse.json({ error: apiText("Silakan masuk kembali atau gunakan token akses yang valid."), code: "AUTH_REQUIRED" }, { status: 401 });
 }
 
 export function forbidden(message = "Akses ditolak") {
@@ -150,7 +150,7 @@ export function planNotFound() {
  * Gate akses plan: auth + ownership.
  * - planId "demo": publik untuk read-only (sesuai flow demo README); write = 403.
  * - Tanpa user: 401. Plan tidak ditemukan / bukan milik user: 404.
- * - Superuser admin (teguhends@gmail.com) bypass ownership untuk akses semua plan.
+ * - Admin terdaftar di ADMIN_EMAILS dapat mengakses plan pengguna lain.
  */
 export async function accessPlan(
   planId: string,
@@ -182,7 +182,7 @@ export async function accessPlan(
  * - planId "demo": publik (read-only).
  * - Mode dev polos: identitas tak terdeteksi server-side, lanjut tanpa gate.
  * - Belum login: redirect ke /login. Plan tak ditemukan / bukan milik user: notFound().
- * - Superuser admin (teguhends@gmail.com) bypass ownership.
+ * - Admin terdaftar di ADMIN_EMAILS dapat mengakses plan pengguna lain.
  * Hanya panggil dari server component (pakai redirect/notFound).
  */
 export async function requirePlanForPage(planId: string): Promise<Plan> {

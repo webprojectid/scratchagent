@@ -22,7 +22,7 @@ const ProfileDashboard = dynamic(() => import("./profile-dashboard").then(module
 import { filterTokens } from "@/lib/account-dashboard";
 const ProjectLedger = dynamic(() => import("./project-ledger").then(module => module.ProjectLedger));
 import { AccountBadges } from "@/components/account-badges";
-import { isDeveloperAdmin } from "@/lib/admin-access";
+
 import { effectiveAccountTier } from "@/lib/account-membership";
 import accountStyles from "@/app/profile/account-ledger.module.css";
 import { accountAreaForTab, accountTabHref, defaultAccountTab, isAccountTab, type AccountArea, type AccountTab } from "@/lib/account-navigation";
@@ -101,7 +101,7 @@ export function AccountWorkspace({ area, initialTab }: { area: AccountArea; init
   useUiLanguage();
   const router = useRouter();
   const isProfileArea = area === "profile";
-
+  const [tokenNow, setTokenNow] = useState(() => Date.now()); useEffect(() => { const timer = window.setInterval(() => setTokenNow(Date.now()), 60_000); return () => window.clearInterval(timer); }, []);
   const [activeTab, setActiveTab] = useState<NavTab>(initialTab);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [preferences, setPreferences] = useState<AccountPreferences>(initialPreferences);
@@ -486,8 +486,8 @@ export function AccountWorkspace({ area, initialTab }: { area: AccountArea; init
   const membershipTier = effectiveAccountTier(user);
   const isPro = membershipTier === "pro";
   const accountPlanLabel = membershipTier ? `Scratch ${isPro ? "Pro" : ui("Free")}` : ui("Paket belum terverifikasi");
-  const isAdmin = user.role === "admin" && isDeveloperAdmin(user.email);
-  const visibleTokens = filterTokens(tokens, tokenGroup, tokenRecent, Date.now());
+  const isAdmin = user.role === "admin";
+  const visibleTokens = filterTokens(tokens, tokenGroup, tokenRecent, tokenNow);
   return (
     <div className="relative min-h-screen">
       <div className={accountStyles.page} data-motion={preferences.motion}>

@@ -62,13 +62,16 @@ test("revision stays stable for identical content and changes for status, task e
   assert.notEqual(progressVersion(withTask), progressVersion(changed));
   assert.notEqual(progressVersion(withTask), version);
 });
-test("compact revision reads retain owner, admin, demo and token-scope gates", async () => {
+test("compact revision reads retain owner, admin, demo and token-scope gates", async (context) => {
+  const original = process.env.ADMIN_EMAILS;
+  process.env.ADMIN_EMAILS = "progress-admin@example.test";
+  context.after(() => { if (original === undefined) delete process.env.ADMIN_EMAILS; else process.env.ADMIN_EMAILS = original; });
   memorySavePlan(plan, owner.email!);
   const access = (user: AuthUser | null) => accessPlan(plan.id, user, { loadPlan: getProgressRevision });
   assert.ok((await access(owner)).plan);
   assert.equal((await access(null)).error?.status, 401);
   assert.equal((await access({ ...owner, email: "other@example.test", userId: "other" })).error?.status, 404);
-  assert.ok((await access({ ...owner, email: "teguhends@gmail.com", userId: "admin" })).plan);
+  assert.ok((await access({ ...owner, email: "progress-admin@example.test", userId: "admin" })).plan);
   assert.equal((await access({ ...owner, tokenPolicy: { access: "read", expiresAt: null, lastUsedAt: null, projectIds: ["different-plan"] } })).error?.status, 403);
   assert.ok((await accessPlan("demo", null, { loadPlan: getProgressRevision })).plan);
   assert.equal((await accessPlan("missing", owner, { loadPlan: getProgressRevision })).error?.status, 404);

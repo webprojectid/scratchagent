@@ -6,7 +6,8 @@ import { handoffSettingsSchema, resolveHandoff, effectiveTechPrefs } from "@/lib
 import { NextResponse } from "next/server";
 import { scheduleGeneration } from "@/lib/run-generation";
 import { z } from "zod";
-import { getRequestUser, planOwnerKey, unauthorized } from "@/lib/api-auth";
+import { getRequestUser, legacyDevMode, planOwnerKey, unauthorized } from "@/lib/api-auth";
+import { readRequestJson, RequestJsonError } from "@/lib/request-json";
 import { savePlan, deletePlan } from "@/lib/storage";
 import { refundQuota, consumeQuota, getQuota } from "@/lib/quota";
 import { getAccountState, isAdminEmail } from "@/lib/billing";
@@ -49,14 +50,16 @@ export async function POST(request: Request) {
   if (blocked) return blocked;
 
   try {
-    const data = input.parse(await request.json());
-
-    // Identitas dari session/token; body userId cuma fallback di mode dev polos.
-    const user = await getRequestUser(data.userId);
+    const legacy = legacyDevMode();
+    let rawBody: unknown = legacy ? await readRequestJson(request) : undefined;
+    const rawUserId = rawBody && typeof rawBody === "object" && "userId" in rawBody ? rawBody.userId : undefined;
+    const user = await getRequestUser(legacy ? typeof rawUserId === "string" ? rawUserId : "shared" : undefined);
     if (!user) {
       await logSecurity("auth_failed", { route: "/api/generate", reason: "no identity" }, { ip, request });
       return unauthorized();
     }
+    if (!legacy) rawBody = await readRequestJson(request);
+    const data = input.parse(rawBody);
     if (user.tokenPolicy && (user.tokenPolicy.access === "read" || user.tokenPolicy.projectIds.length)) return NextResponse.json({ error: apiText("Token ini tidak dapat membuat proyek baru.") }, { status: 403 });
     const ownerId = planOwnerKey(user);
     const handoff = resolveHandoff((await getAccountSettings(user.userId)).handoff, data.handoff);
@@ -146,8 +149,9 @@ export async function POST(request: Request) {
     }
     return NextResponse.json({ id: planId, async: true });
   } catch (error) {
+    if (error instanceof RequestJsonError) return NextResponse.json({ error: apiText(error.code === "PAYLOAD_TOO_LARGE" ? "Ukuran permintaan terlalu besar." : "Body harus berupa JSON yang valid."), code: error.code }, { status: error.status });
+    if (error instanceof z.ZodError) return NextResponse.json({ error: error.issues.map((i) => i.message).join("; "), code: "INVALID_INPUT" }, { status: 400 });
     console.error("[generate]", error);
-    if (error instanceof z.ZodError) return NextResponse.json({ error: error.issues.map((i) => i.message).join("; ") }, { status: 400 });
     return NextResponse.json({ error: "Generation could not be started. Please try again." }, { status: 500 });
   }
 }

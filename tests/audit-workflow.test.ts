@@ -58,8 +58,11 @@ test("persistent generation budget preserves normal multi-phase builds and bound
   assert.equal(await reserveGenerationAttempt("budget-fixture", "pro"), false);
   assert.equal(await reserveGenerationAttempt("another-fixture", "free"), true);
 });
-test("admin and tier capability is shared without extending CLI role", () => {
-  const owner = { userId: "owner", email: "teguhends@gmail.com", via: "session" as const };
+test("admin and tier capability is shared without extending CLI role", (context) => {
+  const original = process.env.ADMIN_EMAILS;
+  process.env.ADMIN_EMAILS = "capability-admin@example.test";
+  context.after(() => { if (original === undefined) delete process.env.ADMIN_EMAILS; else process.env.ADMIN_EMAILS = original; });
+  const owner = { userId: "owner", email: "capability-admin@example.test", via: "session" as const };
   assert.equal(hasProFeatures(owner, "free"), true);
   assert.equal(hasProFeatures({ ...owner, via: "token" }, "free"), false);
   assert.equal(hasProFeatures({ ...owner, email: "user@example.test" }, "free"), false);

@@ -1,18 +1,21 @@
-import { test, before } from "node:test";
+import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import { getAccountState, grantPro, endPro, banUser, unbanUser, getAccountDetail, isAdminEmail, listAccounts } from "@/lib/billing";
 import { memoryGetOrCreateUser } from "@/lib/memory-store";
 import { consumeQuota } from "@/lib/quota";
 
 // Memory mode: tanpa DATABASE_URL.
+const previousAdmins = process.env.ADMIN_EMAILS;
 before(() => {
+  process.env.ADMIN_EMAILS = "billing-admin@example.test";
   delete process.env.DATABASE_URL;
   process.env.QUOTA_GENERATE_DAILY = "3";
 });
+after(() => { if (previousAdmins === undefined) delete process.env.ADMIN_EMAILS; else process.env.ADMIN_EMAILS = previousAdmins; });
 
-test("teguhends@gmail.com diakui sebagai admin", () => {
-  assert.equal(isAdminEmail("teguhends@gmail.com"), true);
-  assert.equal(isAdminEmail("TEGUHENDS@GMAIL.COM"), true, "case insensitive");
+test("configured billing administrator is recognized", () => {
+  assert.equal(isAdminEmail("billing-admin@example.test"), true);
+  assert.equal(isAdminEmail("BILLING-ADMIN@EXAMPLE.TEST"), true, "case insensitive");
   assert.equal(isAdminEmail("orang-lain@gmail.com"), false);
 });
 
