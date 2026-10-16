@@ -5,6 +5,7 @@ import { readFileSync } from "node:fs";
 const origin = new URL(process.argv[2] ?? "http://localhost:3137").origin;
 const site = "https://www.scratchagent.web.id";
 const imagePath = "/social/scratch-agent-share-v3.jpg";
+const siteDescription = "Turn your idea into a clear plan, PRD, and actionable tasks.";
 const agents = ["Mozilla/5.0", "Twitterbot/1.0", "facebookexternalhit/1.1", "meta-externalagent/1.1", "WhatsApp/2.24.0", "LinkedInBot/1.0", "redditbot/1.0"];
 
 const meta = (head, key) => [...head.matchAll(/<meta\b[^>]*>/g)]
@@ -25,6 +26,11 @@ async function checkPage(path, agent) {
   assert.deepEqual(meta(head, "og:image:height"), ["630"]);
   assert.deepEqual(meta(head, "twitter:card"), ["summary_large_image"]);
   const pathname = new URL(path, site).pathname;
+  if (pathname === "/") {
+    for (const key of ["description", "og:description", "twitter:description"]) {
+      assert.deepEqual(meta(head, key), [siteDescription], `${path}: approved description for ${key}`);
+    }
+  }
   const canonical = head.match(/<link\b[^>]*rel="canonical"[^>]*href="([^"]*)/)?.[1];
   assert.equal(new URL(canonical).href, new URL(pathname, site).href, `${path}: canonical URL`);
   assert.equal(new URL(meta(head, "og:url")[0]).href, new URL(pathname, site).href, `${path}: OG URL`);
