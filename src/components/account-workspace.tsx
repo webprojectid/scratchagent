@@ -493,7 +493,7 @@ export function AccountWorkspace({ area, initialTab }: { area: AccountArea; init
       <div className={accountStyles.page} data-motion={preferences.motion}>
         <div className={accountStyles.frame}>
           <aside className={accountStyles.sidebar} aria-label={isProfileArea ? ui("Navigasi profil") : ui("Navigasi pengaturan")}>
-            <div className={accountStyles.sidebarBrand}><span className={accountStyles.brandMark}><BrandMark className="h-[21px] w-[30px] shrink-0 text-[#49ff14]" /></span><strong>ScratchAgent</strong></div>
+            <div className={accountStyles.sidebarBrand}><span className={accountStyles.brandMark}><BrandMark className="h-[21px] w-[30px] shrink-0" /></span><strong>ScratchAgent</strong></div>
             <button type="button" className={accountStyles.mobileNavToggle} aria-expanded={mobileNavOpen} aria-controls="account-navigation" onClick={() => setMobileNavOpen(!mobileNavOpen)}><span>{isProfileArea ? ui("Menu profil") : ui("Menu pengaturan")} <AccountBadges account={user} compact reducedMotion={preferences.motion === "reduced"}/></span><span>{mobileNavOpen ? ui("Tutup") : ui("Buka")}</span></button>
             <nav id="account-navigation" className={mobileNavOpen ? accountStyles.navOpen : undefined} onClick={(event) => { if ((event.target as HTMLElement).closest("button,a")) setMobileNavOpen(false); }}>
               <p className={accountStyles.navLabel}>ScratchAgent</p>

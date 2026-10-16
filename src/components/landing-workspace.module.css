@@ -35,7 +35,7 @@
 .appBody { height: calc(100% - 33px); display: grid; grid-template-columns: 44px 195px minmax(0,1fr) 176px; }
 .rail { display: flex; flex-direction: column; align-items: center; gap: 5px; border-right: 1px solid #262f32; background: #1b1e1d; padding: 10px 3px; }
 .brand { display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; margin-bottom: 12px; }
-.brand svg { width: 30px; height: 21px; flex-shrink: 0; color: #49ff14; }
+.brand svg { width: 30px; height: 21px; flex-shrink: 0; }
 .rail button { display: grid; place-items: center; width: 34px; height: 36px; color: #a8b7aa; border: 0; border-radius: 5px; background: transparent; }
 .rail button[aria-pressed=true] { color: #74fa6a; background: #233327; }
 .rail button:hover { color: #f8fafc; background: #272e29; }

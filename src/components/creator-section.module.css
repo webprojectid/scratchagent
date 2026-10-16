@@ -28,7 +28,7 @@
 .profile { position: relative; width: 100%; padding: 16px; border-radius: 16px; overflow: hidden; background: #171e1a; }
 .profileHeader { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
 .avatar { display: grid; width: 36px; height: 36px; place-items: center; border-radius: 50%; background: #2e4b35; }
-.avatar svg { width: 25px; height: 18px; flex-shrink: 0; color: #49ff14; }
+.avatar svg { width: 25px; height: 18px; flex-shrink: 0; }
 .like { display: grid; width: 34px; height: 36px; place-items: center; color: #a8b7aa; background: #252e28; clip-path: polygon(50% 0%,63% 8%,79% 7%,86% 22%,98% 32%,94% 50%,98% 66%,84% 78%,79% 93%,61% 94%,50% 100%,36% 93%,20% 94%,13% 77%,1% 67%,6% 50%,1% 33%,15% 22%,21% 7%,38% 8%); }
 .section .profileTitle { margin: 0; font-size: .75rem; line-height: 1.4; font-weight: 500; text-wrap: initial; }
 .profileDescription { margin: 5px 0 0; color: var(--creator-muted); font-size: .6875rem; line-height: 1.5; }

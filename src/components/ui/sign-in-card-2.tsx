@@ -414,7 +414,7 @@ export function SignInCard2() {
                   className="relative mx-auto flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-white/10"
                 >
                   {/* Logo Scratch Agent */}
-                  <BrandMark className="h-[15px] w-[22px] shrink-0 text-[#49ff14]" />
+                  <BrandMark className="h-[15px] w-[22px] shrink-0" />
                   <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-50" />
                 </motion.div>
 
