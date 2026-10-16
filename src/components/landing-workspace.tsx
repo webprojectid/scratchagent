@@ -6,6 +6,7 @@ import { ArrowUpRight, Check, ChevronRight, Circle, FileText, Folder, GitBranch,
 import { landingSessions } from "@/lib/landing-demo";
 import { workspaceCopy } from "@/lib/copy-workspace";
 import { PhaseIcon } from "@/components/stock-icon";
+import { BrandMark } from "@/components/brand-mark";
 import styles from "./landing-workspace.module.css";
 
 type Tab = "roadmap" | "prd" | "tasks";
@@ -113,7 +114,7 @@ export function LandingWorkspace({ lang = "en" }: { lang?: "id" | "en" }) {
           </div>
           <div className={styles.appBody}>
             <nav className={styles.rail} aria-label={label("Tampilan demo", "Demo views")}>
-              <span className={styles.brand} aria-label="Scratch Agent"><i /><i /><i /></span>
+              <span className={styles.brand} role="img" aria-label="Scratch Agent"><BrandMark /></span>
               {tabs.map(({ id: value, icon: Icon, label: title }) => <button key={value} aria-label={title} title={title} aria-pressed={tab === value} onClick={() => chooseTab(value)}><Icon size={18} /></button>)}
               <button className={styles.railBottom} aria-label={label("Buka terminal", "Open terminal")} title="Terminal" onClick={() => { setCollapsed(false); document.getElementById(`${id}-terminal`)?.focus(); }}><Terminal size={18} /></button>
             </nav>

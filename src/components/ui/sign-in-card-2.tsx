@@ -10,6 +10,7 @@ import { useLang } from "@/lib/lang";
 import { createClient } from "@/lib/supabase/client";
 import { refreshCurrentUser, supabaseConfigured } from "@/lib/current-user";
 import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
+import { BrandMark } from "@/components/brand-mark";
 
 function Input({ className, type, ...props }: React.ComponentProps<"input">) {
   return (
@@ -413,11 +414,7 @@ export function SignInCard2() {
                   className="relative mx-auto flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-white/10"
                 >
                   {/* Logo Scratch Agent */}
-                  <span className="relative grid size-4 place-items-center overflow-hidden" aria-hidden="true">
-                    <span className="absolute left-0 top-[5px] h-2 w-1.5 -skew-x-[28deg] rounded-sm bg-[#74FA6A]" />
-                    <span className="absolute left-[6px] top-[2px] h-2 w-1.5 -skew-x-[28deg] rounded-sm bg-[#9AFF82]" />
-                    <span className="absolute left-[12px] top-[5px] h-2 w-1.5 -skew-x-[28deg] rounded-sm bg-[#4DDC62]" />
-                  </span>
+                  <BrandMark className="h-[15px] w-[22px] shrink-0 text-[#49ff14]" />
                   <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-50" />
                 </motion.div>
 

@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { useReducedMotion } from "motion/react";
 import { SplineSceneBasic } from "@/components/ui/demo";
 import { useLang } from "@/lib/lang";
+import { BrandMark } from "@/components/brand-mark";
 import s from "./closing-footer.module.css";
 
 export function ClosingFooter({ createHref }: { createHref: string }) {
@@ -119,11 +120,7 @@ export function ClosingFooter({ createHref }: { createHref: string }) {
         <div className={s.footerMain}>
           <div className={s.identity}>
             <Link href="/" className={s.brand}>
-              <span className={s.mark} aria-hidden="true">
-                <i />
-                <i />
-                <i />
-              </span>
+              <BrandMark className={s.mark} />
               Scratch Agent
             </Link>
             <p>
