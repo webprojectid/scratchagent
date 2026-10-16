@@ -1,4 +1,5 @@
 export const SITE_ORIGIN = "https://www.scratchagent.web.id";
+export const SITE_DESCRIPTION = "Turn your idea into a clear plan, PRD, and actionable tasks.";
 
 export const SHARE_IMAGE = {
   url: `${SITE_ORIGIN}/social/scratch-agent-share-v3.jpg`,
@@ -13,6 +14,6 @@ export const siteOpenGraph = {
   type: "website" as const,
   siteName: "Scratch Agent",
   title: "Scratch Agent",
-  description: "Hire your AI agent.",
+  description: SITE_DESCRIPTION,
   images: [SHARE_IMAGE],
 };

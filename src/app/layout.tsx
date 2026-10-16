@@ -5,7 +5,7 @@ import "./globals.css";
 import "./color-styles.css";
 import { Providers } from "@/components/providers";
 import { langInitScript } from "@/lib/lang";
-import { SHARE_IMAGE, SITE_ORIGIN, siteOpenGraph } from "@/lib/site-metadata";
+import { SHARE_IMAGE, SITE_DESCRIPTION, SITE_ORIGIN, siteOpenGraph } from "@/lib/site-metadata";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -21,7 +21,7 @@ const display = Space_Grotesk({ variable: "--font-display", subsets: ["latin"] }
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_ORIGIN),
   title: "Scratch Agent",
-  description: "Hire your AI agent.",
+  description: SITE_DESCRIPTION,
   openGraph: siteOpenGraph,
   twitter: { card: "summary_large_image", images: [{ url: SHARE_IMAGE.url, alt: SHARE_IMAGE.alt }] },
   icons: { icon: "/favicon.svg", shortcut: "/favicon.svg" },
