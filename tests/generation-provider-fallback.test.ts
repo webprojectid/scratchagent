@@ -224,6 +224,18 @@ test("a web architecture excluding a native mobile app completes without archite
 });
 
 for (const tier of ["free", "pro"] as const) {
+  test(`${tier}: supporting reminder wording passes architecture without scope repairs`, async () => {
+    const run = fixture(tier, false, `${architectureFixture}\nBooking reminders support the customer's existing reservation workflow.`);
+    const plan = await run.generate.generatePlanStructure("Build a browser workspace with a reminder one day before each reservation.", { mode: "auto" }, [], tier);
+    assert.match(plan.architecture, /Booking reminders/);
+    assert.equal(run.calls.filter(call => call.stage === "architecture").length, 1);
+    assert.ok(run.calls.every(call => call.userPrompt.includes("BRIEF FIRST:")));
+    assert.ok(run.calls.filter(call => call.stage === "outline").every(call => call.userPrompt.includes("usulan, bukan kebutuhan yang dikonfirmasi")));
+    assert.ok(run.calls.every(call => !call.userPrompt.includes("hanya boleh muncul jika secara eksplisit diminta pengguna")));
+  });
+}
+
+for (const tier of ["free", "pro"] as const) {
   test(`${tier}: shallow valid Mistral output is retried, then Gemini supplies a complete plan and tasks`, async () => {
     const run = fixture(tier);
     const brief = `Kelola akun dan ruang kerja. ${"Kebutuhan rinci pengguna dan data tersimpan. ".repeat(60)}`;

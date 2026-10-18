@@ -137,7 +137,7 @@ export function validateDatabaseSchemaDraft(value: unknown, context: Architectur
   if (obligations.timezone && !(/\b(?:TIMESTAMPTZ|timestamp with time zone|UTC)\b/i.test(schema) && /\b(?:time[ -]?zone|timezone|zona waktu|WIB|WITA|WIT)\b|Asia\/[A-Za-z_]+/i.test(schema))) {
     issues.push("Database schema: specify timestamp storage and the requested schedule timezone or zone identifier.");
   }
-  if (obligations.roleAccess && !(/\b(?:role|permission|peran|hak akses)\b/i.test(schema) && /\b(?:owner_id|user_id|tenant_id|account_id|staff_id|pemilik_id)\b/i.test(schema) && /\b(?:RLS|row[ -]?level security|polic\w*|server[- ]side authorization|server[- ]side guard|server[- ]side role check)\b/i.test(schema))) {
+  if (obligations.roleAccess && !(/\b(?:role|permission|peran|hak akses)\b/i.test(schema) && /\b(?:owner_id|user_id|customer_id|member_id|manager_id|tenant_id|account_id|staff_id|pemilik_id)\b/i.test(schema) && /\b(?:RLS|row[ -]?level security|polic\w*|server[- ]side authorization|server[- ]side guard|server[- ]side role check)\b/i.test(schema))) {
     issues.push("Database schema: tie role or permission records to the owning resource and specify a server-side policy or authorization boundary.");
   }
   const inventedPolicyDefaults = schema.split(/\r?\n/).filter((line) =>

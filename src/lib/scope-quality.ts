@@ -119,11 +119,20 @@ function capabilityState(capability: Capability, brief: string, answers: readonl
   return mentionState(brief, capability.pattern);
 }
 
+export function scopeGuidance(): string {
+  return "BRIEF FIRST: Preserve every requested actor, workflow, delivery platform and confirmed decision. Relevant supporting capabilities may be proposed when they directly complete a requested workflow or improve its usability, reliability or operation. Explain which requested workflow each addition supports, label it as a supporting proposal rather than a user requirement, and keep it subordinate to the requested scope. Never replace requested capabilities, add unrelated products or pad tier counts with extras. Explicit exclusions and later user clarifications take priority over suggestions. Unconfirmed business policies, vendors and numerical targets must remain configurable open decisions or clearly identified proposals; do not present them as user-confirmed facts.";
+}
+
+function exclusionClause(value: string): string {
+  return value.split(/,\s*(?:and\s+|dan\s+)?(?=(?:customers?|users?|owners?|admins?|staff|pay|reschedule|cancel|manage|send|receive|view|create|allow|support|provide|include|enable|pengguna|pemilik|bayar|kirim|kelola)\b)/i, 1)[0];
+}
+
 function explicitExclusions(value: string): string[] {
   const phrases = new Set<string>();
   for (const match of value.matchAll(EXCLUSION_CLAUSE)) {
-    for (const part of match[1].split(/,|\b(?:and|or|dan|atau)\b/i)) {
+    for (const part of exclusionClause(match[1]).split(/,|\b(?:and|or|dan|atau)\b/i)) {
       const phrase = normalize(part.replace(/^(?:a|an|the|any|fitur|feature|features|fitur fitur)\s+/i, ""));
+      if (/^(?:double bookings?|duplicate (?:bookings?|payments?|charges?|submissions?)|data loss|overselling|unauthorized access)$/i.test(phrase)) continue;
       if (phrase.length >= 5 && phrase.length <= 70 && phrase.split(" ").length <= 8) phrases.add(phrase);
     }
   }
@@ -134,7 +143,7 @@ function hasPhrase(value: string, phrase: string): boolean {
   return ` ${normalize(value)} `.includes(` ${phrase} `);
 }
 
-/** Reject only recognizable optional add-ons or verbatim exclusions in generated product claims. */
+/** Absence from the brief is not an exclusion; only explicit user conflicts block a claim. */
 export function validateScopeClaims(input: ScopeValidationInput): string[] {
   const issues: string[] = [];
   const answers = input.confirmedAnswers ?? [];
@@ -151,8 +160,8 @@ export function validateScopeClaims(input: ScopeValidationInput): string[] {
     for (const capability of OPTIONAL_CAPABILITIES) {
       if (!candidateClauses.some((clause) => capability.pattern.test(clause))) continue;
       if (mentionState(candidate.text, capability.pattern, true) === "excluded") continue;
-      if (capabilityState(capability, input.brief, answers) === "requested") continue;
-      issues.push(`${path}: ${capability.name} tidak diminta atau dikecualikan oleh brief.`);
+      if (capabilityState(capability, input.brief, answers) !== "excluded") continue;
+      issues.push(`${path}: ${capability.name} bertentangan dengan pengecualian eksplisit pengguna.`);
       flagged = true;
     }
     if (flagged) continue;
@@ -162,6 +171,8 @@ export function validateScopeClaims(input: ScopeValidationInput): string[] {
         capability.pattern.test(phrase) && capabilityState(capability, input.brief, answers) === "requested")) continue;
       const phrasePattern = new RegExp(`\\b${phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/ /g, "\\s+")}\\b`, "i");
       if (mentionState(candidate.text, phrasePattern) === "excluded") continue;
+      const mentions = [...normalize(candidate.text).matchAll(new RegExp(phrasePattern.source, "gi"))];
+      if (mentions.length && mentions.every((mention) => /\b(?:prevent\w*|avoid\w*|reject\w*|block\w*|mencegah|menolak)\s+(?:\w+\s+){0,3}$/i.test(normalize(candidate.text).slice(0, mention.index)))) continue;
       const answerOverrides = answers.some((answer) => {
         const response = typeof answer === "string" ? answer : answer.answer ?? "";
         return hasPhrase(response, phrase) && mentionState(response, phrasePattern) === "requested";
@@ -173,7 +184,7 @@ export function validateScopeClaims(input: ScopeValidationInput): string[] {
   return issues;
 }
 
-/** Remove an extra criterion only when enough grounded criteria remain. */
+/** Remove explicit conflicts only when enough usable criteria remain. */
 export function removeUnrequestedCriteria(
   criteria: readonly string[],
   scope: Pick<ScopeValidationInput, "brief" | "confirmedAnswers">,

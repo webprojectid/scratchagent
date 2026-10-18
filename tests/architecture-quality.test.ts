@@ -157,3 +157,15 @@ payment records because the portfolio has no authenticated or transactional work
     assert.deepEqual(validateDatabaseSchemaDraft(schema, { brief }), []);
   });
 });
+
+test("customer-owned records with RLS satisfy the role boundary without a user_id alias", () => {
+  const schema = `### reservations
+- id UUID PRIMARY KEY, customer_id UUID REFERENCES profiles(id), start_time TIMESTAMPTZ.
+Each reservation belongs to a customer profile. The foreign key preserves that relationship when the reservation is stored and retrieved.
+### profiles
+- id UUID PRIMARY KEY REFERENCES auth.users(id), role TEXT CHECK (role IN ('customer', 'manager')).
+RLS policy restricts reservation reads and writes to customer_id = auth.uid(); manager role checks run server-side.`;
+  assert.deepEqual(validateDatabaseSchemaDraft(schema, { brief: "Customers and managers have role-based access to reservations." }), []);
+  assert.ok(validateDatabaseSchemaDraft(schema.replace(/customer_id/g, "court_id"), { brief: "Customers and managers have role-based access to reservations." }).some(issue => issue.includes("authorization boundary")));
+  assert.ok(validateDatabaseSchemaDraft(schema.replace(/RLS policy[\s\S]*/, ""), { brief: "Customers and managers have role-based access to reservations." }).some(issue => issue.includes("authorization boundary")));
+});

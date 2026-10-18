@@ -230,3 +230,28 @@ describe("requirements quality gate", () => {
     assert.ok(issues.some((issue) => issue.includes("2000ms")));
   });
 });
+
+test("equivalent worded reminder durations are grounded without new assumptions", () => {
+  for (const source of ["Send a reminder one day before the booking.", "Send a reminder a day before the booking.", "Kirim pengingat sehari sebelum booking.", "Kirim pengingat H-1 sebelum booking.", "Send a D-1 reminder for the booking."]) {
+    const sample = draft();
+    (sample.requirements as { fungsional: string[] }).fungsional[0] = "Send the customer a reminder 24 hours before the booking starts.";
+    assert.deepEqual(validateRequirementsDraft(sample, { brief: `${brief} ${source}` }), [], source);
+  }
+});
+
+test("reminder timing remains separate from checkout holds and changed durations", () => {
+  const sample = draft();
+  const reqs = sample.requirements as { fungsional: string[] };
+  reqs.fungsional[0] = "Checkout keeps the selected slot on hold for 24 hours.";
+  assert.ok(validateRequirementsDraft(sample, { brief: `${brief} Send a reminder one day before booking.` }).some(issue => issue.includes("24 hours")));
+  reqs.fungsional[0] = "Send the customer a reminder 48 hours before the booking starts.";
+  assert.ok(validateRequirementsDraft(sample, { brief: `${brief} Send a reminder one day before booking.` }).some(issue => issue.includes("48 hours")));
+});
+
+test("querying reminder records does not make a reminder duration a search latency", () => {
+  const sample = draft();
+  const flows = sample.user_flow as Array<{ title: string; steps: string[] }>;
+  flows[0].steps[0] = "The worker queries confirmed reservations starting 24 hours away that lack a recorded reminder timestamp.";
+  (sample.requirements as { non_fungsional: string[] }).non_fungsional[1] = "The interface is responsive at 360px width with minimum touch target dimensions of 44 pixels and no horizontal overflow.";
+  assert.deepEqual(validateRequirementsDraft(sample, { brief: `${brief} Send a reminder one day before the reservation.` }), []);
+});

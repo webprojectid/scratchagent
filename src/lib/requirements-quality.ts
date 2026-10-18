@@ -24,14 +24,22 @@ const normalized = (value: unknown): string =>
 const EMPTY_COPY = /^(?:todo|tbd|n\/?a|none|placeholder|lorem ipsum|done|selesai|as needed|sesuai kebutuhan)$/i;
 const GENERIC_COPY = /^(?:(?:the )?(?:system|application|app|platform|feature|module) (?:works?|functions?|runs?) (?:well|properly|as expected)|(?:sistem|aplikasi|fitur|modul) (?:berjalan|berfungsi|bekerja) dengan baik)$/i;
 const GENERIC_NFR = /\b(?:seamless|optimal performance|performant|user.friendly|intuitive|scalab(?:le|ility)|future growth|robust|secure and reliable|relevant regulations?|best practices?|high availability|responsive|efficient|reliably|accurately|consistently|in a timely manner|enforced on the server|data security and privacy|keamanan data terjamin|pengalaman pengguna yang baik|mudah digunakan|cepat dan aman|dapat diskalakan|secara akurat|secara konsisten|tepat waktu|dengan andal)\b/i;
-const TESTABLE_SIGNAL = /\b(?:\d+(?:[.,]\d+)?\s*(?:ms|milliseconds?|detik|seconds?|s|minutes?|menit|hours?|jam|days?|hari|%|kb|mb|gb|users?|pengguna|requests?|permintaan)|p\d{2}|https|tls|aes-?\d+|argon2|bcrypt|rls|row.level security|wcag|keyboard|screen reader|audit logs?|log audit|backup|restore|recovery|rate limit|idempoten\w*|idempoten|idempotent|http\s*[45]\d\d|UTC|TIMESTAMPTZ|latitude|longitude|queue|reject\w*|retri\w*|returns?|responds?|records?|logged?|masked?|encrypted?|blocked?|denied?|announced?|recovers?|mengembalikan|menolak|mencatat|memulihkan|terenkripsi|membatasi|diblokir)\b/i;
+const TESTABLE_SIGNAL = /\b(?:\d+(?:[.,]\d+)?\s*(?:ms|milliseconds?|detik|seconds?|s|minutes?|menit|hours?|jam|days?|hari|%|kb|mb|gb|px|pixels?|users?|pengguna|requests?|permintaan)|p\d{2}|https|tls|aes-?\d+|argon2|bcrypt|rls|row.level security|wcag|keyboard|screen reader|audit logs?|log audit|backup|restore|recovery|rate limit|idempoten\w*|idempoten|idempotent|http\s*[45]\d\d|UTC|TIMESTAMPTZ|latitude|longitude|queue|reject\w*|retri\w*|returns?|responds?|records?|logged?|masked?|encrypted?|blocked?|denied?|announced?|recovers?|mengembalikan|menolak|mencatat|memulihkan|terenkripsi|membatasi|diblokir)\b/i;
 const NUMERIC_UNIT = /\b(\d+(?:[.,]\d+)?)\s*-?\s*(?:(?:concurrent|simultaneous|active|registered|monthly|daily|bersamaan|aktif)\s+)?(milliseconds?|msecs?|ms|seconds?|secs?|sec|s|detik|minutes?|mins?|min|menit|hours?|hrs?|jam|days?|hari|weeks?|minggu|months?|bulan|years?|tahun|percent|persen|%|users?|customers?|pengguna|requests?|permintaan|courts?|lapangan|venues?|lokasi|bookings?|pesanan|slots?|transactions?|transaksi|attempts?|percobaan|steps?|langkah|screens?|layar|pages?|halaman|files?|berkas|characters?|chars?|digits?|karakter|angka|mb|gb)(?=$|[^\p{L}\p{N}])/giu;
 const ALWAYS_ON = /\b24\s*(?:\/|x|×)\s*7\b/giu;
+const TIME_NUMBER_WORDS: Record<string, number> = {
+  a: 1, an: 1, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6,
+  seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12,
+  satu: 1, dua: 2, tiga: 3, empat: 4, lima: 5, enam: 6,
+  tujuh: 7, delapan: 8, sembilan: 9, sepuluh: 10,
+};
+const WORD_TIME = new RegExp(`\\b(${Object.keys(TIME_NUMBER_WORDS).join("|")})[ -]+(seconds?|minutes?|hours?|days?|weeks?|months?|years?|detik|menit|jam|hari|minggu|bulan|tahun)\\b`, "gi");
 const UNSOURCED_PROPOSAL = /\b(?:proposed|proposal|suggested|assumed|assumption|to confirm|to be confirmed|pending confirmation|subject to confirmation|not yet agreed|asumsi|usulan|diusulkan|perlu dikonfirmasi|belum disepakati|target sementara)\b/i;
 
 type NumericClaim = { raw: string; key: string; topic: string | null; index: number };
 const CLAIM_TOPICS = [
-  ["search", /\b(?:search(?:es)?|filter(?:s|ing)?|quer(?:y|ies)|pencarian|mencari|cari)\b/gi],
+  ["reminder", /\b(?:reminders?|pengingat)\b/gi],
+  ["search", /\b(?:search(?:es)?|filter(?:s|ing)?|pencarian|mencari|cari)\b/gi],
   ["webhook", /\b(?:webhooks?|callbacks?)\b/gi],
   ["update", /\b(?:update|updates|updated|sync|synchronize|refresh|pembaruan|memperbarui)\b/gi],
   ["hold", /\b(?:holds?|held|reserv(?:e|es|ed|ation)|menahan|ditahan|reservasi)\b/gi],
@@ -110,6 +118,16 @@ function numericClaims(value: string): NumericClaim[] {
   }
   for (const match of value.matchAll(ALWAYS_ON)) {
     claims.push({ raw: match[0], key: "always-on:24x7", topic: claimTopic(value, match.index ?? 0, match[0].length), index: match.index ?? 0 });
+  }
+  for (const match of value.matchAll(WORD_TIME)) {
+    claims.push({ raw: match[0], key: numericKey(String(TIME_NUMBER_WORDS[match[1].toLowerCase()]), match[2]), topic: claimTopic(value, match.index, match[0].length), index: match.index });
+  }
+  for (const match of value.matchAll(/\bse(detik|menit|jam|hari|minggu|bulan|tahun)\b/gi)) {
+    claims.push({ raw: match[0], key: numericKey("1", match[1]), topic: claimTopic(value, match.index, match[0].length), index: match.index });
+  }
+  // H-1/D-1 are day offsets, including when a model rewrites them as hours.
+  for (const match of value.matchAll(/\b[HD]\s*-\s*(\d+)\b/gi)) {
+    claims.push({ raw: match[0], key: numericKey(match[1], "days"), topic: claimTopic(value, match.index, match[0].length), index: match.index });
   }
   return claims;
 }
