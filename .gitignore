@@ -31,7 +31,7 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# Private configuration; only the blank root template may be published.
 .env*
 *.env
 *.env.*
@@ -73,3 +73,57 @@ scripts/simulasi-production.ts
 
 # security audit notes (local only - jangan dipublish ke repo publik)
 SECURITY_PATCHES.md
+
+# Interpreter caches and local browser/network captures
+__pycache__/
+*.py[cod]
+*.har
+
+# Retired local simulations and one-off operational tools
+/simulasi-e2e/
+/scripts-e2e/
+/support tools/
+/.sim-prog.json
+/sim-real.ts
+/scripts/battle-benchmark-models.ts
+/scripts/bench-plan-list.mts
+/scripts/bench-qoder-models.ts
+/scripts/bench-tunnel-models.ts
+/scripts/check-admin.ts
+/scripts/check-candidate-models.ts
+/scripts/check-empty-fases.ts
+/scripts/check-plan-15.ts
+/scripts/check-plan-empty.ts
+/scripts/check-project.ts
+/scripts/check-user.ts
+/scripts/cleanup-and-finish.ts
+/scripts/delete-plan.ts
+/scripts/diagnose-plan.ts
+/scripts/dump-plan.mjs
+/scripts/filter-proxy-models.ts
+/scripts/find-working-models.ts
+/scripts/generate-all-missing-tasks.ts
+/scripts/generate-free-sim.ts
+/scripts/generate-prompt-only.mjs
+/scripts/get-cookie-check.ps1
+/scripts/inject-simulasi-plan.ts
+/scripts/inspect-all-phases.ts
+/scripts/lib-env.ts
+/scripts/list-available-models.ts
+/scripts/make-token.mjs
+/scripts/migrate-account-workspace.mjs
+/scripts/model-adaptation-test.ts
+/scripts/real-test-generation-v2.ts
+/scripts/real-token-burn-test.ts
+/scripts/repair-plan-tasks.ts
+/scripts/sim-light.ts
+/scripts/simulasi-android.ts
+/scripts/simulasi-qwen37.ts
+/scripts/simulate-e2e.mjs
+/scripts/test-candidate-presets.ts
+/scripts/test-llm.mjs
+/scripts/test-model-endpoint.ts
+/scripts/test-plan.js
+/scripts/test-single-qoder.ts
+/scripts/update-llm-config.ts
+/scripts/verify-limits-live.mjs

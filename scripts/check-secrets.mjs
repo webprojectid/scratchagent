@@ -16,7 +16,11 @@ const literalAssignment = /["']?\b(?:AUTH_SECRET|LLM_API_KEY|GOOGLE_CLIENT_SECRE
 const templateDefaults = new Map([["QUOTA_GENERATE_DAILY", "3"]]);
 
 export function isPrivatePath(file) {
-  const name = path.posix.basename(file.replaceAll("\\", "/")).toLowerCase();
+  const segments = file.replaceAll("\\", "/").toLowerCase().split("/");
+  const name = segments.at(-1);
+  const localDirectories = new Set(["artifacts", "output", ".vercel", ".scratch-data", ".roninvibe-data", "__pycache__"]);
+  if (segments.slice(0, -1).some(part => localDirectories.has(part) || part.startsWith(".tmp-"))) return true;
+  if (/\.(?:har|pyc|pyo)$/.test(name)) return true;
   if (file === ".env.example") return false;
   return /^\.env(?:[._-]|$)/.test(name) || /\.env(?:[._-]|$)/.test(name)
     || name === ".envrc"

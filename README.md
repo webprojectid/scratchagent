@@ -4,7 +4,7 @@ Scratch Agent turns product briefs into reviewed PRDs, roadmaps, architecture, d
 
 ## Local setup
 
-Use Node.js 22 or newer and npm. package-lock.json is the canonical web lockfile; the CLI has its own package and lockfile.
+Use Node.js 24.x and npm. package-lock.json is the canonical web lockfile; the CLI has its own package and lockfile.
 
 ```sh
 npm ci
@@ -57,6 +57,8 @@ npm run hooks:install enables local checks before commits and pushes, without re
 The history scanner checks all local reachable commit trees for known credential patterns and private filenames. It cannot inspect unreachable objects retained by GitHub, external clones or hosting caches. Passing it does not prove every secret format is clean. An old SHA that remains accessible requires credential revocation and, when appropriate, GitHub Support review. See [the October 14 follow-up](docs/security/ENV-FOLLOWUP-2026-10-14.md) for the current boundary between code remediation and external actions.
 
 ## Coding-agent handoff
+
+Start with [the project handoff](docs/PROJECT-HANDOFF.md) and [safe publishing rules](docs/security/SAFE-PUBLISHING.md). The latter defines which files belong in GitHub and how to keep credentials and private audit material out of releases.
 
 Standalone provider/plan simulations have a separate, explicitly opted-in runner. See [manual test instructions](tests/MANUAL.md). They are excluded from offline CI and do not reuse the application's database through that runner.
 

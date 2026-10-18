@@ -18,3 +18,5 @@ npm run test:manual -- providers --allow-live
 ```
 
 This example is potentially billable. It is not part of normal setup or release validation. Do not run against production data merely to satisfy a test count.
+
+Legacy one-off database/token scripts and recorded simulation outputs have been retired from the tracked source. Use the opt-in manual test runner above with disposable test configuration; keep generated output in ignored local artifacts.

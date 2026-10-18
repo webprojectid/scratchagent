@@ -50,6 +50,39 @@ test("only the root blank env template and explicit quota default are allowed", 
   });
 });
 
+test("private audit bundles and network captures are rejected even without ignore rules or recognizable keys", () => {
+  fixture((root, git) => {
+    const paths = ["artifacts/review.png", "nested/output/report.bin", ".tmp-audit/session.bin", "session.har"];
+    for (const file of paths) {
+      mkdirSync(path.dirname(path.join(root, file)), { recursive: true });
+      writeFileSync(path.join(root, file), Buffer.from([0, 1, 2, 3]));
+      git("add", "--", file);
+    }
+    const result = checkTracked(root);
+    for (const file of paths) assert.ok(result.findings.includes(`Index private configuration file: ${file}`));
+  });
+});
+
+test("a private binary report cannot be published by deleting it in a later commit", () => {
+  fixture((root, git) => {
+    mkdirSync(path.join(root, "artifacts"));
+    writeFileSync(path.join(root, "artifacts", "capture.png"), Buffer.from([0, 1, 2, 3]));
+    git("add", "artifacts/capture.png"); git("commit", "--quiet", "-m", "Local report fixture");
+    git("rm", "--quiet", "artifacts/capture.png"); git("commit", "--quiet", "-m", "Remove local report");
+    assert.deepEqual(checkTracked(root).findings, []);
+    assert.ok(checkHistory(root).findings.includes("Reachable history private configuration file: artifacts/capture.png"));
+  });
+});
+
+test("reviewed public image assets remain eligible for publication", () => {
+  fixture((root, git) => {
+    mkdirSync(path.join(root, "public", "brand"), { recursive: true });
+    writeFileSync(path.join(root, "public", "brand", "logo.png"), Buffer.from([0, 1, 2, 3]));
+    git("add", "public/brand/logo.png");
+    assert.deepEqual(checkTracked(root).findings, []);
+  });
+});
+
 test("a clean working copy cannot hide a staged key and oversized text is inspected", () => {
   fixture((root, git) => {
     const key = "thk_" + "live_" + "synthetic".repeat(5);
@@ -178,5 +211,20 @@ test("push scanner checks an explicit outgoing SHA even outside reachable branch
     assert.equal(outgoing.status, 1);
     assert.ok(outgoing.stderr.includes("private configuration file: .env"));
     assert.ok(!outgoing.stdout.includes("synthetic-private-value") && !outgoing.stderr.includes("synthetic-private-value"));
+  });
+});
+
+
+test("retired simulation outputs and operational helpers cannot be force-added again", () => {
+  fixture((root, git) => {
+    copyFileSync(".gitignore", path.join(root, ".gitignore"));
+    const paths = [".sim-prog.json", "simulasi-e2e/results.json", "scripts-e2e/debug.js", "scripts/get-cookie-check.ps1"];
+    for (const file of paths) {
+      mkdirSync(path.dirname(path.join(root, file)), { recursive: true });
+      writeFileSync(path.join(root, file), "synthetic local output\n");
+      git("add", "--force", "--", file);
+    }
+    const result = checkTracked(root);
+    for (const file of paths) assert.ok(result.findings.includes(`Ignored file still tracked: ${file}`));
   });
 });
