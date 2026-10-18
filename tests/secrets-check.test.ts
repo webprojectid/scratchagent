@@ -252,7 +252,31 @@ test("push cannot republish a historical tip containing internal guidance", () =
     git("rm", "--quiet", "AGENTS.md"); git("commit", "--quiet", "-m", "Public tree without instructions");
     const clean = execFileSync("git", ["rev-parse", "HEAD"], { cwd: root, encoding: "utf8" }).trim();
     assert.deepEqual(checkTracked(root).findings, []);
-    assert.deepEqual(checkHistory(root, [clean]).findings, []);
+    assert.ok(checkHistory(root, [clean]).findings.includes("Reachable history local-only documentation: AGENTS.md"));
     assert.ok(checkHistory(root, [internal]).findings.includes("Outgoing tree local-only documentation: AGENTS.md"));
+  });
+});
+
+test("push hook rejects internal guidance deleted from the latest tree", () => {
+  fixture((root, git) => {
+    writeFileSync(path.join(root, "README.md"), "Public setup\n");
+    git("add", "README.md"); git("commit", "--quiet", "-m", "Public initial fixture");
+    git("init", "--bare", "--quiet", "remote.git");
+    git("push", "--quiet", "./remote.git", "HEAD:refs/heads/main");
+    const before = execFileSync("git", ["rev-parse", "HEAD"], { cwd: root, encoding: "utf8" }).trim();
+    writeFileSync(path.join(root, "AGENTS.md"), "synthetic internal note\n");
+    git("add", "AGENTS.md"); git("commit", "--quiet", "-m", "Historical guidance fixture");
+    git("rm", "--quiet", "AGENTS.md"); git("commit", "--quiet", "-m", "Remove guidance from current tree");
+    mkdirSync(path.join(root, "scripts"), { recursive: true });
+    mkdirSync(path.join(root, ".githooks"), { recursive: true });
+    copyFileSync("scripts/check-secrets.mjs", path.join(root, "scripts/check-secrets.mjs"));
+    copyFileSync(".githooks/pre-push", path.join(root, ".githooks/pre-push"));
+    git("config", "core.hooksPath", ".githooks");
+    assert.deepEqual(checkTracked(root).findings, []);
+    const rejected = spawnSync("git", ["push", "./remote.git", "HEAD:refs/heads/main"], { cwd: root, encoding: "utf8" });
+    assert.notEqual(rejected.status, 0);
+    assert.ok(rejected.stderr.includes("Reachable history local-only documentation: AGENTS.md"));
+    assert.equal(execFileSync("git", ["--git-dir=remote.git", "rev-parse", "refs/heads/main"], { cwd: root, encoding: "utf8" }).trim(), before);
+    assert.ok(!rejected.stdout.includes("synthetic internal note") && !rejected.stderr.includes("synthetic internal note"));
   });
 });

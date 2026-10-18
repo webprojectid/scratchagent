@@ -126,7 +126,9 @@ export function checkHistory(root = process.cwd(), outgoingCommits = []) {
       const [, type, oid] = record.slice(0, tab).split(" ");
       if (type !== "blob") continue;
       const file = record.slice(tab + 1);
-      if (outgoing.has(commit) && isLocalOnlyDocumentation(file)) findings.push(`Outgoing tree local-only documentation: ${file}`);
+      if (isLocalOnlyDocumentation(file)) {
+        findings.push(`${outgoing.has(commit) ? "Outgoing tree" : "Reachable history"} local-only documentation: ${file}`);
+      }
       if (!pathsByBlob.has(oid)) pathsByBlob.set(oid, new Set());
       pathsByBlob.get(oid).add(file);
     }
