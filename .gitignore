@@ -127,3 +127,17 @@ __pycache__/
 /scripts/test-single-qoder.ts
 /scripts/update-llm-config.ts
 /scripts/verify-limits-live.mjs
+
+# Owner policy: internal agent instructions and project/security notes stay local
+/AGENTS.md
+/CLAUDE.md
+/GEMINI.md
+/.agents/
+/.claude/
+/anti-slop/
+/skills-lock.json
+/docs/security/
+/docs/archive/
+/docs/PROJECT-HANDOFF.md
+/docs/ACCOUNT-DEVELOPER-TODOS.md
+/docs/egress-optimization.md

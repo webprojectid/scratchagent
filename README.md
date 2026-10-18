@@ -54,11 +54,11 @@ The credential gate reads both staged Git blobs and tracked working files, inclu
 
 npm run hooks:install enables local checks before commits and pushes, without replacing existing hooks. Each new clone needs this explicit setup. If a hook already exists, integrate the two scanner commands there. CI repeats these checks; CI runs after a push and cannot prevent the initial publication by itself. Hooks can be bypassed, so they are an extra guard rather than a guarantee.
 
-The history scanner checks all local reachable commit trees for known credential patterns and private filenames. It cannot inspect unreachable objects retained by GitHub, external clones or hosting caches. Passing it does not prove every secret format is clean. An old SHA that remains accessible requires credential revocation and, when appropriate, GitHub Support review. See [the October 14 follow-up](docs/security/ENV-FOLLOWUP-2026-10-14.md) for the current boundary between code remediation and external actions.
+The history scanner checks all local reachable commit trees for known credential patterns and private filenames. It cannot inspect unreachable objects retained by GitHub, external clones or hosting caches. Passing it does not prove every secret format is clean. An old SHA that remains accessible requires credential revocation and, when appropriate, GitHub Support review.
 
 ## Coding-agent handoff
 
-Start with [the project handoff](docs/PROJECT-HANDOFF.md) and [safe publishing rules](docs/security/SAFE-PUBLISHING.md). The latter defines which files belong in GitHub and how to keep credentials and private audit material out of releases.
+Internal agent instructions, project handoffs and security audit notes are maintained locally and are not published with this repository.
 
 Standalone provider/plan simulations have a separate, explicitly opted-in runner. See [manual test instructions](tests/MANUAL.md). They are excluded from offline CI and do not reuse the application's database through that runner.
 

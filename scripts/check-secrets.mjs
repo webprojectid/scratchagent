@@ -15,6 +15,14 @@ const patterns = [
 const literalAssignment = /["']?\b(?:AUTH_SECRET|LLM_API_KEY|GOOGLE_CLIENT_SECRET|SUPABASE_SERVICE_ROLE_KEY|DB_PASSWORD)["']?\s*[:=]\s*(["'])(.*?)\1/;
 const templateDefaults = new Map([["QUOTA_GENERATE_DAILY", "3"]]);
 
+function isLocalOnlyDocumentation(file) {
+  const normalized = file.replaceAll("\\", "/").toLowerCase();
+  const name = normalized.split("/").at(-1);
+  return ["agents.md", "claude.md", "gemini.md"].includes(name)
+    || [".agents/", ".claude/", "anti-slop/", "docs/security/", "docs/archive/"].some(prefix => normalized.startsWith(prefix))
+    || ["skills-lock.json", "docs/project-handoff.md", "docs/account-developer-todos.md", "docs/egress-optimization.md"].includes(normalized);
+}
+
 export function isPrivatePath(file) {
   const segments = file.replaceAll("\\", "/").toLowerCase().split("/");
   const name = segments.at(-1);
@@ -95,6 +103,7 @@ export function checkTracked(root = process.cwd()) {
   const blobs = readBlobs(root, [...new Set(entries.map(entry => entry.oid))]);
   for (const { file, oid, stage } of entries) {
     if (stage !== "0") findings.push(`Unresolved index entry: ${file}`);
+    if (isLocalOnlyDocumentation(file)) findings.push(`Index local-only documentation: ${file}`);
     findings.push(...inspect(file, blobs.get(oid), "Index"));
     const absolute = path.resolve(root, file);
     if (statSync(absolute, { throwIfNoEntry: false })?.isFile()) {
@@ -109,6 +118,7 @@ export function checkHistory(root = process.cwd(), outgoingCommits = []) {
   // Check each historical tree: identical blobs can also have private filenames.
   const commits = git(root, ["rev-list", "--all", ...outgoingCommits]).toString("utf8").trim().split("\n").filter(Boolean);
   const pathsByBlob = new Map();
+  const outgoing = new Set(outgoingCommits);
   for (const commit of commits) {
     const records = git(root, ["ls-tree", "-r", "-z", commit]).toString("utf8").split("\0").filter(Boolean);
     for (const record of records) {
@@ -116,6 +126,7 @@ export function checkHistory(root = process.cwd(), outgoingCommits = []) {
       const [, type, oid] = record.slice(0, tab).split(" ");
       if (type !== "blob") continue;
       const file = record.slice(tab + 1);
+      if (outgoing.has(commit) && isLocalOnlyDocumentation(file)) findings.push(`Outgoing tree local-only documentation: ${file}`);
       if (!pathsByBlob.has(oid)) pathsByBlob.set(oid, new Set());
       pathsByBlob.get(oid).add(file);
     }

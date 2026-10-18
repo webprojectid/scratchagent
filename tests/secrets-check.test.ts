@@ -228,3 +228,31 @@ test("retired simulation outputs and operational helpers cannot be force-added a
     for (const file of paths) assert.ok(result.findings.includes(`Ignored file still tracked: ${file}`));
   });
 });
+
+
+test("internal agent and audit documents stay local even without ignore rules", () => {
+  fixture((root, git) => {
+    const paths = ["AGENTS.md", "CLAUDE.md", ".agents/skills/example/SKILL.md", "docs/security/review.md", "docs/PROJECT-HANDOFF.md"];
+    for (const file of paths) {
+      mkdirSync(path.dirname(path.join(root, file)), { recursive: true });
+      writeFileSync(path.join(root, file), "synthetic internal note\n");
+      git("add", "--", file);
+    }
+    const result = checkTracked(root);
+    for (const file of paths) assert.ok(result.findings.includes(`Index local-only documentation: ${file}`));
+  });
+});
+
+test("push cannot republish a historical tip containing internal guidance", () => {
+  fixture((root, git) => {
+    writeFileSync(path.join(root, "README.md"), "Public setup\n");
+    writeFileSync(path.join(root, "AGENTS.md"), "synthetic internal note\n");
+    git("add", "README.md", "AGENTS.md"); git("commit", "--quiet", "-m", "Historical instruction fixture");
+    const internal = execFileSync("git", ["rev-parse", "HEAD"], { cwd: root, encoding: "utf8" }).trim();
+    git("rm", "--quiet", "AGENTS.md"); git("commit", "--quiet", "-m", "Public tree without instructions");
+    const clean = execFileSync("git", ["rev-parse", "HEAD"], { cwd: root, encoding: "utf8" }).trim();
+    assert.deepEqual(checkTracked(root).findings, []);
+    assert.deepEqual(checkHistory(root, [clean]).findings, []);
+    assert.ok(checkHistory(root, [internal]).findings.includes("Outgoing tree local-only documentation: AGENTS.md"));
+  });
+});
