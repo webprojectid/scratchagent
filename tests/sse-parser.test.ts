@@ -21,7 +21,16 @@ test("SSE handles split events and an EOF event without trailing newline", async
   const parsed = await parseLLMResponse(response(['data: {"choices":[{"delta":{"cont', 'ent":"split"}}]}\n\ndata: {"usage":{"prompt_tokens":2,"completion_tokens":3,"total_tokens":5}}'], "text/event-stream"));
   assert.equal(parsed.content, "split"); assert.equal(parsed.usage?.total_tokens, 5);
 });
-test("empty SSE reports finite zero token usage", async () => {
+test("empty SSE leaves missing token usage unreported", async () => {
   const parsed = await parseLLMResponse(response(['data: [DONE]\n\n'], "text/event-stream"));
-  assert.equal(parsed.content, ""); assert.equal(parsed.usage?.total_tokens, 0);
+  assert.equal(parsed.content, ""); assert.equal(parsed.usage, undefined);
+});
+
+test("usage preserves cache and reasoning counters separately", async () => {
+  const usage = { prompt_tokens: 20, completion_tokens: 10, total_tokens: 30, prompt_tokens_details: { cached_tokens: 8 }, completion_tokens_details: { reasoning_tokens: 4 } };
+  for (const type of ["application/json", "text/event-stream"]) {
+    const payload = { choices: [{ message: { content: "ok" } }], usage };
+    const parsed = await parseLLMResponse(response([type === "application/json" ? JSON.stringify(payload) : `data: ${JSON.stringify(payload)}\n\ndata: [DONE]\n\n`], type));
+    assert.deepEqual(parsed.usage, usage);
+  }
 });

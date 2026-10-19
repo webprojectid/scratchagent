@@ -3,6 +3,7 @@ import { uiText as ui, useUiLanguage, uiLocale } from "@/lib/ui-text";
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { ProductDecisions } from "@/components/product-decisions";
 import type { Plan } from "@/lib/types";
 import { DiagramWithDetails } from "@/components/mermaid";
 import { PhaseIcon } from "@/components/stock-icon";
@@ -180,6 +181,8 @@ function buildSections(plan: Plan): Section[] {
       </div>
     ),
   });
+
+  if (plan.productSpec) sections.push({ id: "product-decisions", title: uiLocale() === "en-US" ? "Product decisions" : "Keputusan produk", body: <ProductDecisions plan={plan} /> });
 
   sections.push({
     id: "requirements",

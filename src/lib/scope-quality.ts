@@ -22,7 +22,7 @@ interface Capability {
 const OPTIONAL_CAPABILITIES: readonly Capability[] = [
   { name: "two-factor authentication", pattern: /\b(?:two[- ]factor authentication|two[- ]step verification|2fa|mfa|otp login|login otp|autentikasi dua faktor|verifikasi dua langkah)\b/i },
   { name: "customer feedback", pattern: /\b(?:customer|user|pelanggan|pengguna)\s+(?:feedback|umpan balik)(?:\s+(?:submission|form|feature|pengiriman))?\b|\b(?:feedback|umpan balik)\s+(?:submission|form|feature|pengiriman)\b/i },
-  { name: "marketplace reviews", pattern: /\b(?:marketplace|public|venue|court|product|lapangan|produk)\s+(?:(?:feedback|ratings?|umpan balik|penilaian)\s+(?:and|dan)\s+)?(?:reviews?|ratings?|ulasan|penilaian)\b|\b(?:customer|user|pelanggan|pengguna)\s+(?:reviews?|ratings?|ulasan|penilaian)\b(?=\s*(?:[.,;:]|$|and\s+ratings))|\b(?:post|submit|publish|write|rate|kirim|tulis|beri)\s+(?:\w+\s+){0,3}(?:reviews?|ratings?|ulasan|penilaian)\b|\b(?:reviews?|ratings?|ulasan|penilaian)\s+(?:for|of|on|about|management|page|section|system|venue|court|lapangan|produk)\b|\bfeedback\s+(?:and|dan)\s+reviews?\b|\bratings?\b/i },
+  { name: "marketplace reviews", pattern: /\breview\s+(?:completed\s+)?purchases\b|\b(?:marketplace|public|venue|court|product|lapangan|produk)\s+(?:(?:feedback|ratings?|umpan balik|penilaian)\s+(?:and|dan)\s+)?(?:reviews?|ratings?|ulasan|penilaian)\b|\b(?:customer|user|pelanggan|pengguna)\s+(?:reviews?|ratings?|ulasan|penilaian)\b(?=\s*(?:[.,;:]|$|and\s+ratings))|\b(?:post|submit|publish|write|rate|kirim|tulis|beri)\s+(?:\w+\s+){0,3}(?:reviews?|ratings?|ulasan|penilaian)\b|\b(?:reviews?|ratings?|ulasan|penilaian)\s+(?:(?:for|of|on|about)\s+(?:venues?|courts?|products?|sellers?|vendors?|lapangan|produk)|management|page|section|system|venue|court|lapangan|produk)\b|\bfeedback\s+(?:and|dan)\s+reviews?\b|\bratings?\b/i },
   { name: "social networking/media", pattern: /\b(?:social\s+(?:network(?:ing)?|media|sharing|feed|community|login|links?)|jejaring\s+sosial|media\s+sosial|berbagi\s+sosial|bagikan\s+ke\s+(?:instagram|facebook|tiktok|x|twitter))\b/i },
   { name: "dynamic or peak pricing", pattern: /\b(?:dynamic|surge|peak(?:\s+hour|\s+time)?)\s+(?:prices?|pricing|rates?)\b|\b(?:prices?|pricing|rates?)\s+(?:dynamic|surge|peak)\b|\bharga\s+(?:dinamis|jam\s+sibuk|saat\s+sibuk|puncak)\b/i },
   { name: "pricing tiers", pattern: /\b(?:custom|multiple|variable|time[- ]based|tiered)\s+(?:court\s+|venue\s+)?(?:pricing|price|rate)\s+tiers?\b|\b(?:court|venue)\s+(?:pricing|price|rate)\s+tiers?\b|\bpricing\s+tiers?\b/i },
@@ -50,7 +50,7 @@ const OPTIONAL_CAPABILITIES: readonly Capability[] = [
   { name: "audit alerts", pattern: /\b(?:audit|activity)\s+(?:log\s+)?(?:alerts?|warnings?|peringatan)\b|\b(?:alerts?|warnings?|peringatan)\s+(?:for\s+)?(?:audit|activity)\b/i },
   { name: "notification scheduling", pattern: /\b(?:notification|email|notifikasi)\s+(?:scheduling|scheduler|penjadwalan)\b|\b(?:schedule|jadwalkan)\s+(?:notifications?|emails?|notifikasi)\b/i },
   { name: "notification preferences", pattern: /\b(?:notification|email)\s+(?:preferences?|settings?|channel\s+preferences?)\b|\b(?:preferences?|pengaturan)\s+(?:for|of|untuk)\s+(?:notifications?|notifikasi)\b|\bpreferensi\s+notifikasi\b/i },
-  { name: "booking or payment reminders", pattern: /\b(?:booking|payment|match|pembayaran|jadwal|pertandingan)\s+(?:reminders?|pengingat)\b|\bpengingat\s+(?:pemesanan|pembayaran|pertandingan)\b/i },
+  { name: "booking or payment reminders", pattern: /\b(?:booking|payment|match|pembayaran|jadwal|pertandingan|h[- ]?1|day before)\s+(?:reminders?|pengingat)\b|\bpengingat\s+(?:pemesanan|pembayaran|pertandingan|h[- ]?1)\b/i },
   { name: "QR check-in", pattern: /\b(?:qr\s*codes?|barcodes?)\s+(?:check[- ]?in|scann?ing)\b|\b(?:check[- ]?in|scan)\s+(?:by|via|with|using|menggunakan)\s+(?:a\s+)?(?:qr\s*codes?|barcodes?)\b|\bscann?ing\s+(?:a\s+)?(?:qr\s*codes?|barcodes?)\b/i },
   { name: "walk-in booking", pattern: /\bwalk\s+in\b|\b(?:booking|reservation|pemesanan|reservasi)\s+(?:langsung\s+di\s+tempat|tanpa\s+reservasi)\b/i },
   { name: "offline access/cache", pattern: /\boffline\s+(?:cache|caching|mode|storage|sync|data|access)\b|\b(?:cache|caching|storage|sync|access)\s+offline\b|\b(?:mode|akses|penyimpanan)\s+luring\b/i },
@@ -123,16 +123,22 @@ export function scopeGuidance(): string {
   return "BRIEF FIRST: Preserve every requested actor, workflow, delivery platform and confirmed decision. Relevant supporting capabilities may be proposed when they directly complete a requested workflow or improve its usability, reliability or operation. Explain which requested workflow each addition supports, label it as a supporting proposal rather than a user requirement, and keep it subordinate to the requested scope. Never replace requested capabilities, add unrelated products or pad tier counts with extras. Explicit exclusions and later user clarifications take priority over suggestions. Unconfirmed business policies, vendors and numerical targets must remain configurable open decisions or clearly identified proposals; do not present them as user-confirmed facts.";
 }
 
-function exclusionClause(value: string): string {
+export function exclusionClause(value: string): string {
   return value.split(/,\s*(?:and\s+|dan\s+)?(?=(?:customers?|users?|owners?|admins?|staff|pay|reschedule|cancel|manage|send|receive|view|create|allow|support|provide|include|enable|pengguna|pemilik|bayar|kirim|kelola)\b)/i, 1)[0];
+}
+
+export function isSafetyConstraint(value: string): boolean {
+  return /^(?:double bookings?|duplicate (?:bookings?|payments?|charges?|submissions?)|data loss|overselling|unauthorized access)$/i.test(normalize(value));
 }
 
 function explicitExclusions(value: string): string[] {
   const phrases = new Set<string>();
   for (const match of value.matchAll(EXCLUSION_CLAUSE)) {
-    for (const part of exclusionClause(match[1]).split(/,|\b(?:and|or|dan|atau)\b/i)) {
+    // A "without" condition ends before the next comma-separated action.
+    const clause = exclusionClause(match[1]);
+    for (const part of clause.split(/,|\b(?:and|or|dan|atau)\b/i)) {
       const phrase = normalize(part.replace(/^(?:a|an|the|any|fitur|feature|features|fitur fitur)\s+/i, ""));
-      if (/^(?:double bookings?|duplicate (?:bookings?|payments?|charges?|submissions?)|data loss|overselling|unauthorized access)$/i.test(phrase)) continue;
+      if (isSafetyConstraint(phrase)) continue;
       if (phrase.length >= 5 && phrase.length <= 70 && phrase.split(" ").length <= 8) phrases.add(phrase);
     }
   }
@@ -171,8 +177,10 @@ export function validateScopeClaims(input: ScopeValidationInput): string[] {
         capability.pattern.test(phrase) && capabilityState(capability, input.brief, answers) === "requested")) continue;
       const phrasePattern = new RegExp(`\\b${phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/ /g, "\\s+")}\\b`, "i");
       if (mentionState(candidate.text, phrasePattern) === "excluded") continue;
-      const mentions = [...normalize(candidate.text).matchAll(new RegExp(phrasePattern.source, "gi"))];
-      if (mentions.length && mentions.every((mention) => /\b(?:prevent\w*|avoid\w*|reject\w*|block\w*|mencegah|menolak)\s+(?:\w+\s+){0,3}$/i.test(normalize(candidate.text).slice(0, mention.index)))) continue;
+      const escaped = phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/ /g, "\\s+");
+      const prevention = /\b(?:prevent\w*|avoid\w*|reject\w*|block\w*|mencegah|menolak)\s+(?:\w+\s+){0,3}$/i;
+      const mentions = [...normalize(candidate.text).matchAll(new RegExp(`\\b${escaped}\\b`, "gi"))];
+      if (mentions.length && mentions.every((mention) => prevention.test(normalize(candidate.text).slice(0, mention.index)))) continue;
       const answerOverrides = answers.some((answer) => {
         const response = typeof answer === "string" ? answer : answer.answer ?? "";
         return hasPhrase(response, phrase) && mentionState(response, phrasePattern) === "requested";
@@ -184,7 +192,7 @@ export function validateScopeClaims(input: ScopeValidationInput): string[] {
   return issues;
 }
 
-/** Remove explicit conflicts only when enough usable criteria remain. */
+/** Remove an extra criterion only when enough grounded criteria remain. */
 export function removeUnrequestedCriteria(
   criteria: readonly string[],
   scope: Pick<ScopeValidationInput, "brief" | "confirmedAnswers">,

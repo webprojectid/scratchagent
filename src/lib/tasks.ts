@@ -16,7 +16,7 @@ export interface NextTaskResult {
   done: boolean;
   blocked: boolean;
   failedTasks: { ref: string; title: string; failReason: string | null }[];
-  task: { ref: string; title: string; layer: string; phase: number; page: string | null; lastFailReason: string | null } | null;
+  task: { ref: string; title: string; layer: string; phase: number; page: string | null; lastFailReason: string | null; detail?: Task["detail"] } | null;
   progress: {
     phase: { current: number; total: number };
     layer: string;
@@ -74,7 +74,7 @@ export async function getNextTask(planId: string, loadedPlan?: Plan): Promise<Ne
     done: false,
     blocked: false,
     failedTasks: [],
-    task: { ref: next.ref, title: next.title, layer: next.layer, phase: next.phase, page: next.page, lastFailReason: next.lastFailReason ?? null },
+    task: { detail: next.detail, ref: next.ref, title: next.title, layer: next.layer, phase: next.phase, page: next.page, lastFailReason: next.lastFailReason ?? null },
     progress: {
       phase: { current: phases.indexOf(next.phase) + 1, total: phases.length },
       layer: next.layer,

@@ -22,9 +22,11 @@
 export interface ParsedLLMResponse {
   content: string;
   usage?: {
-    prompt_tokens: number;
-    completion_tokens: number;
-    total_tokens: number;
+    prompt_tokens?: number;
+    completion_tokens?: number;
+    total_tokens?: number;
+    prompt_tokens_details?: { cached_tokens?: number };
+    completion_tokens_details?: { reasoning_tokens?: number };
   };
   mode: "streaming" | "json" | "unknown";
 }
@@ -91,9 +93,7 @@ async function parseStream(body: ReadableStream<Uint8Array>, options: ParseOptio
       for (const line of lines) { consumeLine(line); if (finished) break; }
     }
     if (finished) await reader.cancel();
-    const finite = (number: number | undefined) => typeof number === "number" && Number.isFinite(number) ? number : 0;
-    const prompt_tokens = finite(usage.prompt_tokens), completion_tokens = finite(usage.completion_tokens);
-    return { content, usage: { prompt_tokens, completion_tokens, total_tokens: finite(usage.total_tokens) || prompt_tokens + completion_tokens }, mode: "streaming" };
+    return { content, ...(Object.keys(usage).length ? { usage } : {}), mode: "streaming" };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     options.onError?.(new Error(`Streaming parse error: ${message}`));
@@ -126,14 +126,10 @@ async function parseJson(
     }
     
     // Extract usage stats
-    const usage = {
-      prompt_tokens: json.usage?.prompt_tokens ?? 0,
-      completion_tokens: json.usage?.completion_tokens ?? 0,
-      total_tokens: json.usage?.total_tokens ?? 0
-    };
+    const usage: ParsedLLMResponse["usage"] = json.usage ?? undefined;
     
     if (options.logDebug) {
-      console.log(`[SSE Parser] JSON complete: ${content.length} chars, ${usage.total_tokens.toLocaleString()} tokens`);
+      console.log(`[SSE Parser] JSON complete: ${content.length} chars, ${usage?.total_tokens?.toLocaleString() ?? "unreported"} tokens`);
     }
     
     return {

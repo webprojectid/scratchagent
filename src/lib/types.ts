@@ -3,6 +3,7 @@ export type TaskStatus = "pending" | "in_progress" | "done" | "failed";
 export type FeaturePriority = "high" | "medium" | "low";
 
 export interface Task {
+  detail?: import("./task-spec").TaskDetail;
   ref: string;
   title: string;
   layer: TaskLayer;
@@ -18,6 +19,7 @@ export interface Task {
 }
 
 export interface SubFeature {
+  requirementIds?: string[];
   id?: string;
   title: string;
   tujuan?: string;
@@ -26,6 +28,7 @@ export interface SubFeature {
 }
 
 export interface Feature {
+  requirementIds?: string[];
   id?: string;
   slug: string;
   title: string;
@@ -46,6 +49,7 @@ export interface TechStackItem {
 }
 
 export interface UserFlow {
+  requirementIds?: string[];
   title: string;
   steps: string[];
 }
@@ -56,6 +60,8 @@ export interface Requirements {
 }
 
 export interface Plan {
+  generationMetrics?: import("./generation-metrics").GenerationRequestMetric[];
+  productSpec?: import("./product-spec").ProductSpec;
   id: string;
   title: string;
   brief: string;

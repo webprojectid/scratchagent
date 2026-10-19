@@ -41,6 +41,24 @@ function draft(): RequirementsDraft {
 }
 
 describe("requirements quality gate", () => {
+  test("concrete layout behavior is testable, while a bare pixel count is insufficient", () => {
+    const sample = draft();
+    const nfr = (sample.requirements as { non_fungsional: string[] }).non_fungsional;
+    nfr[0] = "Responsive layouts must fit a proposed 360px viewport without horizontal scrolling and retain visible form labels and action buttons at that width.";
+    assert.deepEqual(validateRequirementsDraft(sample, { brief }), []);
+    nfr[0] = "System shall enforce responsive viewport layouts using CSS media queries and flex or grid constraints, ensuring interactive slot buttons maintain a minimum tap target dimension of 44 by 44 CSS pixels and prevent horizontal window scrolling on viewport widths down to 320 CSS pixels (Proposed assumption requiring confirmation: Minimum supported mobile viewport width is 320 CSS pixels).";
+    assert.deepEqual(validateRequirementsDraft(sample, { brief }), []);
+    nfr[0] = "System shall render a responsive UI layout adapting to mobile, tablet, and desktop viewports without horizontal clipping or misaligned interactive slot buttons.";
+    assert.deepEqual(validateRequirementsDraft(sample, { brief }), []);
+    nfr[0] = "The system must be responsive and user-friendly at 360px across devices.";
+    assert.ok(validateRequirementsDraft(sample, { brief }).some(issue => issue.includes("klaim kualitas masih umum")));
+  });
+
+  test("without double booking does not turn later actions into forbidden requirements", () => {
+    const sample = draft();
+    (sample.requirements as { fungsional: string[] }).fungsional[0] = "Customers can reschedule confirmed bookings under the venue policy.";
+    assert.deepEqual(validateRequirementsDraft(sample, { brief: `${brief} Customers book without double booking, pay a deposit, and reschedule or cancel.` }), []);
+  });
   test("rejects bloated repeated requirement inventories", () => {
     const sample = draft();
     const requirements = sample.requirements as { fungsional: string[]; non_fungsional: string[] };

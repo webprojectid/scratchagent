@@ -1,3 +1,4 @@
+import type { TaskDetail } from "@/lib/task-spec";
 import { writeOriginGate } from "@/lib/write-origin";
 import { hasProFeatures } from "@/lib/account-capabilities";
 import { apiText } from "@/lib/ui-messages";
@@ -20,6 +21,7 @@ import { RATE_LIMITS, clientKey, getClientIp, logSecurity, rateLimit, rateLimite
 
 /** Bentuk task final (sama dengan generate-tasks). */
 interface FinalTask {
+  detail?: TaskDetail;
   ref: string;
   title: string;
   layer: "frontend" | "backend" | "qa";
@@ -157,6 +159,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pla
         const ref = buildTaskRef(featureIndex, subIndex, ++taskNum);
         tempKeyToRef.set(t.__key, ref);
         const task = makeTask(ref, t.title, t.layer, phase, t.page ?? null);
+        task.detail = "detail" in t ? t.detail as TaskDetail : undefined;
         assigned.push({ task, rawDeps: t.deps ?? [] });
         return task;
       });

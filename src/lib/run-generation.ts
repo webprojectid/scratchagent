@@ -1,9 +1,12 @@
+import { canResumeGeneration, nextGenerationFailure } from "./generation-recovery";
 import { claimGeneration, releaseGeneration, reserveGenerationAttempt, withGenerationLease } from "./generation-lease";
 import { recordAccountActivity } from "./account-store";
 import type { HandoffSettings } from "./account-preferences";
 import { after } from "next/server";
 import { generatePlanStructure } from "./generate";
-import { savePlan, deletePlan, updatePlanTitle } from "./storage";
+import { savePlan, updatePlanTitle, getPlan } from "./storage";
+import { emptyGenerationCheckpoint, runGenerationSlice } from "./generation-checkpoint";
+import { clearGenerationWork, getGenerationWork, saveGenerationWork } from "./generation-checkpoint-store";
 import { finalizeQuota, refundQuota, recordUsage, type QuotaReceipt } from "./quota";
 import { logSecurity } from "./security";
 
@@ -22,28 +25,55 @@ export interface GenerationJob {
   tier: "free" | "pro";
   ownerId: string;
   userId: string;
-  /** Receipt kuota dari saat user menekan generate. Retry memakai receipt yang
-   * sama tanpa eventId (kuota sudah dibayar di percobaan pertama). */
+  /** Continuations recover the original receipt from the saved checkpoint. */
   receipt: QuotaReceipt;
   ip?: string;
 }
 
-/**
- * Jalankan generate struktur PRD di background (after) dan pulihkan kalau
- * gagal: kuota dikembalikan, kerangka plan dibuang. Aman dipanggil ulang
- * (retry) — retry memakai receipt tanpa eventId supaya kuota tidak dobel.
- */
+/** One saved section per invocation; authenticated progress polling resumes it. */
 export async function scheduleGeneration(job: GenerationJob, tryNo = 1): Promise<boolean> {
-  const lease = await claimGeneration(job.planId, "structure", 4);
+  if (!canResumeGeneration((await getGenerationWork(job.planId))?.failure)) return false;
+  const lease = await claimGeneration(job.planId, "structure", 200);
   if (!lease) return false;
   try {
     if (!await reserveGenerationAttempt(job.userId, job.tier)) {
       await releaseGeneration(job.planId, "structure", lease);
       return false;
     }
+    if (job.receipt.eventId) {
+      const initialized = await withGenerationLease(job.planId, "structure", lease, async () => {
+        if (!await getGenerationWork(job.planId)) {
+          await saveGenerationWork(job.planId, { checkpoint: emptyGenerationCheckpoint(), receipt: job.receipt });
+        }
+        return true;
+      });
+      if (!initialized) {
+        await releaseGeneration(job.planId, "structure", lease);
+        return false;
+      }
+    }
     after(async () => {
+      let receipt = job.receipt;
+      let loaded = false;
       try {
-        const result = await generatePlanStructure(job.brief, job.techPrefs, job.answers, job.tier, job.handoff);
+        const plan = await getPlan(job.planId);
+        if (!plan || plan.status !== "generating" || plan.features.length) return;
+        const saved = await getGenerationWork(job.planId);
+        receipt = saved?.receipt ?? job.receipt;
+        loaded = true;
+        const checkpoint = saved?.checkpoint ?? emptyGenerationCheckpoint();
+        const persist = async (next: typeof checkpoint) => {
+          const stored = await withGenerationLease(job.planId, "structure", lease, async () => {
+            await saveGenerationWork(job.planId, { ...saved, checkpoint: next, receipt });
+            return true;
+          });
+          if (!stored) throw new Error("Generation was superseded.");
+        };
+        if (!saved) await persist(checkpoint);
+        const slice = await runGenerationSlice(checkpoint, persist, () =>
+          generatePlanStructure(job.brief, job.techPrefs, job.answers, job.tier, job.handoff));
+        if (!slice.done) return;
+        const result = slice.value;
         await withGenerationLease(job.planId, "structure", lease, async () => {
           await savePlan({
             id: job.planId,
@@ -55,6 +85,8 @@ export async function scheduleGeneration(job: GenerationJob, tryNo = 1): Promise
             requirements: result.requirements,
             userFlow: result.userFlow,
             architecture: result.architecture,
+            productSpec: result.productSpec,
+            generationMetrics: result.usage.requests,
             databaseSchema: result.databaseSchema,
             status: "generating",
             features: result.features as never,
@@ -65,16 +97,22 @@ export async function scheduleGeneration(job: GenerationJob, tryNo = 1): Promise
           await updatePlanTitle(job.planId, result.title);
           // Watchdog retries have no reservation event; record their successful
           // model usage without finalizing the original reservation again.
-          if (job.receipt.eventId) await finalizeQuota(job.receipt, job.planId, result.usage);
+          if (receipt.eventId) await finalizeQuota(receipt, job.planId, result.usage);
           else await recordUsage(job.userId, job.tier, job.planId, result.usage);
+          await clearGenerationWork(job.planId);
           await recordAccountActivity(job.userId, "generation_complete", "Struktur PRD selesai disusun", job.planId, `generation:${job.planId}`);
           await logSecurity("generate", { planId: job.planId, tier: job.tier, features: result.features.length, tokens: result.usage.tokensIn + result.usage.tokensOut, tryNo }, { ip: job.ip, userId: job.userId });
         });
       } catch (error) {
-        await withGenerationLease(job.planId, "structure", lease, async () => {
-          await refundQuota(job.receipt);
-          await recordAccountActivity(job.userId, "generation_failed", "Generate PRD gagal; kuota dikembalikan", null);
-          await deletePlan(job.planId);
+        if (loaded) await withGenerationLease(job.planId, "structure", lease, async () => {
+          const work = await getGenerationWork(job.planId);
+          if (!work) return;
+          const failure = nextGenerationFailure(work.failure);
+          await saveGenerationWork(job.planId, { ...work, failure });
+          if (failure.paused) {
+            await refundQuota(receipt);
+            await recordAccountActivity(job.userId, "generation_failed", "PRD generation paused; accepted sections saved and allowance restored", job.planId);
+          }
         });
         console.error(`[generate][bg try${tryNo}]`, error);
       } finally {

@@ -169,3 +169,18 @@ RLS policy restricts reservation reads and writes to customer_id = auth.uid(); m
   assert.ok(validateDatabaseSchemaDraft(schema.replace(/customer_id/g, "court_id"), { brief: "Customers and managers have role-based access to reservations." }).some(issue => issue.includes("authorization boundary")));
   assert.ok(validateDatabaseSchemaDraft(schema.replace(/RLS policy[\s\S]*/, ""), { brief: "Customers and managers have role-based access to reservations." }).some(issue => issue.includes("authorization boundary")));
 });
+
+test("durable holds can live on canonical resource slots instead of a bookings table", () => {
+  const schema = `### court_slots
+- id uuid PK, court_id uuid FK REFERENCES courts(id)
+- reserved_by_booking_id uuid FK REFERENCES bookings(id), hold_expires_at TIMESTAMPTZ
+- Atomic conditional update court_slots checks status and owner, returns affected row count before confirming a slot.
+- UNIQUE (court_id, starts_at, ends_at) indexes schedule availability.
+### bookings
+- id uuid PK, customer_id uuid FK REFERENCES users(id), status text
+- Persists confirmed booking history; slots hold the live reservation reference and expiry.`;
+  const issues = validateDatabaseSchemaDraft(schema, { brief: "Prevent double-booking during concurrent checkout.", featureTitles: ["Court checkout"] });
+  assert.equal(issues.some(issue => issue.includes("persist a checkout hold")), false);
+  const missingBinding = schema.replace(/reserved_by_booking_id uuid FK REFERENCES bookings\(id\), /, "");
+  assert.equal(validateDatabaseSchemaDraft(missingBinding, { brief: "Prevent double-booking during concurrent checkout.", featureTitles: ["Court checkout"] }).some(issue => issue.includes("persist a checkout hold")), true);
+});

@@ -137,8 +137,8 @@ function FeaturePanel({ plan, index, onClose, onNav, isPro, onDeleteFeature, onD
 }
 
 
-function RoadmapTaskPanel({ plan, taskRef, onSelect, onClose }: { plan: Plan; taskRef: string; onSelect: (ref: string) => void; onClose: () => void }) {
-  useUiLanguage();
+export function RoadmapTaskPanel({ plan, taskRef, onSelect, onClose }: { plan: Plan; taskRef: string; onSelect: (ref: string) => void; onClose: () => void }) {
+  const language = useUiLanguage();
   const reducedMotion = useReducedMotion();
   const panel = useRef<HTMLElement>(null);
   useEffect(() => {
@@ -150,7 +150,7 @@ function RoadmapTaskPanel({ plan, taskRef, onSelect, onClose }: { plan: Plan; ta
   const entry = plan.features.flatMap(feature => feature.subFeatures.flatMap(sub => sub.tasks.map(task => ({ feature, sub, task })))).find(entry => entry.task.ref === taskRef);
   if (!entry) return null;
   const { task, feature, sub } = entry;
-  return <motion.aside ref={panel} tabIndex={-1} data-task-panel aria-label={ui("Task details")} onKeyDown={event => { if (event.key === "Escape") { event.stopPropagation(); onClose(); } }} initial={{ x: reducedMotion ? 0 : "100%", opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: reducedMotion ? 0 : "100%", opacity: 0 }} transition={{ type: "tween", duration: reducedMotion ? 0 : 0.38, ease: [0.22, 1, 0.36, 1] }} className={`absolute inset-y-0 right-0 z-30 w-full min-w-0 overflow-x-hidden overflow-y-auto break-words border-l border-white/[.06] bg-[#0C0E10] shadow-xl shadow-black/30 ${expanded ? "sm:w-[600px] sm:max-w-[85vw]" : "sm:w-[430px] sm:max-w-[45vw]"}`}>
+  return <motion.aside ref={panel} tabIndex={-1} data-task-panel aria-label={ui("Task details")} onKeyDown={event => { if (event.key === "Escape") { event.stopPropagation(); onClose(); } }} initial={{ x: reducedMotion ? 0 : "100%", opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: reducedMotion ? 0 : "100%", opacity: 0 }} transition={{ type: "tween", duration: reducedMotion ? 0 : 0.38, ease: [0.22, 1, 0.36, 1] }} className={`pointer-events-auto absolute inset-y-0 right-0 z-30 w-full min-w-0 overflow-x-hidden overflow-y-auto break-words border-l border-white/[.06] bg-[#0C0E10] shadow-xl shadow-black/30 ${expanded ? "sm:w-[600px] sm:max-w-[85vw]" : "sm:w-[430px] sm:max-w-[45vw]"}`}>
     <header className="sticky top-0 flex h-12 items-center justify-between border-b border-white/10 bg-[#0C0E10] px-4">
       <b className="text-xs">{ui("Task details")}</b>
       <div className="flex gap-1"><button className="hidden size-9 place-items-center rounded hover:bg-white/5 sm:grid" aria-label={expanded ? ui("Collapse task panel") : ui("Expand task panel")} aria-expanded={expanded} onClick={() => setExpanded(value => !value)}>{expanded ? <Minimize2 size={15}/> : <Maximize2 size={15}/>}</button><button className="grid size-9 place-items-center rounded hover:bg-white/5" aria-label={ui("Close task details")} onClick={onClose}><X size={15}/></button></div>
@@ -159,6 +159,12 @@ function RoadmapTaskPanel({ plan, taskRef, onSelect, onClose }: { plan: Plan; ta
       <p className="font-mono text-xs text-slate-200">{task.ref}</p>
       <h2 className="text-base font-semibold text-white">{task.title}</h2>
       <dl className="grid grid-cols-[90px_minmax(0,1fr)] gap-3 text-xs text-slate-300"><dt>{ui("Status")}</dt><dd>{ui(({ pending: "Belum dimulai", in_progress: "Dikerjakan", done: "Selesai", failed: "Gagal" })[task.status])}</dd><dt>{ui("Layer")}</dt><dd>{task.layer}</dd><dt>{ui("Phase")}</dt><dd>{feature.title}</dd><dt>{ui("Subfeature")}</dt><dd>{sub.title}</dd>{task.page && <><dt>{ui("Page")}</dt><dd>{task.page}</dd></>}</dl>
+      {task.detail && <div className="space-y-5 text-xs leading-relaxed text-slate-300">
+        <p>{task.detail.objective}</p>
+        <p className="font-mono text-slate-400">{task.detail.requirementIds.join(" · ")}</p>
+        {[{ title: language === "en" ? "Deliverables" : "Hasil kerja", items: task.detail.deliverables }, { title: language === "en" ? "Acceptance criteria" : "Kriteria penerimaan", items: task.detail.acceptanceCriteria }].map(group => <section key={group.title}><h3 className="mb-2 font-semibold text-white">{group.title}</h3><ul className="list-disc space-y-2 pl-4">{group.items.map(item => <li key={item}>{item}</li>)}</ul></section>)}
+        <section><h3 className="mb-2 font-semibold text-white">{language === "en" ? "Verification" : "Pengujian"}</h3><ol className="space-y-3">{task.detail.tests.map((test, index) => <li key={index}><p>{test.action}</p><p className="mt-1 text-slate-400">{language === "en" ? "Expected" : "Hasil yang diharapkan"}: {test.expected}</p></li>)}</ol></section>
+      </div>}
       <section><h3 className="mb-2 text-xs font-semibold">{ui("Dependencies")}</h3>{task.deps.length ? task.deps.map(ref => <button key={ref} className="mr-2 rounded bg-white/5 px-3 py-2 font-mono text-xs text-slate-200" onClick={() => onSelect(ref)}>{ref}</button>) : <p className="text-xs text-slate-400">{ui("No dependencies")}</p>}</section>
       {(task.lastFailReason || task.failReason) && <p className="text-xs text-rose-300">{task.lastFailReason || task.failReason}</p>}
       <section><h3 className="mb-2 text-xs font-semibold">{ui("Tasks in this subfeature")}</h3><div className="space-y-2">{sub.tasks.map(item => <button key={item.ref} onClick={() => onSelect(item.ref)} aria-pressed={item.ref === taskRef} className={`block w-full whitespace-normal break-words rounded-lg px-3 py-3 text-left text-xs ${item.ref === taskRef ? "bg-white/10 text-slate-200" : "bg-white/5 text-slate-300"}`}>{item.title}</button>)}</div></section>

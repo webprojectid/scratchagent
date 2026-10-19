@@ -96,8 +96,10 @@ function ViewTabs({ view, setView, pillId }: { view: ViewKey; setView: (v: ViewK
 }
 
 export function PlanClient({ plan: initialPlan, tier = "free" }: { plan: Plan; tier?: "free" | "pro" }) {
-  useUiLanguage();
+  const language = useUiLanguage();
   const reducedMotion = useReducedMotion();
+  const [generationPaused, setGenerationPaused] = useState(false);
+  const [retryingStructure, setRetryingStructure] = useState(false);
   const [plan, setPlan] = useState(initialPlan);
   const [liveTasks, setLiveTasks] = useState<Record<string, Task["status"]> | undefined>(undefined);
   const [showModal, setShowModal] = useState(false);
@@ -109,6 +111,7 @@ export function PlanClient({ plan: initialPlan, tier = "free" }: { plan: Plan; t
   const progressEtag = useRef<{ id: string; value: string } | null>(null);
   const progressInFlight = useRef(false);
   const genAllKickAt = useRef(0);
+  const structureHydrated = useRef(initialPlan.features.length > 0);
   const generatingTasks = plan.status === "generating";
   const isPro = tier === "pro";
 
@@ -132,17 +135,39 @@ export function PlanClient({ plan: initialPlan, tier = "free" }: { plan: Plan; t
       const nextEtag = res.headers.get("etag");
       progressEtag.current = nextEtag ? { id: plan.id, value: nextEtag } : null;
       if (data.features) {
+        if (!structureHydrated.current && data.features.length > 0) {
+          const snapshot = await fetch(`/api/plans/${plan.id}${await userQs()}`, { signal, cache: "no-store" });
+          if (!snapshot.ok) return false;
+          const fullPlan: Plan = await snapshot.json();
+          if (signal?.aborted || fullPlan.id !== plan.id) return false;
+          structureHydrated.current = true;
+          startTransition(() => setPlan(fullPlan));
+        }
         const map: Record<string, Task["status"]> = {};
         for (const f of data.features) {
           for (const sf of f.subFeatures ?? []) {
             for (const t of sf.tasks ?? []) map[t.ref] = t.status;
           }
         }
+        // Selama generating: kalau masih ada fase tanpa task, kick generate-all
+        // lagi (maksimal sekali per 45 detik). Function Vercel bisa mati di
+        // tengah loop — tanpa kick ulang, fase tersisa tidak pernah terisi.
+        // Server idempoten: registry + skip fitur yang sudah berisi task.
+        const adaFaseKosong = (data.features ?? []).some((f: { subFeatures?: { tasks?: unknown[] }[] }) => !(f.subFeatures ?? []).some((sf) => (sf.tasks ?? []).length > 0));
+        if (data.status === "generating" && adaFaseKosong && Date.now() - genAllKickAt.current > 45_000) {
+          genAllKickAt.current = Date.now();
+          fetch(`/api/plans/${plan.id}/generate-all${await userQs()}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: "{}",
+          }).catch(() => {});
+        }
         // Skip polling yang isinya identik: tiap setState bikin objek plan baru,
         // dan PlanMap me-recreate node React Flow — node gak perlu di-reinit
         // kalau gak ada yang berubah (ini biang roadmap "muncul lalu hilang").
         // Sig mencakup status + seluruh isi fitur/task, jadi cukup sebagai penanda.
-        const sig = JSON.stringify({ s: data.status, f: data.features });
+        setGenerationPaused(data.generationFailure?.paused === true);
+        const sig = JSON.stringify({ s: data.status, f: data.features, failure: data.generationFailure });
         if (sig === lastPollSig.current) {
           return true;
         }
@@ -163,7 +188,7 @@ export function PlanClient({ plan: initialPlan, tier = "free" }: { plan: Plan; t
               title: string;
               tujuan?: string;
               selesaiBila?: string[];
-              tasks?: Pick<Task, "ref" | "title" | "layer" | "phase" | "page" | "status" | "deps">[];
+              tasks?: Pick<Task, "ref" | "title" | "layer" | "phase" | "page" | "status" | "deps" | "detail">[];
             }[] = serverF.subFeatures ?? [];
             return {
               ...f,
@@ -175,11 +200,11 @@ export function PlanClient({ plan: initialPlan, tier = "free" }: { plan: Plan; t
                   if (!serverSf) return sf;
                   const existingRefs = new Set(sf.tasks.map((t) => t.ref));
                   const newTasks = (serverSf.tasks ?? []).filter((t: Task) => !existingRefs.has(t.ref));
-                  if (newTasks.length === 0) return sf;
+                  if (newTasks.length === 0) return { ...sf, tasks: sf.tasks.map(t => ({ ...t, ...serverSf.tasks?.find(item => item.ref === t.ref) })) };
                   return {
                     ...sf,
                     tasks: [...sf.tasks, ...newTasks.map((t: Task) => ({
-                      ref: t.ref, title: t.title, layer: t.layer, phase: t.phase,
+                      detail: t.detail, ref: t.ref, title: t.title, layer: t.layer, phase: t.phase,
                       page: t.page, deps: t.deps ?? [], status: t.status,
                       retryCount: 0, lastFailReason: null, failReason: null,
                       startedAt: null, completedAt: null,
@@ -196,7 +221,7 @@ export function PlanClient({ plan: initialPlan, tier = "free" }: { plan: Plan; t
                     tujuan: ssf.tujuan ?? "",
                     selesaiBila: ssf.selesaiBila ?? [],
                     tasks: (ssf.tasks ?? []).map((t: Task) => ({
-                      ref: t.ref, title: t.title, layer: t.layer, phase: t.phase,
+                      detail: t.detail, ref: t.ref, title: t.title, layer: t.layer, phase: t.phase,
                       page: t.page, deps: t.deps ?? [], status: t.status,
                       retryCount: 0, lastFailReason: null, failReason: null,
                       startedAt: null, completedAt: null,
@@ -218,12 +243,12 @@ export function PlanClient({ plan: initialPlan, tier = "free" }: { plan: Plan; t
               tujuan: sf.title,
               selesaiBila: [],
               status: "direncanakan" as const,
-              subFeatures: (sf.subFeatures ?? []).map((ssf: { title: string; tujuan?: string; selesaiBila?: string[]; tasks?: Pick<Task, "ref" | "title" | "layer" | "phase" | "page" | "status" | "deps">[] }) => ({
+              subFeatures: (sf.subFeatures ?? []).map((ssf: { title: string; tujuan?: string; selesaiBila?: string[]; tasks?: Pick<Task, "ref" | "title" | "layer" | "phase" | "page" | "status" | "deps" | "detail">[] }) => ({
                 title: ssf.title,
                 tujuan: ssf.tujuan ?? "",
                 selesaiBila: ssf.selesaiBila ?? [],
                 tasks: (ssf.tasks ?? []).map((t) => ({
-                  ref: t.ref, title: t.title, layer: t.layer, phase: t.phase,
+                  detail: t.detail, ref: t.ref, title: t.title, layer: t.layer, phase: t.phase,
                   page: t.page, deps: t.deps ?? [], status: t.status,
                   retryCount: 0, lastFailReason: null, failReason: null,
                   startedAt: null, completedAt: null,
@@ -235,19 +260,7 @@ export function PlanClient({ plan: initialPlan, tier = "free" }: { plan: Plan; t
         });
         });
         setLiveTasks(map);
-        // Selama generating: kalau masih ada fase tanpa task, kick generate-all
-        // lagi (maksimal sekali per 45 detik). Function Vercel bisa mati di
-        // tengah loop — tanpa kick ulang, fase tersisa tidak pernah terisi.
-        // Server idempoten: registry + skip fitur yang sudah berisi task.
-        const adaFaseKosong = (data.features ?? []).some((f: { subFeatures?: { tasks?: unknown[] }[] }) => !(f.subFeatures ?? []).some((sf) => (sf.tasks ?? []).length > 0));
-        if (data.status === "generating" && adaFaseKosong && Date.now() - genAllKickAt.current > 45_000) {
-          genAllKickAt.current = Date.now();
-          fetch(`/api/plans/${plan.id}/generate-all${await userQs()}`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: "{}",
-          }).catch(() => {});
-        }
+
       }
       return true;
     } catch { return false; }
@@ -293,10 +306,7 @@ export function PlanClient({ plan: initialPlan, tier = "free" }: { plan: Plan; t
 
     let active = true;
 
-    // Generate task sekarang digerakkan SERVER (endpoint generate-all,
-    // background process): gak mati walau tab ditutup/refresh — dulu bug
-    // "plan bolong cuma sampai fase 2" karena loop fetch di browser mati.
-    // Browser tinggal trigger sekali + polling /progress (useEffect bawah).
+    // Resume missing task batches when this project is open.
     const trigger = async () => {
       try {
         const res = await fetch(`/api/plans/${plan.id}/generate-all${await userQs()}`, {
@@ -368,6 +378,14 @@ export function PlanClient({ plan: initialPlan, tier = "free" }: { plan: Plan; t
         </div>
       </div>
 
+      {generationPaused && <div role="alert" className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 px-5 py-3 text-sm text-slate-300">
+        <p>{language === "en" ? "Generation paused. Accepted sections are saved and your allowance was restored." : "Pembuatan terhenti. Bagian yang selesai tersimpan dan kuota sudah dikembalikan."}</p>
+        <button disabled={retryingStructure} className="rounded-md border border-white/20 px-4 py-2 text-white disabled:opacity-50" onClick={async () => {
+          setRetryingStructure(true);
+          try { const response = await fetch(`/api/plans/${plan.id}/retry-generation${await userQs()}`, { method: "POST" }); const result = await response.json(); if (!response.ok) { setNotice(result.error ?? "Please try again later."); return; } setGenerationPaused(false); }
+          finally { setRetryingStructure(false); }
+        }}>{retryingStructure ? (language === "en" ? "Resuming…" : "Melanjutkan…") : (language === "en" ? "Resume saved plan" : "Lanjutkan plan tersimpan")}</button>
+      </div>}
       <FallbackWarningBanner warnings={plan.warnings} />
       <AnimatePresence>
         {showIdeas && <IdeaChatPanel planId={plan.id} isPro={isPro} open={showIdeas} onClose={() => setShowIdeas(false)} />}

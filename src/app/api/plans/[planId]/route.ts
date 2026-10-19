@@ -7,6 +7,14 @@ import { getAccountState } from "@/lib/billing";
 import { deletePlan } from "@/lib/storage";
 import { getClientIp, logSecurity } from "@/lib/security";
 
+export async function GET(request: Request, { params }: { params: Promise<{ planId: string }> }) {
+  const { planId } = await params;
+  const user = await getRequestUser(new URL(request.url).searchParams.get("userId"));
+  const { plan, error } = await accessPlan(planId, user);
+  if (error || !plan) return error;
+  return NextResponse.json(plan, { headers: { "Cache-Control": "private, no-store", Vary: "Cookie, Authorization" } });
+}
+
 export async function DELETE(request: Request, { params }: { params: Promise<{ planId: string }> }) {
   const originGate = writeOriginGate(request);
   if (originGate) return originGate;

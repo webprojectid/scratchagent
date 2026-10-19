@@ -4,6 +4,7 @@ import { uiText as ui, useUiLanguage } from "@/lib/ui-text";
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Check, ChevronDown, Circle, Search, Trash2, X } from "lucide-react";
+import { RoadmapTaskPanel } from "./plan-map";
 import type { Plan, Task } from "@/lib/types";
 
 type BoardTask = Task & { feature: string; featureSlug: string; subFeature: string; subFeatureKey: string };
@@ -111,7 +112,7 @@ function FeaturePicker({ plan, selected, onSelect }: { plan: Plan; selected: str
   );
 }
 
-function TaskCard({ task, compact, onDelete }: { task: BoardTask; compact?: boolean; onDelete?: () => void }) {
+function TaskCard({ task, compact, onDelete, onOpen }: { task: BoardTask; compact?: boolean; onDelete?: () => void; onOpen?: () => void }) {
   useUiLanguage();
   const layer = layerStyle[task.layer] ?? layerStyle.qa;
   const accent = columns.find((c) => c.status === task.status)?.bar ?? "bg-slate-500/70";
@@ -133,7 +134,7 @@ function TaskCard({ task, compact, onDelete }: { task: BoardTask; compact?: bool
             <span className={`size-[3px] rounded-full ${layer.dot}`} />{layer.label}
           </span>
         </div>
-        <h3 className={`mt-0.5 text-[10px] font-medium leading-4 ${task.status === "done" ? "line-through decoration-white/25 text-white/30" : "text-white/80"}`}>{task.title}</h3>
+        <h3 className={`mt-0.5 text-[10px] font-medium leading-4 ${task.status === "done" ? "line-through decoration-white/25 text-white/30" : "text-white/80"}`}><button type="button" onClick={onOpen} className="text-left focus-visible:rounded focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">{task.title}</button></h3>
         <div className="mt-0.5 flex items-center justify-between gap-1 font-mono text-[7px] tabular-nums text-slate-600">
           <span className="flex min-w-0 items-center gap-1">
             {task.status === "in_progress" && <span className="size-1.5 shrink-0 animate-spin rounded-full border border-amber-400 border-r-transparent" />}
@@ -168,7 +169,7 @@ function TaskCard({ task, compact, onDelete }: { task: BoardTask; compact?: bool
         </span>
       </div>
 
-      <h3 className={`mt-2 text-[13px] font-medium leading-snug ${task.status === "done" ? "line-through decoration-white/25 text-white/35" : "text-white/90"}`}>{task.title}</h3>
+      <h3 className={`mt-2 text-[13px] font-medium leading-snug ${task.status === "done" ? "line-through decoration-white/25 text-white/35" : "text-white/90"}`}><button type="button" onClick={onOpen} className="text-left focus-visible:rounded focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">{task.title}</button></h3>
 
       <div className="mt-2.5 flex items-center justify-between gap-2 border-t border-white/[.05] pt-2">
         <span className="min-w-0 flex-1 truncate text-[10px] text-slate-500">{task.subFeature}</span>
@@ -191,6 +192,7 @@ function TaskCard({ task, compact, onDelete }: { task: BoardTask; compact?: bool
 export function TaskBoard({ plan, liveTasks, compact = false, isPro = false, onRemoveTask }: { plan: Plan; liveTasks?: Record<string, Task["status"]>; compact?: boolean; isPro?: boolean; onRemoveTask?: (ref: string, label: string) => void }) {
   useUiLanguage();
   const [selected, setSelected] = useState("all");
+  const [taskRef, setTaskRef] = useState<string | null>(null);
   const allTasks: BoardTask[] = plan.features.flatMap((feature) => feature.subFeatures.flatMap((subFeature) => subFeature.tasks.map((task) => ({ ...task, status: liveTasks?.[task.ref] ?? task.status ?? "pending", feature: feature.title, featureSlug: feature.slug, subFeature: subFeature.title, subFeatureKey: `${feature.slug}::${subFeature.title}` }))));
   const tasks = selected === "all" ? allTasks : selected.includes("::") ? allTasks.filter((task) => task.subFeatureKey === selected) : allTasks.filter((task) => task.featureSlug === selected);
   const done = tasks.filter((task) => task.status === "done").length;
@@ -244,7 +246,7 @@ export function TaskBoard({ plan, liveTasks, compact = false, isPro = false, onR
                 </div>
                 <div className="mt-1 space-y-1">
                   <AnimatePresence mode="popLayout">
-                    {columnTasks.map((task) => <TaskCard key={task.ref} task={task} compact />)}
+                    {columnTasks.map((task) => <TaskCard key={task.ref} task={task} compact onOpen={() => setTaskRef(task.ref)} />)}
                   </AnimatePresence>
                   {columnTasks.length === 0 && <p className="py-1.5 text-center text-[8px] text-slate-700">Kosong</p>}
                 </div>
@@ -252,6 +254,7 @@ export function TaskBoard({ plan, liveTasks, compact = false, isPro = false, onR
             );
           })}
         </div>
+        <AnimatePresence>{taskRef && <div className="pointer-events-none fixed inset-x-0 bottom-0 top-[65px] z-50"><RoadmapTaskPanel plan={plan} taskRef={taskRef} onSelect={setTaskRef} onClose={() => setTaskRef(null)} /></div>}</AnimatePresence>
       </section>
     );
   }
@@ -301,7 +304,7 @@ export function TaskBoard({ plan, liveTasks, compact = false, isPro = false, onR
                 </div>
                 <div className="flex-1 space-y-2 overflow-y-auto pr-0.5">
                   <AnimatePresence mode="popLayout">
-                    {columnTasks.map((task) => <TaskCard key={task.ref} task={task} onDelete={isPro && onRemoveTask ? () => onRemoveTask(task.ref, `task ${task.ref}`) : undefined} />)}
+                    {columnTasks.map((task) => <TaskCard key={task.ref} task={task} onOpen={() => setTaskRef(task.ref)} onDelete={isPro && onRemoveTask ? () => onRemoveTask(task.ref, `task ${task.ref}`) : undefined} />)}
                   </AnimatePresence>
                   {columnTasks.length === 0 && (
                     <div className="grid place-items-center rounded-xl border border-dashed border-white/[.06] py-8">
@@ -314,6 +317,7 @@ export function TaskBoard({ plan, liveTasks, compact = false, isPro = false, onR
           );
         })}
       </div>
+      <AnimatePresence>{taskRef && <div className="pointer-events-none fixed inset-x-0 bottom-0 top-[65px] z-50"><RoadmapTaskPanel plan={plan} taskRef={taskRef} onSelect={setTaskRef} onClose={() => setTaskRef(null)} /></div>}</AnimatePresence>
     </section>
   );
 }

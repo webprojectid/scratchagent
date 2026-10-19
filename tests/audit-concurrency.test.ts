@@ -1,3 +1,5 @@
+import * as taskSpec from "../src/lib/task-spec";
+import * as generationMetrics from "../src/lib/generation-metrics";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -8,7 +10,7 @@ import type { Plan, Task } from "../src/lib/types";
 function moduleFixture(path: string, mocks: Record<string, unknown>, environment = {}) {
   const fixtureModule = { exports: {} as Record<string, (...args: unknown[]) => Promise<unknown>> };
   const output = ts.transpileModule(readFileSync(path, "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
-  runInNewContext(output, { module: fixtureModule, exports: fixtureModule.exports, require: (name: string) => { if (!(name in mocks)) throw new Error(`Unexpected import ${name}`); return mocks[name]; }, process: { env: environment }, Date, Map, console });
+  runInNewContext(output, { module: fixtureModule, exports: fixtureModule.exports, require: (name: string) => { if (name === "./task-spec") return taskSpec; if (name === "./generation-metrics") return generationMetrics; if (!(name in mocks)) throw new Error(`Unexpected import ${name}`); return mocks[name]; }, process: { env: environment }, Date, Map, console });
   return fixtureModule.exports;
 }
 

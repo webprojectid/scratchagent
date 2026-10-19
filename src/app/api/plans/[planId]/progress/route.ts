@@ -1,3 +1,4 @@
+import { getGenerationWork } from "@/lib/generation-checkpoint-store";
 import { getProjectState } from "@/lib/account-store";
 import { writeOriginGate } from "@/lib/write-origin";
 import { NextResponse } from "next/server";
@@ -7,10 +8,7 @@ import { allTasks, getPlan } from "@/lib/storage";
 import { getProgressRevision, type ProgressRevision } from "@/lib/plan-progress";
 import { RATE_LIMITS, clientKey, getClientIp, rateLimit, rateLimitedResponse } from "@/lib/security";
 
-// Pelacak kick watchdog per instance server (cukup perkiraan, bukan sumber kebenaran).
-const generationKicks = new Map<string, { n: number; at: number }>();
-
-// Jendela waktu untuk watchdog after() yang men-regenerasi plan zombie.
+// Each request can resume one persisted structure section in after().
 export const maxDuration = 300;
 
 export async function GET(request: Request, { params }: { params: Promise<{ planId: string }> }) {
@@ -26,32 +24,20 @@ export async function GET(request: Request, { params }: { params: Promise<{ plan
   const revision = header as ProgressRevision;
   const etag = `"${revision.progressVersion}"`;
   const responseHeaders = { ETag: etag, "Cache-Control": "private, no-store", Vary: "Cookie, Authorization" };
-  const lastKick = generationKicks.get(planId);
-  const needsWatchdog = header.status === "generating" && revision.featureCount === 0 &&
-    !!header.createdAt && Date.now() - new Date(header.createdAt).getTime() > 7 * 60_000 &&
-    (!lastKick || lastKick.n < 3 && Date.now() - lastKick.at > 5 * 60_000) &&
-    !!user && (!user.tokenPolicy || user.tokenPolicy.access === "write");
-  if (request.headers.get("if-none-match") === etag && !needsWatchdog) {
+  const needsContinuation = header.status === "generating" && revision.featureCount === 0 &&
+    !!user && (!user.tokenPolicy || user.tokenPolicy.access === "write") && !writeOriginGate(request);
+  if (request.headers.get("if-none-match") === etag && !needsContinuation && header.status !== "generating") {
     return new NextResponse(null, { status: 304, headers: responseHeaders });
   }
   const plan = await getPlan(planId);
   if (!plan) return NextResponse.json({ error: "Plan not found" }, { status: 404, headers: responseHeaders });
 
-  // Watchdog plan zombie: plan asinkron yang function-nya mati di tengah jalan
-  // (kena batas waktu Vercel / crash) tertinggal status generating dengan 0
-  // fase selamanya. Kalau umurnya sudah lewat batas, kick ulang generasinya
-  // Lease persisten membatasi empat percobaan total, termasuk job awal.
-  // Counter lokal hanya mengurangi pemanggilan watchdog pada satu instance.
-  const zombieAgeMs = plan.createdAt ? Date.now() - new Date(plan.createdAt).getTime() : 0;
-  if (plan.status === 'generating' && (plan.features ?? []).length === 0 && zombieAgeMs > 7 * 60_000) {
-    const kick = generationKicks.get(planId);
-    const bolehKick = !kick || (kick.n < 3 && Date.now() - kick.at > 5 * 60_000);
-    const writeAccess = bolehKick && user && !writeOriginGate(request)
+  if (needsContinuation && plan.status === "generating" && plan.features.length === 0) {
+    const writeAccess = user
       ? await accessPlan(planId, user, { write: true, loadPlan: async () => plan })
       : null;
     if (writeAccess?.plan && user) {
       const snapshot = await getProjectState(planId);
-      generationKicks.set(planId, { n: (kick?.n ?? 0) + 1, at: Date.now() });
       await scheduleGeneration(
         {
           planId,
@@ -64,11 +50,12 @@ export async function GET(request: Request, { params }: { params: Promise<{ plan
           userId: user.userId,
           receipt: { userId: plan.userId ?? '', tier: plan.tier ?? 'free' },
         },
-        (kick?.n ?? 0) + 2,
+        2,
       );
     }
   }
 
+  const generationFailure = plan.status === "generating" && !plan.features.length ? (await getGenerationWork(plan.id))?.failure : undefined;
   const tasks = allTasks(plan);
   const done = tasks.filter((t) => t.status === "done").length;
   const failed = tasks.filter((t) => t.status === "failed").length;
@@ -76,6 +63,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ plan
 
   return NextResponse.json({
     planId,
+    generationFailure,
     status: plan.status,
     title: plan.title,
     total: tasks.length,
@@ -83,14 +71,14 @@ export async function GET(request: Request, { params }: { params: Promise<{ plan
     failed,
     inProgress,
     pending: tasks.length - done - failed - inProgress,
-    features: (plan.features ?? []).map((f: any) => ({
+    features: (plan.features ?? []).map((f) => ({
       slug: f.slug,
       title: f.title,
-      subFeatures: (f.subFeatures ?? []).map((sf: any) => ({
+      subFeatures: (f.subFeatures ?? []).map((sf) => ({
         title: sf.title,
         tujuan: sf.tujuan,
         selesaiBila: sf.selesaiBila,
-        tasks: (sf.tasks ?? []).map((t: any) => ({ ref: t.ref, title: t.title, layer: t.layer, phase: t.phase, page: t.page, deps: t.deps, status: t.status })),
+        tasks: (sf.tasks ?? []).map((t) => ({ detail: t.detail, ref: t.ref, title: t.title, layer: t.layer, phase: t.phase, page: t.page, deps: t.deps, status: t.status })),
       })),
     })),
   }, { headers: responseHeaders });

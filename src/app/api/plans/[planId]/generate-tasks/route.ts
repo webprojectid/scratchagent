@@ -1,15 +1,20 @@
+import { appendPlanGenerationMetrics } from "@/lib/storage";
+import { mergeGenerationMetrics } from "@/lib/generation-metrics";
+import type { TaskDetail } from "@/lib/task-spec";
+import { recordUsage } from "@/lib/quota";
 import { writeOriginGate } from "@/lib/write-origin";
 import { claimGeneration, releaseGeneration, reserveGenerationAttempt } from "@/lib/generation-lease";
 import { finalizeGeneratedPlan } from "@/lib/generated-plan";
 import { apiText } from "@/lib/ui-messages";
 import { NextResponse } from "next/server";
 import { accessPlan, getRequestUser } from "@/lib/api-auth";
-import { generateTasksForFeature, buildTaskRef, sanitizeDeps, assignTasksToSubFeatures } from "@/lib/generate";
+import { generateTasksForFeature, getFailedGenerationUsage, buildTaskRef, sanitizeDeps, assignTasksToSubFeatures } from "@/lib/generate";
 
 // Satu fitur bisa makan 1-3 menit dengan failover — beri jendela penuh.
 export const maxDuration = 300;
 
 interface FinalTask {
+  detail?: TaskDetail;
   ref: string;
   title: string;
   layer: "frontend" | "backend" | "qa";
@@ -58,7 +63,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pla
     lease = await claimGeneration(planId, stage);
     if (!lease) return NextResponse.json({ ok: true, alreadyRunning: true });
     if (!await reserveGenerationAttempt(user!.userId, plan.tier ?? "free")) return NextResponse.json({ error: "Generation limit reached. Please try again later." }, { status: 429, headers: { "Retry-After": "600" } });
-    let tasks: { id: string; feature: string; sub_feature: string; title: string; layer: "frontend" | "backend" | "qa"; phase: number; page: string | null; deps: string[] }[] = [];
+    let tasks: { detail?: TaskDetail; id: string; feature: string; sub_feature: string; title: string; layer: "frontend" | "backend" | "qa"; phase: number; page: string | null; deps: string[] }[] = [];
     const reservedQa = featureIndex === plan.features.length - 1;
 
     if (process.env.MOCK_LLM === "1") {
@@ -79,16 +84,29 @@ export async function POST(request: Request, { params }: { params: Promise<{ pla
     } else {
       const subTitles = (feature.subFeatures ?? []).map((sf) => sf.title);
       // Ide user (Pro, maks 2/project) WAJIB ikut terbaca AI sebagai referensi tambahan.
-      const result = await generateTasksForFeature(plan.brief, feature.title, subTitles, featureIndex, plan.tier ?? "free", plan.features.length, plan.ideas, plan.generationSettings, {
+      let result;
+      try { result = await generateTasksForFeature(plan.brief, feature.title, subTitles, featureIndex, plan.tier ?? "free", plan.features.length, plan.ideas, plan.generationSettings, {
+        productSpec: plan.productSpec,
+        requirementIds: feature.requirementIds,
         featureDescription: feature.description,
         featureGoal: feature.tujuan,
         featureCriteria: feature.selesaiBila,
-        subFeatures: feature.subFeatures.map(sub => ({ title: sub.title, tujuan: sub.tujuan, selesaiBila: sub.selesaiBila })),
+        subFeatures: feature.subFeatures.map(sub => ({ requirementIds: sub.requirementIds, title: sub.title, tujuan: sub.tujuan, selesaiBila: sub.selesaiBila })),
         requirements: plan.requirements,
         stack: plan.stack,
         reservedQa,
       });
+      } catch (error) {
+        const failed = getFailedGenerationUsage(error);
+        if (failed) {
+          await appendPlanGenerationMetrics(plan.id, failed.requests ?? []);
+          await recordUsage(user!.userId, plan.tier ?? "free", plan.id, failed, "tasks-failed");
+        }
+        throw error;
+      }
       tasks = result.tasks;
+      plan.generationMetrics = mergeGenerationMetrics(plan.generationMetrics, result.usage.requests);
+      await recordUsage(user!.userId, plan.tier ?? "free", plan.id, result.usage, "tasks");
     }
 
     // Kunci sementara per task: pakai id dari LLM, fallback index. Dipakai utk mapping deps.
@@ -109,6 +127,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pla
         const ref = buildTaskRef(featureIndex, subIndex, ++taskNum);
         tempKeyToRef.set(t.__key, ref);
         const task = makeTask(ref, t.title, t.layer, featureIndex + 1, t.page);
+        task.detail = t.detail;
         assigned.push({ task, rawDeps: t.deps ?? [] });
         return task;
       });

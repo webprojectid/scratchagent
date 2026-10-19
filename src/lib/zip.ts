@@ -1,3 +1,4 @@
+import { renderProductSpec, renderTaskDetail } from "./product-document";
 import type { Plan } from "./types";
 import { legacyHandoff, handoffInstructions } from "./account-preferences";
 
@@ -10,6 +11,8 @@ export function renderPrdMd(plan: Plan): string {
   const en = plan.generationSettings?.language === "en";
   const label = (english: string, indonesian: string) => en ? english : indonesian;
   let md = `# PRD: Project Requirements Document\n\n## 1. Overview\n${plan.brief}\n\n## 2. Requirements\n`;
+
+  if (plan.productSpec) md += renderProductSpec(plan);
 
   if (plan.requirements) {
     md += `\n### ${label("Functional requirements", "Kebutuhan fungsional")}\n${plan.requirements.fungsional.map((r) => `- ${r}`).join("\n")}\n`;
@@ -42,7 +45,7 @@ export function renderPrdMd(plan: Plan): string {
   if (plan.userFlow?.length) {
     md += `\n## 4. User Flow\n`;
     for (const flow of plan.userFlow) {
-      md += `\n### ${flow.title}\n`;
+      md += `\n### ${flow.title}\n${flow.requirementIds?.length ? `Requirements: ${flow.requirementIds.join(", ")}\n` : ""}`;
       flow.steps.forEach((step, i) => { md += `${i + 1}. ${step}\n`; });
     }
   }
@@ -61,7 +64,7 @@ export function renderPrdMd(plan: Plan): string {
     md += plan.stack.map((s) => `- **${s}**`).join("\n") + "\n";
   }
   md += `\n## 8. Implementation & verification\n`;
-  for (const feature of plan.features) for (const part of feature.subFeatures) for (const task of part.tasks) md += `- **${task.ref}** ${task.title} (${task.layer}); dependencies: ${task.deps.join(", ") || "none"}; status: ${task.status}\n`;
+  for (const feature of plan.features) for (const part of feature.subFeatures) for (const task of part.tasks) md += `- **${task.ref}** ${task.title} (${task.layer}); dependencies: ${task.deps.join(", ") || "none"}; status: ${task.status}\n${renderTaskDetail(task)}`;
   md += `\n## 9. Handoff contract\n${handoffInstructions(plan.generationSettings ?? legacyHandoff)}\n`;
   return md;
 }
@@ -79,6 +82,7 @@ export function renderFeatureMd(feature: Plan["features"][0], language: "id" | "
   for (const s of feature.subFeatures) {
     for (const t of s.tasks) {
       md += `\n### ${taskNum}. ${t.title}\nRef: ${t.ref}\nLayer: ${t.layer}\nDependencies: ${t.deps.join(", ") || "none"}\nStatus: ${t.status}\n`;
+      md += renderTaskDetail(t);
       taskNum++;
     }
   }

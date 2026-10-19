@@ -12,6 +12,7 @@ function routeFixture(file: string, mocks: Record<string, unknown>) {
   const fixtureModule = { exports: {} as Record<string, (request: Request, context?: unknown) => Promise<Response>> };
   const output = ts.transpileModule(readFileSync(file, "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
   runInNewContext(output, { module: fixtureModule, exports: fixtureModule.exports, require: (name: string) => {
+    if (name === "@/lib/generation-checkpoint-store") return { getGenerationWork: async () => null };
     if (!(name in mocks)) throw new Error(`Unexpected route dependency: ${name}`);
     return mocks[name];
   }, process: { env: {} }, Date, Map, URL, console: { error() {} } });
@@ -111,4 +112,40 @@ test("read-only progress polling cannot restart generation for a banned account"
   });
   assert.equal((await routes.GET(new Request("https://example.test/api/plans/fixture/progress"), { params: Promise.resolve({ planId: "fixture" }) })).status, 200);
   assert.equal(scheduled, 0);
+});
+
+test("unchanged progress resumes a fresh structure only with write and origin permission", async () => {
+  for (const mode of ["write", "read", "cross-origin"] as const) {
+    let scheduled = 0;
+    const plan = { id: "fixture", userId: "owner", title: "Fixture", brief: "Brief", status: "generating", createdAt: new Date().toISOString(), features: [] };
+    const routes = routeFixture("src/app/api/plans/[planId]/progress/route.ts", {
+      "@/lib/write-origin": { writeOriginGate: () => mode === "cross-origin" ? new Response(null, { status: 403 }) : null },
+      "@/lib/account-store": { getProjectState: async () => ({}) },
+      "next/server": { NextResponse },
+      "@/lib/run-generation": { scheduleGeneration: async () => { scheduled++; } },
+      "@/lib/api-auth": { getRequestUser: async () => ({ userId: "owner", tokenPolicy: { access: mode === "read" ? "read" : "write" } }), accessPlan: async () => ({ plan: { ...plan, progressVersion: "unchanged", featureCount: 0 } }) },
+      "@/lib/storage": { getPlan: async () => plan, allTasks: () => [] },
+      "@/lib/plan-progress": {},
+      "@/lib/security": { getClientIp: async () => "fixture", clientKey: () => "fixture", rateLimit: () => null, RATE_LIMITS: { agent: {} } },
+    });
+    const response = await routes.GET(new Request("https://example.test/api/plans/fixture/progress", { headers: { "If-None-Match": '"unchanged"' } }), { params: Promise.resolve({ planId: "fixture" }) });
+    assert.equal(response.status, 200);
+    assert.equal(scheduled, mode === "write" ? 1 : 0);
+  }
+});
+
+test("the completed structure snapshot returns full PRD data only after the plan access gate", async () => {
+  const plan = { id: "fixture", title: "Generated title", asumsi: ["Proposed provider choice"], architecture: "Generated architecture", databaseSchema: "Generated database", requirements: { fungsional: ["Requested workflow"], nonFungsional: ["Enforced invariant"] } };
+  let authenticated = true;
+  const routes = routeFixture("src/app/api/plans/[planId]/route.ts", {
+    "@/lib/write-origin": {}, "@/lib/account-capabilities": {}, "@/lib/ui-messages": {}, "@/lib/billing": {}, "@/lib/storage": {}, "@/lib/security": {},
+    "next/server": { NextResponse },
+    "@/lib/api-auth": { getRequestUser: async () => authenticated ? { userId: "owner" } : null, accessPlan: async (_id: string, user: unknown) => user ? { plan } : { error: NextResponse.json({}, { status: 401 }) } },
+  });
+  const request = new Request("https://example.test/api/plans/fixture");
+  const response = await routes.GET(request, { params: Promise.resolve({ planId: "fixture" }) });
+  assert.deepEqual(await response.json(), plan);
+  assert.equal(response.headers.get("cache-control"), "private, no-store");
+  authenticated = false;
+  assert.equal((await routes.GET(request, { params: Promise.resolve({ planId: "fixture" }) })).status, 401);
 });

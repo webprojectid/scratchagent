@@ -1,3 +1,6 @@
+import { withPlanMutation } from "./plan-mutation";
+import { mergeGenerationMetrics, type GenerationRequestMetric } from "./generation-metrics";
+import { qualityMetadata, hydrateQuality } from "./task-spec";
 import { getProjectGenerationSettings } from "./account-store";
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import { getDb, withDatabaseTransaction } from "@/db";
@@ -113,12 +116,7 @@ async function persistPlan(plan: Plan, userId: string): Promise<void> {
   const dbUserId = await resolveDbUserId(userId);
   if (!dbUserId) throw new Error("Cannot save a plan without a valid owner");
   const db = getDb();
-  await db.insert(plans).values({
-    id: plan.id,
-    userId: dbUserId,
-    title: plan.title,
-    brief: plan.brief,
-    techPrefs: {
+  const metadata = {
       stack: plan.stack ?? [],
       techStack: plan.techStack ?? [],
       architecture: plan.architecture ?? "",
@@ -128,7 +126,14 @@ async function persistPlan(plan: Plan, userId: string): Promise<void> {
       warnings: plan.warnings ?? [],
       tier: plan.tier ?? "free",
       ideas: plan.ideas ?? [],
-    },
+      ...qualityMetadata(plan),
+    };
+  await db.insert(plans).values({
+    id: plan.id,
+    userId: dbUserId,
+    title: plan.title,
+    brief: plan.brief,
+    techPrefs: metadata,
     assumptions: plan.asumsi ?? [],
     status: plan.status ?? "generating",
     createdAt: plan.createdAt ? new Date(plan.createdAt) : new Date(),
@@ -136,7 +141,21 @@ async function persistPlan(plan: Plan, userId: string): Promise<void> {
     // onConflict update tech_prefs: metadata dinamis (ideas, tier, warnings)
     // hidup di tech_prefs dan HARUS ikut ter-update saat plan disimpan ulang
     // (contoh: submit ide dari kolom chat "Ide Kamu").
-    .onConflictDoUpdate({ target: plans.id, set: { techPrefs: sql`${JSON.stringify({ stack: plan.stack ?? [], techStack: plan.techStack ?? [], architecture: plan.architecture ?? "", databaseSchema: plan.databaseSchema ?? "", requirements: plan.requirements ?? { fungsional: [], nonFungsional: [] }, userFlow: plan.userFlow ?? [], warnings: plan.warnings ?? [], tier: plan.tier ?? "free", ideas: plan.ideas ?? [] })}::jsonb || jsonb_build_object('generationLeases', coalesce(${plans.techPrefs}->'generationLeases', '{}'::jsonb)) || jsonb_strip_nulls(jsonb_build_object('accountNotes', ${plans.techPrefs}->'accountNotes', 'accountNotesUpdatedAt', ${plans.techPrefs}->'accountNotesUpdatedAt'))` } });
+    .onConflictDoUpdate({ target: plans.id, set: {
+      assumptions: plan.asumsi ?? [],
+      techPrefs: sql`excluded.tech_prefs
+        || jsonb_build_object('generationLeases', coalesce(${plans.techPrefs}->'generationLeases', '{}'::jsonb))
+        || jsonb_strip_nulls(jsonb_build_object(
+          'accountNotes', ${plans.techPrefs}->'accountNotes',
+          'accountNotesUpdatedAt', ${plans.techPrefs}->'accountNotesUpdatedAt',
+          'structureWork', ${plans.techPrefs}->'structureWork',
+          'generationMetrics', coalesce(excluded.tech_prefs->'generationMetrics', ${plans.techPrefs}->'generationMetrics'),
+          'productSpec', coalesce(excluded.tech_prefs->'productSpec', ${plans.techPrefs}->'productSpec')))
+        || jsonb_build_object(
+          'phaseRequirements', coalesce(${plans.techPrefs}->'phaseRequirements', '{}'::jsonb) || coalesce(excluded.tech_prefs->'phaseRequirements', '{}'::jsonb),
+          'subfeatureRequirements', coalesce(${plans.techPrefs}->'subfeatureRequirements', '{}'::jsonb) || coalesce(excluded.tech_prefs->'subfeatureRequirements', '{}'::jsonb),
+          'taskDetails', coalesce(${plans.techPrefs}->'taskDetails', '{}'::jsonb) || coalesce(excluded.tech_prefs->'taskDetails', '{}'::jsonb))`,
+    } });
 
   // BATCH INSERT: fitur, sub-fitur, dan task dikumpulkan lalu ditulis masing-
   // masing SATU statement. Dulu tiap baris INSERT sendiri-sendiri â€” plan 90
@@ -323,8 +342,8 @@ export async function getPlan(planId: string): Promise<Plan | undefined> {
           retryCount: t.retryCount,
           lastFailReason: t.lastFailReason ?? null,
           failReason: t.failReason ?? null,
-          startedAt: t.startedAt ?? null,
-          completedAt: t.completedAt ?? null,
+          startedAt: t.startedAt?.toISOString() ?? null,
+          completedAt: t.completedAt?.toISOString() ?? null,
           order: t.order,
         })),
       };
@@ -347,6 +366,7 @@ export async function getPlan(planId: string): Promise<Plan | undefined> {
   const orderedFeatures = orderPlanFeatures(resultFeatures, plan.status as Plan["status"]);
 
   const savedMeta = plan.techPrefs && !Array.isArray(plan.techPrefs) ? plan.techPrefs as any : {};
+  hydrateQuality(orderedFeatures, savedMeta);
   const savedStack = Array.isArray(plan.techPrefs) ? plan.techPrefs as any[] : savedMeta.stack ?? [];
 
   const built: Plan = {
@@ -356,6 +376,8 @@ export async function getPlan(planId: string): Promise<Plan | undefined> {
     techStack: savedMeta.techStack ?? (Array.isArray(plan.techPrefs) ? plan.techPrefs : []),
     stack: savedStack.map((t: any) => t.name ?? t),
     asumsi: plan.assumptions ?? [],
+    productSpec: savedMeta.productSpec,
+    generationMetrics: savedMeta.generationMetrics,
     requirements: savedMeta.requirements ?? { fungsional: [], nonFungsional: [] },
     userFlow: savedMeta.userFlow ?? [],
     architecture: savedMeta.architecture ?? "",
@@ -672,4 +694,23 @@ export async function updatePlanTitle(planId: string, title: string): Promise<vo
   }
   const db = getDb();
   await db.update(plans).set({ title } as any).where(eq(plans.id, planId));
+}
+
+/** Called while holding the plan mutation lock after resolving cross-phase prerequisites. */
+export async function persistTaskDependencies(plan: Plan): Promise<void> {
+  if (isMemoryMode()) { memorySavePlan(plan, plan.userId ?? "shared"); return; }
+  const all = plan.features.flatMap(f => f.subFeatures.flatMap(s => s.tasks));
+  if (!all.length) return;
+  const payload = all.map(task => ({ ref: task.ref, deps: task.deps }));
+  await getDb().execute(sql`UPDATE tasks AS task SET deps = item.value->'deps' FROM jsonb_array_elements(${JSON.stringify(payload)}::jsonb) AS item(value) WHERE task.plan_id = ${plan.id}::uuid AND task.ref = item.value->>'ref' AND task.status = 'pending'`);
+}
+
+export async function appendPlanGenerationMetrics(planId: string, metrics: GenerationRequestMetric[]): Promise<void> {
+  if (!metrics.length) return;
+  await withPlanMutation(planId, async () => {
+    const current = await getPlan(planId);
+    if (!current?.userId) return;
+    current.generationMetrics = mergeGenerationMetrics(current.generationMetrics, metrics);
+    await savePlan(current, current.userId);
+  });
 }

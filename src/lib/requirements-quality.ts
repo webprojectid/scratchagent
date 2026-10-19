@@ -1,3 +1,5 @@
+import { exclusionClause, isSafetyConstraint } from "./scope-quality";
+
 export interface RequirementsDraft {
   user_flow?: unknown;
   requirements?: unknown;
@@ -24,7 +26,7 @@ const normalized = (value: unknown): string =>
 const EMPTY_COPY = /^(?:todo|tbd|n\/?a|none|placeholder|lorem ipsum|done|selesai|as needed|sesuai kebutuhan)$/i;
 const GENERIC_COPY = /^(?:(?:the )?(?:system|application|app|platform|feature|module) (?:works?|functions?|runs?) (?:well|properly|as expected)|(?:sistem|aplikasi|fitur|modul) (?:berjalan|berfungsi|bekerja) dengan baik)$/i;
 const GENERIC_NFR = /\b(?:seamless|optimal performance|performant|user.friendly|intuitive|scalab(?:le|ility)|future growth|robust|secure and reliable|relevant regulations?|best practices?|high availability|responsive|efficient|reliably|accurately|consistently|in a timely manner|enforced on the server|data security and privacy|keamanan data terjamin|pengalaman pengguna yang baik|mudah digunakan|cepat dan aman|dapat diskalakan|secara akurat|secara konsisten|tepat waktu|dengan andal)\b/i;
-const TESTABLE_SIGNAL = /\b(?:\d+(?:[.,]\d+)?\s*(?:ms|milliseconds?|detik|seconds?|s|minutes?|menit|hours?|jam|days?|hari|%|kb|mb|gb|px|pixels?|users?|pengguna|requests?|permintaan)|p\d{2}|https|tls|aes-?\d+|argon2|bcrypt|rls|row.level security|wcag|keyboard|screen reader|audit logs?|log audit|backup|restore|recovery|rate limit|idempoten\w*|idempoten|idempotent|http\s*[45]\d\d|UTC|TIMESTAMPTZ|latitude|longitude|queue|reject\w*|retri\w*|returns?|responds?|records?|logged?|masked?|encrypted?|blocked?|denied?|announced?|recovers?|mengembalikan|menolak|mencatat|memulihkan|terenkripsi|membatasi|diblokir)\b/i;
+const TESTABLE_SIGNAL = /\b(?:\d+(?:[.,]\d+)?\s*(?:ms|milliseconds?|detik|seconds?|s|minutes?|menit|hours?|jam|days?|hari|%|kb|mb|gb|users?|pengguna|requests?|permintaan)|p\d{2}|https|tls|aes-?\d+|argon2|bcrypt|rls|row.level security|wcag|keyboard|screen reader|audit logs?|log audit|backup|restore|recovery|rate limit|idempoten\w*|idempoten|idempotent|http\s*[45]\d\d|UTC|TIMESTAMPTZ|latitude|longitude|queue|reject\w*|retri\w*|returns?|responds?|records?|logged?|masked?|encrypted?|blocked?|denied?|announced?|recovers?|mengembalikan|menolak|mencatat|memulihkan|terenkripsi|membatasi|diblokir)\b/i;
 const NUMERIC_UNIT = /\b(\d+(?:[.,]\d+)?)\s*-?\s*(?:(?:concurrent|simultaneous|active|registered|monthly|daily|bersamaan|aktif)\s+)?(milliseconds?|msecs?|ms|seconds?|secs?|sec|s|detik|minutes?|mins?|min|menit|hours?|hrs?|jam|days?|hari|weeks?|minggu|months?|bulan|years?|tahun|percent|persen|%|users?|customers?|pengguna|requests?|permintaan|courts?|lapangan|venues?|lokasi|bookings?|pesanan|slots?|transactions?|transaksi|attempts?|percobaan|steps?|langkah|screens?|layar|pages?|halaman|files?|berkas|characters?|chars?|digits?|karakter|angka|mb|gb)(?=$|[^\p{L}\p{N}])/giu;
 const ALWAYS_ON = /\b24\s*(?:\/|x|×)\s*7\b/giu;
 const TIME_NUMBER_WORDS: Record<string, number> = {
@@ -35,6 +37,8 @@ const TIME_NUMBER_WORDS: Record<string, number> = {
 };
 const WORD_TIME = new RegExp(`\\b(${Object.keys(TIME_NUMBER_WORDS).join("|")})[ -]+(seconds?|minutes?|hours?|days?|weeks?|months?|years?|detik|menit|jam|hari|minggu|bulan|tahun)\\b`, "gi");
 const UNSOURCED_PROPOSAL = /\b(?:proposed|proposal|suggested|assumed|assumption|to confirm|to be confirmed|pending confirmation|subject to confirmation|not yet agreed|asumsi|usulan|diusulkan|perlu dikonfirmasi|belum disepakati|target sementara)\b/i;
+const LAYOUT_CONTEXT = /\b(?:responsive|layouts?|viewports?|layar|tap targets?|buttons?|controls?)\b/i;
+const LAYOUT_OUTCOME = /\b(?:without|no|prevent\w*|avoid\w*)\s+(?:horizontal\s+(?:window\s+|content\s+)?(?:scrolling|scroll|overflow|clipping)|clipping)\b|\b(?:remain(?:s)? visible|retain visible|tanpa (?:scroll|gulir) horizontal)\b|\b(?:minimum|at least)\s+(?:tap\s+target\s+)?(?:dimension|size|width|height)?\s*(?:of\s+)?\d+(?:\s*(?:by|x|×)\s*\d+)?\s*(?:CSS\s+)?(?:px|pixels?)\b/i;
 
 type NumericClaim = { raw: string; key: string; topic: string | null; index: number };
 const CLAIM_TOPICS = [
@@ -160,6 +164,10 @@ function unsupportedNumericClaims(candidate: string, sourcedClaims: readonly Num
   });
 }
 
+export function unconfirmedNumericClaims(candidate: string, source: string): string[] {
+  return unsupportedNumericClaims(candidate, numericClaims(source)).map(claim => claim.raw);
+}
+
 function substantive(value: unknown, minCharacters: number, minWords: number): boolean {
   const candidate = compact(value);
   return candidate.length >= minCharacters && words(candidate).length >= minWords &&
@@ -179,12 +187,13 @@ function excludedPhrases(brief: string): string[] {
   const phrases: string[] = [];
   const clauses = /\b(?:do not (?:include|add|support|allow|invent)|don't (?:include|add|support|allow|invent)|must not (?:include|add|support|allow|invent)|without|exclude[sd]?|no|not needed|tidak perlu|tidak (?:ada|mendukung)|tanpa|jangan (?:tambahkan|buat|masukkan)|dilarang)\s+([^.!?;\n]{2,120})/gi;
   for (const match of brief.matchAll(clauses)) {
-    const clause = match[1].split(/\s+(?:but|however|except|tetapi|namun)\s+/i, 1)[0];
+    const limited = exclusionClause(match[1]);
+    const clause = limited.split(/\s+(?:but|however|except|tetapi|namun)\s+/i, 1)[0];
     for (const part of clause.split(/,|\s+(?:and|or|dan|atau)\s+/i)) {
       const phrase = normalized(part
         .replace(/^(?:the|a|an|any|feature|features|fitur|need to|support for)\s+/i, "")
         .replace(/\s+(?:for now|at launch|in the mvp|pada mvp|di tahap awal)$/i, ""));
-      if (phrase.length >= 5 && phrase.length <= 55 && words(phrase).length <= 7) phrases.push(phrase);
+      if (!isSafetyConstraint(phrase) && phrase.length >= 5 && phrase.length <= 55 && words(phrase).length <= 7) phrases.push(phrase);
     }
   }
   return [...new Set(phrases)];
@@ -269,7 +278,7 @@ export function validateRequirementsDraft(
       const candidate = compact(entry);
       if (!substantive(entry, 28, 5)) {
         issues.push(`${path}[${index}]: requirement harus menyebut hasil atau perilaku yang dapat diuji.`);
-      } else if (field === "non_fungsional" && GENERIC_NFR.test(candidate) && !TESTABLE_SIGNAL.test(candidate)) {
+      } else if (field === "non_fungsional" && GENERIC_NFR.test(candidate) && !TESTABLE_SIGNAL.test(candidate) && !(LAYOUT_CONTEXT.test(candidate) && LAYOUT_OUTCOME.test(candidate))) {
         issues.push(`${path}[${index}]: klaim kualitas masih umum; tambahkan batas, mekanisme, atau perilaku yang bisa diuji.`);
       }
       checkNumericCommitment(candidate, `${path}[${index}]`);

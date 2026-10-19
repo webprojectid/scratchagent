@@ -1,3 +1,4 @@
+import * as generationMetrics from "../src/lib/generation-metrics";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { POST as cleanup } from "@/app/api/admin/cleanup/route";
@@ -52,6 +53,8 @@ function taskGeneration(owner?: string) {
   const fixtureModule = { exports: {} as { POST: (request: Request, context: unknown) => Promise<Response> } };
   const output = ts.transpileModule(readFileSync("src/app/api/plans/[planId]/generate-tasks/route.ts", "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
   runInNewContext(output, { module: fixtureModule, exports: fixtureModule.exports, require: (name: string) => {
+    if (name === "@/lib/generation-metrics") return generationMetrics;
+    if (name === "@/lib/quota") return { recordUsage: async () => {} };
     if (!(name in mocks)) throw new Error(`Unexpected dependency: ${name}`);
     return mocks[name];
   }, process: { env: { MOCK_LLM: "1" } }, URL });

@@ -6,13 +6,8 @@ import { after } from "next/server";
 import { accessPlan, getRequestUser } from "@/lib/api-auth";
 import { getPlan } from "@/lib/storage";
 
-// Generate SEMUA task di sisi server, digerakkan di background process —
-// bukan loop fetch di browser. Dulu loop di plan-client.tsx mati kalau tab
-// ditutup/refresh, bikin plan bolong (bug "cuma sampai fase 2").
-//
-// Cara pakai: POST sekali saat halaman project kebuka dan status "generating".
-// Idempoten: kalau generate-all untuk plan ini sudah berjalan, langsung OK.
-// Progress tetap dipantau browser via polling /progress (sudah ada).
+// Each invocation fills one batch. Progress polling starts the next batch;
+// reopening a project resumes its remaining phases without regenerating tasks.
 
 function featureHasTasks(feature: import("@/lib/types").Feature): boolean {
   return (feature.subFeatures ?? []).some((sf) => (sf.tasks ?? []).length > 0);
@@ -20,9 +15,8 @@ function featureHasTasks(feature: import("@/lib/types").Feature): boolean {
 
 async function generateAllTasks(planId: string, userId: string, authHeaders: Record<string, string>, origin: string, lease: string) {
   try {
-    // Loop sampai semua fitur terisi atau mentok maxBatch (anti infinity loop
-    // kalau LLM/gateway konsisten gagal — fitur gagal dicoba lagi di batch berikut).
-    const MAX_BATCH = 20;
+    // One batch stays within the route budget, including model repair.
+    const MAX_BATCH = 1;
     for (let batch = 0; batch < MAX_BATCH; batch++) {
       if (!await ownsGeneration(planId, "tasks", lease)) break;
       const plan = await getPlan(planId);
@@ -62,7 +56,7 @@ async function generateAllTasks(planId: string, userId: string, authHeaders: Rec
               method: "POST",
               headers: authHeaders,
               body: JSON.stringify({ featureIndex }),
-              signal: AbortSignal.timeout(300_000),
+              signal: AbortSignal.timeout(265_000),
             });
             const data = await res.json().catch(() => null);
             if (res.status === 429) rateLimited = true;

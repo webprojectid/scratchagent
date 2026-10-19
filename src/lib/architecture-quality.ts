@@ -2,6 +2,7 @@
 export interface ArchitectureQualityContext {
   brief: string;
   featureTitles?: readonly string[];
+  tables?: readonly { name: string; purpose: string; fields: readonly string[]; constraints: readonly string[] }[];
 }
 
 interface Obligations {
@@ -105,12 +106,12 @@ export function validateDatabaseSchemaDraft(value: unknown, context: Architectur
   const obligations = obligationsFor(context.brief);
 
   if (obligations.concurrentBooking) {
-    const sqlHoldTables = [...schema.matchAll(/\bCREATE\s+TABLE\s+(?:\w+\.)?(?:bookings?|reservations?|[a-z_]*holds?)\s*\(([\s\S]*?)\);/gi)].map((match) => match[1]);
-    const markdownHoldTables = [...schema.matchAll(/^#{2,6}\s+(?:bookings?|reservations?|[a-z_]*holds?)\b([\s\S]*?)(?=^#{2,6}\s+|(?![\s\S]))/gim)].map((match) => match[1]);
+    const sqlHoldTables = [...schema.matchAll(/\bCREATE\s+TABLE\s+(?:\w+\.)?[a-z_][a-z0-9_]*\s*\(([\s\S]*?)\);/gi)].map((match) => match[1]);
+    const markdownHoldTables = [...schema.matchAll(/^#{2,6}\s+[a-z_][a-z0-9_]*\b([\s\S]*?)(?=^#{2,6}\s+|(?![\s\S]))/gim)].map((match) => match[1]);
     const holdRecords = [...sqlHoldTables, ...markdownHoldTables];
     const durableHold = (holdRecords.length ? holdRecords : [schema]).some((record) =>
       /\b(?:hold_expires_at|held_until|expires_at|expire_at|expiry_at|valid_until|reservation_expires_at|hold_until)\b/i.test(record)
-      && /\b(?:held_by|hold_owner(?:_id)?|holder(?:_id)?|hold_user_id|reserved_by|reservation_user_id|user_id|customer_id|booking_id|owner_id)\b/i.test(record));
+      && /\b(?:held_by|hold_owner(?:_id)?|holder(?:_id)?|hold_user_id|reserved_by(?:_booking_id)?|reservation_user_id|user_id|customer_id|booking_id|owner_id)\b/i.test(record));
     if (!durableHold) {
       issues.push("Database schema: persist a checkout hold with its owner or booking ID and expiry timestamp; a transient row lock is not a timed hold.");
     }
@@ -126,7 +127,7 @@ export function validateDatabaseSchemaDraft(value: unknown, context: Architectur
     }
   }
   if (obligations.paymentWebhook) {
-    const uniqueEvent = /\bunique\b[^.;\n]{0,100}\b(?:provider_?event_?id|webhook_?event_?id|webhook_?id|callback_?id|event_?id|idempotency_?key)\b|\b(?:provider_?event_?id|webhook_?event_?id|webhook_?id|callback_?id|event_?id|idempotency_?key)\b[^.;\n]{0,100}\bunique\b/i.test(schema);
+    const uniqueEvent = context.tables ? hasStableWebhookEventKey(context.tables) : /\bunique\b[^.;\n]{0,100}\b(?:provider_?event_?id|webhook_?event_?id|webhook_?id|callback_?id|event_?id|idempotency_?key)\b|\b(?:provider_?event_?id|webhook_?event_?id|webhook_?id|callback_?id|event_?id|idempotency_?key)\b[^.;\n]{0,100}\bunique\b/i.test(schema);
     const durableStateGuard = /\b(?:webhooks?|callbacks?|duplicate|idempoten\w*)\b/i.test(schema)
       && (/\bupdate\s+(?:payments?|bookings?|transactions?)\b[\s\S]{0,220}\bwhere\b[\s\S]{0,100}\bstatus\b[\s\S]{0,100}\b(?:returning|affected rows|row count)\b/i.test(schema)
         || /\b(?:atomic|conditional|compare[- ]and[- ]swap)\b[^.!?\n]{0,100}\b(?:payment|booking|transaction)\b[^.!?\n]{0,100}\b(?:status|state)\b/i.test(schema));
@@ -137,7 +138,7 @@ export function validateDatabaseSchemaDraft(value: unknown, context: Architectur
   if (obligations.timezone && !(/\b(?:TIMESTAMPTZ|timestamp with time zone|UTC)\b/i.test(schema) && /\b(?:time[ -]?zone|timezone|zona waktu|WIB|WITA|WIT)\b|Asia\/[A-Za-z_]+/i.test(schema))) {
     issues.push("Database schema: specify timestamp storage and the requested schedule timezone or zone identifier.");
   }
-  if (obligations.roleAccess && !(/\b(?:role|permission|peran|hak akses)\b/i.test(schema) && /\b(?:owner_id|user_id|customer_id|member_id|manager_id|tenant_id|account_id|staff_id|pemilik_id)\b/i.test(schema) && /\b(?:RLS|row[ -]?level security|polic\w*|server[- ]side authorization|server[- ]side guard|server[- ]side role check)\b/i.test(schema))) {
+  if (obligations.roleAccess && !(/\b(?:role|permission|peran|hak akses)\b/i.test(schema) && (/\b(?:owner_id|user_id|customer_id|manager_id|profile_id|member_id|actor_id|tenant_id|agency_id|client_organization_id|warehouse_id|account_id|staff_id|pemilik_id)\b/i.test(schema) || (/\b(?:FK|references|foreign key)\b/i.test(schema) && /\b(?:membership|member|principal|identity|actor)\w*\b/i.test(schema) && /auth\s*\.\s*uid\s*\(|\bserver[- ]side (?:authorization|role check)\b/i.test(schema))) && /\b(?:RLS|row[ -]?level security|polic\w*|server[- ]side authorization|server[- ]side guard|server[- ]side role check)\b/i.test(schema))) {
     issues.push("Database schema: tie role or permission records to the owning resource and specify a server-side policy or authorization boundary.");
   }
   const inventedPolicyDefaults = schema.split(/\r?\n/).filter((line) =>
@@ -149,4 +150,20 @@ export function validateDatabaseSchemaDraft(value: unknown, context: Architectur
     issues.push("Database schema: business-policy durations or refund percentages not given by the user must be configurable and marked proposed, not fixed defaults.");
   }
   return issues;
+}
+
+
+export function hasStableWebhookEventKey(tables: NonNullable<ArchitectureQualityContext["tables"]>): boolean {
+  return tables.some(table => {
+    const eventRecord = /webhook|callback|(?:payment|provider)[_ ]?events?|idempotency|deduplication/i.test(`${table.name} ${table.purpose}`)
+      || table.fields.some(field => /^(?:provider_event|webhook|callback|event_key)\w*\b/i.test(field));
+    if (!eventRecord) return false;
+    const groups = table.constraints.flatMap(constraint => [...constraint.matchAll(/\b(?:UNIQUE|PRIMARY KEY)\s*\(([^)]+)\)/gi)].map(match => match[1].split(",").map(column => column.trim().replaceAll('"', ""))));
+    groups.push(...table.fields.filter(field => /\b(?:UNIQUE|PRIMARY KEY)\b/i.test(field)).map(field => [field.split(/\s+/)[0].replaceAll('"', "")]));
+    return groups.some(columns => columns.some(column => /event|idempot|dedup|message|hash|key/i.test(column) && !/^(?:event_type|event_status)$/i.test(column)) && columns.every(column => {
+      if (/^(?:id|status|created_at|received_at|ingested_at|attempt)$/i.test(column)) return false;
+      const field = table.fields.find(field => field.split(/\s+/)[0].replaceAll('"', "") === column);
+      return !!field && !/default\s+(?:gen_random_uuid|uuid_generate|random)|generated.*identity|\bserial\b/i.test(field);
+    }));
+  });
 }
