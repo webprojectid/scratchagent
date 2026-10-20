@@ -12,9 +12,9 @@ function routeFixture(file: string, mocks: Record<string, unknown>) {
   const fixtureModule = { exports: {} as Record<string, (request: Request, context?: unknown) => Promise<Response>> };
   const output = ts.transpileModule(readFileSync(file, "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
   runInNewContext(output, { module: fixtureModule, exports: fixtureModule.exports, require: (name: string) => {
+    if (name in mocks) return mocks[name];
     if (name === "@/lib/generation-checkpoint-store") return { getGenerationWork: async () => null };
-    if (!(name in mocks)) throw new Error(`Unexpected route dependency: ${name}`);
-    return mocks[name];
+    throw new Error(`Unexpected route dependency: ${name}`);
   }, process: { env: {} }, Date, Map, URL, console: { error() {} } });
   return fixtureModule.exports;
 }
@@ -121,6 +121,29 @@ test("read-only progress polling cannot restart generation for a banned account"
   });
   assert.equal((await routes.GET(new Request("https://example.test/api/plans/fixture/progress"), { params: Promise.resolve({ planId: "fixture" }) })).status, 200);
   assert.equal(scheduled, 0);
+});
+
+test("progress exposes the real running stage and accepted checkpoint count", async () => {
+  const plan = { id: "fixture", userId: "owner", title: "Fixture", status: "generating", createdAt: new Date().toISOString(), features: [] };
+  const routes = routeFixture("src/app/api/plans/[planId]/progress/route.ts", {
+    "@/lib/generation-checkpoint-store": { getGenerationWork: async () => ({
+      checkpoint: { version: 1, activeStage: "discovery", entries: { accepted: { stage: "outline", value: {}, usage: { tokensIn: 1, tokensOut: 1, models: ["fixture"] } } } },
+      receipt: { userId: "owner", tier: "free" },
+    }) },
+    "@/lib/write-origin": { writeOriginGate: () => null },
+    "@/lib/account-store": { getProjectState: async () => ({}) },
+    "next/server": { NextResponse },
+    "@/lib/run-generation": { scheduleGeneration: async () => true },
+    "@/lib/api-auth": { getRequestUser: async () => ({ userId: "owner", tokenPolicy: { access: "read" } }), accessPlan: async () => ({ plan: { ...plan, progressVersion: "fixture", featureCount: 0 } }) },
+    "@/lib/storage": { getPlan: async () => plan, allTasks: () => [] },
+    "@/lib/plan-progress": {},
+    "@/lib/security": { getClientIp: async () => "fixture", clientKey: () => "fixture", rateLimit: () => null, RATE_LIMITS: { agent: {} } },
+  });
+  const response = await routes.GET(new Request("https://example.test/api/plans/fixture/progress"), { params: Promise.resolve({ planId: "fixture" }) });
+  const body = await response.json();
+  assert.equal(body.generationProgress.activeStage, "discovery");
+  assert.equal(body.generationProgress.completedCount, 1);
+  assert.deepEqual(body.generationProgress.completedSections, ["outline"]);
 });
 
 test("unchanged progress resumes a fresh structure only with write and origin permission", async () => {

@@ -55,7 +55,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ plan
     }
   }
 
-  const generationFailure = plan.status === "generating" && !plan.features.length ? (await getGenerationWork(plan.id))?.failure : undefined;
+  const generationWork = plan.status === "generating" && !plan.features.length ? await getGenerationWork(plan.id) : null;
+  const generationFailure = generationWork?.failure;
+  const completedSections = Object.values(generationWork?.checkpoint.entries ?? {}).map(entry => entry.stage).filter(Boolean);
   const tasks = allTasks(plan);
   const done = tasks.filter((t) => t.status === "done").length;
   const failed = tasks.filter((t) => t.status === "failed").length;
@@ -64,6 +66,12 @@ export async function GET(request: Request, { params }: { params: Promise<{ plan
   return NextResponse.json({
     planId,
     generationFailure,
+    generationProgress: generationWork ? {
+      activeStage: generationWork.checkpoint.activeStage ?? null,
+      completedSections,
+      completedCount: Object.keys(generationWork.checkpoint.entries).length,
+      attempt: generationFailure?.attempts ?? 0,
+    } : null,
     status: plan.status,
     title: plan.title,
     total: tasks.length,

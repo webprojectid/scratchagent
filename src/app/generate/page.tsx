@@ -30,10 +30,11 @@ const carouselItems: CarouselItem[] = stages.map((s, i) => ({
 }));
 
 export default function Generate() {
-  useUiLanguage();
+  const language = useUiLanguage();
   const [step, setStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [elapsed, setElapsed] = useState(0);
+  const [completedSections, setCompletedSections] = useState(0);
   const router = useRouter();
 
   useEffect(() => {
@@ -45,30 +46,76 @@ export default function Generate() {
     }
 
     const alreadyGenerating = sessionStorage.getItem("rv_generating") === "true";
+    const existingPlanId = sessionStorage.getItem("rv_generation_plan_id");
     if (!alreadyGenerating) {
       sessionStorage.setItem("rv_generating", "true");
     }
 
     const elapsedTimer = setInterval(() => setElapsed((e) => e + 1), 1000);
-    const maxStep = stages.length - 0.4;
-    const stageTimer = setInterval(() => {
-      setStep((s) => {
-        if (s >= maxStep) return s;
-        const remaining = maxStep - s;
-        return s + Math.max(0.03, remaining * 0.06);
-      });
-    }, 1500);
+    let pollTimer: ReturnType<typeof setTimeout> | undefined;
+    let disposed = false;
+    let pollFailures = 0;
+    const cleanup = () => {
+      sessionStorage.removeItem("rv_generating");
+      sessionStorage.removeItem("rv_generation_plan_id");
+      clearInterval(elapsedTimer);
+      if (pollTimer) clearTimeout(pollTimer);
+    };
+    const pollStructure = async (planId: string) => {
+      if (disposed) return;
+      try {
+        const pr = await fetch(`/api/plans/${planId}/progress`);
+        if (pr.status === 404) {
+          cleanup();
+          setError(ui("Generate gagal di tengah jalan. Kuota sudah dikembalikan, silakan coba lagi."));
+          return;
+        }
+        const pj = await pr.json();
+        if (!pr.ok) throw new Error(pj.error ?? `HTTP ${pr.status}`);
+        pollFailures = 0;
+        if (pj.generationFailure?.paused) {
+          cleanup();
+          setError(ui("Generation paused after repeated provider failures. Your allowance was restored. Please try again."));
+          return;
+        }
+        const activeStage = pj.generationProgress?.activeStage as string | null | undefined;
+        const stageIndex: Record<string, number> = {
+          discovery: 0,
+          outline: 2,
+          subfeatures: 3,
+          architecture: 5,
+          database: 6,
+          requirements: 8,
+          review: 8,
+          tasks: 9,
+          diagram: 6,
+        };
+        if (activeStage && activeStage in stageIndex) setStep(stageIndex[activeStage]);
+        setCompletedSections(pj.generationProgress?.completedCount ?? 0);
+        if ((pj.features ?? []).length > 0) {
+          cleanup();
+          setStep(stages.length);
+          setTimeout(() => router.push(`/project/${planId}`), 400);
+          return;
+        }
+      } catch {
+        pollFailures++;
+        if (pollFailures >= 5) {
+          cleanup();
+          setError(language === "en"
+            ? "Progress could not be checked after several attempts. Return to the brief and try again."
+            : "Progress gagal diperiksa setelah beberapa percobaan. Kembali ke brief lalu coba lagi.");
+          return;
+        }
+      }
+      pollTimer = setTimeout(() => pollStructure(planId), 3000);
+    };
 
-    if (!alreadyGenerating) {
+    if (existingPlanId) {
+      pollStructure(existingPlanId);
+    } else if (!alreadyGenerating) {
       const answersStr = sessionStorage.getItem("rv_answers");
       getCurrentUser().then((user) => {
-        let pollTimer: ReturnType<typeof setTimeout> | undefined;
-        const cleanup = () => {
-          sessionStorage.removeItem("rv_generating");
-          clearInterval(stageTimer);
-          clearInterval(elapsedTimer);
-          if (pollTimer) clearTimeout(pollTimer);
-        };
         fetch("/api/generate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -95,50 +142,33 @@ export default function Generate() {
               setError(data.error);
               return;
             }
+            sessionStorage.setItem("rv_generation_plan_id", data.id);
             // Generate jalan di background (after). Tunggu struktur PRD siap
             // (fase pertama muncul di /progress) baru pindah ke halaman project
-            // — di situ task lanjut terisi realtime dan generate-all terpicu.
-            const pollStructure = async () => {
-              try {
-                const pr = await fetch(`/api/plans/${data.id}/progress`);
-                if (pr.status === 404) {
-                  cleanup();
-                  setError(ui("Generate gagal di tengah jalan. Kuota sudah dikembalikan — silakan coba lagi."));
-                  return;
-                }
-                const pj = await pr.json();
-                if (!pr.ok) throw new Error(pj.error ?? `HTTP ${pr.status}`);
-                if (pj.generationFailure?.paused) {
-                  cleanup();
-                  setError(ui("Generation paused after repeated provider failures. Your allowance was restored. Please try again."));
-                  return;
-                }
-                if ((pj.features ?? []).length > 0) {
-                  cleanup();
-                  setStep(stages.length);
-                  setTimeout(() => router.push(`/project/${data.id}`), 400);
-                  return;
-                }
-              } catch { /* jaringan putus sesaat: coba lagi */ }
-              pollTimer = setTimeout(pollStructure, 3000);
-            };
-            pollStructure();
+            // Di situ task lanjut terisi realtime dan generate-all terpicu.
+            pollStructure(data.id);
           })
           .catch((err) => {
             cleanup();
             setError(err.message);
           });
       });
+    } else {
+      sessionStorage.removeItem("rv_generating");
+      pollTimer = setTimeout(() => setError(language === "en"
+        ? "This generation session lost its plan reference. Return to the brief and start it again."
+        : "Sesi generate kehilangan referensi plan. Kembali ke brief lalu mulai lagi."), 0);
     }
 
     return () => {
-      clearInterval(stageTimer);
+      disposed = true;
       clearInterval(elapsedTimer);
+      if (pollTimer) clearTimeout(pollTimer);
     };
-  }, [router]);
+  }, [language, router]);
 
   const currentStage = Math.min(Math.floor(step), stages.length - 1);
-  const pct = Math.round((step / stages.length) * 100);
+  const pct = step >= stages.length ? 100 : Math.min(92, Math.max(4, Math.round(((step + 1) / stages.length) * 100)));
 
   return (
     <Shell back="/new/prefs" sidebar={false}>
@@ -187,7 +217,17 @@ export default function Generate() {
             </div>
 
             <p className="mt-8 text-center text-xs text-slate-500">
-              {elapsed > 60 ? ui("Masih bekerja. LLM sedang menyusun struktur kompleks, sabar ya.") : elapsed > 30 ? ui("Hampir selesai...") : ui("Biasanya 20 sampai 60 detik. Task akan menyusul di halaman plan.")}
+              {completedSections > 0
+                ? language === "en"
+                  ? `${completedSections} PRD sections saved. Work will continue from this checkpoint.`
+                  : `${completedSections} bagian PRD tersimpan. Proses akan dilanjutkan dari checkpoint ini.`
+                : elapsed > 60
+                  ? language === "en"
+                    ? "The first PRD section is still being written. Progress reflects the server job."
+                    : "Bagian pertama PRD masih disusun. Progress mengikuti proses server."
+                  : language === "en"
+                    ? "PRD generation has started. Progress reflects the server job."
+                    : "Penyusunan PRD sudah dimulai. Progress mengikuti proses server."}
             </p>
           </>
         )}

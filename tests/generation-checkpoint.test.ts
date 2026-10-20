@@ -40,6 +40,24 @@ test("failed persistence and failed model calls cannot masquerade as saved progr
   assert.equal(Object.keys(fresh.entries).length, 0);
 });
 
+test("the running backend stage is persisted before the model responds and cleared after acceptance", async () => {
+  let checkpoint = emptyGenerationCheckpoint();
+  let release!: () => void;
+  const waiting = new Promise<void>(resolve => { release = resolve; });
+  const persist = async (saved: GenerationCheckpoint) => { checkpoint = structuredClone(saved); };
+  const run = runGenerationSlice(checkpoint, persist, () => checkpointedSection("discovery", "brief", undefined, async () => {
+    await waiting;
+    return "accepted";
+  }));
+  await new Promise(resolve => setTimeout(resolve, 0));
+  assert.equal(checkpoint.activeStage, "discovery");
+  assert.equal(Object.keys(checkpoint.entries).length, 0);
+  release();
+  assert.equal((await run).done, true);
+  assert.equal(checkpoint.activeStage, undefined);
+  assert.equal(Object.values(checkpoint.entries)[0].stage, "discovery");
+});
+
 test("different prompts and independent projects never reuse another result", async () => {
   const checkpoint = emptyGenerationCheckpoint();
   let count = 0;

@@ -4,8 +4,9 @@ import { createHash } from "node:crypto";
 export interface GenerationUsage { tokensIn: number; tokensOut: number; models: string[]; requests?: import("./generation-metrics").GenerationRequestMetric[] }
 export interface GenerationCheckpoint {
   version: 1;
-  entries: Record<string, { value: unknown; usage: GenerationUsage }>;
+  entries: Record<string, { value: unknown; usage: GenerationUsage; stage?: string }>;
   failedUsage?: Record<string, GenerationUsage>;
+  activeStage?: string;
 }
 
 export class GenerationPaused extends Error {
@@ -57,6 +58,8 @@ export async function checkpointedSection<T>(
     }
     if (state.used) throw new GenerationPaused();
     state.used = true;
+    state.checkpoint.activeStage = stage;
+    await state.persist(structuredClone(state.checkpoint));
     const before = { tokensIn: usage?.tokensIn ?? 0, tokensOut: usage?.tokensOut ?? 0, requests: usage?.requests?.length ?? 0 };
     const failed = state.checkpoint.failedUsage?.[key];
     if (usage && failed) {
@@ -81,7 +84,9 @@ export async function checkpointedSection<T>(
     state.checkpoint.entries[key] = {
       value: structuredClone(value),
       usage: sectionUsage(),
+      stage,
     };
+    delete state.checkpoint.activeStage;
     if (state.checkpoint.failedUsage) delete state.checkpoint.failedUsage[key];
     await state.persist(structuredClone(state.checkpoint));
     return value;
