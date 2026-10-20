@@ -393,7 +393,7 @@ async function callLlmUncached<T>(schema: z.ZodType<T>, prompt: string, usage?: 
           console.warn(`[LLM] ${entry.model} ${options.stage ?? "outline"} gagal validasi, coba perbaiki bagian ini`);
           continue;
         }
-        if (entries.length === 1 && cycle === 0 && error instanceof Error && error.name !== "AbortError") {
+        if (entries.length === 1 && cycle === 0 && error instanceof Error && Date.now() + 10_000 < options.deadline!) {
           feedback = ["The previous request failed. Return complete valid JSON"];
           continue;
         }
