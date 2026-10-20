@@ -1,3 +1,9 @@
+export const privateArtifactSources = [
+  "/:artifact((?:[^/]+/)*(?:\\.env(?:\\.[^/]+)?|\\.git|\\.svn|\\.aws|\\.codex|\\.agents|\\.vercel|\\.scratch-data|\\.roninvibe-data|\\.tmp-[^/]*|node_modules|artifacts|backups?|AGENTS\\.md|CLAUDE\\.md|GEMINI\\.md|[^/]+\\.(?:sql|sqlite3?|db|pem|key|bak|old|orig|log|har))(?:/.*)?)",
+  "/docs/:section(security|archive)/:path*",
+  "/docs/:guide(PROJECT-HANDOFF|ACCOUNT-DEVELOPER-TODOS)\\.md",
+];
+
 /** These paths are never product assets, including accidentally copied files. */
 export function isPrivateArtifact(pathname: string): boolean {
   let path: string;

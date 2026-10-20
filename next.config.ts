@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import { contentSecurityPolicy } from "./src/lib/content-security-policy";
+import { privateArtifactSources } from "./src/lib/public-request-policy";
 
 const nextConfig: NextConfig = {
   // Sembunyikan fingerprint framework.
@@ -18,15 +19,24 @@ const nextConfig: NextConfig = {
       process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "0x4AAAAAAEnBHa0BVZ4egzVD",
   },
   async rewrites() {
-    return [
+    return { beforeFiles: privateArtifactSources.map(source => ({ source, destination: "/api/private-artifact" })), afterFiles: [
       {
         source: "/creator/teguh-adhi-wibowo-transparent.gif",
         destination: "/creator/teguh-adhi-wibowo-animated.gif",
       },
-    ];
+    ], fallback: [] };
   },
   async headers() {
     return [
+      ...["/api/:path*", "/project/:path*", "/profile/:path*", "/admin/:path*", "/developer-settings/:path*", "/settings/:path*", "/dashboard/:path*", ...privateArtifactSources].map(source => ({
+        source,
+        headers: [
+          { key: "Cache-Control", value: "private, no-store, max-age=0" },
+          { key: "CDN-Cache-Control", value: "no-store" },
+          { key: "Vercel-CDN-Cache-Control", value: "no-store" },
+          { key: "X-Robots-Tag", value: "noindex, nofollow" },
+        ],
+      })),
       {
         source: "/:path*",
         headers: [
