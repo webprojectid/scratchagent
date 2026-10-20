@@ -4,7 +4,7 @@ import React, { useState, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence, useMotionValue, useTransform, useSpring, useMotionTemplate } from "framer-motion";
-import { Mail, Lock, Eye, EyeClosed, ArrowRight, ArrowLeft, User } from "lucide-react";
+import { Mail, Lock, Eye, EyeClosed, ArrowRight, ArrowLeft, User, KeyRound } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLang } from "@/lib/lang";
 import { createClient } from "@/lib/supabase/client";
@@ -40,9 +40,11 @@ export function SignInCard2() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [otp, setOtp] = useState("");
+  const [awaitingOtp, setAwaitingOtp] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState<"google" | "github" | null>(null);
-  const [focusedInput, setFocusedInput] = useState<"email" | "password" | "name" | null>(null);
+  const [focusedInput, setFocusedInput] = useState<"email" | "password" | "name" | "otp" | null>(null);
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
@@ -89,6 +91,8 @@ export function SignInCard2() {
 
   const switchMode = (next: Mode) => {
     setMode(next);
+    setAwaitingOtp(false);
+    setOtp("");
     setError("");
     setInfo("");
   };
@@ -114,12 +118,49 @@ export function SignInCard2() {
     }
   };
 
+  const handleResendOtp = async () => {
+    setIsLoading(true);
+    setError("");
+    setInfo("");
+    try {
+      const { error: resendError } = await createClient().auth.resend({ type: "signup", email });
+      if (resendError) {
+        setError(en ? "We could not send a new code yet. Wait a moment and try again." : "Kode baru belum bisa dikirim. Tunggu sebentar lalu coba lagi.");
+        return;
+      }
+      setInfo(en ? `A new code was sent to ${email}.` : `Kode baru dikirim ke ${email}.`);
+    } catch {
+      setError(en ? "We could not send a new code. Try again." : "Kode baru gagal dikirim. Coba lagi.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError("");
     setInfo("");
     setIsLoading(true);
     try {
+      if (awaitingOtp) {
+        if (!/^\d{6}$/.test(otp)) {
+          setError(en ? "Enter the 6-digit code from your email." : "Masukkan kode 6 digit dari email kamu.");
+          return;
+        }
+        const supabase = createClient();
+        const { data, error: verifyError } = await supabase.auth.verifyOtp({
+          email,
+          token: otp,
+          type: "signup",
+        });
+        if (verifyError || !data.session) {
+          setError(en ? "That code is invalid or has expired. Request a new code and try again." : "Kode tidak valid atau sudah kedaluwarsa. Minta kode baru lalu coba lagi.");
+          return;
+        }
+        refreshCurrentUser();
+        router.push("/new");
+        return;
+      }
       if (process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && !captchaToken) {
         setError(en ? "Complete the CAPTCHA check first." : "Selesaikan verifikasi CAPTCHA terlebih dahulu.");
         return;
@@ -171,10 +212,11 @@ export function SignInCard2() {
         }
         // Kalau project Supabase minta konfirmasi email, tidak ada session.
         if (!data.session) {
+          setAwaitingOtp(true);
           setInfo(
             en
-              ? "Account created. Check your email to confirm your address, then sign in."
-              : "Akun dibuat. Cek email kamu untuk konfirmasi alamatnya, lalu masuk.",
+              ? `We sent a 6-digit code to ${email}.`
+              : `Kami mengirim kode 6 digit ke ${email}.`,
           );
           return;
         }
@@ -230,21 +272,25 @@ export function SignInCard2() {
   };
 
   const t = {
-    title: mode === "signin" ? (en ? "Welcome Back" : "Selamat Datang Kembali") : en ? "Create Your Account" : "Buat Akun Baru",
+    title: awaitingOtp
+      ? en ? "Check Your Email" : "Cek Email Kamu"
+      : mode === "signin" ? (en ? "Welcome Back" : "Selamat Datang Kembali") : en ? "Create Your Account" : "Buat Akun Baru",
     sub:
-      mode === "signin"
+      awaitingOtp
+        ? en ? "Enter the verification code to activate your account" : "Masukkan kode verifikasi untuk mengaktifkan akun"
+        : mode === "signin"
         ? en
           ? "Sign in to continue to Scratch Agent"
           : "Masuk untuk lanjut ke Scratch Agent"
         : en
-          ? "Start on the Free plan — no credit card"
-          : "Mulai dari paket Free — tanpa kartu kredit",
+          ? "Start free. No credit card required."
+          : "Mulai gratis. Tanpa kartu kredit.",
     emailPlaceholder: en ? "Email address" : "Alamat email",
     passwordPlaceholder: "Password",
     namePlaceholder: en ? "Your name" : "Nama kamu",
     rememberMe: en ? "Remember me" : "Ingat saya",
     forgot: en ? "Forgot password?" : "Lupa password?",
-    submit: mode === "signin" ? (en ? "Sign In" : "Masuk") : en ? "Create account" : "Buat akun",
+    submit: awaitingOtp ? (en ? "Verify email" : "Verifikasi email") : mode === "signin" ? (en ? "Sign In" : "Masuk") : en ? "Create account" : "Buat akun",
     or: en ? "or" : "atau",
     google: en ? "Sign in with Google" : "Masuk dengan Google",
     github: en ? "Sign in with GitHub" : "Masuk dengan GitHub",
@@ -438,6 +484,26 @@ export function SignInCard2() {
               {/* Form login */}
               <form onSubmit={handleSubmit} className="space-y-4">
                 <motion.div className="space-y-3">
+                  {awaitingOtp ? (
+                    <div className={`relative ${focusedInput === "otp" ? "z-10" : ""}`}>
+                      <div className="relative flex items-center overflow-hidden rounded-lg">
+                        <KeyRound className={`absolute left-3 h-4 w-4 transition-colors duration-300 ${focusedInput === "otp" ? "text-[#74FA6A]" : "text-white/40"}`} />
+                        <Input
+                          type="text"
+                          inputMode="numeric"
+                          autoComplete="one-time-code"
+                          aria-label={en ? "6-digit verification code" : "Kode verifikasi 6 digit"}
+                          placeholder={en ? "6-digit code" : "Kode 6 digit"}
+                          value={otp}
+                          maxLength={6}
+                          onChange={(event) => setOtp(event.target.value.replace(/\D/g, "").slice(0, 6))}
+                          onFocus={() => setFocusedInput("otp")}
+                          onBlur={() => setFocusedInput(null)}
+                          className="h-12 w-full border-transparent bg-white/5 pl-10 pr-3 text-center font-mono text-lg tracking-[0.45em] text-white transition-colors duration-300 placeholder:font-sans placeholder:text-sm placeholder:tracking-normal placeholder:text-white/30 focus:border-[#74FA6A]/30 focus:bg-white/10"
+                        />
+                      </div>
+                    </div>
+                  ) : <>
                   {/* Nama (mode daftar) */}
                   <AnimatePresence>
                     {mode === "signup" && (
@@ -510,6 +576,7 @@ export function SignInCard2() {
                       </div>
                     </div>
                   </div>
+                  </>}
                 </motion.div>
 
                 {(error || info) && (
@@ -517,7 +584,7 @@ export function SignInCard2() {
                 )}
 
                 {/* Cloudflare Turnstile */}
-                {process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && (
+                {!awaitingOtp && process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && (
                   <div className="flex justify-center my-2 w-full overflow-hidden">
                     <Turnstile
                       ref={captcha}
@@ -531,7 +598,7 @@ export function SignInCard2() {
                 )}
 
                 {/* Ingat saya & lupa password (mode masuk) */}
-                {mode === "signin" && (
+                {mode === "signin" && !awaitingOtp && (
                   <div className="flex items-center justify-between pt-1">
                     <div className="flex items-center space-x-2">
                       <div className="relative">
@@ -592,8 +659,18 @@ export function SignInCard2() {
                   </div>
                 </motion.button>
 
+                {awaitingOtp && <div className="flex items-center justify-center gap-4 text-xs">
+                  <button type="button" disabled={isLoading} onClick={() => void handleResendOtp()} className="text-white/60 transition-colors hover:text-white disabled:opacity-40">
+                    {en ? "Resend code" : "Kirim ulang kode"}
+                  </button>
+                  <span className="h-3 w-px bg-white/15" aria-hidden="true" />
+                  <button type="button" disabled={isLoading} onClick={() => { setAwaitingOtp(false); setOtp(""); setError(""); setInfo(""); }} className="text-white/60 transition-colors hover:text-white disabled:opacity-40">
+                    {en ? "Change email" : "Ganti email"}
+                  </button>
+                </div>}
+
                 {/* Divider */}
-                <div className="relative mb-5 mt-2 flex items-center">
+                {!awaitingOtp && <div className="relative mb-5 mt-2 flex items-center">
                   <div className="flex-grow border-t border-white/5" />
                   <motion.span
                     className="mx-3 text-xs text-white/40"
@@ -604,10 +681,10 @@ export function SignInCard2() {
                     {t.or}
                   </motion.span>
                   <div className="flex-grow border-t border-white/5" />
-                </div>
+                </div>}
 
                 {/* Google */}
-                <motion.button
+                {!awaitingOtp && <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   transition={{ type: "spring", stiffness: 400, damping: 25 }}
@@ -630,10 +707,10 @@ export function SignInCard2() {
                     )}
                     <span className="text-xs text-white/80 transition-colors group-hover/google:text-white">{t.google}</span>
                   </div>
-                </motion.button>
+                </motion.button>}
 
                 {/* GitHub */}
-                <motion.button
+                {!awaitingOtp && <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   transition={{ type: "spring", stiffness: 400, damping: 25 }}
@@ -653,10 +730,10 @@ export function SignInCard2() {
                     )}
                     <span className="text-xs text-white/80 transition-colors group-hover/github:text-white">{t.github}</span>
                   </div>
-                </motion.button>
+                </motion.button>}
 
                 {/* Link ganti mode masuk/daftar */}
-                <motion.p className="mt-4 text-center text-xs text-white/60" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}>
+                {!awaitingOtp && <motion.p className="mt-4 text-center text-xs text-white/60" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}>
                   {mode === "signin" ? t.noAccount : t.hasAccount}{" "}
                   <button type="button" onClick={() => switchMode(mode === "signin" ? "signup" : "signin")} className="group/signup relative inline-block">
                     <span className="relative z-10 font-medium text-white transition-colors duration-300 group-hover/signup:text-[#74FA6A]">
@@ -664,7 +741,7 @@ export function SignInCard2() {
                     </span>
                     <span className="absolute bottom-0 left-0 h-[1px] w-0 bg-[#74FA6A] transition-all duration-300 group-hover/signup:w-full" />
                   </button>
-                </motion.p>
+                </motion.p>}
               </form>
               </motion.div>
             </div>
