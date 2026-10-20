@@ -107,6 +107,12 @@ export default function Generate() {
                   return;
                 }
                 const pj = await pr.json();
+                if (!pr.ok) throw new Error(pj.error ?? `HTTP ${pr.status}`);
+                if (pj.generationFailure?.paused) {
+                  cleanup();
+                  setError(ui("Generation paused after repeated provider failures. Your allowance was restored. Please try again."));
+                  return;
+                }
                 if ((pj.features ?? []).length > 0) {
                   cleanup();
                   setStep(stages.length);

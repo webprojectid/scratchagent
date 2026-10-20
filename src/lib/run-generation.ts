@@ -70,9 +70,18 @@ export async function scheduleGeneration(job: GenerationJob, tryNo = 1): Promise
           if (!stored) throw new Error("Generation was superseded.");
         };
         if (!saved) await persist(checkpoint);
+        const completedBefore = Object.keys(checkpoint.entries).length;
         const slice = await runGenerationSlice(checkpoint, persist, () =>
           generatePlanStructure(job.brief, job.techPrefs, job.answers, job.tier, job.handoff));
-        if (!slice.done) return;
+        if (!slice.done) {
+          if (Object.keys(checkpoint.entries).length > completedBefore) {
+            await withGenerationLease(job.planId, "structure", lease, async () => {
+              const work = await getGenerationWork(job.planId);
+              if (work?.failure) await saveGenerationWork(job.planId, { ...work, failure: undefined });
+            });
+          }
+          return;
+        }
         const result = slice.value;
         await withGenerationLease(job.planId, "structure", lease, async () => {
           await savePlan({

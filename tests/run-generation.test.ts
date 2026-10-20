@@ -6,11 +6,11 @@ import { runInNewContext } from "node:vm";
 import ts from "typescript";
 import * as checkpoints from "../src/lib/generation-checkpoint";
 
-function scheduler(fail = false, ownsLease = true, registrationFails = false, split = false, readFails = false) {
+function scheduler(fail = false, ownsLease = true, registrationFails = false, split = false, readFails = false, initialWork: unknown = null) {
   let clock = 1000000;
   const calls: { kind: string; args: unknown[] }[] = [];
   let work: (() => Promise<void>) | undefined;
-  let saved: unknown = null;
+  let saved: unknown = initialWork;
   const record = (kind: string) => async (...args: unknown[]) => { calls.push({ kind, args }); };
   const mocks: Record<string, unknown> = {
     "./generation-recovery": { nextGenerationFailure: (previous: Parameters<typeof recovery.nextGenerationFailure>[0]) => recovery.nextGenerationFailure(previous, clock), canResumeGeneration: (previous: Parameters<typeof recovery.canResumeGeneration>[0]) => recovery.canResumeGeneration(previous, clock) },
@@ -41,6 +41,16 @@ function scheduler(fail = false, ownsLease = true, registrationFails = false, sp
   return { advanceClock: () => { clock += 70000; }, calls, savedWork: () => saved, schedule: fixtureModule.exports.scheduleGeneration, run: async () => { assert.ok(work); await work(); } };
 }
 const job = { planId: "fixture-plan", ownerId: "fixture-owner", userId: "fixture-user", tier: "free", brief: "Fixture", techPrefs: { mode: "auto" }, answers: [], receipt: { userId: "fixture-user", tier: "free", eventId: "fixture-receipt" } };
+
+test("a successful section resets prior provider failures before the next section", async () => {
+  const fixture = scheduler(false, true, false, true, false, {
+    checkpoint: checkpoints.emptyGenerationCheckpoint(), receipt: job.receipt,
+    failure: { attempts: 2, paused: false, retryAt: 0, message: "Temporary provider failure" },
+  });
+  await fixture.schedule(job); await fixture.run();
+  assert.equal((fixture.savedWork() as { failure?: unknown }).failure, undefined);
+  assert.equal(fixture.calls.some(call => call.kind === "refund"), false);
+});
 
 test("successful background generation preserves owner and finalizes quota once", async () => {
   const fixture = scheduler(); await fixture.schedule(job); await fixture.run();
