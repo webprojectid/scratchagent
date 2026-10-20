@@ -9,6 +9,7 @@ import { emptyGenerationCheckpoint, runGenerationSlice } from "./generation-chec
 import { clearGenerationWork, getGenerationWork, saveGenerationWork } from "./generation-checkpoint-store";
 import { finalizeQuota, refundQuota, recordUsage, type QuotaReceipt } from "./quota";
 import { logSecurity } from "./security";
+import { GenerationOutputRejected } from "./generation-output";
 
 export interface GenerationJob {
   planId: string;
@@ -117,6 +118,10 @@ export async function scheduleGeneration(job: GenerationJob, tryNo = 1): Promise
           const work = await getGenerationWork(job.planId);
           if (!work) return;
           const failure = nextGenerationFailure(work.failure);
+          if (error instanceof GenerationOutputRejected) {
+            failure.paused = true;
+            failure.message = `The ${error.stage} section needs correction. Accepted sections are saved and allowance restored.`;
+          }
           await saveGenerationWork(job.planId, { ...work, failure });
           if (failure.paused) {
             await refundQuota(receipt);

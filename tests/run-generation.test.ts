@@ -5,8 +5,9 @@ import { readFileSync } from "node:fs";
 import { runInNewContext } from "node:vm";
 import ts from "typescript";
 import * as checkpoints from "../src/lib/generation-checkpoint";
+import * as outputContract from "../src/lib/generation-output";
 
-function scheduler(fail = false, ownsLease = true, registrationFails = false, split = false, readFails = false, initialWork: unknown = null) {
+function scheduler(fail: boolean | Error = false, ownsLease = true, registrationFails = false, split = false, readFails = false, initialWork: unknown = null) {
   let clock = 1000000;
   const calls: { kind: string; args: unknown[] }[] = [];
   let work: (() => Promise<void>) | undefined;
@@ -15,11 +16,12 @@ function scheduler(fail = false, ownsLease = true, registrationFails = false, sp
   const mocks: Record<string, unknown> = {
     "./generation-recovery": { nextGenerationFailure: (previous: Parameters<typeof recovery.nextGenerationFailure>[0]) => recovery.nextGenerationFailure(previous, clock), canResumeGeneration: (previous: Parameters<typeof recovery.canResumeGeneration>[0]) => recovery.canResumeGeneration(previous, clock) },
     "./generation-checkpoint": checkpoints,
+    "./generation-output": outputContract,
     "./generation-checkpoint-store": { getGenerationWork: async () => { if (readFails) throw new Error("Storage unavailable"); return saved; }, saveGenerationWork: async (_id: string, value: unknown) => { saved = structuredClone(value); calls.push({ kind: "checkpoint", args: [] }); }, clearGenerationWork: record("clear") },
     "./generation-lease": { claimGeneration: async () => "lease", releaseGeneration: record("release"), withGenerationLease: async (_plan: string, _stage: string, _token: string, action: () => Promise<void>) => ownsLease ? action() : null, reserveGenerationAttempt: async () => true },
     "next/server": { after: (callback: () => Promise<void>) => { if (registrationFails) throw new Error("Fixture scheduling failure"); work = callback; } },
     "./generate": { generatePlanStructure: async () => {
-      if (fail) throw new Error("Fixture failure");
+      if (fail) throw fail instanceof Error ? fail : new Error("Fixture failure");
       if (split) for (const section of ["outline", "requirements"]) await checkpoints.checkpointedSection(section, section, undefined, async () => section);
       return { title: "Fixture", stack: [], features: [], usage: { tokensIn: 2, tokensOut: 3 } };
     } },
@@ -41,6 +43,19 @@ function scheduler(fail = false, ownsLease = true, registrationFails = false, sp
   return { advanceClock: () => { clock += 70000; }, calls, savedWork: () => saved, schedule: fixtureModule.exports.scheduleGeneration, run: async () => { assert.ok(work); await work(); } };
 }
 const job = { planId: "fixture-plan", ownerId: "fixture-owner", userId: "fixture-user", tier: "free", brief: "Fixture", techPrefs: { mode: "auto" }, answers: [], receipt: { userId: "fixture-user", tier: "free", eventId: "fixture-receipt" } };
+
+test("an exhausted targeted validation repair pauses once instead of starting three fresh loops", async () => {
+  const fixture = scheduler(new outputContract.GenerationOutputRejected('database', ['Missing canonical room table']));
+  await fixture.schedule(job); await fixture.run();
+  const saved = fixture.savedWork() as { failure: recovery.GenerationFailure };
+  assert.equal(saved.failure.paused, true);
+  assert.equal(saved.failure.attempts, 1);
+  assert.match(saved.failure.message, /database/);
+  assert.equal(fixture.calls.filter(call => call.kind === 'refund').length, 1);
+  fixture.advanceClock();
+  assert.equal(await fixture.schedule(job), false);
+  assert.equal(fixture.calls.filter(call => call.kind === 'refund').length, 1);
+});
 
 test("a successful section resets prior provider failures before the next section", async () => {
   const fixture = scheduler(false, true, false, true, false, {

@@ -25,6 +25,21 @@ export const productSpecSchema = z.object({
 });
 export type ProductSpec = z.infer<typeof productSpecSchema>;
 
+/** Resolve punctuation/case differences to the user's exact original excerpt. */
+export function alignProductEvidence(spec: ProductSpec, source: string): ProductSpec {
+  const tokens = [...source.matchAll(/[\p{L}\p{N}]+/gu)];
+  const excerpt = (quote: string): string => {
+    if (!quote || source.includes(quote)) return quote;
+    const words = [...quote.matchAll(/[\p{L}\p{N}]+/gu)].map(match => match[0].toLowerCase());
+    if (!words.length) return quote;
+    const start = tokens.findIndex((_, index) => words.every((word, offset) => tokens[index + offset]?.[0].toLowerCase() === word));
+    if (start < 0) return quote;
+    const first = tokens[start], last = tokens[start + words.length - 1];
+    return source.slice(first.index!, last.index! + last[0].length);
+  };
+  return { ...spec, requirements: spec.requirements.map(requirement => ({ ...requirement, sourceQuote: excerpt(requirement.sourceQuote) })), decisions: spec.decisions.map(decision => ({ ...decision, sourceQuote: excerpt(decision.sourceQuote) })) };
+}
+
 export const productSpecInstructions = `Extract a product decision contract before planning phases. Do not invent research or committed business numbers. Requirements must cover all explicitly requested workflows, including registration and administrative operations. Use R01, R02 etc. sourceQuote must be an EXACT excerpt from the supplied brief or confirmed answers. Group closely related actions, but never omit a requested workflow. verification MUST use ONLY these exact enum strings: success, failure, duplicate, concurrency, recovery. Select scenarios actually needed for that requirement. Keep the contract concise. dependsOn lists only true prerequisite requirement IDs; form an acyclic delivery dependency graph, not a sequential user-flow chain. Mutual runtime interactions are not delivery prerequisites; leave dependsOn empty for those.
 Entities MUST use lowercase snake_case names matching /^[a-z][a-z0-9_]*$/, for example users, course_lessons or payment_events. They define canonical table names and essential fields used by all following sections. states.entity must be a declared entity and values are the only state names for that entity. Prefer a small coherent model over duplicate tables.
 decisions separate confirmed facts with exact sourceQuote from proposed choices and open questions. A confirmed decision requires evidence. Unspecified business policies, budgets, SLAs, numeric thresholds and providers remain OPEN: do not assign arbitrary default numbers. Describe metrics with definition and measurement; use target "Not established; confirm baseline and target" when unspecified. Write risks with a responsible role, plus practical rollout checks and rollback actions. outOfScope contains explicitly excluded capabilities only.
@@ -90,6 +105,20 @@ export function phaseRequirementIssues(features: { title: string; requirement_id
   }
   for (const id of known) if (!assigned.has(id)) issues.push(`${id}: no owning phase`);
   return issues;
+}
+
+/** Prefer a dedicated phase over a shared reference without leaving a phase ownerless. */
+export function normalizePhaseOwnership<T extends { requirement_ids?: string[] }>(features: T[]): void {
+  const ids = new Set(features.flatMap(feature => feature.requirement_ids ?? []));
+  for (const id of ids) {
+    const owners = features.filter(feature => feature.requirement_ids?.includes(id));
+    if (owners.length < 2) continue;
+    const dedicated = owners.filter(feature => new Set(feature.requirement_ids).size === 1);
+    if (dedicated.length !== 1) continue;
+    for (const feature of owners) {
+      if (feature !== dedicated[0]) feature.requirement_ids = feature.requirement_ids!.filter(owned => owned !== id);
+    }
+  }
 }
 
 export function orderRequirementPhases<T extends { requirement_ids?: string[] }>(features: T[], spec: ProductSpec): T[] {

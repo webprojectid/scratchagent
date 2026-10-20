@@ -12,6 +12,7 @@ export interface GenerationRequestMetric {
   tokensOut: number | null;
   cachedTokens: number | null;
   reasoningTokens: number | null;
+  validationIssues?: string[];
 }
 
 export function mergeGenerationMetrics(...groups: (GenerationRequestMetric[] | undefined)[]): GenerationRequestMetric[] {
