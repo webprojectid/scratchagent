@@ -19,7 +19,7 @@ function routeFixture(file: string, mocks: Record<string, unknown>) {
   return fixtureModule.exports;
 }
 
-function generationEntry(schedulingFails = false, options: { authenticated?: boolean; legacy?: boolean; tier?: "free" | "pro"; emailVerified?: boolean } = {}) {
+function generationEntry(schedulingFails = false, options: { authenticated?: boolean; legacy?: boolean; tier?: "free" | "pro"; emailVerified?: boolean; noQuota?: boolean } = {}) {
   const calls: string[] = [];
   const identities: (string | undefined)[] = [];
   let charged = 0;
@@ -35,7 +35,7 @@ function generationEntry(schedulingFails = false, options: { authenticated?: boo
     "@/lib/api-auth": { getRequestUser: async (id?: string) => { identities.push(id); return options.authenticated === false ? null : user; }, legacyDevMode: () => !!options.legacy, planOwnerKey: () => user.userId, unauthorized: () => NextResponse.json({ error: "Please sign in again or use a valid access token.", code: "AUTH_REQUIRED" }, { status: 401 }) },
     "@/lib/request-json": { readRequestJson, RequestJsonError },
     "@/lib/storage": { savePlan: async () => calls.push("save"), deletePlan: async () => calls.push("delete") },
-    "@/lib/quota": { consumeQuota: async () => { charged++; return { userId: user.userId, tier: options.tier ?? "free", eventId: "fixture" }; }, refundQuota: async () => calls.push("refund") },
+    "@/lib/quota": { consumeQuota: async () => { if (options.noQuota) return null; charged++; return { userId: user.userId, tier: options.tier ?? "free", eventId: "fixture" }; }, refundQuota: async () => calls.push("refund") },
     "@/lib/billing": { getAccountState: async () => ({ tier: options.tier ?? "free" }), isAdminEmail: () => false },
     "@/lib/security": { getClientIp: async () => "fixture", blockedIpResponse: async () => null, RATE_LIMITS: { generate: { limit: 10, windowMs: 600000 } }, rateLimit: () => null, clientKey: () => "fixture", logSecurity: async () => {} },
   });
@@ -81,6 +81,15 @@ test("email verification remains unchanged for both Free and Pro generation", as
     assert.equal(fixture.charged(), 1);
     assert.deepEqual(fixture.calls, ["save", "schedule"]);
   }
+});
+
+test("exhausted Free quota blocks client tier and identity spoofing before provider work", async () => {
+  const fixture = generationEntry(false, { tier: "free", noQuota: true });
+  const response = await fixture.invoke(JSON.stringify({ brief: "Synthetic booking app", techPrefs: { mode: "auto" }, tier: "pro", userId: "admin@example.test", skipLimit: true }));
+  assert.equal(response.status, 429);
+  assert.equal(fixture.charged(), 0);
+  assert.deepEqual(fixture.calls, []);
+  assert.deepEqual(fixture.identities, [undefined]);
 });
 
 test("a saved provider configuration starts generation without LLM environment values", async () => {

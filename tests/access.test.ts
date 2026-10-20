@@ -67,9 +67,32 @@ test("accessPlan: non-owner dapat 404 (bukan 403, biar tidak bocor)", async () =
   assert.equal(error?.status, 404);
 });
 
+test("administrator CLI tokens cannot inherit cross-account browser privileges", async (context) => {
+  const original = process.env.ADMIN_EMAILS;
+  process.env.ADMIN_EMAILS = "access-admin@example.test";
+  context.after(() => { if (original === undefined) delete process.env.ADMIN_EMAILS; else process.env.ADMIN_EMAILS = original; });
+  const adminToken: AuthUser = { userId: "uuid-admin", email: "access-admin@example.test", via: "token" };
+  for (const write of [false, true]) {
+    const result = await accessPlan("plan-alice", adminToken, { write });
+    assert.equal(result.error?.status, 404);
+    assert.equal(result.plan, undefined);
+  }
+  assert.ok((await accessPlan("plan-alice", { ...alice, via: "token" })).plan);
+});
+
 test("accessPlan: tanpa identitas dapat 401", async () => {
   const { error } = await accessPlan("plan-alice", null);
   assert.equal(error?.status, 401);
+});
+
+test("read-only and project-scoped tokens cannot broaden plan access", async () => {
+  const scoped: AuthUser = { ...alice, via: "token", tokenPolicy: { access: "read", projectIds: ["plan-alice"], expiresAt: null, lastUsedAt: null } };
+  assert.ok((await accessPlan("plan-alice", scoped)).plan);
+  assert.equal((await accessPlan("plan-alice", scoped, { write: true })).error?.status, 403);
+  assert.equal((await accessPlan("plan-other", scoped)).error?.status, 403);
+  const foreign = { ...bob, tokenPolicy: { ...scoped.tokenPolicy!, access: "write" as const } };
+  assert.equal((await accessPlan("plan-alice", foreign)).error?.status, 404);
+  assert.equal((await accessPlan("plan-alice", foreign, { write: true })).error?.status, 404);
 });
 
 test("accessPlan: plan tidak dikenal dapat 404", async () => {

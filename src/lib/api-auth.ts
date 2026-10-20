@@ -172,7 +172,7 @@ export async function accessPlan(
   if (!plan) return { error: planNotFound() };
   if (!ownsPlan(plan, user)) {
     const { isAdminEmail } = await import("@/lib/billing");
-    if (!isAdminEmail(user.email)) return { error: planNotFound() };
+    if (user.via !== "session" || !isAdminEmail(user.email)) return { error: planNotFound() };
   }
   return { plan };
 }
