@@ -31,7 +31,7 @@ test("whole JSON retains embedded SQL and Mermaid strings, including literal reg
   assert.throws(() => extractGenerationJson('"just a SQL string"'));
 });
 
-test("targeted repairs preserve facts and cannot create fields or traverse prototypes", () => {
+test("targeted replacements preserve facts and reject unknown or unsafe paths", () => {
   const prior = JSON.stringify({ title: "CourtFlow", features: [{ title: "Old title", requirement_ids: ["R01"] }] });
   assert.deepEqual(mergeGenerationPatch({ patch: [{ op: "replace", path: "/features/0/title", value: "Court checkout" }] }, prior), { title: "CourtFlow", features: [{ title: "Court checkout", requirement_ids: ["R01"] }] });
   for (const path of ["/__proto__/polluted", "/constructor/prototype/value", "/missing", "/features/8/title"]) assert.throws(() => mergeGenerationPatch({ patch: [{ op: "replace", path, value: "unsafe" }] }, prior));
@@ -95,9 +95,58 @@ test("supporting technical tables require explicit proposal provenance and a can
   const core = spec.entities.map(entity => ({ name: entity.name, relationships: [] as string[] }));
   const supporting = { name: "notification_dispatches", supporting: true, requirementIds: ["R01"], parentEntities: ["bookings"], relationships: ["notification_dispatches.booking_id references bookings.id"] };
   assert.deepEqual(schemaEntityIssues([...core, supporting], spec), []);
-  assert.match(schemaEntityIssues([...core, { ...supporting, relationships: [] }], spec).join(" "), /explicit supporting implementation proposal/);
-  assert.match(schemaEntityIssues([...core, { ...supporting, supporting: false }], spec).join(" "), /explicit supporting implementation proposal/);
+  assert.match(schemaEntityIssues([...core, { ...supporting, relationships: [] }], spec).join(" "), /\/relationships: state how/);
+  assert.match(schemaEntityIssues([...core, { ...supporting, supporting: false }], spec).join(" "), /\/supporting: set true/);
   assert.match(schemaEntityIssues([supporting], spec).join(" "), /Canonical table courts is missing/);
+});
+
+test("repair adds missing schema metadata without overwriting facts or permitting unsafe paths", () => {
+  const previous = JSON.stringify({ tables: [{ name: 'delivery_jobs', relationships: ['delivery_jobs.record_id references records.id'] }] });
+  const repaired = mergeGenerationPatch({ patch: [
+    { op: 'add', path: '/tables/0/supporting', value: true },
+    { op: 'add', path: '/tables/0/parentEntities', value: ['records'] },
+    { op: 'add', path: '/tables/0/requirementIds', value: ['R01'] },
+  ] }, previous) as {tables:{name:string;supporting:boolean}[]};
+  assert.equal(repaired.tables[0].name, 'delivery_jobs');
+  assert.equal(repaired.tables[0].supporting, true);
+  for (const path of ['/tables/0/name', '/tables/0', '/tables/2', '/__proto__/polluted']) assert.throws(() => mergeGenerationPatch({ patch: [{ op: 'add', path, value: 'unsafe' }] }, previous));
+  const appended = mergeGenerationPatch({patch:[{op:'add', path:'/tables/-', value:{name:'delivery_attempts'}}]}, previous) as {tables:{name:string}[]};
+  assert.equal(appended.tables.length, 2);
+  assert.equal(appended.tables[0].name, 'delivery_jobs');
+  const numericAppend = mergeGenerationPatch({patch:[{op:'add', path:'/tables/1', value:{name:'delivery_attempts'}}]}, previous) as {tables:{name:string}[]};
+  assert.deepEqual(numericAppend, appended);
+});
+
+test("ordinal seconds are not latency policies while actual one-second promises still fail", () => {
+  assert.deepEqual(validateContractText(['Duplicate signup does not create a second account.', 'A retry never emits a second payment or a second record.', 'Reject a second active stay request.', 'Open the record in a second browser tab.'], 'Users manage accounts and payments'), []);
+  assert.match(validateContractText(['Signup must complete within a second.'], 'Users manage accounts').join(' '), /Unspecified numeric policy/);
+  assert.match(validateContractText(['Response latency is a second.'], 'Users manage accounts').join(' '), /Unspecified numeric policy/);
+});
+
+test("review append corrections preserve accepted constraints and still reject replacement of unknown paths", () => {
+  const sections = { architecture: { paragraphs: ['Retain ownership checks'], mermaid: 'flowchart TD' }, database: { tables: [{ constraints: ['PRIMARY KEY id'] }] }, requirements: {} };
+  const corrected = applyGenerationReview(sections, { corrections: [{ section: 'database', path: '/tables/0/constraints/-', value: 'UNIQUE event_id', reason: 'Keep duplicate events idempotent' }] });
+  assert.deepEqual(corrected.database.tables[0].constraints, ['PRIMARY KEY id', 'UNIQUE event_id']);
+  assert.deepEqual(sections.database.tables[0].constraints, ['PRIMARY KEY id']);
+  assert.throws(() => applyGenerationReview(sections, { corrections: [{ section: 'database', path: '/tables/0/constraints/9', value: 'Missing value', reason: 'Unknown replacement is invalid' }] }));
+});
+
+test("review table-name selectors resolve only to one existing table", () => {
+  const sections = { architecture: {}, database: { tables: [{ name:'records', constraints: ['PRIMARY KEY id'] }] }, requirements: {} };
+  const result = applyGenerationReview(sections, {corrections:[{section:'database', path:'/tables/records/constraints/-', value:'UNIQUE external_id', reason:'Make repeated imports idempotent'}]});
+  assert.deepEqual(result.database.tables[0].constraints, ['PRIMARY KEY id', 'UNIQUE external_id']);
+  assert.throws(() => applyGenerationReview(sections, {corrections:[{section:'database', path:'/tables/unknown/constraints/-', value:'UNIQUE external_id', reason:'Unknown tables must not be invented'}]}));
+});
+
+test("review flows resolve exact requirement identity without replacing another actor workflow", () => {
+  const sections={architecture:{},database:{},requirements:{user_flow:[{title:'Owner update',requirementIds:['R01'],steps:['Keep owner behavior']},{title:'Staff review',requirementIds:['R02'],steps:['Old staff behavior']}]}};
+  const value={title:'Review as staff',requirementIds:['R02'],steps:['Corrected staff behavior']};
+  for(const op of ['replace','add'] as const){
+    const result=applyGenerationReview(sections,{corrections:[{section:'requirements',op,path:'/user_flow/0',value,reason:'Resolve the staff-only recovery behavior'}]});
+    assert.deepEqual(result.requirements.user_flow[0],sections.requirements.user_flow[0]);
+    assert.deepEqual(result.requirements.user_flow[1],value);
+    assert.equal(result.requirements.user_flow.length,2);
+  }
 });
 
 test("diagram escape normalization preserves SQL and quoted label escapes", () => {

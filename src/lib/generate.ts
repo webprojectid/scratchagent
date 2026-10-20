@@ -4,8 +4,8 @@ import type { GenerationRequestMetric } from "./generation-metrics";
 import { publicProviderFetch } from "./provider-network";
 import { defaultHandoff, legacyHandoff, handoffInstructions, type HandoffSettings } from "./account-preferences";
 import { z } from "zod";
-import { checkpointedSection, GenerationPaused, isCheckpointedGeneration } from "./generation-checkpoint";
-import { generationContracts, repairRequest, schemaRepairFeedback } from "./generation-contract";
+import { checkpointedSection, GenerationPaused, generationSliceDeadline } from "./generation-checkpoint";
+import { generationContracts, repairRequest, reviewRepairRequest, schemaRepairFeedback } from "./generation-contract";
 import { extractGenerationJson, normalizeGeneratedText } from "./generation-json";
 import {
   applyArchFallback,
@@ -275,14 +275,14 @@ async function attemptOnce<T>(
   // benar. Nonce bikin varian unik supaya gak ikut ter-cache.
   const userContent = cycle === 0
     ? prompt
-    : repairRequest(prompt, feedback ?? ["Return complete JSON with the required field types"], previousDraft);
+    : (options.stage === 'review' ? reviewRepairRequest : repairRequest)(prompt, feedback ?? ["Return complete JSON with the required field types"], previousDraft);
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
   const start = Date.now();
   let draft: string | undefined;
   const metric: GenerationRequestMetric = { id: crypto.randomUUID(), stage: options.stage ?? "outline", model, startedAt: new Date(start).toISOString(), durationMs: 0, status: "failed", httpStatus: null, requestId: null, repair: cycle > 0, tokensIn: null, tokensOut: null, cachedTokens: null, reasoningTokens: null };
   if (usage && !usage.models.includes(model)) usage.models.push(model);
-  console.log(`[LLM] request ke ${baseUrl}/chat/completions (model: ${model}, siklus ${cycle + 1})`);
+  console.log(`[LLM] ${options.stage ?? "outline"} request (model: ${model}, cycle ${cycle + 1})`);
   try {
     const res = await publicProviderFetch(`${baseUrl}/chat/completions`, {
       method: "POST",
@@ -326,7 +326,8 @@ async function attemptOnce<T>(
       usage.tokensIn += parsed.usage.prompt_tokens ?? 0;
       usage.tokensOut += parsed.usage.completion_tokens ?? 0;
     }
-    const raw = mergeGenerationPatch(JSON.parse(extractJson(parsed.content ?? "")), previousDraft);
+    const decoded = JSON.parse(extractJson(parsed.content ?? ""));
+    const raw = options.stage === 'review' ? decoded : mergeGenerationPatch(decoded, previousDraft);
     draft = JSON.stringify(raw);
     const value = schema.parse(normalizeGenerationOutput(options.stage ?? "outline", normalize(raw)));
     const issues = options.validate?.(value) ?? [];
@@ -340,7 +341,7 @@ async function attemptOnce<T>(
   } catch (error) {
     if (error instanceof QualityError) metric.validationIssues = error.issues.slice(0, 24);
     else if (error instanceof z.ZodError) metric.validationIssues = schemaRepairFeedback(error);
-    else if (metric.status === "rejected") metric.validationIssues = ["Response could not be parsed into the required JSON contract"];
+    else if (metric.status === "rejected") metric.validationIssues = [error instanceof Error && error.message.startsWith("JSON parsing gagal:") ? error.message : "Response could not be parsed into the required JSON contract"];
     if (draft && error !== null && typeof error === "object") rejectedDrafts.set(error, draft.slice(0, 80_000));
     throw error;
   } finally {
@@ -355,7 +356,7 @@ async function attemptOnce<T>(
  * perbaikan dari model yang sama sebelum beralih ke model cadangan.
  */
 async function callLlm<T>(schema: z.ZodType<T>, prompt: string, usage?: LlmUsage, options: LlmCallOptions<T> = {}): Promise<T> {
-  try { return await checkpointedSection(options.stage ?? "outline", prompt, usage, () => callLlmUncached(schema, prompt, usage, options)); }
+  try { return await checkpointedSection(options.stage ?? "outline", prompt, usage, sectionUsage => callLlmUncached(schema, prompt, sectionUsage, options)); }
   catch (error) {
     if (usage && error && typeof error === "object") failedGenerationUsage.set(error, usage);
     throw error;
@@ -364,7 +365,7 @@ async function callLlm<T>(schema: z.ZodType<T>, prompt: string, usage?: LlmUsage
 
 async function callLlmUncached<T>(schema: z.ZodType<T>, prompt: string, usage?: LlmUsage, options: LlmCallOptions<T> = {}): Promise<T> {
   // Leave time for checkpoint persistence before a 300-second invocation ends.
-  options = { ...options, deadline: Date.now() + 250_000 };
+  options = { ...options, deadline: Math.min(Date.now() + 250_000, generationSliceDeadline() ?? Infinity) };
   const providers = options.providers ?? await resolveLlmProviders();
   if (providers.length === 0) throw new Error("Konfigurasi LLM belum lengkap (isi lewat Settings atau env)");
   const entries = providers.flatMap((p) => p.models.map((model) => ({ baseUrl: p.baseUrl, apiKey: p.apiKey, model })));
@@ -376,7 +377,7 @@ async function callLlmUncached<T>(schema: z.ZodType<T>, prompt: string, usage?: 
   for (const entry of entries) {
     let feedback: string[] | undefined;
     let previousDraft: string | undefined;
-    const maxCycles = 2;
+    const maxCycles = options.stage === "review" ? 3 : 2;
     for (let cycle = 0; cycle < maxCycles; cycle++) {
       if (Date.now() >= options.deadline!) throw new Error("Generation section exceeded its time budget.");
       try {
@@ -392,9 +393,9 @@ async function callLlmUncached<T>(schema: z.ZodType<T>, prompt: string, usage?: 
         }
         const repairable = error instanceof QualityError || error instanceof z.ZodError ||
           (error instanceof Error && error.message.startsWith("JSON parsing gagal"));
-        if (repairable) rejectedIssues = error instanceof QualityError ? error.issues.slice(0, 24) : error instanceof z.ZodError ? schemaRepairFeedback(error) : ["Invalid JSON response"];
+        if (repairable) rejectedIssues = error instanceof QualityError ? error.issues.slice(0, 24) : error instanceof z.ZodError ? schemaRepairFeedback(error) : [(error as Error).message];
         if (repairable && cycle < maxCycles - 1) {
-          feedback = error instanceof QualityError ? error.issues.slice(0, 24) : error instanceof z.ZodError ? schemaRepairFeedback(error) : ["Return one complete JSON object using the field types in the system message"];
+          feedback = rejectedIssues;
           previousDraft = rejectedDrafts.get(error as object);
           console.warn(`[LLM] ${entry.model} ${options.stage ?? "outline"} gagal validasi, coba perbaiki bagian ini`);
           continue;
@@ -698,7 +699,7 @@ export async function generatePlanStructure(
   );
   let nextGroup = 0;
   const subfeatureResults: Array<z.infer<typeof stage2Schema>> = new Array(subfeatureGroups.length);
-  const subfeaturesPromise = Promise.all(Array.from({ length: Math.min(isCheckpointedGeneration() ? 1 : 3, subfeatureGroups.length) }, async () => {
+  const subfeaturesPromise = Promise.all(Array.from({ length: Math.min(3, subfeatureGroups.length) }, async () => {
     while (nextGroup < subfeatureGroups.length) {
       const groupIndex = nextGroup++;
       const group = subfeatureGroups[groupIndex];
@@ -800,7 +801,7 @@ export async function generatePlanStructure(
     ),
     callLlm(
       dbSchema,
-      `Product context: ${sharedContext}\n\nKamu adalah database architect. Buat database schema yang sesuai seluruh kemampuan produk di context.\n${styleRule} Jelaskan tabel utama, kolom dan tipe, PK/FK/UNIQUE/INDEX yang diperlukan, serta keputusan penyimpanan yang tidak jelas dari brief sebagai asumsi. Show the data-level invariant behind each requested concurrency guarantee, callback idempotency, authorization boundary, and timezone rule; a generic claim is insufficient. For concurrent bookings, persist hold owner and expiry, then reject collisions with a database-enforced active-slot rule. With PostgreSQL and overlapping intervals, write an explicit EXCLUDE USING gist constraint on court/resource ID and tstzrange(start,end) WHERE status IN active booking states; alternatively describe an atomic conditional UPDATE of a canonical slot row that checks status and verifies one affected row. A plain lookup followed by insert is not safe. If the user gave no hold duration, make it configurable and do not invent a number. For payment callbacks, persist a UNIQUE provider_event_id or a durable atomic payment-state guard, including late settlement after a hold expires. State how time is stored and displayed, and where ownership policies are enforced. Keep schema names and state names consistent with flows. Identifikasi hot path. Return the ERD separately in mermaid, without fences. Keep every canonical core entity. Additional technical support tables (outbox, notification dispatch, event deduplication) are allowed ONLY as explicit implementation proposals with supporting:true, requirementIds from the contract, and parentEntities naming canonical entities actually linked in relationships. Do not rename core entities or omit a requested workflow to avoid a supporting table.\n\nFormat: {"invariants":["..."],"tables":[{"name":"canonical_entity","purpose":"...","fields":["id uuid PK"],"constraints":[],"relationships":[]}],"mermaid":"erDiagram\\n..."}`,
+      `Product context: ${sharedContext}\n\nKamu adalah database architect. Buat database schema yang sesuai seluruh kemampuan produk di context.\n${styleRule} Jelaskan tabel utama, kolom dan tipe, PK/FK/UNIQUE/INDEX yang diperlukan, serta keputusan penyimpanan yang tidak jelas dari brief sebagai asumsi. Show the data-level invariant behind each requested concurrency guarantee, callback idempotency, authorization boundary, and timezone rule; a generic claim is insufficient. For concurrent bookings, persist hold owner and expiry, then reject collisions with a database-enforced active-slot rule. With PostgreSQL and overlapping intervals, write an explicit EXCLUDE USING gist constraint on court/resource ID and tstzrange(start,end) WHERE status IN active booking states; alternatively describe an atomic conditional UPDATE of a canonical slot row that checks status and verifies one affected row. A plain lookup followed by insert is not safe. If the user gave no hold duration, make it configurable and do not invent a number. For payment callbacks, persist a UNIQUE provider_event_id or a durable atomic payment-state guard, including late settlement after a hold expires. State how time is stored and displayed, and where ownership policies are enforced. Keep schema names and state names consistent with flows. Identifikasi hot path. Return the ERD separately in mermaid, without fences. Keep every canonical core entity. Additional technical support tables (outbox, notification dispatch, event deduplication) are allowed ONLY as explicit implementation proposals with supporting:true, requirementIds from the contract, and parentEntities naming canonical entities actually linked in relationships. Do not rename core entities or omit a requested workflow to avoid a supporting table.\n\nFormat: {"invariants":["..."],"tables":[{"name":"canonical_entity","purpose":"...","fields":["id uuid PK"],"constraints":[],"relationships":[],"supporting":false,"requirementIds":["R01"],"parentEntities":[]}],"mermaid":"erDiagram\\n..."}`,
       usage,
       { stage: "database", providers, validate: (draft) => [
         ...validateTechnicalClaims(draft.database_schema),
@@ -1004,11 +1005,18 @@ export async function generateTasksForFeature(
   const ideaBlock = ideas && ideas.length > 0
     ? `\nREFERENSI WAJIB — IDE TAMBAHAN DARI USER (baca semua; jika relevan dengan fitur ini, pastikan ada task yang mengakomodasinya):\n${ideas.map((i, n) => `${n + 1}. "${i.text}"${i.featureTitle ? ` (sudah punya fase: ${i.featureTitle})` : ""}`).join("\n")}\n`
     : "";
+  const targets = subFeatures.map((title, index) => ({
+    ...context?.subFeatures?.find(sub => sub.title === title), title, id: `S${String(index + 1).padStart(2, "0")}`,
+  }));
+  const targetTitles = new Map(targets.map(target => [target.id, target.title]));
   const result = await callLlm(
     stage3Schema,
-    `Product context: ${JSON.stringify({ brief, productSpec: scopedSpec, requirementIds: context?.requirementIds, featureTitle, featureDescription: context?.featureDescription, featureGoal: context?.featureGoal, featureCriteria: context?.featureCriteria, subFeatures: context?.subFeatures ?? subFeatures.map((title) => ({ title })), requirements: scopedSpec ? undefined : context?.requirements, stack: context?.stack })}\n${ideaBlock}\nKamu adalah tech lead senior. Buat task untuk fitur ini saja dengan pendekatan kritis:\n${styleRule}\n1. ${taskBudgetRule} Tiap task harus spesifik dan menelusur ke tujuan serta kriteria selesai subfitur yang bersangkutan.${reservedQa ? ` Four ${QA_COPY[handoff.language].subFeature} tasks are added by the server afterward; do not count them in this response.` : ""}\n2. Setiap sub-fitur harus mendapat minimal satu task yang relevan.\n3. Tiap judul task maksimal 60 karakter, diawali kata kerja, tanpa mengulang nama fitur.\n4. Sertakan validasi, error path, integrasi dan pengujian yang relevan, tanpa task generik yang hanya mengisi jumlah.\n5. Beri SETIAP task id unik berurutan: t1, t2, t3, dst.\n6. Dependency hanya merujuk task dalam daftar ini yang harus selesai lebih dulu, tanpa siklus. Task paralel memakai deps [].\n7. Urutan logis layer: frontend -> backend -> qa.\n8. Every task MUST include detail: {objective,requirementIds,deliverables,acceptanceCriteria,tests:[{scenario,action,expected}],prerequisiteRequirementIds}. Keep detail concise, at most 3 items per list. Every owned requirement needs implementation and its required verification scenarios across these tasks. prerequisiteRequirementIds may ONLY contain dependsOn IDs declared for those requirements in the canonical contract; do not add out-of-scope requirements. Unknown numeric policies stay open. Test inputs may use explicitly labelled fixture values; never promote fixture durations or computed example percentages into acceptance policy defaults.\n9. Setiap task wajib field: id, sub_feature (judul sub-fitur persis dari daftar), title, layer (frontend/backend/qa), phase, page (null atau path), deps (array id). JANGAN tulis field feature.\n\nFormat: {"tasks":[{"id":"t1","sub_feature":"${subFeatures[0] ?? "..."}","title":"...","layer":"frontend","phase":${featureIndex + 1},"page":null,"deps":[],"detail":{"objective":"observable product outcome","requirementIds":["R01"],"deliverables":["concrete implementation artifact"],"acceptanceCriteria":["observable behavior under a named trigger"],"tests":[{"scenario":"success","action":"specific user action or input","expected":"concrete observable result"}],"prerequisiteRequirementIds":[]}}]}`,
+    `Product context: ${JSON.stringify({ brief, productSpec: scopedSpec, requirementIds: context?.requirementIds, featureTitle, featureDescription: context?.featureDescription, featureGoal: context?.featureGoal, featureCriteria: context?.featureCriteria, subFeatures: targets, requirements: scopedSpec ? undefined : context?.requirements, stack: context?.stack })}\n${ideaBlock}\nKamu adalah tech lead senior. Buat task untuk fitur ini saja dengan pendekatan kritis:\n${styleRule}\n1. ${taskBudgetRule} Tiap task harus spesifik dan menelusur ke tujuan serta kriteria selesai subfitur yang bersangkutan.${reservedQa ? ` Four ${QA_COPY[handoff.language].subFeature} tasks are added by the server afterward; do not count them in this response.` : ""}\n2. Setiap sub-fitur harus mendapat minimal satu task yang relevan.\n3. Tiap judul task maksimal 60 karakter, diawali kata kerja, tanpa mengulang nama fitur.\n4. Sertakan validasi, error path, integrasi dan pengujian yang relevan, tanpa task generik yang hanya mengisi jumlah.\n5. Beri SETIAP task id unik berurutan: t1, t2, t3, dst.\n6. Dependency hanya merujuk task dalam daftar ini yang harus selesai lebih dulu, tanpa siklus. Task paralel memakai deps [].\n7. Urutan logis layer: frontend -> backend -> qa.\n8. Every task MUST include detail: {objective,requirementIds,deliverables,acceptanceCriteria,tests:[{scenario,action,expected}],prerequisiteRequirementIds}. Keep detail concise, at most 3 items per list. Every owned requirement needs implementation and its required verification scenarios across these tasks. prerequisiteRequirementIds may ONLY contain dependsOn IDs declared for those requirements in the canonical contract; do not add out-of-scope requirements. Unknown numeric policies stay open. Test inputs may use explicitly labelled fixture values; never promote fixture durations or computed example percentages into acceptance policy defaults.\n9. Setiap task wajib field: id, sub_feature (stable ID S01, S02, etc. from the supplied subfeature list; never invent or skip an ID), title, layer (frontend/backend/qa), phase, page (null atau path), deps (array id). JANGAN tulis field feature.\n\nFormat: {"tasks":[{"id":"t1","sub_feature":"S01","title":"...","layer":"frontend","phase":${featureIndex + 1},"page":null,"deps":[],"detail":{"objective":"observable product outcome","requirementIds":["R01"],"deliverables":["concrete implementation artifact"],"acceptanceCriteria":["observable behavior under a named trigger"],"tests":[{"scenario":"success","action":"specific user action or input","expected":"concrete observable result"}],"prerequisiteRequirementIds":[]}}]}`,
     usage,
-    { stage: "tasks", validate: (draft) => [...validateTaskTechnicalClaims(draft.tasks), ...validateTaskDraft(draft.tasks, subFeatures, tier, { reservedQa }), ...validateTaskDetails(draft.tasks, context?.productSpec, context?.requirementIds), ...validateContractText(draft.tasks.flatMap(task => [task.title, ...(task.detail ? [task.detail.objective, ...task.detail.acceptanceCriteria] : [])]), productEvidenceSource(brief, context?.productSpec))] },
+    { stage: "tasks", validate: (draft) => {
+      for (const task of draft.tasks) task.sub_feature = targetTitles.get(task.sub_feature) ?? task.sub_feature;
+      return [...validateTaskTechnicalClaims(draft.tasks), ...validateTaskDraft(draft.tasks, subFeatures, tier, { reservedQa }), ...validateTaskDetails(draft.tasks, context?.productSpec, context?.requirementIds), ...validateContractText(draft.tasks.flatMap(task => [task.title, ...(task.detail ? [task.detail.objective, ...task.detail.acceptanceCriteria] : [])]), productEvidenceSource(brief, context?.productSpec))];
+    } },
   );
   // Enforce keras: potong task berlebih dari LLM ke budget maksimum.
   return { tasks: trimToMax(result.tasks, maxTasks), usage };

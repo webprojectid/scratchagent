@@ -69,13 +69,18 @@ export function normalizeGenerationOutput(stage: string, input: unknown): unknow
       const fields = record(table.fields)
         ? Object.entries(table.fields).map(([name, definition]) => typeof definition === 'string' ? `${name} ${definition}` : record(definition) ? column({ ...definition, name }) : definition)
         : Array.isArray(table.fields) ? table.fields.map(column) : table.fields;
-      return { ...table, fields, requirementIds: table.requirementIds ?? table.requirement_ids, parentEntities: table.parentEntities ?? table.parent_entities };
+      const list = (item: unknown) => typeof item === 'string' ? [item] : item;
+      return { ...table, fields,
+        supporting: table.supporting === 'true' ? true : table.supporting === 'false' ? false : table.supporting,
+        requirementIds: list(table.requirementIds ?? table.requirement_ids),
+        parentEntities: list(table.parentEntities ?? table.parent_entities),
+      };
     });
   }
   if (stage === 'tasks' && Array.isArray(value.tasks)) {
     value.tasks = value.tasks.map(task => record(task) ? {
       ...task,
-      sub_feature: task.sub_feature ?? task.subFeature,
+      sub_feature: task.sub_feature_id ?? task.sub_feature ?? task.subFeature,
       deps: task.deps ?? task.dependencies,
       phase: typeof task.phase === 'string' && /^\d+$/.test(task.phase) ? Number(task.phase) : task.phase,
     } : task);

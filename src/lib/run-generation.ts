@@ -31,7 +31,7 @@ export interface GenerationJob {
   ip?: string;
 }
 
-/** One saved section per invocation; authenticated progress polling resumes it. */
+/** One bounded wave per invocation; polling resumes saved work. */
 export async function scheduleGeneration(job: GenerationJob, tryNo = 1): Promise<boolean> {
   if (!canResumeGeneration((await getGenerationWork(job.planId))?.failure)) return false;
   const lease = await claimGeneration(job.planId, "structure", 200);
@@ -56,6 +56,7 @@ export async function scheduleGeneration(job: GenerationJob, tryNo = 1): Promise
     after(async () => {
       let receipt = job.receipt;
       let loaded = false;
+      let acceptedBefore = 0;
       try {
         const plan = await getPlan(job.planId);
         if (!plan || plan.status !== "generating" || plan.features.length) return;
@@ -72,8 +73,9 @@ export async function scheduleGeneration(job: GenerationJob, tryNo = 1): Promise
         };
         if (!saved) await persist(checkpoint);
         const completedBefore = Object.keys(checkpoint.entries).length;
+        acceptedBefore = completedBefore;
         const slice = await runGenerationSlice(checkpoint, persist, () =>
-          generatePlanStructure(job.brief, job.techPrefs, job.answers, job.tier, job.handoff));
+          generatePlanStructure(job.brief, job.techPrefs, job.answers, job.tier, job.handoff), { concurrency: 3 });
         if (!slice.done) {
           if (Object.keys(checkpoint.entries).length > completedBefore) {
             await withGenerationLease(job.planId, "structure", lease, async () => {
@@ -117,7 +119,8 @@ export async function scheduleGeneration(job: GenerationJob, tryNo = 1): Promise
         if (loaded) await withGenerationLease(job.planId, "structure", lease, async () => {
           const work = await getGenerationWork(job.planId);
           if (!work) return;
-          const failure = nextGenerationFailure(work.failure);
+          const madeProgress = Object.keys(work.checkpoint.entries).length > acceptedBefore;
+          const failure = nextGenerationFailure(madeProgress ? undefined : work.failure);
           if (error instanceof GenerationOutputRejected) {
             failure.paused = true;
             failure.message = `The ${error.stage} section needs correction. Accepted sections are saved and allowance restored.`;

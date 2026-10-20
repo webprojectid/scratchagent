@@ -124,6 +124,14 @@ function numericClaims(value: string): NumericClaim[] {
     claims.push({ raw: match[0], key: "always-on:24x7", topic: claimTopic(value, match.index ?? 0, match[0].length), index: match.index ?? 0 });
   }
   for (const match of value.matchAll(WORD_TIME)) {
+    // Distinguish ordinal noun phrases ("a second active booking") from time.
+    if (/^second$/i.test(match[2])) {
+      const after = value.slice(match.index + match[0].length);
+      const before = value.slice(Math.max(0, match.index - 60), match.index);
+      if (/^\s+(?!(?:later|earlier|elapsed|of|after|before|per|for|from|to|or|and)\b)[a-z]+\b/i.test(after)) continue;
+      if (/^a$/i.test(match[1]) && !/\b(?:within|under|after|before|in|wait|waits|takes?|lasts?|every|per)\s*$/i.test(before)
+        && !/\b(?:latency|timeout|delay|duration|response time)\b.{0,30}$/i.test(before) && !/^\s+(?:later|earlier|elapsed)\b/i.test(after)) continue;
+    }
     claims.push({ raw: match[0], key: numericKey(String(TIME_NUMBER_WORDS[match[1].toLowerCase()]), match[2]), topic: claimTopic(value, match.index, match[0].length), index: match.index });
   }
   for (const match of value.matchAll(/\bse(detik|menit|jam|hari|minggu|bulan|tahun)\b/gi)) {

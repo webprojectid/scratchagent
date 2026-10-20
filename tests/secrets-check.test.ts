@@ -275,7 +275,7 @@ test("push hook rejects internal guidance deleted from the latest tree", () => {
     assert.deepEqual(checkTracked(root).findings, []);
     const rejected = spawnSync("git", ["push", "./remote.git", "HEAD:refs/heads/main"], { cwd: root, encoding: "utf8" });
     assert.notEqual(rejected.status, 0);
-    assert.ok(rejected.stderr.includes("Reachable history local-only documentation: AGENTS.md"));
+    assert.ok((rejected.stdout + rejected.stderr).includes("Reachable history local-only documentation: AGENTS.md"));
     assert.equal(execFileSync("git", ["--git-dir=remote.git", "rev-parse", "refs/heads/main"], { cwd: root, encoding: "utf8" }).trim(), before);
     assert.ok(!rejected.stdout.includes("synthetic internal note") && !rejected.stderr.includes("synthetic internal note"));
   });

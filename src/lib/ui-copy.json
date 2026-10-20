@@ -808,6 +808,7 @@
  ["Detail proyek belum bisa dibuka. Periksa koneksi dan izinkan penyimpanan browser, lalu coba lagi.","Project details could not be opened. Check your connection, allow browser storage, and try again."],
  ["Jawaban belum tersimpan. Izinkan penyimpanan browser, lalu coba lagi.","Your answers were not saved. Allow browser storage and try again."],
  ["Generate gagal di tengah jalan. Kuota sudah dikembalikan — silakan coba lagi.","Generation stopped before completion. Your allowance was restored. Please try again."],
+ ["Pembuatan terhenti. Bagian yang selesai tersimpan dan kuota sudah dikembalikan.","Generation paused. Completed sections are saved and your allowance was restored."],
  ["Gagal memuat daftar akun","Accounts could not be loaded"],
  ["Gagal memuat detail akun","Account details could not be loaded"],
  ["Simulasi berhasil. Akun asli tidak berubah.","Simulation complete. Actual accounts are unchanged."],

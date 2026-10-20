@@ -64,4 +64,11 @@ test('shared references defer to one dedicated owner without hiding ambiguous ow
   assert.deepEqual(ambiguous, [{ requirement_ids: ['R01'] }, { requirement_ids: ['R01'] }]);
 });
 
+test('supporting table aliases retain exact parent and requirement metadata', () => {
+  const result = normalizeGenerationOutput('database', { tables: [{ name: 'record_events', fields: [], supporting: 'true', requirement_ids: 'R01', parent_entities: 'records', relationships: ['record_events.record_id references records.id'] }] }) as {tables:{supporting:boolean;requirementIds:string[];parentEntities:string[]}[]};
+  assert.deepEqual(result.tables[0].requirementIds, ['R01']);
+  assert.deepEqual(result.tables[0].parentEntities, ['records']);
+  assert.equal(result.tables[0].supporting, true);
+});
+
 

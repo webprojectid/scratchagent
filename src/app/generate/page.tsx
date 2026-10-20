@@ -75,7 +75,7 @@ export default function Generate() {
         pollFailures = 0;
         if (pj.generationFailure?.paused) {
           cleanup();
-          setError(ui("Generation paused after repeated provider failures. Your allowance was restored. Please try again."));
+          setError(ui("Pembuatan terhenti. Bagian yang selesai tersimpan dan kuota sudah dikembalikan."));
           return;
         }
         const activeStage = pj.generationProgress?.activeStage as string | null | undefined;

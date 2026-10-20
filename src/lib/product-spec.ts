@@ -159,9 +159,16 @@ export function canonicalSchemaIssues(tables: { name: string; fields: string[]; 
 
 export function schemaEntityIssues(tables: { name: string; supporting?: boolean; requirementIds?: string[]; parentEntities?: string[]; relationships: string[] }[], spec: ProductSpec): string[] {
   const issues = spec.entities.filter(entity => !tables.some(table => table.name === entity.name)).map(entity => `Canonical table ${entity.name} is missing`);
-  for (const table of tables.filter(table => !spec.entities.some(entity => entity.name === table.name))) {
-    const grounded = table.supporting && !!table.requirementIds?.length && table.requirementIds.every(id => spec.requirements.some(r => r.id === id)) && !!table.parentEntities?.length && table.parentEntities.every(name => spec.entities.some(e => e.name === name) && table.relationships.some(link => new RegExp(`\\b${name}\\b`).test(link)));
-    if (!grounded) issues.push(`Table ${table.name} must use a canonical name OR be an explicit supporting implementation proposal: supporting:true, requirementIds from the requested workflow, parentEntities referencing canonical entities with stated relationships. Preserve existing valid hold expiry and ownership fields.`);
+  for (const [index, table] of tables.entries()) {
+    if (spec.entities.some(entity => entity.name === table.name)) continue;
+    const path = `/tables/${index}`;
+    if (!table.supporting) issues.push(`${path}/supporting: set true to label ${table.name} as an implementation proposal; preserve core entities and valid fields.`);
+    if (!table.requirementIds?.length || table.requirementIds.some(id => !spec.requirements.some(r => r.id === id))) issues.push(`${path}/requirementIds: supply the existing requirement IDs this table supports, chosen from ${spec.requirements.map(r => r.id).join(", ")}.`);
+    if (!table.parentEntities?.length || table.parentEntities.some(name => !spec.entities.some(e => e.name === name))) issues.push(`${path}/parentEntities: supply canonical parent names chosen from ${spec.entities.map(e => e.name).join(", ")}; each parent needs a stated relationship.`);
+    for (const parent of table.parentEntities ?? []) {
+      const escaped = parent.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      if (!table.relationships.some(link => new RegExp(`\\b${escaped}\\b`, "i").test(link))) issues.push(`${path}/relationships: state how ${table.name} links to canonical parent ${parent}.`);
+    }
   }
   return issues;
 }

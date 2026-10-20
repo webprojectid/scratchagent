@@ -83,7 +83,7 @@ function stageOf(systemPrompt: string): Stage {
   return "requirements";
 }
 
-function fixture(tier: "free" | "pro", underfillFirstPhase = false, architecture = architectureFixture, invalidTypes = false) {
+function fixture(tier: "free" | "pro", underfillFirstPhase = false, architecture = architectureFixture, invalidTypes = false, invalidReviewPaths = false) {
   const calls: Call[] = [];
   const featureCount = limits.structureLimits(tier).features[0];
   const goodFeatures = Array.from({ length: featureCount }, (_, index) => ({
@@ -98,7 +98,9 @@ function fixture(tier: "free" | "pro", underfillFirstPhase = false, architecture
 
   function responseFor(call: Call) {
     switch (call.stage) {
-      case "review": return { corrections: [] };
+      case "review": return { corrections: invalidReviewPaths && calls.filter(item => item.stage === 'review').length < 3
+        ? [{ section: 'database', path: '/tables/0/constraints/99', value: 'UNIQUE event_id', reason: 'Synthetic nonexistent path for bounded repair' }]
+        : [] };
       case "discovery":
         return { problem: "Pengguna membutuhkan ruang kerja tersimpan", audiences: ["Pemilik akun"], outcomes: ["Perubahan dapat dibuka kembali"], requirements: goodFeatures.map((f, i) => ({ id: f.requirement_ids[0], statement: description(i), sourceQuote: "Kelola akun", priority: "must", verification: ["success", "failure"], dependsOn: [] })), decisions: [], entities: ["accounts", "workspaces", "workspace_sections"].map(name => ({ name, fields: ["id"] })), states: [], outOfScope: [], metrics: [{ name: "Keberhasilan simpan", definition: "Rasio simpan berhasil terhadap percobaan", measurement: "Periksa event simpan", target: "Konfirmasi baseline dan target" }], risks: [{ risk: "Perubahan bersamaan", mitigation: "Periksa versi sebelum simpan", owner: "Backend lead" }], rollout: { stages: ["Uji pengguna pilot"], releaseChecks: ["Periksa versi saat perubahan bersamaan"], rollback: ["Batasi perubahan baru saat pemulihan"] } };
       case "outline":
@@ -161,13 +163,13 @@ function fixture(tier: "free" | "pro", underfillFirstPhase = false, architecture
       case "tasks": {
         const contextMatch = call.userPrompt.match(/Product context: (\{[^\n]+\})/);
         assert.ok(contextMatch, "prompt task memuat konteks fitur");
-        const context = JSON.parse(contextMatch[1]) as { subFeatures: { title: string }[] };
+        const context = JSON.parse(contextMatch[1]) as { subFeatures: { title: string; id?: string }[] };
         const subTitles = context.subFeatures.map((sub) => sub.title);
         const fullCount = Math.max(subTitles.length, limits.structureLimits(tier).tasks[0] - 4);
         const count = call.model === "mistral" && tier === "free" ? fullCount - 1 : fullCount;
         return { tasks: Array.from({ length: count }, (_, index) => ({
           id: `t${index + 1}`,
-          sub_feature: subTitles[index % subTitles.length],
+          sub_feature: context.subFeatures[index % subTitles.length].id ?? subTitles[index % subTitles.length],
           title: call.model === "mistral" ? "Buat fitur" : `Bangun validasi langkah ${index + 1} untuk akun pengguna`,
           layer: "backend",
           phase: featureCount,
@@ -227,6 +229,7 @@ function fixture(tier: "free" | "pro", underfillFirstPhase = false, architecture
     process: { env: {} },
     console: { log() {}, warn() {}, error() {} },
     Response,
+    Error,
     AbortController,
     setTimeout,
     clearTimeout,
@@ -255,6 +258,18 @@ test("a repair receives the rejected draft and exact field feedback instead of g
   assert.match(repair.userPrompt, /<rejected-draft>/);
   assert.match(repair.userPrompt, /Assumption fixture/);
   assert.match(repair.userPrompt, /preserve unaffected/i);
+});
+
+test("review path errors receive precise feedback and two bounded repairs without restarting accepted sections", async () => {
+  const run = fixture('free', false, architectureFixture, false, true);
+  const plan = await run.generate.generatePlanStructure('Kelola akun dan ruang kerja.', {mode:'auto'}, [], 'free');
+  const reviews = run.calls.filter(call => call.stage === 'review');
+  assert.equal(reviews.length, 3);
+  assert.match(reviews[1].userPrompt, /replacement target does not exist/);
+  assert.match(reviews[1].userPrompt, /full corrections object/);
+  assert.match(reviews[1].userPrompt, /not to the previous corrections array/);
+  assert.equal(run.calls.filter(call => call.stage === 'database').length, 1);
+  assert.ok(plan.features.length > 0);
 });
 
 test("Pro structure survives serialized resumptions without repeating accepted sections", async () => {

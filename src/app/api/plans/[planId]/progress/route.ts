@@ -8,7 +8,7 @@ import { allTasks, getPlan } from "@/lib/storage";
 import { getProgressRevision, type ProgressRevision } from "@/lib/plan-progress";
 import { RATE_LIMITS, clientKey, getClientIp, rateLimit, rateLimitedResponse } from "@/lib/security";
 
-// Each request can resume one persisted structure section in after().
+// Each request can resume a bounded wave of saved structure work in after().
 export const maxDuration = 300;
 
 export async function GET(request: Request, { params }: { params: Promise<{ planId: string }> }) {

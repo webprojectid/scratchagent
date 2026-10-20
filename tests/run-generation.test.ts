@@ -21,6 +21,7 @@ function scheduler(fail: boolean | Error = false, ownsLease = true, registration
     "./generation-lease": { claimGeneration: async () => "lease", releaseGeneration: record("release"), withGenerationLease: async (_plan: string, _stage: string, _token: string, action: () => Promise<void>) => ownsLease ? action() : null, reserveGenerationAttempt: async () => true },
     "next/server": { after: (callback: () => Promise<void>) => { if (registrationFails) throw new Error("Fixture scheduling failure"); work = callback; } },
     "./generate": { generatePlanStructure: async () => {
+      if (split && fail) await checkpoints.checkpointedSection('outline', 'outline', undefined, async () => 'saved');
       if (fail) throw fail instanceof Error ? fail : new Error("Fixture failure");
       if (split) for (const section of ["outline", "requirements"]) await checkpoints.checkpointedSection(section, section, undefined, async () => section);
       return { title: "Fixture", stack: [], features: [], usage: { tokensIn: 2, tokensOut: 3 } };
@@ -65,6 +66,19 @@ test("a successful section resets prior provider failures before the next sectio
   await fixture.schedule(job); await fixture.run();
   assert.equal((fixture.savedWork() as { failure?: unknown }).failure, undefined);
   assert.equal(fixture.calls.some(call => call.kind === "refund"), false);
+});
+
+test("a wave that saves a peer resets old failures before counting a new transient error", async () => {
+  const fixture = scheduler(new Error('Transient peer error'), true, false, true, false, {
+    checkpoint: checkpoints.emptyGenerationCheckpoint(), receipt: job.receipt,
+    failure: { attempts: 2, paused: false, retryAt: 0, message: 'Earlier network failures' },
+  });
+  await fixture.schedule(job); await fixture.run();
+  const saved = fixture.savedWork() as {failure:recovery.GenerationFailure;checkpoint:checkpoints.GenerationCheckpoint};
+  assert.equal(Object.keys(saved.checkpoint.entries).length, 1);
+  assert.equal(saved.failure.attempts, 1);
+  assert.equal(saved.failure.paused, false);
+  assert.equal(fixture.calls.some(call => call.kind === 'refund'), false);
 });
 
 test("successful background generation preserves owner and finalizes quota once", async () => {
