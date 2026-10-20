@@ -161,6 +161,6 @@ if (process.argv[1] && pathToFileURL(path.resolve(process.argv[1])).href === imp
     process.exitCode = result.findings.length ? 1 : 0;
   } catch {
     console.error("Credential scan failed to inspect the repository. No credential values are printed.");
-    process.exitCode = 1;
+    process.exitCode = 2;
   }
 }

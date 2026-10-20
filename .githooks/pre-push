@@ -1,5 +1,40 @@
 #!/bin/sh
 set -eu
 cd "$(git rev-parse --show-toplevel)"
-node scripts/check-secrets.mjs
-node scripts/check-secrets.mjs --history --push
+
+# Git sends the ref updates on stdin, so save them before running both scans.
+updates=$(cat)
+set +e
+tracked_report=$(node scripts/check-secrets.mjs 2>&1)
+tracked_status=$?
+history_report=$(printf '%s\n' "$updates" | node scripts/check-secrets.mjs --history --push 2>&1)
+history_status=$?
+set -e
+
+printf '%s\n' "$tracked_report"
+printf '%s\n' "$history_report"
+
+# Exit code 2 means the scanner itself failed. Never let confirmation bypass
+# a scan that did not complete successfully.
+if [ "$tracked_status" -gt 1 ] || [ "$history_status" -gt 1 ]; then
+  echo "Push blocked: a security scan could not finish." >&2
+  exit 1
+fi
+
+has_findings=0
+if [ "$tracked_status" -eq 1 ] || [ "$history_status" -eq 1 ]; then
+  has_findings=1
+fi
+
+if [ "$has_findings" -eq 1 ]; then
+  if [ ! -r /dev/tty ]; then
+    echo "Push blocked: findings require an interactive YES confirmation." >&2
+    exit 1
+  fi
+  printf '\nThe scan found items that may be published. Review the file names above. Values are never shown.\nType YES to push anyway, or anything else to cancel: ' > /dev/tty
+  IFS= read -r answer < /dev/tty || exit 1
+  case "$answer" in
+    YES|yes|Yes) ;;
+    *) echo "Push cancelled." >&2; exit 1 ;;
+  esac
+fi
