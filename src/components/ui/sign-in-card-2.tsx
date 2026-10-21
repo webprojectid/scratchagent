@@ -187,8 +187,7 @@ export function SignInCard2() {
             setError(en ? "Wrong email or password." : "Email atau password salah.");
             return;
           }
-          refreshCurrentUser();
-          router.push("/new");
+          router.replace("/auth/complete");
           return;
         }
 

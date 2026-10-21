@@ -59,8 +59,12 @@ test("social OTP is six digits, one-time, session-bound and throttles concurrent
     assert.equal(socialOtpRequired("github", ["oauth"]), true);
     assert.equal(socialOtpRequired("google", ["oauth_provider/authorization_code"]), true);
     assert.equal(socialOtpRequired("google", ["unrecognized-method"]), true);
-    assert.equal(socialOtpRequired("google", ["password"]), false);
-    assert.equal(socialOtpRequired("email", [{ method: "password" }]), false);
+    assert.equal(socialOtpRequired("google", ["password"]), true);
+    assert.equal(socialOtpRequired("email", [{ method: "password" }]), true);
+    assert.equal(socialOtpRequired("email", []), true);
+    assert.equal(socialOtpRequired("email", [{ method: "otp" }]), false);
+    assert.equal(socialOtpRequired("email", [{ method: "recovery" }]), false);
+    assert.equal(socialOtpRequired("email", ["password", "recovery"]), false);
     const identity: SocialIdentity = { authUserId: randomUUID(), sessionId: randomUUID(), email: "synthetic@example.test", required: true };
     let code = "", sends = 0;
     const sender: typeof sendTransactionalEmail = async (to, content) => { assert.equal(to, identity.email); code = content.text.match(/\b\d{6}\b/)![0]; sends++; return "synthetic-message"; };
@@ -83,6 +87,36 @@ test("social OTP is six digits, one-time, session-bound and throttles concurrent
     assert.equal(await verifySocialCode(failed, code), false);
   } finally {
     for (const [name, value] of [["EMAIL_OTP_SECRET", oldSecret], ["DATABASE_URL", oldDb], ["SOCIAL_EMAIL_OTP_REQUIRED", oldEnabled]]) { if (value === undefined) delete process.env[name!]; else process.env[name!] = value; }
+  }
+});
+
+test("reopening verification preserves an unexpired code; explicit resend alone rotates it", async t => {
+  const previous = { secret: process.env.EMAIL_OTP_SECRET, database: process.env.DATABASE_URL };
+  delete process.env.DATABASE_URL;
+  process.env.EMAIL_OTP_SECRET = randomUUID() + randomUUID();
+  t.mock.timers.enable({ apis: ["Date"], now: new Date("2026-10-21T10:00:00Z").getTime() });
+  try {
+    const identity: SocialIdentity = { authUserId: randomUUID(), sessionId: randomUUID(), email: "synthetic-reload@example.test", required: true };
+    let code = "", sends = 0;
+    const sender: typeof sendTransactionalEmail = async (_to, content) => { code = content.text.match(/\b\d{6}\b/)![0]; sends++; return "synthetic-id"; };
+    await issueSocialCode(identity, "en", sender);
+    const original = code;
+    t.mock.timers.tick(61_000);
+    await issueSocialCode(identity, "en", sender);
+    assert.equal(sends, 1);
+    assert.equal(await verifySocialCode(identity, original), true);
+    const another = { ...identity, sessionId: randomUUID() };
+    await issueSocialCode(another, "en", sender);
+    await issueSocialCode(another, "en", sender, true);
+    assert.equal(sends, 2);
+    t.mock.timers.tick(61_000);
+    await issueSocialCode(another, "en", sender, true);
+    assert.equal(sends, 3);
+    assert.equal(await verifySocialCode(another, code), true);
+  } finally {
+    t.mock.timers.reset();
+    if (previous.secret === undefined) delete process.env.EMAIL_OTP_SECRET; else process.env.EMAIL_OTP_SECRET = previous.secret;
+    if (previous.database === undefined) delete process.env.DATABASE_URL; else process.env.DATABASE_URL = previous.database;
   }
 });
 

@@ -13,9 +13,11 @@ let memoryLock = Promise.resolve();
 export function socialOtpRequired(provider: unknown, amr: unknown): boolean {
   if (process.env.SOCIAL_EMAIL_OTP_REQUIRED !== "1") return false;
   const methods = Array.isArray(amr) ? amr.flatMap(item => typeof item === "string" ? [item] : item && typeof item.method === "string" ? [item.method] : []) : [];
+  if (methods.includes("recovery")) return false;
+  if (methods.includes("password")) return true;
   if (methods.includes("oauth") || methods.includes("oauth_provider/authorization_code")) return true;
-  const emailLogin = methods.some(method => ["password", "otp", "recovery", "magiclink", "email/signup"].includes(method));
-  return !emailLogin && (provider === "google" || provider === "github");
+  const emailLogin = methods.some(method => ["otp", "magiclink", "email/signup"].includes(method));
+  return !emailLogin && (provider === "google" || provider === "github" || provider === "email");
 }
 
 export function hashLoginCode(identity: Pick<SocialIdentity, "sessionId" | "authUserId">, nonce: string, code: string): string {
@@ -61,7 +63,7 @@ export async function isSocialSessionVerified(identity: SocialIdentity): Promise
   return result.rows.length > 0;
 }
 
-export async function issueSocialCode(identity: SocialIdentity, language: EmailLanguage, send = sendTransactionalEmail): Promise<{ verified: boolean; retryAfter: number }> {
+export async function issueSocialCode(identity: SocialIdentity, language: EmailLanguage, send = sendTransactionalEmail, resend = false): Promise<{ verified: boolean; retryAfter: number }> {
   if (!identity.required) return { verified: true, retryAfter: 0 };
   const code = String(randomInt(0, 1_000_000)).padStart(6, "0");
   const nonce = randomUUID();
@@ -70,6 +72,9 @@ export async function issueSocialCode(identity: SocialIdentity, language: EmailL
   const issued = await locked(identity, async (row, save, limit) => {
     if (row?.verified_at) return { verified: true, retryAfter: 0 };
     const retryAfter = row ? Math.ceil((row.sent_at.getTime() + 60_000 - now.getTime()) / 1000) : 0;
+    if (!resend && row && row.attempts < 5 && row.expires_at.getTime() > now.getTime()) {
+      return { verified: false, retryAfter: Math.max(0, retryAfter) };
+    }
     if (retryAfter > 0) {
       if (row!.attempts >= 5) throw new Error("Please wait a minute before requesting another code.");
       return { verified: false, retryAfter };

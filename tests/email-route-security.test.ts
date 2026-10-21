@@ -37,7 +37,7 @@ test("OTP route denies cross-origin requests and never accepts an arbitrary reci
   const otp = route<{ POST(request: Request): Promise<Response> }>("src/app/api/auth/social-otp/route.ts", {
     "@/lib/account-api": { sameOrigin: (request: Request) => request.headers.get("origin") === "https://example.test", parseAccountBody: async (request: Request, schema: z.ZodType) => schema.parse(await request.json()) },
     "@/lib/supabase/session-identity": { getSupabaseSessionIdentity: async () => ({ identity: { authUserId: "synthetic", email: "owner@example.test", sessionId: "synthetic-session", required: true } }) },
-    "@/lib/social-email-otp": { issueSocialCode: async () => { sends++; return { verified: false, retryAfter: 60 }; } },
+    "@/lib/social-email-otp": { isSocialSessionVerified: async () => false, issueSocialCode: async () => { sends++; return { verified: false, retryAfter: 60 }; } },
     "@/lib/security": { rateLimit: () => null },
   });
   const request = (body: unknown, origin = "https://example.test") => new Request("https://example.test/api/auth/social-otp", { method: "POST", headers: { origin, "Content-Type": "application/json" }, body: JSON.stringify(body) });
@@ -46,6 +46,18 @@ test("OTP route denies cross-origin requests and never accepts an arbitrary reci
   assert.equal(sends, 0);
   assert.equal((await otp.POST(request({ action: "send", language: "en" }))).status, 200);
   assert.equal(sends, 1);
+});
+
+test("verification retry recognizes an already verified session without reusing its consumed code", async () => {
+  const otp = route<{ POST(request: Request): Promise<Response> }>("src/app/api/auth/social-otp/route.ts", {
+    "@/lib/account-api": { sameOrigin: () => true, parseAccountBody: async (request: Request, schema: z.ZodType) => schema.parse(await request.json()) },
+    "@/lib/supabase/session-identity": { getSupabaseSessionIdentity: async () => ({ identity: { authUserId: "synthetic", sessionId: "synthetic-session", required: true } }) },
+    "@/lib/social-email-otp": { isSocialSessionVerified: async () => true, verifySocialCode: async () => { throw new Error("Consumed code must not be verified again"); } },
+    "@/lib/security": { rateLimit: () => null },
+  });
+  const response = await otp.POST(new Request("https://example.test/api/auth/social-otp", { method: "POST", body: JSON.stringify({ action: "verify", code: "000000" }) }));
+  assert.equal(response.status, 200);
+  assert.equal((await response.json()).verified, true);
 });
 
 test("reset-password route rejects an ordinary session without a recovery proof", async () => {

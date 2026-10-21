@@ -6,7 +6,7 @@ import { isSocialSessionVerified, issueSocialCode, verifySocialCode } from "@/li
 import { rateLimit } from "@/lib/security";
 
 export const runtime = "nodejs";
-const inputSchema = z.discriminatedUnion("action", [z.object({ action: z.literal("send"), language: z.enum(["en", "id"]).default("en") }).strict(), z.object({ action: z.literal("verify"), code: z.string().regex(/^\d{6}$/) }).strict()]);
+const inputSchema = z.discriminatedUnion("action", [z.object({ action: z.literal("send"), language: z.enum(["en", "id"]).default("en"), resend: z.boolean().default(false) }).strict(), z.object({ action: z.literal("verify"), code: z.string().regex(/^\d{6}$/) }).strict()]);
 const noStore = { "Cache-Control": "private, no-store" };
 
 export async function GET() {
@@ -24,7 +24,8 @@ export async function POST(request: Request) {
     if (!session) return NextResponse.json({ error: "Please sign in again." }, { status: 401 });
     const input = await parseAccountBody(request, inputSchema);
     if (rateLimit(`social-otp:${session.identity.sessionId}`, 15, 60_000) !== null) return NextResponse.json({ error: "Too many attempts. Please wait a minute." }, { status: 429 });
-    if (input.action === "send") return NextResponse.json(await issueSocialCode(session.identity, input.language), { headers: noStore });
+    if (await isSocialSessionVerified(session.identity)) return NextResponse.json({ verified: true }, { headers: noStore });
+    if (input.action === "send") return NextResponse.json(await issueSocialCode(session.identity, input.language, undefined, input.resend), { headers: noStore });
     const verified = await verifySocialCode(session.identity, input.code);
     return NextResponse.json(verified ? { verified: true } : { error: "The code is invalid or expired. Request a new code and try again." }, { status: verified ? 200 : 400, headers: noStore });
   } catch (cause) {

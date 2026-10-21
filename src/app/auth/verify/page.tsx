@@ -14,7 +14,6 @@ export default function VerifySocialLogin() {
   const [busy, setBusy] = useState(false);
   const [retryAfter, setRetryAfter] = useState(0);
   const [error, setError] = useState("");
-  const [sent, setSent] = useState(false);
   useEffect(() => {
     let active = true;
     fetch("/api/auth/social-otp", { cache: "no-store" }).then(async response => {
@@ -32,14 +31,15 @@ export default function VerifySocialLogin() {
     const timer = setTimeout(() => setRetryAfter(value => Math.max(0, value - 1)), 1000);
     return () => clearTimeout(timer);
   }, [retryAfter]);
-  const send = useCallback(async () => {
+  const send = useCallback(async (resend = false) => {
     setBusy(true); setError("");
     try {
-      const response = await fetch("/api/auth/social-otp", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "send", language: en ? "en" : "id" }) });
+      const response = await fetch("/api/auth/social-otp", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "send", language: en ? "en" : "id", resend }) });
       const result = await response.json();
       if (!response.ok) throw new Error();
       if (result.verified) { refreshCurrentUser(); router.replace("/new"); return; }
-      setSent(true); setRetryAfter(result.retryAfter);
+      if (resend) setCode("");
+      setRetryAfter(result.retryAfter);
     } catch { setError(en ? "The code could not be sent. Wait a minute and try again." : "Kode belum bisa dikirim. Tunggu sebentar lalu coba lagi."); }
     finally { setBusy(false); }
   }, [en, router]);
@@ -53,9 +53,16 @@ export default function VerifySocialLogin() {
     event.preventDefault(); setBusy(true); setError("");
     try {
       const response = await fetch("/api/auth/social-otp", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "verify", code }) });
-      if (!response.ok) throw new Error();
+      if (!response.ok) {
+        setError(response.status === 400
+          ? (en ? "Use the most recent six-digit code. Codes expire after 10 minutes." : "Gunakan kode enam angka dari email terbaru. Kode kedaluwarsa setelah 10 menit.")
+          : response.status === 429
+            ? (en ? "Too many attempts. Wait a minute and try again." : "Terlalu banyak percobaan. Tunggu sebentar lalu coba lagi.")
+            : (en ? "Verification is temporarily unavailable. Please try again." : "Verifikasi sementara tidak tersedia. Coba lagi."));
+        return;
+      }
       refreshCurrentUser(); router.replace("/new");
-    } catch { setError(en ? "The code is invalid or expired. Request a new code and try again." : "Kode tidak valid atau kedaluwarsa. Minta kode baru dan coba lagi."); }
+    } catch { setError(en ? "Could not connect. Please try verifying again." : "Belum bisa terhubung. Coba verifikasi lagi."); }
     finally { setBusy(false); }
-  }}><label className="block text-sm">{en ? "Verification code" : "Kode verifikasi"}<input className="mt-2 w-full rounded-lg border border-white/20 bg-white/5 px-4 py-3 font-mono text-xl tracking-[.35em] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#74FA6A]" inputMode="numeric" autoComplete="one-time-code" maxLength={6} pattern="[0-9]{6}" required value={code} onChange={event => setCode(event.target.value.replace(/\D/g, "").slice(0, 6))}/></label>{error && <p role="alert" className="text-sm text-red-400">{error}</p>}<button className="btn w-full" disabled={busy || !sent || code.length !== 6}>{busy ? (en ? "Please wait…" : "Mohon tunggu…") : (en ? "Verify and continue" : "Verifikasi dan lanjutkan")}</button></form><button type="button" className="mt-5 min-h-11 text-sm text-white/70 disabled:opacity-40" disabled={busy || !email || retryAfter > 0} onClick={() => void send()}>{retryAfter > 0 ? (en ? `Resend in ${retryAfter}s` : `Kirim ulang dalam ${retryAfter}d`) : (en ? "Resend code" : "Kirim ulang kode")}</button><button type="button" className="mt-2 min-h-11 text-sm text-white/50" onClick={async () => { await createClient().auth.signOut({ scope: "local" }); clearCurrentUser(); router.replace("/login"); }}>{en ? "Use another account" : "Gunakan akun lain"}</button></section></Shell>;
+  }}><label className="block text-sm">{en ? "Verification code" : "Kode verifikasi"}<input className="mt-2 w-full rounded-lg border border-white/20 bg-white/5 px-4 py-3 font-mono text-xl tracking-[.35em] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#74FA6A]" inputMode="numeric" autoComplete="one-time-code" maxLength={6} pattern="[0-9]{6}" required value={code} onChange={event => setCode(event.target.value.replace(/\D/g, "").slice(0, 6))}/></label>{error && <p role="alert" className="text-sm text-red-400">{error}</p>}<button className="btn w-full" disabled={busy || !email || code.length !== 6}>{busy ? (en ? "Please wait…" : "Mohon tunggu…") : (en ? "Verify and continue" : "Verifikasi dan lanjutkan")}</button></form><button type="button" className="mt-5 min-h-11 text-sm text-white/70 disabled:opacity-40" disabled={busy || !email || retryAfter > 0} onClick={() => void send(true)}>{retryAfter > 0 ? (en ? `Resend in ${retryAfter}s` : `Kirim ulang dalam ${retryAfter}d`) : (en ? "Resend code" : "Kirim ulang kode")}</button><button type="button" className="mt-2 min-h-11 text-sm text-white/50" onClick={async () => { await createClient().auth.signOut({ scope: "local" }); clearCurrentUser(); router.replace("/login"); }}>{en ? "Use another account" : "Gunakan akun lain"}</button></section></Shell>;
 }
