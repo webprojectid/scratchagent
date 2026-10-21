@@ -15,19 +15,20 @@ test("task invocations run one batch and a later invocation resumes only missing
     "@/lib/generation-lease": { claimGeneration: async () => "lease", ownsGeneration: async () => true, releaseGeneration: async () => { releases++; } },
     "@/lib/generated-plan": { finalizeGeneratedPlan: async () => { plan.status = "ready"; } },
     "next/server": { NextResponse, after: (work: typeof background) => { background = work; } },
-    "@/lib/api-auth": { getRequestUser: async () => ({ userId: "owner" }), accessPlan: async () => ({ plan: structuredClone(plan) }) },
+    "@/lib/api-auth": { getRequestUser: async (legacyUserId?: string) => ({ userId: legacyUserId ?? "owner", email: legacyUserId, via: legacyUserId ? "legacy-dev" : "session" }), accessPlan: async () => ({ plan: structuredClone(plan) }) },
     "@/lib/storage": { getPlan: async () => structuredClone(plan) },
   };
   const fixtureModule = { exports: {} as { POST: (request: Request, context: unknown) => Promise<Response> } };
   const source = ts.transpileModule(readFileSync("src/app/api/plans/[planId]/generate-all/route.ts", "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
-  runInNewContext(source, { module: fixtureModule, exports: fixtureModule.exports, require: (name: string) => { if (!(name in mocks)) throw new Error(name); return mocks[name]; }, URL, AbortSignal, console, fetch: async (_url: string, init: RequestInit) => {
+  runInNewContext(source, { module: fixtureModule, exports: fixtureModule.exports, require: (name: string) => { if (!(name in mocks)) throw new Error(name); return mocks[name]; }, URL, AbortSignal, console, fetch: async (url: string, init: RequestInit) => {
     assert.equal((init.headers as Record<string, string>).Authorization, "Bearer fixture");
+    assert.equal(new URL(url).searchParams.get("userId"), "local@example.test");
     const index = JSON.parse(String(init.body)).featureIndex;
     requests.push(index); plan.features[index].subFeatures[0].tasks.push({ ref: `T${index}` });
     return Response.json({ ok: true });
   } });
   const invoke = async () => {
-    await fixtureModule.exports.POST(new Request("https://example.test/api/plans/fixture/generate-all", { method: "POST", headers: { Authorization: "Bearer fixture" } }), { params: Promise.resolve({ planId: "fixture" }) });
+    await fixtureModule.exports.POST(new Request("https://example.test/api/plans/fixture/generate-all?userId=local%40example.test", { method: "POST", headers: { Authorization: "Bearer fixture" } }), { params: Promise.resolve({ planId: "fixture" }) });
     assert.ok(background); await background();
   };
   await invoke(); assert.deepEqual(requests, [0, 1, 2, 3, 4, 5, 6, 7]);

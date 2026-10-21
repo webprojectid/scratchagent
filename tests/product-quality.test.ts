@@ -1,5 +1,5 @@
 import { validateTechnicalClaims } from "../src/lib/technical-claims";
-import { applyGenerationReview } from "../src/lib/generation-review";
+import { accumulateGenerationReview, applyGenerationReview } from "../src/lib/generation-review";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { extractGenerationJson, normalizeGeneratedText } from "../src/lib/generation-json";
@@ -109,18 +109,34 @@ test("repair adds missing schema metadata without overwriting facts or permittin
   ] }, previous) as {tables:{name:string;supporting:boolean}[]};
   assert.equal(repaired.tables[0].name, 'delivery_jobs');
   assert.equal(repaired.tables[0].supporting, true);
-  for (const path of ['/tables/0/name', '/tables/0', '/tables/2', '/__proto__/polluted']) assert.throws(() => mergeGenerationPatch({ patch: [{ op: 'add', path, value: 'unsafe' }] }, previous));
+  for (const path of ['/tables/0/name', '/tables/2', '/__proto__/polluted']) assert.throws(() => mergeGenerationPatch({ patch: [{ op: 'add', path, value: 'unsafe' }] }, previous));
   const appended = mergeGenerationPatch({patch:[{op:'add', path:'/tables/-', value:{name:'delivery_attempts'}}]}, previous) as {tables:{name:string}[]};
   assert.equal(appended.tables.length, 2);
   assert.equal(appended.tables[0].name, 'delivery_jobs');
   const numericAppend = mergeGenerationPatch({patch:[{op:'add', path:'/tables/1', value:{name:'delivery_attempts'}}]}, previous) as {tables:{name:string}[]};
   assert.deepEqual(numericAppend, appended);
+  const inserted = mergeGenerationPatch({ patch: [{ op: 'add', path: '/tables/0/relationships/0', value: 'delivery_jobs.payment_id references payments.id' }] }, previous) as { tables: { relationships: string[] }[] };
+  assert.deepEqual(inserted.tables[0].relationships, ['delivery_jobs.payment_id references payments.id', 'delivery_jobs.record_id references records.id']);
+  for (const index of ['-1', '2', '1.5']) assert.throws(() => mergeGenerationPatch({ patch: [{ op: 'add', path: `/tables/0/relationships/${index}`, value: 'invalid' }] }, previous));
 });
 
 test("ordinal seconds are not latency policies while actual one-second promises still fail", () => {
   assert.deepEqual(validateContractText(['Duplicate signup does not create a second account.', 'A retry never emits a second payment or a second record.', 'Reject a second active stay request.', 'Open the record in a second browser tab.'], 'Users manage accounts and payments'), []);
   assert.match(validateContractText(['Signup must complete within a second.'], 'Users manage accounts').join(' '), /Unspecified numeric policy/);
   assert.match(validateContractText(['Response latency is a second.'], 'Users manage accounts').join(' '), /Unspecified numeric policy/);
+});
+
+test("calendar controls and clock notation are not invented business durations", () => {
+  const source = "Owners configure court schedules and operating hours.";
+  for (const text of [
+    "Owners use a 24-hour time picker interface.",
+    "Selected hours display in 24 hour format such as 18:00 to 22:00.",
+    "Disables time inputs when a day toggle is turned off.",
+    "Users select a day from the calendar.",
+  ]) assert.deepEqual(validateContractText([text], source), [], text);
+  for (const text of ["Bookings expire after 24 hours.", "A hold lasts one day.", "Send a reminder a day before booking.", "The day selector responds within 300ms."]) {
+    assert.ok(validateContractText([text], source).length > 0, text);
+  }
 });
 
 test("review append corrections preserve accepted constraints and still reject replacement of unknown paths", () => {
@@ -136,6 +152,27 @@ test("review table-name selectors resolve only to one existing table", () => {
   const result = applyGenerationReview(sections, {corrections:[{section:'database', path:'/tables/records/constraints/-', value:'UNIQUE external_id', reason:'Make repeated imports idempotent'}]});
   assert.deepEqual(result.database.tables[0].constraints, ['PRIMARY KEY id', 'UNIQUE external_id']);
   assert.throws(() => applyGenerationReview(sections, {corrections:[{section:'database', path:'/tables/unknown/constraints/-', value:'UNIQUE external_id', reason:'Unknown tables must not be invented'}]}));
+});
+
+test("review repairs retain a prior appended table and can fill its empty parent array", () => {
+  const sections = { architecture: {}, database: { tables: [
+    { name: 'users', supporting: false, requirementIds: ['R01'], parentEntities: [], relationships: [] },
+    { name: 'complaints', supporting: false, requirementIds: ['R01'], parentEntities: [], relationships: [] },
+  ] }, requirements: {} };
+  const addedTable = { corrections: [{ section: 'database' as const, op: 'add' as const, path: '/tables/-', value: {
+    name: 'complaint_status_history', supporting: true, requirementIds: ['R01'], parentEntities: [],
+    relationships: ['complaint_id references complaints.id'],
+  }, reason: 'Track changes to complaint status' }] };
+  const repair = { corrections: [{ section: 'database' as const, path: '/tables/complaint_status_history/parentEntities/0', value: 'complaints',
+    reason: 'Link the history to its canonical complaint record' }] };
+  const accumulated = accumulateGenerationReview(addedTable, repair);
+  assert.equal(accumulated.corrections.length, 2);
+  const corrected = applyGenerationReview(sections, accumulated);
+  assert.deepEqual(corrected.database.tables[2].parentEntities, ['complaints']);
+  const supportingSpec = { entities: [{ name: 'users' }, { name: 'complaints' }], requirements: [{ id: 'R01' }] } as never;
+  assert.deepEqual(schemaEntityIssues(corrected.database.tables, supportingSpec), []);
+  const repeatedFullResponse = accumulateGenerationReview(addedTable, { corrections: [...addedTable.corrections, ...repair.corrections] });
+  assert.equal(repeatedFullResponse.corrections.length, 2);
 });
 
 test("review flows resolve exact requirement identity without replacing another actor workflow", () => {

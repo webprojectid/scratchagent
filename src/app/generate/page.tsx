@@ -9,7 +9,7 @@ import { Shell } from "@/components/brand";
 import { CircularCarousel, type CarouselItem } from "@/components/ui/circular-carousel";
 import { getCurrentUser } from "@/lib/current-user";
 
-const stages = [
+const indonesianStages = [
   { title: "Membaca brief", desc: "Mendeteksi domain produk & konteks awal", tag: "Brief" },
   { title: "Menyusun asumsi", desc: "Memilih stack teknologi yang relevan", tag: "Stack" },
   { title: "Daftar fitur", desc: "Membuat daftar fitur lengkap dengan prioritas", tag: "Fitur" },
@@ -22,19 +22,30 @@ const stages = [
   { title: "Tech stack", desc: "Menyiapkan deskripsi tech stack detail", tag: "Tech" },
 ];
 
-const carouselItems: CarouselItem[] = stages.map((s, i) => ({
-  id: String(i + 1),
-  title: s.title,
-  description: s.desc,
-  tag: s.tag,
-}));
+const englishStages = [
+  { title: "Reading your brief", desc: "Identifying the product domain and context", tag: "Brief" },
+  { title: "Defining assumptions", desc: "Choosing a suitable technology stack", tag: "Stack" },
+  { title: "Planning features", desc: "Listing features and their priorities", tag: "Features" },
+  { title: "Defining subfeatures", desc: "Breaking each feature into smaller parts", tag: "Detail" },
+  { title: "Priorities and phases", desc: "Ordering phases and priorities", tag: "Phases" },
+  { title: "System architecture", desc: "Designing the system architecture and diagrams", tag: "Arch" },
+  { title: "Database schema", desc: "Designing tables, relationships, and the ERD", tag: "DB" },
+  { title: "User flow", desc: "Mapping the user journey", tag: "Flow" },
+  { title: "Requirements", desc: "Defining functional and nonfunctional requirements", tag: "Spec" },
+  { title: "Tech stack", desc: "Preparing the technology stack details", tag: "Tech" },
+];
+
+async function legacyUserQuery(): Promise<string> {
+  const user = await getCurrentUser();
+  return user?.email ? `?userId=${encodeURIComponent(user.email)}` : "";
+}
 
 export default function Generate() {
   const language = useUiLanguage();
   const [step, setStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  const [elapsed, setElapsed] = useState(0);
-  const [completedSections, setCompletedSections] = useState(0);
+  const stages = language === "en" ? englishStages : indonesianStages;
+  const carouselItems: CarouselItem[] = stages.map((stage, index) => ({ id: String(index + 1), title: stage.title, description: stage.desc, tag: stage.tag }));
   const router = useRouter();
 
   useEffect(() => {
@@ -51,20 +62,18 @@ export default function Generate() {
       sessionStorage.setItem("rv_generating", "true");
     }
 
-    const elapsedTimer = setInterval(() => setElapsed((e) => e + 1), 1000);
     let pollTimer: ReturnType<typeof setTimeout> | undefined;
     let disposed = false;
     let pollFailures = 0;
     const cleanup = () => {
       sessionStorage.removeItem("rv_generating");
       sessionStorage.removeItem("rv_generation_plan_id");
-      clearInterval(elapsedTimer);
       if (pollTimer) clearTimeout(pollTimer);
     };
     const pollStructure = async (planId: string) => {
       if (disposed) return;
       try {
-        const pr = await fetch(`/api/plans/${planId}/progress`);
+        const pr = await fetch(`/api/plans/${planId}/progress${await legacyUserQuery()}`);
         if (pr.status === 404) {
           cleanup();
           setError(ui("Generate gagal di tengah jalan. Kuota sudah dikembalikan, silakan coba lagi."));
@@ -91,10 +100,9 @@ export default function Generate() {
           diagram: 6,
         };
         if (activeStage && activeStage in stageIndex) setStep(stageIndex[activeStage]);
-        setCompletedSections(pj.generationProgress?.completedCount ?? 0);
         if ((pj.features ?? []).length > 0) {
           cleanup();
-          setStep(stages.length);
+          setStep(englishStages.length);
           setTimeout(() => router.push(`/project/${planId}`), 400);
           return;
         }
@@ -113,7 +121,29 @@ export default function Generate() {
 
     if (existingPlanId) {
       pollStructure(existingPlanId);
-    } else if (!alreadyGenerating) {
+    } else if (alreadyGenerating) {
+      // In development, React Strict Mode can replay this effect while the
+      // first start request is still in flight. Wait for its plan ID instead
+      // of showing a false lost-session error or starting another request.
+      const waitStartedAt = Date.now();
+      const waitForPlanId = () => {
+        if (disposed) return;
+        const planId = sessionStorage.getItem("rv_generation_plan_id");
+        if (planId) {
+          pollStructure(planId);
+          return;
+        }
+        if (Date.now() - waitStartedAt >= 60_000) {
+          cleanup();
+          setError(language === "en"
+            ? "The plan could not be started. Return to the brief and try again."
+            : "Plan belum berhasil dimulai. Kembali ke brief lalu coba lagi.");
+          return;
+        }
+        pollTimer = setTimeout(waitForPlanId, 250);
+      };
+      waitForPlanId();
+    } else {
       const answersStr = sessionStorage.getItem("rv_answers");
       getCurrentUser().then((user) => {
         fetch("/api/generate", {
@@ -153,16 +183,10 @@ export default function Generate() {
             setError(err.message);
           });
       });
-    } else {
-      sessionStorage.removeItem("rv_generating");
-      pollTimer = setTimeout(() => setError(language === "en"
-        ? "This generation session lost its plan reference. Return to the brief and start it again."
-        : "Sesi generate kehilangan referensi plan. Kembali ke brief lalu mulai lagi."), 0);
     }
 
     return () => {
       disposed = true;
-      clearInterval(elapsedTimer);
       if (pollTimer) clearTimeout(pollTimer);
     };
   }, [language, router]);
@@ -172,8 +196,8 @@ export default function Generate() {
 
   return (
     <Shell back="/new/prefs" sidebar={false}>
-      <div className="mx-auto flex min-h-[100dvh] w-full max-w-xl flex-col justify-center px-5 py-16">
-        <p className="eyebrow">{error ? ui("Misi gagal") : ui("Agent sedang menyusun strategi")}</p>
+      <div className="mx-auto flex min-h-[100dvh] w-full max-w-3xl flex-col justify-center px-5 py-16">
+        <p className="eyebrow mx-auto w-full max-w-xl">{error ? ui("Misi gagal") : ui("Agent sedang menyusun strategi")}</p>
         {error ? (
           <div className="mt-8">
             <p className="text-red-400">{error}</p>
@@ -181,12 +205,11 @@ export default function Generate() {
           </div>
         ) : (
           <>
-            <div className="mt-6 flex items-center justify-between text-sm text-slate-400">
+            <div className="mx-auto mt-6 flex w-full max-w-xl items-center text-sm text-slate-400">
               <span>{pct}%</span>
-              <span className="font-mono text-xs">{elapsed}s</span>
             </div>
 
-            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10">
+            <div className="mx-auto mt-2 h-1.5 w-full max-w-xl overflow-hidden rounded-full bg-white/10">
               <motion.div
                 animate={{ width: `${pct}%` }}
                 transition={{ ease: "easeOut", duration: 0.4 }}
@@ -200,35 +223,22 @@ export default function Generate() {
               </motion.div>
             </div>
 
-            <div className="mt-5 flex items-center gap-3 text-sm text-slate-300">
+            <div className="mx-auto mt-5 flex w-full max-w-xl items-center gap-3 text-sm text-slate-300">
               <Loader2 className="size-4 animate-spin text-[#74FA6A]" />
               <motion.span key={currentStage} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}>
                 {stages[currentStage].desc}
               </motion.span>
             </div>
 
-            <div className="mt-16 mb-8">
+            <div className="mt-10 mb-2">
               <CircularCarousel
                 items={carouselItems}
                 activeIndex={currentStage}
                 autoPlay={false}
                 showArrows={false}
+                countLabel={language === "en" ? "of" : "dari"}
               />
             </div>
-
-            <p className="mt-8 text-center text-xs text-slate-500">
-              {completedSections > 0
-                ? language === "en"
-                  ? `${completedSections} PRD sections saved. Work will continue from this checkpoint.`
-                  : `${completedSections} bagian PRD tersimpan. Proses akan dilanjutkan dari checkpoint ini.`
-                : elapsed > 60
-                  ? language === "en"
-                    ? "The first PRD section is still being written. Progress reflects the server job."
-                    : "Bagian pertama PRD masih disusun. Progress mengikuti proses server."
-                  : language === "en"
-                    ? "PRD generation has started. Progress reflects the server job."
-                    : "Penyusunan PRD sudah dimulai. Progress mengikuti proses server."}
-            </p>
           </>
         )}
       </div>

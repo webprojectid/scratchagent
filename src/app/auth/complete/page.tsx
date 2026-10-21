@@ -24,7 +24,11 @@ export default function AuthComplete() {
           setTimeout(() => router.push("/login"), 1500);
           return;
         }
-        router.push("/new");
+        return fetch("/api/auth/social-otp", { cache: "no-store" }).then(async response => {
+          if (!response.ok) throw new Error("Verification unavailable");
+          const status = await response.json();
+          router.replace(status.verified ? "/new" : "/auth/verify");
+        });
       })
       .catch(() => {
         setError(ui("Gagal membaca session"));

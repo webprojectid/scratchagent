@@ -19,9 +19,9 @@ export function mergeGenerationPatch(response: unknown, previous?: string): unkn
     if (!parent || typeof parent !== "object") throw new Error("JSON parsing gagal: patch parent does not exist");
     if (change.op === "replace" && !Object.hasOwn(parent, last)) throw new Error("JSON parsing gagal: replacement target does not exist; replace its existing parent field, or use add with /- to append a missing array item");
     if (change.op === "add" && Array.isArray(parent)) {
-      const append = last === '-' || /^(?:0|[1-9]\d*)$/.test(last) && Number(last) === parent.length;
-      if (!append || parent.length >= 500) throw new Error("JSON parsing gagal: array add cannot target an existing index; use replace to correct it or /- to append without changing existing items");
-      parent.push(change.value);
+      const index = last === '-' ? parent.length : /^(?:0|[1-9]\d*)$/.test(last) ? Number(last) : -1;
+      if (index < 0 || index > parent.length || parent.length >= 500) throw new Error("JSON parsing gagal: array add index is outside the array; use /- to append");
+      parent.splice(index, 0, change.value);
       continue;
     }
     if (change.op === "add" && Object.hasOwn(parent, last)) throw new Error("JSON parsing gagal: add cannot overwrite an existing field");

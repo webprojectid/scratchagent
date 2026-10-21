@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { effectiveAccountTier } from "@/lib/account-membership";
 
@@ -43,109 +43,116 @@ function readLegacyUser(): CurrentUser | null {
   return null;
 }
 
+type UserSnapshot = { user: CurrentUser | null; loading: boolean };
+const serverSnapshot: UserSnapshot = { user: null, loading: true };
+let snapshot = serverSnapshot;
 let cached: Promise<CurrentUser | null> | null = null;
+let revision = 0;
+const listeners = new Set<() => void>();
+
+function publish(user: CurrentUser | null, loading = false) {
+  snapshot = { user, loading };
+  listeners.forEach(listener => listener());
+}
+
+export function getCurrentUserSnapshot(): UserSnapshot { return snapshot; }
 
 async function resolveIdentity(): Promise<CurrentUser | null> {
-  // 1) Sumber utama: session Supabase (cookie).
   if (supabaseConfigured()) {
     try {
-      const supabase = createClient();
-      const { data } = await supabase.auth.getUser();
-      const su = data.user;
-      if (su?.email) {
-        const meta = (su.user_metadata ?? {}) as Record<string, unknown>;
-        const rawName = (meta.full_name as string) || (meta.name as string);
-        return {
-          email: su.email,
-          name: formatDisplayName(su.email, rawName),
-          provider: ((su.app_metadata?.provider as string) ?? "oauth"),
-          role: "user",
-        };
+      // Session identity is for presentation only; /api/me verifies permissions.
+      const { data } = await createClient().auth.getSession();
+      const user = data.session?.user;
+      if (user?.email) {
+        const meta = user.user_metadata ?? {};
+        return { email: user.email, name: formatDisplayName(user.email, meta.full_name || meta.name), provider: user.app_metadata?.provider ?? "oauth", role: "user" };
       }
-    } catch {
-      /* lanjut ke fallback */
-    }
+    } catch {}
+    return null;
   }
-  // 2) Fallback: localStorage (mode dev polos / legacy).
   return readLegacyUser();
 }
 
-async function resolveUser(): Promise<CurrentUser | null> {
+async function resolveUser(version: number): Promise<CurrentUser | null> {
   const identity = await resolveIdentity();
-  if (!identity) return null;
+  if (version !== revision) return snapshot.user;
+  if (!identity) { publish(null); return null; }
+  publish(snapshot.user?.email === identity.email ? snapshot.user : identity, true);
+  let user = identity;
   try {
     const response = await fetch(`/api/me?userId=${encodeURIComponent(identity.email)}`, { cache: "no-store" });
     if (response.ok) {
       const account = await response.json();
-      return { ...identity, name: account.name || identity.name, role: account.role === "admin" ? "admin" : "user", tier: effectiveAccountTier(account), proActive: typeof account.proActive === "boolean" ? account.proActive : undefined, emailVerified: account.emailVerified, createdAt: account.createdAt ?? null, proExpiresAt: account.proExpiresAt ?? null };
+      user = { ...identity, name: account.name || identity.name, role: account.role === "admin" ? "admin" : "user", tier: effectiveAccountTier(account), proActive: typeof account.proActive === "boolean" ? account.proActive : undefined, emailVerified: account.emailVerified, createdAt: account.createdAt ?? null, proExpiresAt: account.proExpiresAt ?? null };
+    } else if (response.status === 401 || response.status === 403) {
+      if (version === revision) publish(null);
+      return null;
     }
-  } catch { /* Keep the signed-in identity when the account service is unavailable. */ }
-  return identity;
+  } catch {}
+  if (version !== revision) return snapshot.user;
+  publish(user);
+  return user;
 }
 
-/**
- * Ambil identitas user saat ini. Supabase session jadi sumber utama;
- * localStorage hanya fallback untuk dev tanpa Supabase. Hasil di-cache
- * supaya banyak pemanggil berbagi resolusi yang sama.
- */
 export function getCurrentUser(): Promise<CurrentUser | null> {
   if (typeof window === "undefined") return Promise.resolve(null);
-  if (!cached) cached = resolveUser();
+  if (!cached) cached = resolveUser(revision);
   return cached;
 }
 
-/** Paksa resolusi ulang (mis. setelah login/logout). */
 export function refreshCurrentUser(): void {
+  revision++;
   cached = null;
+  if (listeners.size) void getCurrentUser();
 }
 
-/** Hook React: return user + loading (auto-sync dengan Supabase dan Storage). */
-export function useCurrentUser(): { user: CurrentUser | null; loading: boolean } {
-  const [user, setUser] = useState<CurrentUser | null>(null);
-  const [loading, setLoading] = useState(true);
+export function clearCurrentUser(): void {
+  revision++;
+  cached = Promise.resolve(null);
+  publish(null);
+}
 
-  useEffect(() => {
-    let active = true;
+function subscribe(listener: () => void) {
+  listeners.add(listener);
+  return () => { listeners.delete(listener); };
+}
 
-    const syncUser = () => {
-      refreshCurrentUser();
-      getCurrentUser().then((u) => {
-        if (!active) return;
-        setUser(u);
-        setLoading(false);
-      });
+let observers = 0;
+let stopObserving: (() => void) | undefined;
+function observeAuth() {
+  if (observers++ === 0) {
+    const sync = () => refreshCurrentUser();
+    const storage = (event: StorageEvent) => {
+      if (event.key === null || event.key === "scratch_user" || event.key?.startsWith("sb-")) sync();
     };
-
-    // Initial load
-    getCurrentUser().then((u) => {
-      if (!active) return;
-      setUser(u);
-      setLoading(false);
-    });
-
-    // Supabase auth subscription
-    let authSubscription: { unsubscribe: () => void } | null = null;
+    let subscription: { unsubscribe: () => void } | undefined;
     if (supabaseConfigured()) {
-      try {
-        const supabase = createClient();
-        const { data } = supabase.auth.onAuthStateChange((event) => {
-          if (event !== "INITIAL_SESSION") syncUser();
-        });
-        authSubscription = data.subscription;
-      } catch {}
+      const { data } = createClient().auth.onAuthStateChange(event => {
+        if (event === "SIGNED_OUT") clearCurrentUser();
+        else if (event !== "INITIAL_SESSION") {
+          // Do not call session methods while Supabase holds its auth lock.
+          setTimeout(sync, 0);
+        }
+      });
+      subscription = data.subscription;
     }
-
-    // Storage & focus listeners for multi-tab sync
-    window.addEventListener("storage", syncUser);
-    window.addEventListener("focus", syncUser);
-
-    return () => {
-      active = false;
-      authSubscription?.unsubscribe();
-      window.removeEventListener("storage", syncUser);
-      window.removeEventListener("focus", syncUser);
+    window.addEventListener("focus", sync);
+    window.addEventListener("storage", storage);
+    stopObserving = () => {
+      subscription?.unsubscribe();
+      window.removeEventListener("focus", sync);
+      window.removeEventListener("storage", storage);
     };
-  }, []);
+  }
+  return () => { if (--observers === 0) stopObserving?.(); };
+}
 
-  return { user, loading };
+export function useCurrentUser(): UserSnapshot {
+  const state = useSyncExternalStore(subscribe, getCurrentUserSnapshot, () => serverSnapshot);
+  useEffect(() => {
+    const stop = observeAuth();
+    void getCurrentUser();
+    return stop;
+  }, []);
+  return state;
 }

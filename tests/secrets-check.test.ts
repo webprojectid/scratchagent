@@ -280,3 +280,14 @@ test("push hook rejects internal guidance deleted from the latest tree", () => {
     assert.ok(!rejected.stdout.includes("synthetic internal note") && !rejected.stderr.includes("synthetic internal note"));
   });
 });
+
+
+test("Brevo keys and email signing secrets cannot be published or printed by the scanner", () => {
+  fixture((root, git) => {
+    const samples = ["xkey" + "sib-" + "synthetic".repeat(6), "xsmtp" + "sib-" + "synthetic".repeat(6), ...["BREVO_API_KEY", "EMAIL_OTP_SECRET", "CRON_SECRET"].map(name => name + "=" + JSON.stringify("synthetic-private-value"))];
+    writeFileSync(path.join(root, "mailer.txt"), samples.join("\n")); git("add", "mailer.txt");
+    const result = checkTracked(root);
+    assert.equal(result.findings.filter((finding: string) => finding.startsWith("Index potential embedded")).length, samples.length);
+    assert.ok(result.findings.every((finding: string) => !finding.includes("synthetic-private-value")));
+  });
+});

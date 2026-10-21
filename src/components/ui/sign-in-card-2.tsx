@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence, useMotionValue, useTransform, useSpring, useMotionTemplate } from "framer-motion";
@@ -42,6 +42,12 @@ export function SignInCard2() {
   const [password, setPassword] = useState("");
   const [otp, setOtp] = useState("");
   const [awaitingOtp, setAwaitingOtp] = useState(false);
+  const [otpRetryAfter, setOtpRetryAfter] = useState(0);
+  useEffect(() => {
+    if (otpRetryAfter <= 0) return;
+    const timer = setTimeout(() => setOtpRetryAfter(value => Math.max(0, value - 1)), 1000);
+    return () => clearTimeout(timer);
+  }, [otpRetryAfter]);
   const [isLoading, setIsLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState<"google" | "github" | null>(null);
   const [focusedInput, setFocusedInput] = useState<"email" | "password" | "name" | "otp" | null>(null);
@@ -119,6 +125,7 @@ export function SignInCard2() {
   };
 
   const handleResendOtp = async () => {
+    if (otpRetryAfter > 0) return;
     setIsLoading(true);
     setError("");
     setInfo("");
@@ -128,6 +135,7 @@ export function SignInCard2() {
         setError(en ? "We could not send a new code yet. Wait a moment and try again." : "Kode baru belum bisa dikirim. Tunggu sebentar lalu coba lagi.");
         return;
       }
+      setOtpRetryAfter(60);
       setInfo(en ? `A new code was sent to ${email}.` : `Kode baru dikirim ke ${email}.`);
     } catch {
       setError(en ? "We could not send a new code. Try again." : "Kode baru gagal dikirim. Coba lagi.");
@@ -198,7 +206,7 @@ export function SignInCard2() {
           email,
           password,
           options: {
-            data: { full_name: cleanName },
+            data: { full_name: cleanName, language: lang },
             captchaToken: captchaToken || undefined,
           },
         });
@@ -213,6 +221,7 @@ export function SignInCard2() {
         // Kalau project Supabase minta konfirmasi email, tidak ada session.
         if (!data.session) {
           setAwaitingOtp(true);
+          setOtpRetryAfter(60);
           setInfo(
             en
               ? `We sent a 6-digit code to ${email}.`
@@ -297,9 +306,6 @@ export function SignInCard2() {
     noAccount: en ? "Don't have an account?" : "Belum punya akun?",
     switchLabel: mode === "signin" ? (en ? "Sign up" : "Daftar") : en ? "Sign in" : "Masuk",
     hasAccount: en ? "Already have an account?" : "Sudah punya akun?",
-    forgotInfo: en
-      ? "Password reset isn't available yet — try signing in with Google."
-      : "Reset password belum tersedia — coba masuk lewat Google.",
     back: en ? "Back to home" : "Kembali ke beranda",
   };
 
@@ -630,8 +636,7 @@ export function SignInCard2() {
                     <button
                       type="button"
                       onClick={() => {
-                        setInfo(t.forgotInfo);
-                        setError("");
+                        router.push("/forgot-password");
                       }}
                       className="text-xs text-white/60 transition-colors duration-200 hover:text-white"
                     >
@@ -660,8 +665,8 @@ export function SignInCard2() {
                 </motion.button>
 
                 {awaitingOtp && <div className="flex items-center justify-center gap-4 text-xs">
-                  <button type="button" disabled={isLoading} onClick={() => void handleResendOtp()} className="text-white/60 transition-colors hover:text-white disabled:opacity-40">
-                    {en ? "Resend code" : "Kirim ulang kode"}
+                  <button type="button" disabled={isLoading || otpRetryAfter > 0} onClick={() => void handleResendOtp()} className="text-white/60 transition-colors hover:text-white disabled:opacity-40">
+                    {otpRetryAfter > 0 ? (en ? `Resend in ${otpRetryAfter}s` : `Kirim ulang dalam ${otpRetryAfter} detik`) : (en ? "Resend code" : "Kirim ulang kode")}
                   </button>
                   <span className="h-3 w-px bg-white/15" aria-hidden="true" />
                   <button type="button" disabled={isLoading} onClick={() => { setAwaitingOtp(false); setOtp(""); setError(""); setInfo(""); }} className="text-white/60 transition-colors hover:text-white disabled:opacity-40">

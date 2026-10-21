@@ -1,5 +1,5 @@
 import { apiText } from "@/lib/ui-messages";
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { z } from "zod";
 import { accountRequest, accountError, parseAccountBody } from "@/lib/account-api";
 import { accountSettingsPatchSchema } from "@/lib/account-preferences";
@@ -36,7 +36,12 @@ export async function PATCH(request: Request, context: Context) {
     const { resource } = await context.params;
     if (resource !== "settings") return NextResponse.json({ error: apiText("Tidak ditemukan.") }, { status: 404 });
     const patch = await parseAccountBody(request, accountSettingsPatchSchema);
-    return NextResponse.json(await saveAccountSettings(user.userId, patch));
+    const settings = await saveAccountSettings(user.userId, patch);
+    if (patch.display?.language && user.via === "session") after(async () => {
+      try { const { createClient } = await import("@/lib/supabase/server"); await (await createClient()).auth.updateUser({ data: { language: patch.display!.language } }); }
+      catch { console.error("[email-language] Preference sync unavailable"); }
+    });
+    return NextResponse.json(settings);
   } catch (error) { return accountError(error); }
 }
 export async function POST(request: Request, context: Context) {

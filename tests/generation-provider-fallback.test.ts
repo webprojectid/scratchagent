@@ -83,7 +83,7 @@ function stageOf(systemPrompt: string): Stage {
   return "requirements";
 }
 
-function fixture(tier: "free" | "pro", underfillFirstPhase = false, architecture = architectureFixture, invalidTypes = false, invalidReviewPaths = false) {
+function fixture(tier: "free" | "pro", underfillFirstPhase = false, architecture = architectureFixture, invalidTypes = false, invalidReviewPaths = false, transform?: (response: unknown, call: Call) => unknown) {
   const calls: Call[] = [];
   const featureCount = limits.structureLimits(tier).features[0];
   const goodFeatures = Array.from({ length: featureCount }, (_, index) => ({
@@ -201,7 +201,8 @@ function fixture(tier: "free" | "pro", underfillFirstPhase = false, architecture
       const body = JSON.parse(String(init.body)) as { model: string; messages: { content: string }[] };
       const call = { model: body.model, stage: stageOf(body.messages[0].content), userPrompt: body.messages[1].content };
       calls.push(call);
-      return new Response(JSON.stringify(responseFor(call)), { status: 200, headers: { "content-type": "application/json" } });
+      const response = responseFor(call);
+      return new Response(JSON.stringify(transform ? transform(response, call) : response), { status: 200, headers: { "content-type": "application/json" } });
     } },
     "./account-preferences": { defaultHandoff: { language: "id" }, legacyHandoff: { language: "id" }, handoffInstructions: () => "" },
     zod: { z },
@@ -266,8 +267,8 @@ test("review path errors receive precise feedback and two bounded repairs withou
   const reviews = run.calls.filter(call => call.stage === 'review');
   assert.equal(reviews.length, 3);
   assert.match(reviews[1].userPrompt, /replacement target does not exist/);
-  assert.match(reviews[1].userPrompt, /full corrections object/);
-  assert.match(reviews[1].userPrompt, /not to the previous corrections array/);
+  assert.match(reviews[1].userPrompt, /never a top-level patch object/);
+  assert.match(reviews[1].userPrompt, /earlier corrections are preserved/);
   assert.equal(run.calls.filter(call => call.stage === 'database').length, 1);
   assert.ok(plan.features.length > 0);
 });
@@ -347,5 +348,65 @@ for (const tier of ["free", "pro"] as const) {
     assert.deepEqual(taskCalls.map((call) => call.model), ["mistral", "mistral", "gemini"]);
     assert.match(taskCalls[1].userPrompt, /failed these checks:.*title/);
     if (tier === "free") assert.match(taskCalls[1].userPrompt, /4-8 task/);
+  });
+}
+
+for (const tier of ["free", "pro"] as const) {
+  test(`${tier}: malformed repair recovers a full object without losing its previous draft`, async () => {
+    let attempts = 0;
+    const run = fixture(tier, false, architectureFixture, false, false, (response, call) => {
+      if (call.stage !== "architecture") return response;
+      attempts++;
+      if (attempts === 1) return { paragraphs: 123, mermaid: "flowchart TD\nA --> B" };
+      if (attempts === 2) return { patch: [{ op: "replace", path: "/missing", value: "invalid replacement" }] };
+      return response;
+    });
+    const plan = await run.generate.generatePlanStructure("Kelola akun dan ruang kerja.", { mode: "auto" }, [], tier);
+    const repairs = run.calls.filter(call => call.stage === "architecture");
+    assert.equal(repairs.length, 3);
+    assert.match(repairs[2].userPrompt, /COMPLETE corrected JSON object/);
+    assert.match(repairs[2].userPrompt, /"paragraphs":123/);
+    assert.doesNotMatch(repairs[2].userPrompt, /"path":"\/missing"/);
+    assert.equal(run.calls.filter(call => call.stage === "database").length, 1);
+    assert.equal(plan.features.length, run.featureCount);
+  });
+
+  test(`${tier}: equivalent provider envelopes and field names retain the tier contract`, async () => {
+    const run = fixture(tier, false, architectureFixture, false, true, (response, call) => {
+      const value = structuredClone(response) as Record<string, unknown>;
+      if (call.stage === "outline" || call.stage === "subfeatures") {
+        value.phases = value.features;
+        delete value.features;
+      }
+      if (call.stage === "subfeatures") {
+        value.phases = (value.phases as Record<string, unknown>[]).map(phase => {
+          const { sub_features, ...rest } = phase;
+          return { ...rest, subFeatures: (sub_features as Record<string, unknown>[]).map(sub => {
+            const { tujuan, selesai_bila, ...fields } = sub;
+            return { ...fields, goal: tujuan, acceptanceCriteria: selesai_bila };
+          }) };
+        });
+      }
+      return { result: value };
+    });
+    const plan = await run.generate.generatePlanStructure("Kelola akun dan ruang kerja.", { mode: "auto" }, [], tier);
+    assert.equal(plan.features.length, run.featureCount);
+    assert.ok(plan.features.slice(0, -1).every(feature => feature.subFeatures.length >= limits.structureLimits(tier).subFeatures[0]));
+    assert.ok(plan.features.every(feature => feature.subFeatures.every(sub => sub.selesaiBila.length >= 2)));
+    assert.equal(run.calls.filter(call => call.stage === "review").length, 3);
+  });
+}
+
+for (const tier of ["free", "pro"] as const) {
+  test(`${tier}: an invalid first review cannot poison the corrected replacement`, async () => {
+    let reviews = 0;
+    const run = fixture(tier, false, architectureFixture, false, false, (response, call) => {
+      if (call.stage === "review" && ++reviews === 1) return { corrections: "wrong collection type" };
+      return response;
+    });
+    const plan = await run.generate.generatePlanStructure("Kelola akun dan ruang kerja.", { mode: "auto" }, [], tier);
+    assert.equal(reviews, 2);
+    assert.equal(plan.features.length, run.featureCount);
+    assert.equal(run.calls.filter(call => call.stage === "database").length, 1);
   });
 }

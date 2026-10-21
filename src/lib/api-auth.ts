@@ -69,19 +69,17 @@ export async function getAuthUser(): Promise<AuthUser | null> {
 
   if (supabaseConfigured()) {
     try {
-      const { createClient } = await import("@/lib/supabase/server");
-      const supabase = await createClient();
-      const { data } = await supabase.auth.getUser();
-      const email = data.user?.email;
-      if (email) {
+      const { getSupabaseSessionIdentity } = await import("@/lib/supabase/session-identity");
+      const { isSocialSessionVerified } = await import("./social-email-otp");
+      const session = await getSupabaseSessionIdentity();
+      if (session && await isSocialSessionVerified(session.identity)) {
+        const email = session.identity.email;
         const userId = await userIdByEmail(email);
-        const claims = await supabase.auth.getClaims();
-        const sessionId = claims.data?.claims?.session_id;
-        if (typeof sessionId !== "string" || !/^[0-9a-f-]{36}$/i.test(sessionId)) return null;
+        const sessionId = session.identity.sessionId;
         const agent = h.get("user-agent") ?? "Browser";
         const device = `${/Edg\//.test(agent) ? "Edge" : /Firefox\//.test(agent) ? "Firefox" : /Chrome\//.test(agent) ? "Chromium" : /Safari\//.test(agent) ? "Safari" : "Browser"} · ${/Windows/.test(agent) ? "Windows" : /Android/.test(agent) ? "Android" : /iPhone|iPad/.test(agent) ? "iOS" : /Mac/.test(agent) ? "macOS" : "Perangkat lain"}`;
-        if (!await trackSession(sessionId, userId, device, claims.data?.claims?.iat)) return null;
-        return { userId, email, via: "session", sessionId, emailVerified: !!data.user?.email_confirmed_at };
+        if (!await trackSession(sessionId, userId, device, session.issuedAt)) return null;
+        return { userId, email, via: "session", sessionId, emailVerified: !!session.user.email_confirmed_at };
       }
     } catch {
       // Session tidak terbaca / Supabase error: anggap belum login.
@@ -110,7 +108,8 @@ export async function getRequestUser(legacyUserId?: string | null): Promise<Auth
   // karena nilai dari client dipercaya mentah-mentah sebagai identitas.
   if (legacyUserId && legacyDevMode()) {
     const email = legacyUserId.includes("@") ? legacyUserId : null;
-    return { userId: legacyUserId, email, via: "legacy-dev" };
+    const userId = email ? memoryGetOrCreateUser(email).id : legacyUserId;
+    return { userId, email, via: "legacy-dev" };
   }
   return null;
 }

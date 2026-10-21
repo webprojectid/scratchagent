@@ -115,6 +115,8 @@ function numericClaims(value: string): NumericClaim[] {
   const claims: NumericClaim[] = [];
   for (const match of value.matchAll(NUMERIC_UNIT)) {
     const raw = match[0];
+    const after = value.slice((match.index ?? 0) + raw.length);
+    if (/^24\s*-?\s*(?:hours?|jam)$/i.test(raw) && /^\s+(?:time\s+)?(?:format|clock|picker|notation)\b/i.test(after)) continue;
     const key = numericKey(match[1], match[2]);
     if (key && Number.isFinite(Number(match[1].replace(",", ".")))) {
       claims.push({ raw, key, topic: claimTopic(value, match.index ?? 0, raw.length), index: match.index ?? 0 });
@@ -124,6 +126,12 @@ function numericClaims(value: string): NumericClaim[] {
     claims.push({ raw: match[0], key: "always-on:24x7", topic: claimTopic(value, match.index ?? 0, match[0].length), index: match.index ?? 0 });
   }
   for (const match of value.matchAll(WORD_TIME)) {
+    const afterTime = value.slice(match.index + match[0].length);
+    const beforeTime = value.slice(Math.max(0, match.index - 60), match.index);
+    if (/^(?:a|one)$/i.test(match[1]) && /^day$/i.test(match[2]) && (
+      /^\s+(?:toggle|selector|picker|checkbox|column|cell|label)\b/i.test(afterTime) ||
+      /\b(?:select|selects|selected|choose|chooses|pick|picks|picked)\s*$/i.test(beforeTime)
+    )) continue;
     // Distinguish ordinal noun phrases ("a second active booking") from time.
     if (/^second$/i.test(match[2])) {
       const after = value.slice(match.index + match[0].length);

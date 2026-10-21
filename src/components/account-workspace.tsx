@@ -46,7 +46,7 @@ import {
   ArrowLeft,
   Settings,
 } from "lucide-react";
-import { getCurrentUser, refreshCurrentUser, supabaseConfigured } from "@/lib/current-user";
+import { getCurrentUser, clearCurrentUser, refreshCurrentUser, supabaseConfigured } from "@/lib/current-user";
 import { createClient } from "@/lib/supabase/client";
 
 type UserData = {
@@ -255,7 +255,7 @@ export function AccountWorkspace({ area, initialTab }: { area: AccountArea; init
 
   const handleLogout = () => {
     localStorage.removeItem("scratch_user");
-    refreshCurrentUser();
+    clearCurrentUser();
     if (supabaseConfigured()) {
       createClient()
         .auth.signOut()

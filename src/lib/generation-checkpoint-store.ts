@@ -8,7 +8,8 @@ export interface SavedGenerationWork {
   checkpoint: GenerationCheckpoint;
   receipt: QuotaReceipt;
 }
-const memory = new Map<string, SavedGenerationWork>();
+const localState = globalThis as unknown as { scratchGenerationCheckpoints?: Map<string, SavedGenerationWork> };
+const memory = localState.scratchGenerationCheckpoints ??= new Map<string, SavedGenerationWork>();
 
 export async function getGenerationWork(planId: string): Promise<SavedGenerationWork | null> {
   if (!process.env.DATABASE_URL) return structuredClone(memory.get(planId) ?? null);

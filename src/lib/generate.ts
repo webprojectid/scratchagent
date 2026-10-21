@@ -1,5 +1,5 @@
 import { validateTechnicalClaims, validateTaskTechnicalClaims } from "./technical-claims";
-import { generationReviewSchema, generationReviewInstructions, applyGenerationReview } from "./generation-review";
+import { generationReviewSchema, generationReviewInstructions, accumulateGenerationReview, applyGenerationReview } from "./generation-review";
 import type { GenerationRequestMetric } from "./generation-metrics";
 import { publicProviderFetch } from "./provider-network";
 import { defaultHandoff, legacyHandoff, handoffInstructions, type HandoffSettings } from "./account-preferences";
@@ -326,7 +326,15 @@ async function attemptOnce<T>(
       usage.tokensIn += parsed.usage.prompt_tokens ?? 0;
       usage.tokensOut += parsed.usage.completion_tokens ?? 0;
     }
-    const decoded = JSON.parse(extractJson(parsed.content ?? ""));
+    let decoded = JSON.parse(extractJson(parsed.content ?? ""));
+    if (options.stage === 'review') decoded = normalizeGenerationOutput('review', decoded);
+    if (options.stage === 'review' && previousDraft) {
+      let previousReview: ReturnType<typeof generationReviewSchema.safeParse> | undefined;
+      try { previousReview = generationReviewSchema.safeParse(JSON.parse(extractJson(previousDraft))); } catch { /* A malformed review must not reject its corrected replacement. */ }
+      if (previousReview?.success) decoded = accumulateGenerationReview(previousReview.data, generationReviewSchema.parse(decoded));
+    }
+    // A malformed patch must not replace the full draft used by the next repair.
+    if (decoded && typeof decoded === 'object' && 'patch' in decoded && previousDraft) draft = previousDraft;
     const raw = options.stage === 'review' ? decoded : mergeGenerationPatch(decoded, previousDraft);
     draft = JSON.stringify(raw);
     const value = schema.parse(normalizeGenerationOutput(options.stage ?? "outline", normalize(raw)));
@@ -377,7 +385,7 @@ async function callLlmUncached<T>(schema: z.ZodType<T>, prompt: string, usage?: 
   for (const entry of entries) {
     let feedback: string[] | undefined;
     let previousDraft: string | undefined;
-    const maxCycles = options.stage === "review" ? 3 : 2;
+    let maxCycles = options.stage === "review" ? 3 : 2;
     for (let cycle = 0; cycle < maxCycles; cycle++) {
       if (Date.now() >= options.deadline!) throw new Error("Generation section exceeded its time budget.");
       try {
@@ -394,8 +402,10 @@ async function callLlmUncached<T>(schema: z.ZodType<T>, prompt: string, usage?: 
         const repairable = error instanceof QualityError || error instanceof z.ZodError ||
           (error instanceof Error && error.message.startsWith("JSON parsing gagal"));
         if (repairable) rejectedIssues = error instanceof QualityError ? error.issues.slice(0, 24) : error instanceof z.ZodError ? schemaRepairFeedback(error) : [(error as Error).message];
+        const completeRecovery = repairable && cycle === 1 && maxCycles === 2 && !(error instanceof QualityError);
+        if (completeRecovery) maxCycles = 3;
         if (repairable && cycle < maxCycles - 1) {
-          feedback = rejectedIssues;
+          feedback = completeRecovery ? [...rejectedIssues!, "FORMAT RECOVERY: Return the complete corrected object, not a patch."] : rejectedIssues;
           previousDraft = rejectedDrafts.get(error as object);
           console.warn(`[LLM] ${entry.model} ${options.stage ?? "outline"} gagal validasi, coba perbaiki bagian ini`);
           continue;
@@ -847,11 +857,18 @@ export async function generatePlanStructure(
   const review = await callLlm(generationReviewSchema,
     `${generationReviewInstructions}\n${styleRule}\nBrief and confirmed answers: ${JSON.stringify({ brief, confirmedAnswers: contextAnswers ?? [] })}\nCanonical contract: ${JSON.stringify(productSpec)}\nDraft sections: ${JSON.stringify(sections)}`,
     usage, { stage: "review", providers, validate: value => {
-      const corrected = applyGenerationReview(sections, value);
+      const rejectedCorrections = new Set<(typeof value.corrections)[number]>();
+      const correctionIssues: string[] = [];
+      const corrected = applyGenerationReview(sections, value, (correction, error) => {
+        rejectedCorrections.add(correction);
+        correctionIssues.push(`${correction.section}${correction.path}: ${error.message}`);
+      });
+      value.corrections = value.corrections.filter(correction => !rejectedCorrections.has(correction));
       const architecture = archSchema.parse(corrected.architecture);
       const database = dbSchema.parse(corrected.database);
       const requirements = reqSchema.parse(corrected.requirements);
       return [
+        ...correctionIssues,
         ...validateTechnicalClaims([architecture.architecture, database.database_schema, ...requirements.requirements.fungsional, ...requirements.requirements.non_fungsional].join("\n\n")),
         ...validateArchitectureDraft(architecture.architecture, { brief: affirmativeScope, featureTitles }),
         ...validateContractText(architecture.paragraphs, confirmedScope),

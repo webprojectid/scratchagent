@@ -13,7 +13,7 @@ function featureHasTasks(feature: import("@/lib/types").Feature): boolean {
   return (feature.subFeatures ?? []).some((sf) => (sf.tasks ?? []).length > 0);
 }
 
-async function generateAllTasks(planId: string, userId: string, authHeaders: Record<string, string>, origin: string, lease: string) {
+async function generateAllTasks(planId: string, userId: string, authHeaders: Record<string, string>, origin: string, lease: string, legacyUserId?: string) {
   try {
     // One batch stays within the route budget, including model repair.
     const MAX_BATCH = 1;
@@ -52,7 +52,8 @@ async function generateAllTasks(planId: string, userId: string, authHeaders: Rec
             // URL absolut dari request asli — di Vercel gak bisa pake localhost
             // (self-loop gagal), dan PORT env gak selalu diset di serverless.
             const base = origin;
-            const res = await fetch(`${base}/api/plans/${planId}/generate-tasks`, {
+            const legacyQuery = legacyUserId ? `?userId=${encodeURIComponent(legacyUserId)}` : "";
+            const res = await fetch(`${base}/api/plans/${planId}/generate-tasks${legacyQuery}`, {
               method: "POST",
               headers: authHeaders,
               body: JSON.stringify({ featureIndex }),
@@ -107,7 +108,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ pla
     if (cookie) authHeaders.Cookie = cookie;
 
     // Fire-and-forget: loop jalan di server process, request balas langsung.
-    after(() => generateAllTasks(planId, ownerId, authHeaders, new URL(request.url).origin, lease));
+    const legacyIdentity = user?.via === "legacy-dev" ? user.email ?? user.userId : undefined;
+    after(() => generateAllTasks(planId, ownerId, authHeaders, new URL(request.url).origin, lease, legacyIdentity));
 
     return NextResponse.json({ ok: true, started: true, features: (plan.features ?? []).length });
   } catch (error) {

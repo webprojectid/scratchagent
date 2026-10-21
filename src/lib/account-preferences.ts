@@ -24,6 +24,7 @@ export const handoffSettingsSchema = z.object({
   agent: z.enum(["generic", "claude", "codex", "cursor", "opencode"]).default("generic"),
 });
 export const notificationSettingsSchema = z.object({
+  emailPlanExpiry: z.boolean().default(true), emailUnfinishedPlans: z.boolean().default(true),
   generationComplete: z.boolean().default(true), generationFailed: z.boolean().default(true),
   agentBlocked: z.boolean().default(true), checkpoint: z.boolean().default(true), planExpiry: z.boolean().default(true),
 });

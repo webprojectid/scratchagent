@@ -84,7 +84,7 @@ export function validateContractText(texts: string[], source: string): string[] 
   const issues: string[] = [];
   for (const text of texts) {
     const unsupported = unconfirmedNumericClaims(text, source).filter(raw => /(?:milliseconds?|msecs?|ms|seconds?|secs?|minutes?|hours?|days?|weeks?|months?|years?|detik|menit|jam|hari|minggu|bulan|tahun|percent|persen|%)\b|%$|^[HD]\s*-/i.test(raw));
-    for (const raw of unsupported) issues.push(`Unspecified numeric policy ${raw}: keep it an open configurable decision instead of inventing a default`);
+    for (const raw of unsupported) issues.push(`Unspecified numeric policy ${raw} in ${JSON.stringify(text.slice(0, 360))}: keep it an open configurable decision instead of inventing a default`);
     for (const match of text.matchAll(/\b\d+(?:\.\d+)?\s*(?:requests?|transactions?)\s*(?:per|\/)\s*seconds?\b/gi)) {
       if (!evidence.includes(normalize(match[0]))) issues.push(`Unspecified numeric policy ${match[0]}: keep it an open configurable decision instead of inventing a default`);
     }

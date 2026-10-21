@@ -1,6 +1,6 @@
 import { writeOriginGate } from "@/lib/write-origin";
 import { apiText } from "@/lib/ui-messages";
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { getRequestUser, requireAdmin } from "@/lib/api-auth";
 import { banUser, endPro, getAccountDetail, grantPro, isAdminEmail, unbanUser } from "@/lib/billing";
 import { getClientIp, logSecurity, clientKey, rateLimit, RATE_LIMITS, rateLimitedResponse } from "@/lib/security";
@@ -76,6 +76,10 @@ export async function POST(request: Request, { params }: Params) {
       : { ok: false, message: "Aksi tidak dikenal. Pakai grant-pro, end-pro, ban, atau unban." };
 
     if (!result.ok) return NextResponse.json({ error: result.message }, { status: 400 });
+    if (action === "grant-pro") after(async () => {
+      try { const { deliverEmailQueue } = await import("@/lib/email-notifications"); await deliverEmailQueue(1, id); }
+      catch { console.error("[pro-email] Delivery remains queued"); }
+    });
     const ip = await getClientIp(request);
     await logSecurity("admin_action", { action, targetUserId: id, targetEmail: target.email, days: Number(body?.days) || null }, { ip, userId: user!.userId });
     return NextResponse.json({ ok: true, message: result.message });

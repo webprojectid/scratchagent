@@ -1,7 +1,6 @@
 "use client";
 import { uiText as ui, useUiLanguage } from "@/lib/ui-text";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
@@ -10,49 +9,32 @@ import { User, UserRound, Settings, LogOut, BookOpen, Cpu } from "lucide-react";
 
 import { accountMenuLinks } from "@/lib/account-navigation";
 import { createClient } from "@/lib/supabase/client";
-import { getCurrentUser, refreshCurrentUser, supabaseConfigured, type CurrentUser } from "@/lib/current-user";
+import { useCurrentUser, clearCurrentUser, supabaseConfigured } from "@/lib/current-user";
 import styles from "./user-nav.module.css";
 
 export function UserNav({ landingButtons = false }: { landingButtons?: boolean }) {
   useUiLanguage();
   const router = useRouter();
-  const [user, setUser] = useState<CurrentUser | null>(null);
-
-  useEffect(() => {
-    let active = true;
-    const sync = () => {
-      refreshCurrentUser();
-      getCurrentUser().then((u) => {
-        if (active) setUser(u);
-      });
-    };
-    sync();
-
-    window.addEventListener("focus", sync);
-    window.addEventListener("storage", sync);
-    return () => {
-      active = false;
-      window.removeEventListener("focus", sync);
-      window.removeEventListener("storage", sync);
-    };
-  }, []);
+  const { user, loading } = useCurrentUser();
 
   const handleLogout = () => {
     localStorage.removeItem("scratch_user");
-    refreshCurrentUser();
+    clearCurrentUser();
     if (supabaseConfigured()) {
       createClient()
         .auth.signOut()
         .catch(() => {})
         .finally(() => {
-          setUser(null);
           router.push("/login");
         });
     } else {
-      setUser(null);
       router.push("/login");
     }
   };
+
+  if (!user && loading) {
+    return <button type="button" disabled aria-busy="true" aria-label={ui("Menu Akun")} className={styles.trigger}><UserRound size={19} strokeWidth={1.75} aria-hidden="true" /></button>;
+  }
 
   if (!user) {
     return (

@@ -131,7 +131,11 @@ export async function scheduleGeneration(job: GenerationJob, tryNo = 1): Promise
             await recordAccountActivity(job.userId, "generation_failed", "PRD generation paused; accepted sections saved and allowance restored", job.planId);
           }
         });
-        console.error(`[generate][bg try${tryNo}]`, error);
+        if (error instanceof GenerationOutputRejected) {
+          console.error(`[generate][bg try${tryNo}] stage=${error.stage} validation=${error.issues.slice(0, 8).join(" | ")}`);
+        } else {
+          console.error(`[generate][bg try${tryNo}]`, error);
+        }
       } finally {
         await releaseGeneration(job.planId, "structure", lease);
       }

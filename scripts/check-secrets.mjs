@@ -6,13 +6,14 @@ import { pathToFileURL } from "node:url";
 const patterns = [
   /postgres(?:ql)?:\/\/[^\s"'\x60]+:[^\s"'\x60]+@(?!localhost\b|127\.0\.0\.1\b)[^\s"'\x60]+/,
   /\bsk-[A-Za-z0-9_-]{24,}/,
+  /\b(?:xkeysib|xsmtpsib)-[A-Za-z0-9_-]{24,}/,
   /\bsk-[A-Za-z0-9_-]{4,}(?:\.{3}|…)[A-Za-z0-9_-]{4,}/,
   /\bthk_(?:live|test)_[A-Za-z0-9_-]{16,}/,
   /\brv_[a-f0-9]{24,}\b/,
   /\b(?:gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{30,}|sb_secret_[A-Za-z0-9_-]{16,})/,
   /-----BEGIN (?:RSA |EC |OPENSSH |DSA |ENCRYPTED )?PRIVATE KEY-----/,
 ];
-const literalAssignment = /["']?\b(?:AUTH_SECRET|LLM_API_KEY|GOOGLE_CLIENT_SECRET|SUPABASE_SERVICE_ROLE_KEY|DB_PASSWORD)["']?\s*[:=]\s*(["'])(.*?)\1/;
+const literalAssignment = /["']?\b(?:AUTH_SECRET|LLM_API_KEY|GOOGLE_CLIENT_SECRET|SUPABASE_SERVICE_ROLE_KEY|DB_PASSWORD|BREVO_API_KEY|EMAIL_OTP_SECRET|CRON_SECRET)["']?\s*[:=]\s*(["'])(.*?)\1/;
 const templateDefaults = new Map([["QUOTA_GENERATE_DAILY", "3"]]);
 
 function isLocalOnlyDocumentation(file) {

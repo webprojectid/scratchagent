@@ -5,8 +5,9 @@ import { drizzle, type NodePgDatabase } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 import * as schema from "./schema";
 import * as accountSchema from "./account-schema";
+import * as emailSchema from "./email-schema";
 
-const fullSchema = { ...schema, ...accountSchema };
+const fullSchema = { ...schema, ...accountSchema, ...emailSchema };
 type Database = NodePgDatabase<typeof fullSchema>;
 const transactionScope = new AsyncLocalStorage<Database>();
 const globalDb = globalThis as unknown as { pool?: Pool };

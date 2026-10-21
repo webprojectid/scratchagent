@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -20,11 +20,12 @@ export interface CircularCarouselProps {
   autoPlayInterval?: number;
   showArrows?: boolean;
   className?: string;
+  countLabel?: string;
 }
 
 const VISIBLE_COUNT = 5;
-const RADIUS_X = 220;
-const RADIUS_Y = 100;
+const RADIUS_X = 310;
+const RADIUS_Y = 190;
 
 function getItemPosition(index: number, activeIndex: number, total: number) {
   const offset = index - activeIndex;
@@ -34,7 +35,7 @@ function getItemPosition(index: number, activeIndex: number, total: number) {
   if (offset > half) adjustedOffset = offset - total;
   if (offset < -half) adjustedOffset = offset + total;
 
-  if (Math.abs(adjustedOffset) > half * 2) return null;
+  if (Math.abs(adjustedOffset) > half) return null;
 
   const angle = (adjustedOffset / VISIBLE_COUNT) * Math.PI;
   const x = Math.sin(angle) * RADIUS_X;
@@ -57,6 +58,7 @@ export function CircularCarousel({
   autoPlayInterval = 4000,
   showArrows = true,
   className,
+  countLabel = "of",
 }: CircularCarouselProps) {
   const [internalIndex, setInternalIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
@@ -115,10 +117,12 @@ export function CircularCarousel({
       className={cn(
         "relative flex flex-col items-center justify-center gap-8 outline-none",
         className,
+  countLabel = "of",
       )}
     >
       {/* Circular track */}
-      <div className="relative h-[280px] w-full max-w-lg">
+      <div className="relative h-[300px] w-full sm:h-[420px] md:h-[500px]">
+        <div className="absolute left-1/2 top-1/2 h-[500px] w-[800px] -translate-x-1/2 -translate-y-1/2 scale-[.46] min-[400px]:scale-[.55] sm:scale-[.8] md:scale-100">
         <AnimatePresence mode="popLayout">
           {items.map((item, i) => {
             const pos = getItemPosition(i, activeIndex, total);
@@ -187,6 +191,7 @@ export function CircularCarousel({
             );
           })}
         </AnimatePresence>
+        </div>
       </div>
 
       {/* Center content */}
@@ -201,7 +206,7 @@ export function CircularCarousel({
           {String(activeIndex + 1).padStart(2, "0")}
         </span>
         <span className="mt-1 text-xs text-white/40">
-          of {String(total).padStart(2, "0")}
+          {countLabel} {String(total).padStart(2, "0")}
         </span>
       </motion.div>
 

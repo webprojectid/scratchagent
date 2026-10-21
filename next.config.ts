@@ -16,7 +16,7 @@ const nextConfig: NextConfig = {
   },
   env: {
     NEXT_PUBLIC_TURNSTILE_SITE_KEY:
-      process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "0x4AAAAAAEnBHa0BVZ4egzVD",
+      process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || (process.env.NODE_ENV === "production" ? "0x4AAAAAAEnBHa0BVZ4egzVD" : ""),
   },
   async rewrites() {
     return { beforeFiles: privateArtifactSources.map(source => ({ source, destination: "/api/private-artifact" })), afterFiles: [

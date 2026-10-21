@@ -150,7 +150,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ pla
     if (!saved) return NextResponse.json({ error: "Generation was superseded. Refresh the plan." }, { status: 409 });
     return NextResponse.json({ ok: true, featureIndex, tasksGenerated: tasks.length });
   } catch (error) {
-    console.error("[generate-tasks]", error);
+    if (error && typeof error === "object" && "stage" in error && "issues" in error && Array.isArray(error.issues)) {
+      console.error(`[generate-tasks] stage=${String(error.stage)} validation=${error.issues.slice(0, 8).join(" | ")}`);
+    } else {
+      console.error("[generate-tasks]", error);
+    }
     return NextResponse.json({ error: "Tasks could not be generated. Please try again." }, { status: 500 });
   } finally {
     if (lease) await releaseGeneration(leasedPlan, stage, lease);

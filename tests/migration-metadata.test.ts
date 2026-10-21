@@ -4,6 +4,7 @@ import { readFileSync, existsSync } from "node:fs";
 import { generateDrizzleJson, generateMigration } from "drizzle-kit/api";
 import * as schema from "@/db/schema";
 import * as account from "@/db/account-schema";
+import * as email from "@/db/email-schema";
 
 test("every journal migration has linked metadata and a SQL file", () => {
   const journal = JSON.parse(readFileSync("drizzle/meta/_journal.json", "utf8"));
@@ -15,10 +16,10 @@ test("every journal migration has linked metadata and a SQL file", () => {
     previousId = snapshot.id;
   }
 });
-test("schema includes all 18 protected tables and generates no phantom changes", async () => {
-  const snapshot = JSON.parse(readFileSync("drizzle/meta/0010_snapshot.json", "utf8"));
-  const current = generateDrizzleJson({ ...schema, ...account });
-  assert.equal(Object.keys(current.tables).length, 18);
+test("schema includes all 22 protected tables and generates no phantom changes", async () => {
+  const snapshot = JSON.parse(readFileSync("drizzle/meta/0011_snapshot.json", "utf8"));
+  const current = generateDrizzleJson({ ...schema, ...account, ...email });
+  assert.equal(Object.keys(current.tables).length, 22);
   assert.ok(Object.values(current.tables).every(table => table.isRLSEnabled));
   assert.deepEqual(await generateMigration(snapshot, current), []);
 });

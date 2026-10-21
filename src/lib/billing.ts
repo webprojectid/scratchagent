@@ -226,10 +226,17 @@ export async function grantPro(userId: string, grantedBy: string, days: number):
     .from(subscriptions)
     .where(and(eq(subscriptions.userId, userId), sql`${subscriptions.endedAt} is null`));
   if (activeRows.length > 0) return { ok: false, message: "User sudah berlangganan Pro" };
-  await db.transaction(async (tx) => {
+  const activated = await db.transaction(async (tx) => {
+    await tx.select({ id: users.id }).from(users).where(eq(users.id, userId)).for("update");
+    const existing = await tx.select({ id: subscriptions.id }).from(subscriptions).where(and(eq(subscriptions.userId, userId), isNull(subscriptions.endedAt)));
+    if (existing.length) return false;
     await tx.update(users).set({ tier: "pro" } as never).where(eq(users.id, userId));
-    await tx.insert(subscriptions).values({ userId, grantedBy, expiresAt } as never);
+    const [subscription] = await tx.insert(subscriptions).values({ userId, grantedBy, expiresAt } as never).returning();
+    const { enqueueEmail } = await import("./email-store");
+    await enqueueEmail(userId, `pro-active:${subscription.id}`, { kind: "pro_active", subscriptionId: subscription.id, startsAt: subscription.startedAt.toISOString(), expiresAt: expiresAt.toISOString(), days }, tx);
+    return true;
   });
+  if (!activated) return { ok: false, message: "User sudah berlangganan Pro" };
   return { ok: true, message: `Akses Pro aktif selama ${durationLabel(days)}` };
 }
 
