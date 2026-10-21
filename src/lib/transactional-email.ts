@@ -1,5 +1,7 @@
 import { createHash } from "node:crypto";
 import { STRUCTURE_LIMITS, IDEAS_PER_PLAN_LIMIT } from "./plan-limits";
+import { emailCodeBox, emailLayout, escapeEmail } from "./email-layout";
+export { escapeEmail } from "./email-layout";
 
 export type EmailLanguage = "en" | "id";
 export type EmailContent = { subject: string; html: string; text: string };
@@ -8,10 +10,6 @@ export type EmailPayload =
   | { kind: "pro_active"; subscriptionId: string; startsAt: string; expiresAt: string; days: number }
   | { kind: "pro_expiry"; subscriptionId: string; expiresAt: string; days: number }
   | { kind: "unfinished_plans"; plans: { id: string; title: string; done: number; total: number }[] };
-
-export function escapeEmail(value: string): string {
-  return value.replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]!);
-}
 
 export function appEmailUrl(path = "/"): string {
   const origin = new URL(process.env.EMAIL_SITE_URL || "https://www.scratchagent.web.id");
@@ -50,11 +48,18 @@ export function emailTemplate(payload: EmailPayload, lang: EmailLanguage = "en",
     : en ? "This is an automated email from Scratch Agent. Please do not reply." : "Email otomatis dari Scratch Agent. Mohon tidak membalas email ini.";
   const url = appEmailUrl(path);
   const body = paragraphs.map((line, index) => payload.kind === "social_otp" && index === 1
-    ? `<p style="font-size:36px;font-weight:700;letter-spacing:10px;color:#152018;margin:28px 0">${escapeEmail(line)}</p>`
-    : `<p style="line-height:1.7;color:#424b45">${escapeEmail(line)}</p>`).join("");
-  const list = details.length ? `<ul style="padding-left:22px;line-height:1.9;color:#424b45">${details.map(line => `<li>${escapeEmail(line)}</li>`).join("")}</ul>` : "";
+    ? emailCodeBox(line)
+    : `<p style="margin:0 0 16px;font-size:15px;line-height:1.8;color:#b4c3b8">${escapeEmail(line)}</p>`).join("");
+  const list = details.length ? `<ul style="margin:24px 0;padding-left:20px;font-size:14px;line-height:1.9;color:#b4c3b8">${details.map(line => `<li style="padding:3px 0">${escapeEmail(line)}</li>`).join("")}</ul>` : "";
   const button = payload.kind === "social_otp" ? "" : `<p style="margin:30px 0"><a href="${escapeEmail(url)}" style="background:#74FA6A;color:#10200e;text-decoration:none;padding:14px 22px;border-radius:8px;display:inline-block;font-weight:600">${escapeEmail(action)}</a></p>`;
-  return { subject, text: ["Scratch Agent", subject, ...paragraphs, ...details, ...(payload.kind === "social_otp" ? [] : [action, url]), footer, appEmailUrl("/settings?tab=notifications")].join("\n\n"), html: `<!doctype html><html lang="${lang}"><head><meta name="viewport" content="width=device-width,initial-scale=1"><meta charset="utf-8"></head><body style="margin:0;padding:24px 12px;background:#f3f5f2;font-family:Arial,Helvetica,sans-serif"><table role="presentation" style="width:100%;max-width:600px;margin:auto;background:#fff;border-radius:12px"><tr><td style="padding:32px"><p style="font-size:18px;font-weight:700;color:#152018;margin:0 0 28px"><img src="${escapeEmail(appEmailUrl("/brand/scratch-agent-mark-2k.png"))}" width="30" height="21" alt="" style="vertical-align:middle;margin-right:8px">Scratch Agent</p><h1 style="font-size:24px;line-height:1.35;color:#152018">${escapeEmail(subject)}</h1>${body}${list}${button}<hr style="border:0;border-top:1px solid #e4e9e3;margin:30px 0"><p style="font-size:12px;color:#737c76;line-height:1.6">${escapeEmail(footer)}</p>${payload.kind === "unfinished_plans" || payload.kind === "pro_expiry" ? `<a style="font-size:12px;color:#424b45" href="${escapeEmail(appEmailUrl("/settings?tab=notifications"))}">${en ? "Notification settings" : "Pengaturan notifikasi"}</a>` : ""}</td></tr></table></body></html>` };
+  const reminders = payload.kind === "unfinished_plans" || payload.kind === "pro_expiry";
+  const footerHtml = escapeEmail(footer) + (reminders ? `<br><a href="${escapeEmail(appEmailUrl("/settings?tab=notifications"))}" style="color:#c5d4c8;text-decoration:underline">${en ? "Email preferences" : "Pengaturan notifikasi"}</a>` : "");
+  const title = payload.kind === "social_otp" ? (en ? "Verify your sign-in" : "Verifikasi login Anda") : subject;
+  return {
+    subject,
+    text: ["Scratch Agent", subject, ...paragraphs, ...details, ...(payload.kind === "social_otp" ? [] : [action, url]), footer, appEmailUrl("/settings?tab=notifications")].join("\n\n"),
+    html: emailLayout({ language: lang, titleHtml: escapeEmail(title), bodyHtml: body + list + button, footerHtml, bannerUrl: appEmailUrl("/brand/email-header-v1.jpg"), homeUrl: appEmailUrl("/"), align: payload.kind === "social_otp" ? "center" : "left" }),
+  };
 }
 
 export class EmailSendError extends Error {
