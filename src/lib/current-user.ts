@@ -7,7 +7,7 @@ export interface CurrentUser {
   name: string;
   provider?: string;
   role?: string;
-  tier?: "free" | "pro" | "max";
+  tier?: "free" | "pro";
   proActive?: boolean;
   createdAt?: string | null;
   proExpiresAt?: string | null;

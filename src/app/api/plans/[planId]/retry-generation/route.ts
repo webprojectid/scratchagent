@@ -16,7 +16,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pla
   if (error || !plan) return error;
   if (!user || !plan.userId || plan.status !== "generating" || plan.features.length) return NextResponse.json({ error: "This plan cannot be resumed here." }, { status: 409 });
   const account = await getAccountState(user.userId);
-  if (!account || account.bannedAt || plan.tier === "max" && account.tier !== "max" || plan.tier === "pro" && !hasProFeatures(user, account.tier)) {
+  if (!account || account.bannedAt || plan.tier === "pro" && !hasProFeatures(user, account.tier)) {
     return NextResponse.json({ error: "An active subscription matching this plan is required to restart generation.", code: "PLAN_TIER_REQUIRED" }, { status: 403 });
   }
   const lease = await claimGeneration(plan.id, "structure");
@@ -27,7 +27,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pla
     const response = await withGenerationLease(plan.id, "structure", lease, async () => {
       const saved = await getGenerationWork(plan.id);
       if (!saved?.failure?.paused) return NextResponse.json({ error: "Generation is not paused." }, { status: 409 });
-      receipt = plan.physical ? await (await import("@/lib/physical-quota")).consumePhysicalQuota(plan.userId!) : await consumeQuota(plan.userId!, account.tier === "max" ? "pro" : account.tier, { skipLimit: await isAdminEmail(user.email) });
+      receipt = await consumeQuota(plan.userId!, account.tier, { skipLimit: await isAdminEmail(user.email) });
       if (!receipt) return NextResponse.json({ error: "Your plan allowance is currently used. Try again when it resets." }, { status: 429 });
       await saveGenerationWork(plan.id, { checkpoint: saved.checkpoint, receipt });
       committed = true;

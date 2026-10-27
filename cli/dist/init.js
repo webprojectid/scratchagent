@@ -78,23 +78,9 @@ ${agentsMd(loadConfig()?.baseUrl ?? "")}
 ## Mode
 Kerjakan satu task per sesi. Ikuti urutan server. Berhenti di checkpoint.
 `;
-const physicalAgentsMd = `# Scratch Agent — Machines & Robotics
-
-Read the full hardware PRD, Foundation, engineering plan, component choices,
-task dependencies and open decisions before working. Respect manual choices.
-Use protocol v2. Run task next --json and follow executor, discipline, required
-tools, revision and evidence rules. An AI agent performs only supported digital
-work; assembly, physical measurements and human reviews require the owner.
-Record real digital evidence with task evidence before requesting completion.
-Waiting for parts/human/review/tool is not failure or completion. Never invent
-test results, compatibility, fabrication files, measurements or approvals.
-Do not install a web UI stack unless companion software is actually required.
-Do not purchase, flash, fabricate or operate devices without authorization.
-Compiler/simulator success is not physical validation. Report these separately.
-`;
-export function initAgent(agent, domain = "software") {
+export function initAgent(agent) {
     const cwd = process.cwd();
-    const md = domain === "physical" ? physicalAgentsMd : agentsMd(loadConfig()?.baseUrl ?? "");
+    const md = agentsMd(loadConfig()?.baseUrl ?? "");
     if (agent === "opencode" || agent === "codex" || agent === "auto") {
         writeFileSync(join(cwd, "AGENTS.md"), md);
         console.log("✓ AGENTS.md ditulis");
@@ -111,7 +97,7 @@ export function initAgent(agent, domain = "software") {
         const cursorDir = join(cwd, ".cursor");
         if (!existsSync(cursorDir))
             mkdirSync(cursorDir, { recursive: true });
-        writeFileSync(join(cursorDir, "rules"), domain === "physical" ? physicalAgentsMd : CURSOR_RULES);
+        writeFileSync(join(cursorDir, "rules"), CURSOR_RULES);
         console.log("✓ .cursor/rules ditulis");
     }
 }

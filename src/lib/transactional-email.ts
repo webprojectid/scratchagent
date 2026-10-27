@@ -1,6 +1,5 @@
 import { createHash } from "node:crypto";
-import { MAX_PLAN } from "./max-plan";
-import { STRUCTURE_LIMITS, ideasPerPlanLimit } from "./plan-limits";
+import { STRUCTURE_LIMITS, IDEAS_PER_PLAN_LIMIT } from "./plan-limits";
 import { emailCodeBox, emailLayout, escapeEmail } from "./email-layout";
 export { escapeEmail } from "./email-layout";
 
@@ -8,8 +7,8 @@ export type EmailLanguage = "en" | "id";
 export type EmailContent = { subject: string; html: string; text: string };
 export type EmailPayload =
   | { kind: "social_otp"; code: string }
-  | { kind: "pro_active"; tier?: "pro" | "max"; subscriptionId: string; startsAt: string; expiresAt: string; days: number }
-  | { kind: "pro_expiry"; tier?: "pro" | "max"; subscriptionId: string; expiresAt: string; days: number }
+  | { kind: "pro_active"; subscriptionId: string; startsAt: string; expiresAt: string; days: number }
+  | { kind: "pro_expiry"; subscriptionId: string; expiresAt: string; days: number }
   | { kind: "unfinished_plans"; plans: { id: string; title: string; done: number; total: number }[] };
 
 export function appEmailUrl(path = "/"): string {
@@ -20,7 +19,6 @@ export function appEmailUrl(path = "/"): string {
 
 export function emailTemplate(payload: EmailPayload, lang: EmailLanguage = "en", timezone = "Asia/Jakarta"): EmailContent {
   const en = lang === "en";
-  const packageName = "tier" in payload && payload.tier === "max" ? "Max" : "Pro";
   const date = (value: string) => new Intl.DateTimeFormat(en ? "en-GB" : "id-ID", { dateStyle: "long", timeStyle: "short", timeZone: timezone }).format(new Date(value)) + ` (${timezone})`;
   let subject: string, paragraphs: string[], details: string[] = [], action = en ? "Open Scratch Agent" : "Buka Scratch Agent", path = "/profile";
   if (payload.kind === "social_otp") {
@@ -28,19 +26,16 @@ export function emailTemplate(payload: EmailPayload, lang: EmailLanguage = "en",
     subject = en ? "Your Scratch Agent verification code" : "Kode verifikasi Scratch Agent Anda";
     paragraphs = [en ? "Enter this code to finish signing in. It expires in 10 minutes and can only be used once." : "Masukkan kode ini untuk menyelesaikan login. Kode berlaku 10 menit dan hanya bisa dipakai sekali.", payload.code, en ? "Never share this code. If you did not request it, you can ignore this email." : "Jangan bagikan kode ini. Abaikan email ini jika Anda tidak meminta kode."];
   } else if (payload.kind === "pro_active") {
-    subject = en ? `Payment successful — your ${packageName} access is active` : `Pembayaran berhasil — akses ${packageName} Anda aktif`;
-    paragraphs = [en ? `Your ${packageName} access has been activated. You can start creating plans now.` : `Akses ${packageName} Anda sudah diaktifkan. Anda bisa mulai membuat plan sekarang.`];
-    const limits = STRUCTURE_LIMITS[payload.tier === "max" ? "max" : "pro"];
-    const ideaLimit = ideasPerPlanLimit(payload.tier);
-    const range = (value: [number, number]) => payload.tier === "max" ? `${en ? "Up to" : "Hingga"} ${value[1]}` : value.join("–");
-    details = [en ? `Package: Scratch ${packageName} · ${payload.days} days` : `Paket: Scratch ${packageName} · ${payload.days} hari`, `${en ? "Starts" : "Mulai"}: ${date(payload.startsAt)}`, `${en ? "Ends" : "Berakhir"}: ${date(payload.expiresAt)}`, en ? `${range(limits.features)} phases per plan` : `${range(limits.features)} fase per plan`, en ? `${range(limits.subFeatures)} subfeatures per phase` : `${range(limits.subFeatures)} subfitur per fase`, en ? `${range(limits.tasks)} tasks per phase` : `${range(limits.tasks)} task per fase`, en ? `Up to ${ideaLimit} additional ideas per project` : `Hingga ${ideaLimit} ide tambahan per proyek`];
-    if (packageName === "Max") { details.splice(3,0,en ? "Software plan structure (hardware scope is planned separately):" : "Struktur plan software (lingkup hardware direncanakan terpisah):"); details.push(en ? "All Pro features for software plans, plus hardware and robotics PRDs" : "Semua fitur Pro untuk plan software, termasuk PRD hardware dan robotika", en ? `${MAX_PLAN.hardwarePlans} hardware PRDs per rolling ${MAX_PLAN.hardwareWindowDays} days; software planning remains unlimited` : `${MAX_PLAN.hardwarePlans} PRD hardware dalam rolling ${MAX_PLAN.hardwareWindowDays} hari; plan software tetap tanpa batas kuota`); }
+    subject = en ? "Payment successful — your Pro access is active" : "Pembayaran berhasil — akses Pro Anda aktif";
+    paragraphs = [en ? "Your Pro access has been activated. You can start creating plans now." : "Akses Pro Anda sudah diaktifkan. Anda bisa mulai membuat plan sekarang."];
+    const limits = STRUCTURE_LIMITS.pro;
+    details = [en ? `Package: Scratch Pro · ${payload.days} days` : `Paket: Scratch Pro · ${payload.days} hari`, `${en ? "Starts" : "Mulai"}: ${date(payload.startsAt)}`, `${en ? "Ends" : "Berakhir"}: ${date(payload.expiresAt)}`, en ? `Up to ${limits.features[1]} phases per plan` : `Hingga ${limits.features[1]} fase per plan`, en ? `Up to ${limits.subFeatures[1]} subfeatures per phase` : `Hingga ${limits.subFeatures[1]} subfitur per fase`, en ? `Up to ${limits.tasks[1]} tasks per phase` : `Hingga ${limits.tasks[1]} task per fase`, en ? `Up to ${IDEAS_PER_PLAN_LIMIT} additional ideas per project` : `Hingga ${IDEAS_PER_PLAN_LIMIT} ide tambahan per proyek`];
     action = en ? "Start creating a plan" : "Mulai buat plan"; path = "/new";
   } else if (payload.kind === "pro_expiry") {
-    subject = en ? `Your ${packageName} access ends in ${payload.days} ${payload.days === 1 ? "day" : "days"}` : `Akses ${packageName} Anda berakhir ${payload.days} hari lagi`;
+    subject = en ? `Your Pro access ends in ${payload.days} ${payload.days === 1 ? "day" : "days"}` : `Akses Pro Anda berakhir ${payload.days} hari lagi`;
     paragraphs = [en ? "Review your access before it expires. This email does not renew your package or charge you." : "Periksa akses Anda sebelum berakhir. Email ini tidak memperpanjang paket atau menagih pembayaran."];
     details = [`${en ? "Access ends" : "Akses berakhir"}: ${date(payload.expiresAt)}`];
-    action = en ? `View my ${packageName} access` : `Lihat akses ${packageName} saya`;
+    action = en ? "View my Pro access" : "Lihat akses Pro saya";
   } else {
     subject = en ? "Your plans have unfinished tasks" : "Masih ada task pada plan Anda";
     paragraphs = [en ? "Pick up where you left off. These plans still have tasks to complete." : "Lanjutkan pekerjaan terakhir Anda. Plan berikut masih memiliki task yang belum selesai."];

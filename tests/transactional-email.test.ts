@@ -9,9 +9,9 @@ import { expiryReminderDay, unfinishedReminderDue } from "@/lib/email-notificati
 test("email templates escape user content and use the actual Pro limits", () => {
   const content = emailTemplate({ kind: "pro_active", subscriptionId: randomUUID(), days: 31, startsAt: "2026-10-01T02:00:00Z", expiresAt: "2026-11-01T02:00:00Z" });
   assert.match(content.subject, /Payment successful/);
-  assert.match(content.text, /10–15 phases/);
-  assert.match(content.text, /12–20 subfeatures/);
-  assert.match(content.text, /15–25 tasks/);
+  assert.match(content.text, /Up to 15 phases/);
+  assert.match(content.text, /Up to 20 subfeatures/);
+  assert.match(content.text, /Up to 25 tasks/);
   assert.match(content.text, /31 days/);
   assert.match(content.text, /1 November 2026/);
   assert.doesNotMatch(content.text, /Rp|\$\d|invoice/i);

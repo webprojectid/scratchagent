@@ -17,7 +17,7 @@ test("every journal migration has linked metadata and a SQL file", () => {
   }
 });
 test("schema includes all 22 protected tables and generates no phantom changes", async () => {
-  const snapshot = JSON.parse(readFileSync("drizzle/meta/0013_snapshot.json", "utf8"));
+  const snapshot = JSON.parse(readFileSync("drizzle/meta/0011_snapshot.json", "utf8"));
   const current = generateDrizzleJson({ ...schema, ...account, ...email });
   assert.equal(Object.keys(current.tables).length, 22);
   assert.ok(Object.values(current.tables).every(table => table.isRLSEnabled));

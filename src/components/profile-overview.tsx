@@ -31,7 +31,7 @@ export function ProfileOverview({ user, quota, onSave, onNavigate, preview = fal
   const [error, setError] = useState("");
   const dirty = name.trim() !== user.name || JSON.stringify(profile) !== JSON.stringify(profileSettings);
   const tier = effectiveAccountTier(user);
-  const pro = tier === "pro" || tier === "max";
+  const pro = tier === "pro";
   const unlimited = quota?.unlimited === true;
   const initials = (user.name || user.email).split(/\s+/).slice(0, 2).map(n => n[0]).join("").toUpperCase();
   const remaining = quota ? Math.max(0, Math.min(quota.limit, quota.remaining)) : 0;
@@ -62,7 +62,7 @@ export function ProfileOverview({ user, quota, onSave, onNavigate, preview = fal
       <aside className={s.rightRail}>
         <section className={s.usage} aria-labelledby="plan-title">
           <div className={s.usageTop}><span className={s.eyebrow}>{ui("PAKET SAAT INI")}</span><span className={s.dot} /></div>
-          <h2 id="plan-title">{tier ? `Scratch ${tier === "max" ? "Max" : pro ? "Pro" : ui("Free")}` : ui("Paket belum terverifikasi")}<span>{tier ? pro ? ui("Untuk alur kerja lebih luas.") : ui("Dari ide ke rencana pertama.") : ui("Status langganan belum tersedia.")}</span></h2>
+          <h2 id="plan-title">{tier ? `Scratch ${pro ? "Pro" : ui("Free")}` : ui("Paket belum terverifikasi")}<span>{tier ? pro ? ui("Untuk alur kerja lebih luas.") : ui("Dari ide ke rencana pertama.") : ui("Status langganan belum tersedia.")}</span></h2>
           <div className={s.quota}><span>{ui("Generate tersedia")}</span><strong>{unlimited ? ui("Tanpa batas") : quota ? <>{remaining}<small> / {quota.limit}</small></> : "…"}</strong></div>
           {quota && !unlimited && <progress aria-label={ui("Kuota generate tersisa")} value={remaining} max={Math.max(1, quota.limit)} />}
           <p className={s.help}>{!quota ? ui("Kuota belum tersedia.") : unlimited ? user.role === "admin" && !pro ? ui("Akses admin bebas kuota generate harian.") : ui("Paket Anda tidak memiliki batas generate.") : quota.resetAt && !Number.isNaN(Date.parse(quota.resetAt)) ? `Reset ${new Date(quota.resetAt).toLocaleString(uiLocale(), {day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}.` : ui("Kuota mengikuti periode pemakaian akun.")}</p>

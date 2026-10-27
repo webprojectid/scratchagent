@@ -1,5 +1,4 @@
 import { withPlanMutation } from "./plan-mutation";
-import type { TaskActor } from "./physical-tasks";
 import { structureLimits } from "./plan-limits";
 import { isAutomaticQaSubFeature, isAutomaticQaTaskTitle, QA_COPY } from "./qa-labels";
 import type { Plan } from "./types";
@@ -14,11 +13,10 @@ const layerOrder: Record<string, number> = { frontend: 0, backend: 1, qa: 2 };
 // pernah tuntas sebelum fase 2 dimulai.
 
 export interface NextTaskResult {
-  waiting?: { ref: string; reason: string }[];
   done: boolean;
   blocked: boolean;
   failedTasks: { ref: string; title: string; failReason: string | null }[];
-  task: { ref: string; title: string; layer: string; phase: number; page: string | null; lastFailReason: string | null; detail?: Task["detail"]; hardware?: Task["hardware"] } | null;
+  task: { ref: string; title: string; layer: string; phase: number; page: string | null; lastFailReason: string | null; detail?: Task["detail"] } | null;
   progress: {
     phase: { current: number; total: number };
     layer: string;
@@ -28,11 +26,10 @@ export interface NextTaskResult {
   };
 }
 
-export async function getNextTask(planId: string, loadedPlan?: Plan, actor?: TaskActor): Promise<NextTaskResult> {
+export async function getNextTask(planId: string, loadedPlan?: Plan): Promise<NextTaskResult> {
   const plan = loadedPlan?.id === planId ? loadedPlan : await getPlan(planId);
   if (!plan) return { done: true, blocked: false, failedTasks: [], task: null, progress: { phase: { current: 0, total: 0 }, layer: "qa", page: null, checkpoint: false, remainingInLayer: 0 } };
 
-  if (plan.physical) return (await import("./physical-tasks")).nextPhysicalTask(plan, actor);
   const tasks = allTasks(plan);
   const doneRefs = new Set(tasks.filter((t) => t.status === "done").map((t) => t.ref));
   const failed = tasks.filter((t) => t.status === "failed");
@@ -91,23 +88,18 @@ export async function getNextTask(planId: string, loadedPlan?: Plan, actor?: Tas
 export class TaskConflict extends Error {
   constructor(message: string) { super(message); this.name = "TaskConflict"; }
 }
-async function transitionTask(planId: string, ref: string, action: "start" | "complete" | "fail" | "retry", reason?: string, actor?: TaskActor): Promise<Task | null> {
+async function transitionTask(planId: string, ref: string, action: "start" | "complete" | "fail" | "retry", reason?: string): Promise<Task | null> {
   return withPlanMutation(planId, async () => {
     const found = await findTask(planId, ref);
     if (!found) return null;
     const { task, plan } = found;
-    if (plan.physical && (!actor || actor.type === "agent" && (task.hardware?.executor === "human" || task.hardware?.evidenceKind === "physical"))) throw new TaskConflict("This task requires an authenticated human executor.");
-    if (plan.physical && (action === "start" || action === "complete")) {
-      const issues = (await import("./physical-tasks")).physicalTaskIssues(task, action, actor);
-      if (issues.length) throw new TaskConflict(issues.join(" "));
-    }
     const target = { start: "in_progress", complete: "done", fail: "failed", retry: "pending" }[action] as Task["status"];
     if (task.status === target) return task;
     if (action === "start") {
       if (task.status !== "pending") throw new TaskConflict("Only pending tasks can be started.");
       if (plan.status === "generating") throw new TaskConflict("Wait for plan generation to finish.");
-      if (allTasks(plan).some(candidate => candidate.status === "in_progress" && candidate.ref !== ref && (!plan.physical || !candidate.hardware?.waitReason))) throw new TaskConflict("Another task is already running.");
-      const next = await getNextTask(planId, plan, actor);
+      if (allTasks(plan).some(candidate => candidate.status === "in_progress" && candidate.ref !== ref)) throw new TaskConflict("Another task is already running.");
+      const next = await getNextTask(planId, plan);
       if (next.task?.ref !== ref) throw new TaskConflict("Complete earlier tasks and dependencies before starting this task.");
     } else if (action === "retry") {
       if (task.status !== "failed") throw new TaskConflict("Only failed tasks can be retried.");
@@ -116,7 +108,6 @@ async function transitionTask(planId: string, ref: string, action: "start" | "co
     if (action === "start") patch.startedAt = new Date().toISOString();
     if (action === "complete") patch.completedAt = new Date().toISOString();
     if (action === "fail") { patch.failReason = reason ?? "Task failed"; patch.lastFailReason = patch.failReason; }
-    if (plan.physical && task.hardware && action === "fail") patch.hardware = { ...task.hardware, revision: task.hardware.revision + 1, review: undefined };
     if (action === "retry") { patch.failReason = null; patch.retryCount = (task.retryCount ?? 0) + 1; patch.startedAt = null; patch.completedAt = null; }
     if (!await updateTask(planId, ref, patch, task.status)) throw new TaskConflict("Task changed. Refresh the plan and try again.");
     await syncFeatureStatuses(planId);
@@ -125,10 +116,10 @@ async function transitionTask(planId: string, ref: string, action: "start" | "co
     return { ...task, ...patch };
   });
 }
-export const startTask = (planId: string, ref: string, actor?: TaskActor) => transitionTask(planId, ref, "start", undefined, actor);
-export const completeTask = (planId: string, ref: string, actor?: TaskActor) => transitionTask(planId, ref, "complete", undefined, actor);
-export const failTask = (planId: string, ref: string, reason: string, actor?: TaskActor) => transitionTask(planId, ref, "fail", reason, actor);
-export const retryTask = (planId: string, ref: string, actor?: TaskActor) => transitionTask(planId, ref, "retry", undefined, actor);
+export const startTask = (planId: string, ref: string) => transitionTask(planId, ref, "start");
+export const completeTask = (planId: string, ref: string) => transitionTask(planId, ref, "complete");
+export const failTask = (planId: string, ref: string, reason: string) => transitionTask(planId, ref, "fail", reason);
+export const retryTask = (planId: string, ref: string) => transitionTask(planId, ref, "retry");
 
 async function checkPlanComplete(planId: string, plan: Plan) {
   const tasks = allTasks(plan);
@@ -160,7 +151,6 @@ function setQaCapacityWarning(plan: Plan, active: boolean): boolean {
  * mutasi dan hanya mengubah status ke ready jika nilai ini true.
  */
 export function ensureQaPhase(plan: Plan): { changed: boolean; ready: boolean } {
-  if (plan.physical) return { changed: false, ready: !!plan.physical.spec && plan.features.length > 0 && plan.features.every(f => f.subFeatures.every(s => s.tasks.length > 0)) };
   const features = plan.features ?? [];
   if (features.length === 0 || features.some((feature) =>
     !(feature.subFeatures ?? []).some((sub) => !isAutomaticQaSubFeature(sub.title) && (sub.tasks ?? []).length > 0)

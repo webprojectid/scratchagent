@@ -211,10 +211,6 @@ interface LlmUsage {
 type GenerationStage = "discovery" | "outline" | "subfeatures" | "architecture" | "database" | "requirements" | "tasks" | "diagram" | "review" | "idea";
 
 interface LlmCallOptions<T> {
-  normalization?: "contract";
-  contract?: string;
-  role?: string;
-  maxTokens?: number;
   stage?: GenerationStage;
   validate?: (value: T) => string[];
   providers?: LlmProvider[];
@@ -294,12 +290,12 @@ async function attemptOnce<T>(
       body: JSON.stringify({
         model,
         messages: [
-          { role: "system", content: `${options.role ?? stageRoles[options.stage ?? "outline"]} Return one valid JSON object only. Use double-quoted keys and strings, with no prose, comments, or trailing commas outside JSON. Escape newlines and quotes inside strings. Preserve confirmed user facts, chosen language, and the exact requested field names. JSON FIELD TYPES: ${options.contract ?? generationContracts[options.stage ?? "outline"]} Never output objects where strings are required. Keep each criterion concise and observable. Unconfirmed numeric targets and business policies must be labeled proposed assumptions requiring confirmation. Do not log or display passwords, password hashes or hash fragments. RLS controls row authorization; validate input formats with explicit application or database constraints. Never invent built-in database catalogs or extensions.` },
+          { role: "system", content: `${stageRoles[options.stage ?? "outline"]} Return one valid JSON object only. Use double-quoted keys and strings, with no prose, comments, or trailing commas outside JSON. Escape newlines and quotes inside strings. Preserve confirmed user facts, chosen language, and the exact requested field names. JSON FIELD TYPES: ${generationContracts[options.stage ?? "outline"]} Never output objects where strings are required. Keep each criterion concise and observable. Unconfirmed numeric targets and business policies must be labeled proposed assumptions requiring confirmation. Do not log or display passwords, password hashes or hash fragments. RLS controls row authorization; validate input formats with explicit application or database constraints. Never invent built-in database catalogs or extensions.` },
           { role: "user", content: userContent },
         ],
         temperature: 0.2,
-        max_tokens: options.maxTokens ?? (options.stage === "tasks" ? 16384 : options.stage === "subfeatures" || options.stage === "discovery" ? 8192 :
-          options.stage === "database" || options.stage === "requirements" || options.stage === "review" ? 8192 : 4096),
+        max_tokens: options.stage === "tasks" ? 16384 : options.stage === "subfeatures" || options.stage === "discovery" ? 8192 :
+          options.stage === "database" || options.stage === "requirements" || options.stage === "review" ? 8192 : 4096,
         // Streaming: parser SSE auto-detect dan fallback ke JSON, jadi aman
         // untuk gateway yang mengabaikan flag ini. Manfaat: token pertama
         // langsung mengalir (progress), dan gateway tidak menahan seluruh
@@ -341,7 +337,7 @@ async function attemptOnce<T>(
     if (decoded && typeof decoded === 'object' && 'patch' in decoded && previousDraft) draft = previousDraft;
     const raw = options.stage === 'review' ? decoded : mergeGenerationPatch(decoded, previousDraft);
     draft = JSON.stringify(raw);
-    const value = schema.parse(options.normalization === "contract" ? raw : normalizeGenerationOutput(options.stage ?? "outline", normalize(raw)));
+    const value = schema.parse(normalizeGenerationOutput(options.stage ?? "outline", normalize(raw)));
     const issues = options.validate?.(value) ?? [];
     draft = JSON.stringify(value);
     if (issues.length > 0) {
@@ -367,7 +363,7 @@ async function attemptOnce<T>(
  * Coba model utama lebih dulu. Bila responsnya rusak atau dangkal, minta satu
  * perbaikan dari model yang sama sebelum beralih ke model cadangan.
  */
-export async function callLlm<T>(schema: z.ZodType<T>, prompt: string, usage?: LlmUsage, options: LlmCallOptions<T> = {}): Promise<T> {
+async function callLlm<T>(schema: z.ZodType<T>, prompt: string, usage?: LlmUsage, options: LlmCallOptions<T> = {}): Promise<T> {
   try { return await checkpointedSection(options.stage ?? "outline", prompt, usage, sectionUsage => callLlmUncached(schema, prompt, sectionUsage, options)); }
   catch (error) {
     if (usage && error && typeof error === "object") failedGenerationUsage.set(error, usage);
@@ -467,7 +463,6 @@ async function regenerateDiagram(
 }
 
 export interface GenerateResult {
-  physical?: import("./physical-domain").PhysicalPlan;
   productSpec?: ProductSpec;
   title: string;
   brief: string;
@@ -653,7 +648,7 @@ export async function generatePlanStructure(
   const brandTitle =
     one.title.split(/[:\u2013\u2014]|\s+-\s+/)[0].trim() || one.title;
   if (one.features.length > limits.features[1]) {
-    structureWarnings.push(handoff.language === "en" ? `The response exceeded the feature limit (${one.features.length}). It was limited to ${limits.features[1]} for the ${tier === "max" ? "Max" : tier === "pro" ? "Pro" : "Free"} plan.` : `Prompt melebihi batas (${one.features.length} fitur). Dipotong jadi ${limits.features[1]} sesuai paket ${tier === "max" ? "Max" : tier === "pro" ? "Pro" : "Free"}.`);
+    structureWarnings.push(handoff.language === "en" ? `The response exceeded the feature limit (${one.features.length}). It was limited to ${limits.features[1]} for the ${tier === "pro" ? "Pro" : "Free"} plan.` : `Prompt melebihi batas (${one.features.length} fitur). Dipotong jadi ${limits.features[1]} sesuai paket ${tier === "pro" ? "Pro" : "Free"}.`);
   }
   const featureTitles = stage1Features.map((f) => f.title);
 
@@ -708,7 +703,7 @@ export async function generatePlanStructure(
     }
     return accepted;
   };
-  const batchSize = tier === "pro" || tier === "max" ? 2 : 4;
+  const batchSize = tier === "pro" ? 2 : 4;
   const subfeatureGroups = Array.from({ length: Math.ceil(stage1Features.length / batchSize) }, (_, index) =>
     stage1Features.slice(index * batchSize, (index + 1) * batchSize),
   );
@@ -721,7 +716,7 @@ export async function generatePlanStructure(
       const requested = group.map((feature) => {
         const index = stage1Features.indexOf(feature);
         return { ...feature, subfeatureTarget: limits.subFeatures[0] - (index === stage1Features.length - 1 ? 1 : 0), subfeatureRange: index === stage1Features.length - 1
-          ? [limits.subFeatures[0] - 1, tier === "max" ? Math.min(limits.subFeatures[1] - 1, limits.tasks[1] - 4) : limits.subFeatures[1] - 1]
+          ? [limits.subFeatures[0] - 1, limits.subFeatures[1] - 1]
           : limits.subFeatures };
       });
       subfeatureResults[groupIndex] = await callLlm(
@@ -924,7 +919,7 @@ export async function generatePlanStructure(
     return { requirementIds: f.requirement_ids, slug: f.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""), title: f.title, icon: f.icon, description: f.description, tujuan: f.tujuan, selesaiBila: f.selesai_bila, priority: f.priority, status: "direncanakan" as const, subFeatures };
   });
   if (subFeatureTrimmed) {
-    structureWarnings.push(handoff.language === "en" ? `Subfeatures per phase were limited to ${limits.subFeatures[1]} for the ${tier === "max" ? "Max" : tier === "pro" ? "Pro" : "Free"} plan.` : `Jumlah sub-fitur per fase dibatasi ${limits.subFeatures[1]} sesuai paket ${tier === "max" ? "Max" : tier === "pro" ? "Pro" : "Free"}`);
+    structureWarnings.push(handoff.language === "en" ? `Subfeatures per phase were limited to ${limits.subFeatures[1]} for the ${tier === "pro" ? "Pro" : "Free"} plan.` : `Jumlah sub-fitur per fase dibatasi ${limits.subFeatures[1]} sesuai paket ${tier === "pro" ? "Pro" : "Free"}`);
   }
 
   const resolvedStack = one.stack?.length
@@ -1066,7 +1061,7 @@ const ideaPhaseSchema = z.object({
       tujuan: z.string().default(""),
       selesai_bila: z.array(z.string()).default([]),
     }),
-  ).min(1).default([]),
+  ).min(1).max(20).default([]),
 });
 
 export interface IdeaFeature {
@@ -1084,10 +1079,10 @@ export interface IdeaFeature {
  * metadata). Task-nya digenerate terpisah oleh generateTasksForFeature agar
  * ikut budget task yang sama dengan fitur reguler.
  */
-export async function convertIdeaToFeature(brief: string, ideaText: string, phase: number, handoff: HandoffSettings = legacyHandoff, tier: Tier = "pro"): Promise<IdeaFeature> {
+export async function convertIdeaToFeature(brief: string, ideaText: string, phase: number, handoff: HandoffSettings = legacyHandoff): Promise<IdeaFeature> {
   const usage: LlmUsage = { tokensIn: 0, tokensOut: 0, models: [] };
   const result = await callLlm(
-    ideaPhaseSchema.extend({ sub_features: ideaPhaseSchema.shape.sub_features.unwrap().max(structureLimits(tier).subFeatures[1]) }),
+    ideaPhaseSchema,
     `Brief project: ${brief}
 
 IDE TAMBAHAN DARI USER (wajib diwujudkan, ini alasan fitur ini ada):

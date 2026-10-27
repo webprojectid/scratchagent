@@ -17,14 +17,12 @@ import { randomUUID } from "crypto";
 const input = z.object({
   brief: z.string().trim().min(3).max(5000),
   techPrefs: z.object({
-    domain: z.enum(["software", "physical"]).optional(),
-    hardware: z.unknown().optional(),
     mode: z.enum(["auto", "custom"]),
     frontend: z.string().optional(),
     backend: z.string().optional(),
     database: z.string().optional(),
     deployment: z.string().optional(),
-  }).refine(v => v.domain !== "physical" || !!v.hardware, "Hardware Foundation is required."),
+  }),
   handoff: handoffSettingsSchema.partial().optional(),
   userId: z.string().default("shared"),
   answers: z
@@ -65,11 +63,7 @@ export async function POST(request: Request) {
     if (user.tokenPolicy && (user.tokenPolicy.access === "read" || user.tokenPolicy.projectIds.length)) return NextResponse.json({ error: apiText("Token ini tidak dapat membuat proyek baru.") }, { status: 403 });
     const ownerId = planOwnerKey(user);
     const handoff = resolveHandoff((await getAccountSettings(user.userId)).handoff, data.handoff);
-    const providedPrefs = { ...data.techPrefs, hardware: data.techPrefs.domain === "physical" ? (await import("@/lib/physical-domain")).physicalInputSchema.parse(data.techPrefs.hardware) : undefined };
-    const techPrefs = effectiveTechPrefs(providedPrefs, handoff);
-    const membership = techPrefs.domain === "physical" ? await getAccountState(user.userId) : undefined;
-    if (techPrefs.domain === "physical" && (membership?.tier !== "max" || membership.bannedAt)) return NextResponse.json({ error: "Hardware and robotics planning requires an active Max plan.", code: "MAX_REQUIRED" }, { status: 403 });
-    if (techPrefs.domain === "physical" && !await (await import("@/lib/physical-storage")).physicalStorageReady()) return NextResponse.json({ error: "Hardware planning is not enabled on this server yet." }, { status: 503 });
+    const techPrefs = effectiveTechPrefs(data.techPrefs, handoff);
 
     // Rem kedua selain kuota harian: maks 10 generate per 10 menit per akun.
     const rl = RATE_LIMITS.generate;
@@ -77,7 +71,7 @@ export async function POST(request: Request) {
     if (retryIn !== null) return rateLimitedResponse(clientKey(user.userId, ip), retryIn, { ip, userId: user.userId, route: "/api/generate" });
 
     // Tier + status banned: Pro bypass kuota, banned ditolak total.
-    const account = membership ?? await getAccountState(user.userId);
+    const account = await getAccountState(user.userId);
     if (account?.bannedAt) {
       await logSecurity("access_denied", { route: "/api/generate", reason: "banned" }, { ip, userId: user.userId, request });
       return NextResponse.json({ error: apiText("Akun ini telah diblokir secara permanen.") }, { status: 403 });
@@ -91,12 +85,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: apiText("Konfigurasi LLM belum lengkap. Konfigurasikan provider melalui Developer Setting") }, { status: 503 });
     }
 
-    const receipt = techPrefs.domain === "physical"
-      ? await (await import("@/lib/physical-quota")).consumePhysicalQuota(ownerId)
-      : await consumeQuota(ownerId, tier === "max" ? "pro" : tier, { skipLimit: await isAdminEmail(user.email) });
+    const receipt = await consumeQuota(ownerId, tier, { skipLimit: await isAdminEmail(user.email) });
     if (!receipt) {
       await logSecurity("quota_exhausted", { route: "/api/generate", tier }, { ip, userId: user.userId, request });
-      return NextResponse.json({ error: techPrefs.domain === "physical" ? "Your hardware PRD allowance is used. Check your allowance reset date and try again later." : apiText("Kuota generate harian habis. Coba besok."), code: techPrefs.domain === "physical" ? "HARDWARE_QUOTA_EXHAUSTED" : "QUOTA_EXHAUSTED" }, { status: 429 });
+      return NextResponse.json({ error: apiText("Kuota generate harian habis. Coba besok.") }, { status: 429 });
     }
 
     // ASINKRON: balas planId seketinda dengan plan kerangka (status generating),
@@ -109,7 +101,6 @@ export async function POST(request: Request) {
       {
         id: planId,
         title: data.brief.slice(0, 48),
-        ...(techPrefs.domain === "physical" && techPrefs.hardware ? { physical: { version: 1 as const, revision: 1, input: techPrefs.hardware } } : {}),
         brief: data.brief,
         stack: [],
         asumsi: [],
@@ -170,10 +161,6 @@ export async function GET(request: Request) {
   const user = await getRequestUser(searchParams.get("userId"));
   if (!user) return unauthorized();
   const account = await getAccountState(user.userId);
-  if (searchParams.get("domain") === "physical") {
-    if (account?.tier !== "max" || account.bannedAt) return NextResponse.json({error:"An active Max plan is required.",code:"MAX_REQUIRED"},{status:403});
-    return NextResponse.json(await (await import("@/lib/physical-quota")).getPhysicalQuota(planOwnerKey(user)));
-  }
-  const tier = account?.tier === "max" ? "pro" : account?.tier ?? "free";
+  const tier = account?.tier ?? "free";
   return NextResponse.json(await getQuota(planOwnerKey(user), tier, { unlimited: await isAdminEmail(user.email) }));
 }

@@ -14,7 +14,7 @@ export const projectState = pgTable("account_project_state", {
   planId: uuid("plan_id").primaryKey(),
   favorite: boolean().notNull().default(false), archived: boolean().notNull().default(false),
   lastOpenedAt: timestamp("last_opened_at", { withTimezone: true }),
-  generationSettings: jsonb("generation_settings").$type<HandoffSettings>(), generationInput: jsonb("generation_input").$type<{ techPrefs: import("../lib/types").TechPrefs; answers: { question: string; answer: string }[] }>(),
+  generationSettings: jsonb("generation_settings").$type<HandoffSettings>(), generationInput: jsonb("generation_input").$type<{ techPrefs: { mode: "auto" | "custom"; frontend?: string; backend?: string; database?: string; deployment?: string }; answers: { question: string; answer: string }[] }>(),
 }, table => [foreignKey({ name: "account_project_state_plan_id_fkey", columns: [table.planId], foreignColumns: [plans.id] }).onDelete("cascade")]).enableRLS();
 export const accountLibrary = pgTable("account_library", {
   id: uuid().primaryKey().defaultRandom(), userId: uuid("user_id").notNull(),

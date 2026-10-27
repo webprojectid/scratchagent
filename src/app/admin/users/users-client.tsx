@@ -72,10 +72,10 @@ function fmtDate(iso: string | null): string {
 
 function TierChip({ tier }: { tier: string }) {
   useUiLanguage();
-  if (tier === "pro" || tier === "max") {
+  if (tier === "pro") {
     return (
       <span className="inline-flex items-center gap-1 rounded-full bg-[#74FA6A] px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-[.12em] text-black">
-        <Crown size={11} /> {tier === "max" ? "Max" : "Pro"}
+        <Crown size={11} /> Pro
       </span>
     );
   }
@@ -104,7 +104,6 @@ export default function AdminUsersPage({ preview = false, embedded = false }: { 
   const [toast, setToast] = useState<{ text: string; ok: boolean } | null>(null);
   /** Durasi Pro yang dipilih admin di card konfirmasi. Default 1 bulan (31 hari). */
   const [grantDays, setGrantDays] = useState<number>(31);
-  const [grantTier, setGrantTier] = useState<"pro" | "max">("pro");
   /** Akun yang sedang menunggu konfirmasi durasi Pro. Card terbuka selama terisi. */
   const [grantTarget, setGrantTarget] = useState<{ id: string; email: string; name: string | null } | null>(null);
 
@@ -181,7 +180,7 @@ export default function AdminUsersPage({ preview = false, embedded = false }: { 
   }, [preview, demoAccounts]);
 
   function simulateAction(id: string, action: string) {
-    const patch = action === "grant-pro" || action === "grant-max" ? {tier:action === "grant-max" ? "max" : "pro",proActive:true,proExpiresAt:new Date(Date.now()+grantDays*86400000).toISOString()} : action === "end-pro" ? {tier:"free",proActive:false,proExpiresAt:null} : {bannedAt:action === "ban" ? new Date().toISOString() : null};
+    const patch = action === "grant-pro" ? {tier:"pro",proActive:true,proExpiresAt:new Date(Date.now()+grantDays*86400000).toISOString()} : action === "end-pro" ? {tier:"free",proActive:false,proExpiresAt:null} : {bannedAt:action === "ban" ? new Date().toISOString() : null};
     setDemoAccounts(list => list.map(a => a.id === id ? {...a,...patch} : a));
     setAccounts(list => list?.map(a => a.id === id ? {...a,...patch} : a) ?? []);
     setSelected(a => a?.id === id ? {...a,...patch} : a);
@@ -243,13 +242,13 @@ export default function AdminUsersPage({ preview = false, embedded = false }: { 
   /** Buka card konfirmasi durasi Pro untuk satu akun. */
   const openGrantConfirm = (a: { id: string; email: string; name: string | null }) => {
     setGrantTarget({ id: a.id, email: a.email, name: a.name });
-    setGrantDays(31); setGrantTier("pro");
+    setGrantDays(31);
   };
 
   /** Kirim Pro dengan durasi terpilih, lalu tutup card konfirmasi. */
   const confirmGrant = async () => {
     if (!grantTarget) return;
-    if (preview) { simulateAction(grantTarget.id,grantTier === "max" ? "grant-max" : "grant-pro"); return; }
+    if (preview) { simulateAction(grantTarget.id,"grant-pro"); return; }
     const id = grantTarget.id;
     const key = `${id}:grant-pro`;
     setBusy(key);
@@ -258,7 +257,7 @@ export default function AdminUsersPage({ preview = false, embedded = false }: { 
       const res = await fetch(`/api/admin/users/${id}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: grantTier === "max" ? "grant-max" : "grant-pro", days: grantDays }),
+        body: JSON.stringify({ action: "grant-pro", days: grantDays }),
       });
       const data = await res.json();
       if (!res.ok || !data.ok) {
@@ -298,7 +297,7 @@ export default function AdminUsersPage({ preview = false, embedded = false }: { 
         <div className={adminStyles.metrics} aria-label={ui("Ringkasan hasil pencarian")}>
           <div><span>{ui("Akun ditampilkan")}</span><strong>{accounts?.length ?? "—"}</strong></div>
           <div><span>{ui("Paket Free")}</span><strong>{freeList.length}</strong></div>
-          <div><span>Pro &amp; Max</span><strong>{proList.length}</strong></div>
+          <div><span>{ui("Paket Pro")}</span><strong>{proList.length}</strong></div>
           <div><span>{ui("Diblokir")}</span><strong>{bannedCount}</strong></div>
         </div>
         {/* Pencarian */}
@@ -325,14 +324,13 @@ export default function AdminUsersPage({ preview = false, embedded = false }: { 
                   <Sparkles size={17} />
                 </div>
                 <div>
-                  <p className="text-[14.5px] font-semibold text-white">{grantTier === "max" ? "Grant Max access" : ui("Berikan akses Pro")}</p>
+                  <p className="text-[14.5px] font-semibold text-white">{ui("Berikan akses Pro")}</p>
                   <p className="mt-0.5 text-[12px] text-[#8C97A5]">{grantTarget.name || grantTarget.email} · {grantTarget.email}</p>
                 </div>
               </div>
               <button onClick={() => setGrantTarget(null)} className="rounded-full border border-white/10 px-3 py-1.5 text-[11.5px] text-white/50 transition hover:text-white">{ui("Batal")}</button>
             </div>
             <p className="mt-4 font-mono text-[10px] font-bold uppercase tracking-[.16em] text-white/35">{ui("pilih masa aktif")}</p>
-            <label className="mt-3 block text-sm">Plan <select aria-label="Membership plan" value={grantTier} onChange={event => setGrantTier(event.target.value as "pro" | "max")} className="ml-3 rounded border border-white/20 bg-[#101417] p-2"><option value="pro">Pro</option><option value="max">Max · Hardware &amp; Robotics</option></select></label>
             <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-5">
               {PRO_DURATIONS.map((d) => (
                 <button
@@ -518,7 +516,7 @@ export default function AdminUsersPage({ preview = false, embedded = false }: { 
                       <TierChip tier={a.tier} />
                       {a.proActive && (
                         <span className="hidden rounded-full border border-sky-400/30 bg-sky-400/[.08] px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-[.12em] tabular-nums text-sky-300 sm:inline-flex">
-                          {a.proExpiresAt ? a.tier === "max" ? `Max · ${fmtDate(a.proExpiresAt)}` : ui("Pro valid until {0}", fmtDate(a.proExpiresAt)) : ui("subs aktif")}
+                          {a.proExpiresAt ? ui("Pro valid until {0}", fmtDate(a.proExpiresAt)) : ui("subs aktif")}
                         </span>
                       )}
                       {a.bannedAt && (

@@ -29,9 +29,8 @@ program
   .command("init")
   .description("Tulis file skill untuk AI agent")
   .option("--agent <agent>", "opencode | claude | cursor | auto", "auto")
-  .option("--domain <domain>", "software | physical", "software")
-  .action((opts: { agent: string; domain: string }) => {
-    initAgent(opts.agent, opts.domain);
+  .action((opts: { agent: string }) => {
+    initAgent(opts.agent);
     const config = loadConfig();
     if (config?.planId) console.log(`\nPlan aktif: ${config.planId}`);
   });
@@ -44,8 +43,7 @@ program
   .action(async (planId: string) => {
     const config = loadConfig();
     if (config) { config.planId = planId; saveConfig(config); }
-    const data = (await api(`/api/v1/plans/${planId}?protocol=2`)) as { physical?: unknown; document?: string; agentHandoff?: string; title: string; brief: string; stack: string[]; asumsi: string[]; features: { title: string; description: string; tujuan: string; selesaiBila: string[] }[] };
-    if (data.physical) { console.log(data.document); console.log(data.agentHandoff); return; }
+    const data = (await api(`/api/v1/plans/${planId}`)) as { title: string; brief: string; stack: string[]; asumsi: string[]; features: { title: string; description: string; tujuan: string; selesaiBila: string[] }[] };
     console.log(`\n# ${data.title}\n`);
     console.log(`Brief: ${data.brief}`);
     console.log(`Stack: ${data.stack.join(", ")}\n`);
@@ -71,16 +69,11 @@ program
   .action(async (opts: { plan: string; json?: boolean }) => {
     const config = loadConfig();
     if (config) { config.planId = opts.plan; saveConfig(config); }
-    const data = (await api(`/api/v1/plans/${opts.plan}/next?protocol=2`)) as { done: boolean; blocked: boolean; waiting?: { ref: string; reason: string }[]; failedTasks: { ref: string; title: string; failReason: string | null }[]; task: { ref: string; title: string; layer: string; phase: number } | null; progress: { phase: { current: number; total: number }; checkpoint: boolean; lastFailReason?: string | null } };
+    const data = (await api(`/api/v1/plans/${opts.plan}/next`)) as { done: boolean; blocked: boolean; failedTasks: { ref: string; title: string; failReason: string | null }[]; task: { ref: string; title: string; layer: string; phase: number } | null; progress: { phase: { current: number; total: number }; checkpoint: boolean; lastFailReason?: string | null } };
     if (opts.json) {
       console.log(JSON.stringify(data));
     } else {
       if (data.done) { console.log("✓ Semua task selesai"); return; }
-      if (data.blocked && data.waiting?.length) {
-        console.log("Waiting for prerequisites:");
-        for (const task of data.waiting) console.log(`  ${task.ref}: ${task.reason}`);
-        return;
-      }
       if (data.blocked) {
         console.log("⛔ Blocked — task gagal:");
         for (const t of data.failedTasks) console.log(`  ${t.ref}: ${t.title} — ${t.failReason}`);
@@ -92,17 +85,6 @@ program
   });
 
 const taskCmd = program.commands.find((c) => c.name() === "task")!;
-
-taskCmd.command("evidence <ref>").description("Record actual digital verification for a hardware task")
-  .requiredOption("--report <report>", "Observed result, not a planned result")
-  .requiredOption("--revision <revision>", "Task revision from task next")
-  .requiredOption("--outcome <outcome>", "pass | fail | inconclusive")
-  .action(async (ref: string, opts: { report: string; revision: string; outcome: string }) => {
-    const config = loadConfig();
-    if (!config?.planId) throw new Error("Select a plan with plan get first.");
-    await api(`/api/plans/${encodeURIComponent(config.planId)}/hardware-tasks/${encodeURIComponent(ref)}`, { method: "POST", body: JSON.stringify({ action: "evidence", outcome: opts.outcome, report: opts.report, revision: Number(opts.revision), requestId: crypto.randomUUID() }) });
-    console.log("Verification result recorded; completion remains subject to review requirements.");
-  });
 
 // planId wajib untuk semua operasi task (tidak ada lagi fallback pencarian global).
 function planQs(): string {

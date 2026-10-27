@@ -15,7 +15,7 @@ const steps = [
   { title: "Paste dan jalankan", desc: "Agent mengeksekusi task satu per satu mengikuti urutan server." },
 ];
 
-export function AgentPromptModal({ planId, physical = false, onClose }: { planId: string; physical?: boolean; onClose: () => void }) {
+export function AgentPromptModal({ planId, onClose }: { planId: string; onClose: () => void }) {
   useUiLanguage();
   const [handoff, setHandoff] = useState<HandoffSettings>(legacyHandoff);
   const [tokenError, setTokenError] = useState("");
@@ -27,7 +27,7 @@ export function AgentPromptModal({ planId, physical = false, onClose }: { planId
 
   useEffect(() => {
     fetch("/api/me").then((r) => (r.ok ? r.json() : null)).then((d) => {
-      if (d?.tier === "pro" || d?.tier === "max") setTier("pro");
+      if (d?.tier === "pro") setTier("pro");
     }).catch(() => {});
   }, []);
 
@@ -61,7 +61,7 @@ export function AgentPromptModal({ planId, physical = false, onClose }: { planId
 
   const serverUrl = typeof window !== "undefined" ? window.location.origin : "";
 
-  const prompt = token ? buildAgentPrompt(planId, token, serverUrl, handoff, physical) : "";
+  const prompt = token ? buildAgentPrompt(planId, token, serverUrl, handoff) : "";
 
   const copyPrompt = () => {
     navigator.clipboard.writeText(prompt);

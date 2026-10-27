@@ -13,7 +13,7 @@ import {
   generateTasksForFeature,
   sanitizeDeps,
 } from "@/lib/generate";
-import { ideasPerPlanLimit } from "@/lib/plan-limits";
+import { IDEAS_PER_PLAN_LIMIT } from "@/lib/plan-limits";
 import { getPlan, savePlan } from "@/lib/storage";
 import { claimGeneration, releaseGeneration } from "@/lib/generation-lease";
 import { withPlanMutation } from "@/lib/plan-mutation";
@@ -53,9 +53,8 @@ export async function GET(_request: Request, { params }: { params: Promise<{ pla
   const user = await getRequestUser();
   const { plan, error } = await accessPlan(planId, user);
   if (error || !plan) return error;
-  if (plan.physical) return NextResponse.json({ error: "Hardware changes require a new reviewed design revision. This software-only extension is unavailable for hardware plans." }, { status: 409 });
   const account = user ? await getAccountState(user.userId) : null;
-  const ideaLimit = hasProFeatures(user, account?.tier) ? ideasPerPlanLimit(account?.tier) : 0;
+  const ideaLimit = hasProFeatures(user, account?.tier) ? IDEAS_PER_PLAN_LIMIT : 0;
   const ideas = plan.ideas ?? [];
   return NextResponse.json({ ideas, used: ideas.length, limit: ideaLimit, left: Math.max(0, ideaLimit - ideas.length) });
 }
@@ -80,8 +79,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ pla
   if (error || !initialPlan) return error;
   let plan = initialPlan;
 
-  if (plan.physical) return NextResponse.json({ error: "Hardware changes require a new reviewed design revision. This software-only extension is unavailable for hardware plans." }, { status: 409 });
-
   // Rem laju: ide memicu 2 panggilan LLM; cegah spam biaya.
   const ip = await getClientIp(request);
   const rl = RATE_LIMITS.ideas;
@@ -102,20 +99,19 @@ export async function POST(request: Request, { params }: { params: Promise<{ pla
   const lease = await claimGeneration(planId, "ideas");
   if (!lease) return NextResponse.json({ error: "An idea is already being added. Wait for it to finish." }, { status: 409 });
   try {
-  const access = await accessPlan(planId, user, { write: true });
-  if (access.error || !access.plan) return access.error;
-  plan = structuredClone(access.plan);
-  if (plan.status !== "ready") return NextResponse.json({ error: "Wait for plan generation to finish before adding an idea." }, { status: 409 });
-  const ideaLimit = ideasPerPlanLimit(account?.tier);
-  const ideaTier = account?.tier === "max" ? "max" : "pro";
-  // Enforce the active membership allowance before provider work.
-  const ideas = plan.ideas ?? [];
-  if (ideas.length >= ideaLimit) {
-    return NextResponse.json(
-      { error: `Maksimal ${ideaLimit} ide per project sudah terpakai.`, used: ideas.length },
-      { status: 409 },
-    );
-  }
+    const access = await accessPlan(planId, user, { write: true });
+    if (access.error || !access.plan) return access.error;
+    plan = structuredClone(access.plan);
+    if (plan.status !== "ready") return NextResponse.json({ error: "Wait for plan generation to finish before adding an idea." }, { status: 409 });
+    const ideaLimit = IDEAS_PER_PLAN_LIMIT;
+    // Enforce the active membership allowance before provider work.
+    const ideas = plan.ideas ?? [];
+    if (ideas.length >= ideaLimit) {
+      return NextResponse.json(
+        { error: `Maksimal ${ideaLimit} ide per project sudah terpakai.`, used: ideas.length },
+        { status: 409 },
+      );
+    }
 
     // Fase baru menempati urutan terakhir plan (phase = jumlah fitur + 1).
     const featureIndex = plan.features.length;
@@ -132,7 +128,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pla
           subFeatures: [{ title: "Umum", tujuan: text, selesaiBila: [] }],
           usage: { tokensIn: 0, tokensOut: 0 },
         }
-      : await convertIdeaToFeature(plan.brief, text, phase, plan.generationSettings, ideaTier);
+      : await convertIdeaToFeature(plan.brief, text, phase, plan.generationSettings);
 
     // 2) AI menyusun task untuk fase baru ini (budget sama dengan fitur reguler;
     //    ide-ide lain ikut disertakan sebagai referensi tambahan).
@@ -152,7 +148,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pla
           ideaFeature.title,
           ideaFeature.subFeatures.map((s) => s.title),
           featureIndex,
-          ideaTier,
+          "pro",
           plan.features.length + 1,
           plan.ideas,
           plan.generationSettings,
@@ -213,7 +209,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pla
       const latest = await getPlan(planId);
       if (!latest || latest.features.length !== featureIndex || (latest.ideas ?? []).length !== ideas.length) return false;
       const membership = await getAccountState(user!.userId);
-      if (!hasProFeatures(user, membership?.tier) || ideas.length >= ideasPerPlanLimit(membership?.tier)) return false;
+      if (!hasProFeatures(user, membership?.tier) || ideas.length >= IDEAS_PER_PLAN_LIMIT) return false;
       latest.features.push(candidate.features[featureIndex]);
       latest.ideas = candidate.ideas;
       await savePlan(latest, latest.userId ?? user!.userId);

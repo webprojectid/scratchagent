@@ -32,7 +32,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ ref
   const { error } = await accessPlan(planId, user, { write: true });
   if (error) return error;
 
-  const task = await failTask(planId, decoded, reason, { id: user.userId, type: user.via === "token" ? "agent" : "human" });
+  const task = await failTask(planId, decoded, reason);
   if (!task) return NextResponse.json({ error: apiText("Task tidak ditemukan") }, { status: 404 });
   await recordAccountActivity(user.userId, "agent_blocked", `Task ${decoded} gagal dan perlu ditinjau`, planId);
   return NextResponse.json({ ok: true, ref: decoded, status: task.status });

@@ -35,12 +35,12 @@ async function unfinishedPlans(userId: string): Promise<UnfinishedPlan[]> {
 
 export async function scheduleEmailReminders(now = new Date()) {
   if (!emailEnabled() || !process.env.DATABASE_URL) return;
-  const subscriptions = await getDb().execute(sql`SELECT s.id,s.user_id,s.expires_at,s.tier FROM subscriptions s JOIN users u ON u.id=s.user_id WHERE s.ended_at IS NULL AND s.expires_at > ${now} AND s.expires_at <= ${new Date(now.getTime() + 7 * DAY)} AND u.banned_at IS NULL`);
-  for (const sub of subscriptions.rows as unknown as { id: string; user_id: string; expires_at: Date; tier: string }[]) {
+  const subscriptions = await getDb().execute(sql`SELECT s.id,s.user_id,s.expires_at FROM subscriptions s JOIN users u ON u.id=s.user_id WHERE s.ended_at IS NULL AND s.expires_at > ${now} AND s.expires_at <= ${new Date(now.getTime() + 7 * DAY)} AND u.banned_at IS NULL`);
+  for (const sub of subscriptions.rows as unknown as { id: string; user_id: string; expires_at: Date }[]) {
     const settings = await getAccountSettings(sub.user_id);
     const day = expiryReminderDay(sub.expires_at, now, settings.display.timezone);
     if (!day || !settings.notifications.emailPlanExpiry) continue;
-    await enqueueEmail(sub.user_id, `expiry:${sub.id}:${new Date(sub.expires_at).toISOString()}:${day}`, { kind: "pro_expiry", tier: sub.tier === "max" ? "max" : "pro", subscriptionId: sub.id, expiresAt: new Date(sub.expires_at).toISOString(), days: day });
+    await enqueueEmail(sub.user_id, `expiry:${sub.id}:${new Date(sub.expires_at).toISOString()}:${day}`, { kind: "pro_expiry", subscriptionId: sub.id, expiresAt: new Date(sub.expires_at).toISOString(), days: day });
   }
   const candidates = await getDb().execute(sql`SELECT DISTINCT p.user_id FROM plans p JOIN users u ON u.id=p.user_id WHERE p.status IN ('ready','implementing') AND p.created_at < ${new Date(now.getTime() - 3 * DAY)} AND u.banned_at IS NULL AND NOT EXISTS (SELECT 1 FROM email_outbox o WHERE o.user_id=p.user_id AND o.kind='unfinished_plans' AND (o.status IN ('pending','processing') OR (o.status='uncertain' AND o.first_attempt_at > ${new Date(now.getTime() - 7 * DAY)}) OR (o.status='sent' AND o.sent_at > ${new Date(now.getTime() - 7 * DAY)}))) ORDER BY p.user_id LIMIT 200`);
   for (const row of candidates.rows as { user_id: string }[]) {

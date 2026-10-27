@@ -1,25 +1,17 @@
-import { MAX_PLAN } from "./max-plan";
 import type { Lang } from "./lang";
 
 /** Copy halaman pricing. Semua angka di sini mengikuti quota.ts dan plan-limits.ts. */
 export function pricingCopy(lang: Lang) {
   const en = lang === "en";
-  const price = (value: number) => `${en ? "IDR " : "Rp "}${new Intl.NumberFormat(en ? "en-US" : "id-ID").format(value)}`;
   return {
     eyebrow: en ? "Plans for every build pace" : "Paket untuk setiap ritme kerja",
     heroTitle: en ? "Pick the plan that fits your build." : "Pilih paket sesuai ritme kerjamu.",
-    heroSub: en ? "Free, Pro and Max turn a brief into a structured plan, PRD, architecture, and ordered tasks. The limits and editing tools are different." : "Free, Pro, dan Max mengubah brief jadi struktur plan, PRD, arsitektur, dan task terurut. Batas penggunaan dan alat editnya berbeda.",
+    heroSub: en ? "Both plans turn a brief into a structured plan, PRD, architecture, and ordered tasks. The limits and editing tools are different." : "Kedua paket mengubah brief jadi struktur plan, PRD, arsitektur, dan task terurut. Batas penggunaan dan alat editnya berbeda.",
     pipeline: en ? ["Brief", "Plan structure", "PRD", "Architecture", "Ordered tasks"] : ["Brief", "Struktur plan", "PRD", "Arsitektur", "Task terurut"],
     currencyNote: en ? "Prices in IDR" : "Harga dalam Rupiah",
     plansTitle: en ? "Plans" : "Paket",
     freeDescription: en ? "For trying the full planning flow." : "Untuk mencoba seluruh alur planning.",
     proDescription: en ? "For frequent builds and deeper plans." : "Untuk kerja rutin dan plan lebih mendalam.",
-    maxDescription: en ? "For software builders who also plan machines and robots." : "Untuk pembuat software yang juga merencanakan mesin dan robot.",
-    maxMonthlyPrice: price(MAX_PLAN.monthlyPriceIdr),
-    maxQuarterlyPrice: price(MAX_PLAN.quarterlyPriceIdr),
-    maxPriceNote: en ? "Proposed pricing · checkout not open" : "Usulan harga · pembelian belum dibuka",
-    maxAction: en ? "Max preview" : "Preview Max",
-    maxReasons: en ? ["All Pro features for software plans", "Unlimited software plan generations", "Up to 30 phases per plan", "Up to 30 sub-features per phase", "Up to 30 tasks per phase", "Add up to 5 ideas per software project", `${MAX_PLAN.hardwarePlans} hardware / robotics PRDs per rolling ${MAX_PLAN.hardwareWindowDays} days`, "Same software model and planning quality as Pro", "Mechanical, electronics, power, firmware and control planning", "Engineering export pack with component candidates and verification tasks", "Separate AI tasks and human physical work"] : ["Semua fitur Pro untuk plan software", "Generate plan software tanpa batas kuota", "Hingga 30 fase per plan", "Hingga 30 subfitur per fase", "Hingga 30 task per fase", "Tambahkan hingga 5 ide per project software", `${MAX_PLAN.hardwarePlans} PRD hardware / robot dalam rolling ${MAX_PLAN.hardwareWindowDays} hari`, "Model dan kualitas perencanaan software sama dengan Pro", "Perencanaan mekanik, elektronik, daya, firmware, dan kontrol", "Paket ekspor engineering berisi kandidat komponen dan task verifikasi", "Task AI dan pekerjaan fisik manusia dipisahkan"],
     chooseFree: en ? "Choose Free" : "Pilih Free",
     choosePro: en ? "Choose Pro" : "Pilih Pro",
     freeWhy: en ? "Why choose Free?" : "Kenapa pilih Free?",
@@ -37,31 +29,29 @@ export function pricingCopy(lang: Lang) {
     quarterlyPrice: en ? "IDR 93,600" : "Rp 93.600",
     quarterlyOriginal: en ? "IDR 117,000" : "Rp 117.000",
     compareTitle: en ? "Compare every plan detail" : "Bandingkan detail tiap paket",
-    compareSub: en ? "Software limits are shown below. Hardware plans follow the engineering scope rather than the software phase counts." : "Batas software ditampilkan di bawah. Plan hardware mengikuti lingkup engineering, bukan jumlah fase software.",
+    compareSub: en ? "The limits below are enforced by ScratchAgent when it generates or edits a plan." : "Batas di bawah ini diterapkan langsung oleh ScratchAgent saat membuat atau mengedit plan.",
     featureLabel: en ? "Feature" : "Fitur",
     comparison: [
       { label: en ? "Successful generations per rolling 24 hours" : "Generate berhasil per rolling 24 jam", free: "3", pro: en ? "Unlimited" : "Tanpa batas" },
-      { label: en ? "Phases per plan" : "Fase per plan", free: en ? "Up to 8" : "Hingga 8", max: en ? "Up to 30" : "Hingga 30", pro: en ? "Up to 15" : "Hingga 15" },
-      { label: en ? "Sub-features per phase" : "Sub-fitur per fase", free: en ? "Up to 5" : "Hingga 5", max: en ? "Up to 30" : "Hingga 30", pro: en ? "Up to 20" : "Hingga 20" },
-      { label: en ? "Tasks per phase" : "Task per fase", free: en ? "Up to 12" : "Hingga 12", max: en ? "Up to 30" : "Hingga 30", pro: en ? "Up to 25" : "Hingga 25" },
-      { label: en ? "Add ideas after generation" : "Tambah ide setelah generate", free: en ? "Not included" : "Tidak termasuk", max: en ? "Up to 5 per software project" : "Hingga 5 per project software", pro: en ? "Up to 2 per project" : "Maks. 2 per project" },
+      { label: en ? "Phases per plan" : "Fase per plan", free: en ? "Up to 8" : "Hingga 8", pro: en ? "Up to 15" : "Hingga 15" },
+      { label: en ? "Sub-features per phase" : "Sub-fitur per fase", free: en ? "Up to 5" : "Hingga 5", pro: en ? "Up to 20" : "Hingga 20" },
+      { label: en ? "Tasks per phase" : "Task per fase", free: en ? "Up to 12" : "Hingga 12", pro: en ? "Up to 25" : "Hingga 25" },
+      { label: en ? "Add ideas after generation" : "Tambah ide setelah generate", free: en ? "Not included" : "Tidak termasuk", pro: en ? "Up to 2 per project" : "Maks. 2 per project" },
       { label: en ? "Delete plan structure" : "Hapus struktur plan", free: en ? "Not included" : "Tidak termasuk", pro: en ? "Included" : "Termasuk" },
     ],
     faqTitle: en ? "Pricing FAQs" : "FAQ pricing",
     faqs: en ? [
-      { q: "What does Max include?", a: `All Pro software benefits, plus ${MAX_PLAN.hardwarePlans} hardware or robotics PRDs per rolling ${MAX_PLAN.hardwareWindowDays} days. Proposed pricing is ${price(MAX_PLAN.monthlyPriceIdr)} monthly or ${price(MAX_PLAN.quarterlyPriceIdr)} for three months. Checkout is not open. The output is a planning document; physical assembly and validation remain human work.` },
       { q: "What counts as one generation?", a: "A generation is counted after ScratchAgent successfully saves a complete plan. If generation fails, the quota slot is returned." },
       { q: "When does the Free quota reset?", a: "Free uses a rolling 24-hour window. Each successful generation leaves the window 24 hours after it was created, which opens one slot again." },
       { q: "What changes when I choose Pro?", a: "Pro removes the generation quota, raises the enforced plan structure limits, lets you add up to two ideas per project, and lets you delete phases, sub-features, or tasks that are not running." },
-      { q: "How does the Pro 3-month price work?", a: "One month costs Rp 39,000. Three months cost Rp 93,600 instead of Rp 117,000, a 20% reduction for that billing period." },
+      { q: "How does the 3-month price work?", a: "One month costs Rp 39,000. Three months cost Rp 93,600 instead of Rp 117,000, a 20% reduction for that billing period." },
       { q: "Can a running task be deleted?", a: "No. ScratchAgent blocks deletion while a task is in progress so the plan does not conflict with the connected coding agent." },
       { q: "Do Free and Pro use the same planning flow?", a: "Yes. Both run the same stages: plan structure, PRD, architecture, database schema, and ordered tasks. The enforced size limits and Pro editing tools differ." },
     ] : [
-      { q: "Apa yang termasuk Max?", a: `Semua manfaat Pro untuk software, ditambah ${MAX_PLAN.hardwarePlans} PRD hardware atau robot dalam rolling ${MAX_PLAN.hardwareWindowDays} hari. Usulan harga ${price(MAX_PLAN.monthlyPriceIdr)} per bulan atau ${price(MAX_PLAN.quarterlyPriceIdr)} untuk tiga bulan. Pembelian belum dibuka. Hasilnya dokumen perencanaan; perakitan dan validasi fisik tetap dikerjakan manusia.` },
       { q: "Apa yang dihitung sebagai satu generate?", a: "Generate dihitung setelah ScratchAgent berhasil menyimpan plan lengkap. Kalau proses generate gagal, slot kuotanya dikembalikan." },
       { q: "Kapan kuota Free kembali tersedia?", a: "Free memakai rolling 24 jam. Setiap generate yang berhasil keluar dari jendela hitung 24 jam setelah dibuat, lalu satu slot terbuka lagi." },
       { q: "Apa yang berubah saat memilih Pro?", a: "Pro menghapus batas kuota generate, menaikkan batas struktur plan, membuka penambahan maksimal dua ide per project, serta mengizinkan penghapusan fase, sub-fitur, atau task yang tidak sedang berjalan." },
-      { q: "Bagaimana hitungan harga Pro 3 bulan?", a: "Harga satu bulan Rp 39.000. Paket tiga bulan Rp 93.600 dari harga normal Rp 117.000, jadi potongannya 20% untuk periode tersebut." },
+      { q: "Bagaimana hitungan harga 3 bulan?", a: "Harga satu bulan Rp 39.000. Paket tiga bulan Rp 93.600 dari harga normal Rp 117.000, jadi potongannya 20% untuk periode tersebut." },
       { q: "Apakah task yang sedang berjalan bisa dihapus?", a: "Tidak. ScratchAgent menolak penghapusan task yang sedang berjalan agar struktur plan tidak bentrok dengan coding agent yang terhubung." },
       { q: "Apakah alur planning Free dan Pro sama?", a: "Ya. Keduanya menjalankan tahap struktur plan, PRD, arsitektur, database schema, dan task terurut. Batas ukuran plan dan alat edit Pro yang berbeda." },
     ],

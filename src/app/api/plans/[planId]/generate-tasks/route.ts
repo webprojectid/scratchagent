@@ -46,7 +46,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ pla
     const user = await getRequestUser(legacyUserId);
     const { plan, error } = await accessPlan(planId, user, { write: true });
     if (error || !plan) return error;
-    if (plan.physical) return NextResponse.json({ ok: plan.status === "ready", skipped: true, message: "Hardware tasks are generated with the engineering plan." });
     if (!plan.userId || plan.userId === "shared") {
       return NextResponse.json({ error: "Plan owner is missing" }, { status: 409 });
     }
@@ -63,13 +62,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ pla
     leasedPlan = planId;
     lease = await claimGeneration(planId, stage);
     if (!lease) return NextResponse.json({ ok: true, alreadyRunning: true });
-    if (!await reserveGenerationAttempt(user!.userId, plan.tier === "max" ? "pro" : plan.tier ?? "free")) return NextResponse.json({ error: "Generation limit reached. Please try again later." }, { status: 429, headers: { "Retry-After": "600" } });
+    if (!await reserveGenerationAttempt(user!.userId, plan.tier ?? "free")) return NextResponse.json({ error: "Generation limit reached. Please try again later." }, { status: 429, headers: { "Retry-After": "600" } });
     let tasks: { detail?: TaskDetail; id: string; feature: string; sub_feature: string; title: string; layer: "frontend" | "backend" | "qa"; phase: number; page: string | null; deps: string[] }[] = [];
     const reservedQa = featureIndex === plan.features.length - 1;
 
     if (process.env.MOCK_LLM === "1") {
       const layers: ("frontend" | "backend" | "qa")[] = ["frontend", "backend", "qa"];
-      const count = Math.max(feature.subFeatures.length, (plan.tier === "pro" || plan.tier === "max" ? 15 : 8) - (reservedQa ? 4 : 0));
+      const count = Math.max(feature.subFeatures.length, (plan.tier === "pro" ? 15 : 8) - (reservedQa ? 4 : 0));
       for (let i = 0; i < count; i++) {
         tasks.push({
           id: `t${i + 1}`,
@@ -101,13 +100,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ pla
         const failed = getFailedGenerationUsage(error);
         if (failed) {
           await appendPlanGenerationMetrics(plan.id, failed.requests ?? []);
-          await recordUsage(user!.userId, plan.tier === "max" ? "pro" : plan.tier ?? "free", plan.id, failed, "tasks-failed");
+          await recordUsage(user!.userId, plan.tier ?? "free", plan.id, failed, "tasks-failed");
         }
         throw error;
       }
       tasks = result.tasks;
       plan.generationMetrics = mergeGenerationMetrics(plan.generationMetrics, result.usage.requests);
-      await recordUsage(user!.userId, plan.tier === "max" ? "pro" : plan.tier ?? "free", plan.id, result.usage, "tasks");
+      await recordUsage(user!.userId, plan.tier ?? "free", plan.id, result.usage, "tasks");
     }
 
     // Kunci sementara per task: pakai id dari LLM, fallback index. Dipakai utk mapping deps.

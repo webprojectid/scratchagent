@@ -59,7 +59,6 @@ export function legacyQaPhaseRefs(plan: Pick<Plan, "features">): string[] {
  * supaya UI bisa menampilkan banner jujur.
  */
 function withDiagrams(plan: Plan): Plan {
-  if (plan.physical) return plan;
   let arch = normalizeMermaidFences(plan.architecture ?? "");
   let db = normalizeMermaidFences(plan.databaseSchema ?? "");
 
@@ -128,7 +127,6 @@ async function persistPlan(plan: Plan, userId: string): Promise<void> {
       tier: plan.tier ?? "free",
       ideas: plan.ideas ?? [],
       ...qualityMetadata(plan),
-      ...(plan.physical ? (await import("./physical-storage")).physicalMetadata(plan) : {}),
     };
   await db.insert(plans).values({
     id: plan.id,
@@ -156,7 +154,6 @@ async function persistPlan(plan: Plan, userId: string): Promise<void> {
         || jsonb_build_object(
           'phaseRequirements', coalesce(${plans.techPrefs}->'phaseRequirements', '{}'::jsonb) || coalesce(excluded.tech_prefs->'phaseRequirements', '{}'::jsonb),
           'subfeatureRequirements', coalesce(${plans.techPrefs}->'subfeatureRequirements', '{}'::jsonb) || coalesce(excluded.tech_prefs->'subfeatureRequirements', '{}'::jsonb),
-          'hardwareTasks', coalesce(excluded.tech_prefs->'hardwareTasks', '{}'::jsonb) || coalesce(${plans.techPrefs}->'hardwareTasks', '{}'::jsonb),
           'taskDetails', coalesce(${plans.techPrefs}->'taskDetails', '{}'::jsonb) || coalesce(excluded.tech_prefs->'taskDetails', '{}'::jsonb))`,
     } });
 
@@ -226,7 +223,7 @@ async function persistPlan(plan: Plan, userId: string): Promise<void> {
           subFeatureId: sid,
           ref: task.ref,
           title: task.title,
-          layer: task.hardware ? null : task.layer,
+          layer: task.layer,
           phase: task.phase,
           page: task.page ?? null,
           deps: task.deps ?? [],
@@ -251,7 +248,7 @@ async function persistPlan(plan: Plan, userId: string): Promise<void> {
           subFeatureId: firstSid,
           ref: task.ref,
           title: task.title,
-          layer: task.hardware ? null : task.layer,
+          layer: task.layer,
           phase: task.phase,
           page: task.page ?? null,
           deps: task.deps ?? [],
@@ -370,7 +367,6 @@ export async function getPlan(planId: string): Promise<Plan | undefined> {
 
   const savedMeta = plan.techPrefs && !Array.isArray(plan.techPrefs) ? plan.techPrefs as any : {};
   hydrateQuality(orderedFeatures, savedMeta);
-  if (savedMeta.physical) (await import("./physical-storage")).hydratePhysical(orderedFeatures, savedMeta);
   const savedStack = Array.isArray(plan.techPrefs) ? plan.techPrefs as any[] : savedMeta.stack ?? [];
 
   const built: Plan = {
@@ -380,7 +376,6 @@ export async function getPlan(planId: string): Promise<Plan | undefined> {
     techStack: savedMeta.techStack ?? (Array.isArray(plan.techPrefs) ? plan.techPrefs : []),
     stack: savedStack.map((t: any) => t.name ?? t),
     asumsi: plan.assumptions ?? [],
-    physical: savedMeta.physical,
     productSpec: savedMeta.productSpec,
     generationMetrics: savedMeta.generationMetrics,
     requirements: savedMeta.requirements ?? { fungsional: [], nonFungsional: [] },
@@ -392,7 +387,7 @@ export async function getPlan(planId: string): Promise<Plan | undefined> {
     createdAt: plan.createdAt?.toISOString(),
     userId: plan.userId ?? undefined,
     warnings: Array.isArray(savedMeta.warnings) ? savedMeta.warnings : undefined,
-    tier: savedMeta.tier === "max" ? "max" : savedMeta.tier === "pro" ? "pro" : "free",
+    tier: savedMeta.tier === "pro" ? "pro" : "free",
     ideas: Array.isArray(savedMeta.ideas) ? savedMeta.ideas : undefined,
     generationSettings: (await getProjectGenerationSettings(planId)) ?? undefined,
     accountNotes: typeof savedMeta.accountNotes === "string" ? savedMeta.accountNotes : "",
@@ -563,7 +558,6 @@ export async function updateTask(planId: string, ref: string, patch: Partial<Tas
 
   const changed = await db.update(tasks).set(updateData).where(and(eq(tasks.id, task.id), expectedStatus ? eq(tasks.status, expectedStatus) : undefined)).returning({ id: tasks.id });
   if (!changed.length) return false;
-  if (patch.hardware) await db.update(plans).set({ techPrefs: sql`jsonb_set(${plans.techPrefs}, ARRAY['hardwareTasks', ${ref}]::text[], ${JSON.stringify(patch.hardware)}::jsonb, true)` }).where(eq(plans.id, planId));
 
   await db.insert(taskEvents).values({
     planId,

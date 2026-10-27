@@ -70,24 +70,24 @@ test("navigation shares identity before account details, and logout discards lat
   }
 });
 
-test("a fresh entitlement check replaces cached Max with the current Free membership", async () => {
+test("a fresh entitlement check replaces cached Pro with the current Free membership", async () => {
   const descriptors = ["window", "localStorage", "fetch"].map(key => [key, Object.getOwnPropertyDescriptor(globalThis, key)] as const);
   const previousUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   delete process.env.NEXT_PUBLIC_SUPABASE_URL;
   try {
     Object.defineProperty(globalThis, "window", { configurable: true, value: {} });
     Object.defineProperty(globalThis, "localStorage", { configurable: true, value: { getItem: () => JSON.stringify({ email: "membership-refresh@example.test" }) } });
-    let tier = "max";
+    let tier = "pro";
     let calls = 0;
     Object.defineProperty(globalThis, "fetch", { configurable: true, value: async () => { calls++; return Response.json({ tier, proActive: tier !== "free" }); } });
     refreshCurrentUser();
-    assert.equal((await getCurrentUser())?.tier, "max");
+    assert.equal((await getCurrentUser())?.tier, "pro");
     tier = "free";
-    assert.equal((await getCurrentUser())?.tier, "max");
+    assert.equal((await getCurrentUser())?.tier, "pro");
     assert.equal(calls, 1);
     assert.equal((await getCurrentUser({ fresh: true }))?.tier, "free");
     assert.equal(calls, 2);
-    tier = "max";
+    tier = "pro";
     Object.defineProperty(globalThis, "fetch", { configurable: true, value: async () => Response.json({ tier, proActive: true, proExpiresAt: "2020-01-01T00:00:00Z" }) });
     const expired = await getCurrentUser({ fresh: true });
     assert.equal(expired?.tier, "free");

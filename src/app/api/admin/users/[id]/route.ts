@@ -63,21 +63,20 @@ export async function POST(request: Request, { params }: Params) {
       return NextResponse.json({ error: apiText("Akun admin tidak bisa diubah lewat menu ini.") }, { status: 400 });
     }
 
-    if ((action === "grant-pro" || action === "grant-max") && !Number.isFinite(Number(body?.days))) {
+    if (action === "grant-pro" && !Number.isFinite(Number(body?.days))) {
       return NextResponse.json({ error: apiText("Pilih durasi Pro: 7, 14, 28, 31, atau 93 hari.") }, { status: 400 });
     }
 
     const actor = user!.email ?? "admin";
     const result =
-      action === "grant-max" ? await grantPro(id, actor, Number(body?.days), "max")
-      : action === "grant-pro" ? await grantPro(id, actor, Number(body?.days))
+      action === "grant-pro" ? await grantPro(id, actor, Number(body?.days))
       : action === "end-pro" ? await endPro(id, actor)
       : action === "ban" ? await banUser(id)
       : action === "unban" ? await unbanUser(id)
       : { ok: false, message: "Aksi tidak dikenal. Pakai grant-pro, end-pro, ban, atau unban." };
 
     if (!result.ok) return NextResponse.json({ error: result.message }, { status: 400 });
-    if (action === "grant-pro" || action === "grant-max") after(async () => {
+    if (action === "grant-pro") after(async () => {
       try { const { deliverEmailQueue } = await import("@/lib/email-notifications"); await deliverEmailQueue(1, id); }
       catch { console.error("[pro-email] Delivery remains queued"); }
     });

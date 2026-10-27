@@ -1,7 +1,8 @@
 import { sql } from "drizzle-orm";
 import { getDb, withDatabaseTransaction } from "@/db";
 
-const memoryLocks = new Map<string, Promise<unknown>>();
+const localState = globalThis as unknown as { scratchPlanMutationLocks?: Map<string, Promise<unknown>> };
+const memoryLocks = localState.scratchPlanMutationLocks ??= new Map<string, Promise<unknown>>();
 export async function withPlanMutation<T>(planId: string, operation: () => Promise<T>): Promise<T> {
   if (process.env.DATABASE_URL) return withDatabaseTransaction(async () => {
     await getDb().execute(sql`SELECT pg_advisory_xact_lock(hashtextextended(${`plan:${planId}`}, 0))`);

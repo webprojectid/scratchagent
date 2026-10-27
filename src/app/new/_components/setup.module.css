@@ -134,8 +134,3 @@ textarea.textAnswer { min-height: 200px; }
 }
 @media (max-width: 380px) { .workspace, .header { padding-inline: 16px; } .progressNav li + li::before { margin: 0 10px; } .primary { padding-inline: 17px; gap: 13px; } .footer span:last-child { display: none; } }
 @media (prefers-reduced-motion: reduce) { .page *, .page *::before, .page *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
-
-.documentOptions { margin-top: 28px; border-top: 1px solid #353939; border-bottom: 1px solid #353939; }
-.documentOptions > summary { cursor: pointer; padding: 18px 0; font-size: 14px; }
-.documentOptions > summary > span { display: block; margin: 8px 0 0 18px; color: #aeb8b2; font-size: 12px; }
-.documentOptions > summary:focus-visible { outline: 2px solid #74fa6a; outline-offset: 4px; }

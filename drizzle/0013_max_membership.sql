@@ -1,1 +1,0 @@
-ALTER TABLE "subscriptions" ADD COLUMN "tier" text DEFAULT 'pro' NOT NULL;

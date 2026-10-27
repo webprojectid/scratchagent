@@ -1,5 +1,4 @@
 "use client";
-import { PhysicalTaskControls } from "./physical-task-controls";
 import { uiText as ui, useUiLanguage } from "@/lib/ui-text";
 
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -159,8 +158,7 @@ export function RoadmapTaskPanel({ plan, taskRef, onSelect, onClose }: { plan: P
     <div className="space-y-5 p-5">
       <p className="font-mono text-xs text-slate-200">{task.ref}</p>
       <h2 className="text-base font-semibold text-white">{task.title}</h2>
-      <dl className="grid grid-cols-[90px_minmax(0,1fr)] gap-3 text-xs text-slate-300"><dt>{ui("Status")}</dt><dd>{ui(({ pending: "Belum dimulai", in_progress: "Dikerjakan", done: "Selesai", failed: "Gagal" })[task.status])}</dd><dt>{task.hardware ? (language === "en" ? "Discipline" : "Disiplin") : ui("Layer")}</dt><dd>{task.layer}</dd><dt>{ui("Phase")}</dt><dd>{feature.title}</dd><dt>{ui("Subfeature")}</dt><dd>{sub.title}</dd>{task.page && <><dt>{ui("Page")}</dt><dd>{task.page}</dd></>}</dl>
-      {task.hardware && <PhysicalTaskControls key={`${task.ref}:${task.hardware.revision}`} planId={plan.id} task={task}/>}
+      <dl className="grid grid-cols-[90px_minmax(0,1fr)] gap-3 text-xs text-slate-300"><dt>{ui("Status")}</dt><dd>{ui(({ pending: "Belum dimulai", in_progress: "Dikerjakan", done: "Selesai", failed: "Gagal" })[task.status])}</dd><dt>{ui("Layer")}</dt><dd>{task.layer}</dd><dt>{ui("Phase")}</dt><dd>{feature.title}</dd><dt>{ui("Subfeature")}</dt><dd>{sub.title}</dd>{task.page && <><dt>{ui("Page")}</dt><dd>{task.page}</dd></>}</dl>
       {task.detail && <div className="space-y-5 text-xs leading-relaxed text-slate-300">
         <p>{task.detail.objective}</p>
         <p className="font-mono text-slate-400">{task.detail.requirementIds.join(" · ")}</p>

@@ -4,13 +4,12 @@ import { readFileSync } from "node:fs";
 import { runInNewContext } from "node:vm";
 import ts from "typescript";
 import { NextResponse } from "next/server";
-import { ideasPerPlanLimit } from "@/lib/plan-limits";
-import { physicalStorageReady } from "@/lib/physical-storage";
+import { IDEAS_PER_PLAN_LIMIT } from "@/lib/plan-limits";
 import type { Plan } from "@/lib/types";
 
-function fixture(initialTier: "free" | "pro" | "max", used = 0) {
+function fixture(initialTier: "free" | "pro", used = 0) {
   let tier = initialTier;
-  let plan: Plan = { id: "synthetic-plan", userId: "synthetic-owner", tier: "max", title: "Synthetic", brief: "Synthetic brief", stack: [], asumsi: [], features: [], status: "ready", ideas: Array.from({ length: used }, () => ({ text: "Existing synthetic idea", createdAt: "2026-01-01T00:00:00Z" })) };
+  let plan: Plan = { id: "synthetic-plan", userId: "synthetic-owner", tier: "pro", title: "Synthetic", brief: "Synthetic brief", stack: [], asumsi: [], features: [], status: "ready", ideas: Array.from({ length: used }, () => ({ text: "Existing synthetic idea", createdAt: "2026-01-01T00:00:00Z" })) };
   let lease = false, calls = 0, saves = 0;
   let releaseProvider!: () => void, providerStarted!: () => void;
   const started = new Promise<void>(resolve => { providerStarted = resolve; });
@@ -20,16 +19,16 @@ function fixture(initialTier: "free" | "pro" | "max", used = 0) {
     "@/lib/write-origin": { writeOriginGate: () => null },
     "@/lib/api-auth": { getRequestUser: async () => ({ userId: "synthetic-owner", via: "session" }), accessPlan: async () => ({ plan: structuredClone(plan) }) },
     "@/lib/billing": { getAccountState: async () => ({ tier }) },
-    "@/lib/account-capabilities": { hasProFeatures: (_user: unknown, value: string) => value === "pro" || value === "max" },
+    "@/lib/account-capabilities": { hasProFeatures: (_user: unknown, value: string) => value === "pro" },
     "@/lib/ui-messages": { apiText: (value: string) => value },
     "@/lib/account-store": { recordAccountActivity: async () => {} },
     "@/lib/security": { RATE_LIMITS: { ideas: { limit: 10, windowMs: 1000 } }, clientKey: () => "synthetic", getClientIp: async () => "synthetic", rateLimit: () => null, logSecurity: async () => {} },
-    "@/lib/plan-limits": { ideasPerPlanLimit },
+    "@/lib/plan-limits": { IDEAS_PER_PLAN_LIMIT },
     "@/lib/generation-lease": { claimGeneration: async () => { if (lease) return null; lease = true; return "synthetic-lease"; }, releaseGeneration: async () => { lease = false; } },
     "@/lib/plan-mutation": { withPlanMutation: async (_id: string, operation: () => Promise<unknown>) => operation() },
     "@/lib/storage": { getPlan: async () => structuredClone(plan), savePlan: async (value: Plan) => { saves++; plan = structuredClone(value); } },
     "@/lib/generate": {
-      convertIdeaToFeature: async (_brief: string, _text: string, _phase: number, _settings: unknown, modelTier: string) => { assert.equal(modelTier, initialTier); calls++; providerStarted(); await provider; return { title: "Synthetic additional phase", subFeatures: [{ title: "Synthetic capability", tujuan: "Synthetic objective", selesaiBila: ["Observable result"] }] }; },
+      convertIdeaToFeature: async () => { calls++; providerStarted(); await provider; return { title: "Synthetic additional phase", subFeatures: [{ title: "Synthetic capability", tujuan: "Synthetic objective", selesaiBila: ["Observable result"] }] }; },
       generateTasksForFeature: async (_brief: string, _title: string, _sub: string[], _index: number, modelTier: string) => { assert.equal(modelTier, initialTier); return { tasks: [{ id: "t1", title: "Synthetic task", layer: "backend", deps: [] }] }; },
       assignTasksToSubFeatures: () => new Map([[0, [0]]]), buildTaskRef: () => "F01-S01-T01", sanitizeDeps: () => new Map(),
     },
@@ -46,8 +45,8 @@ test("Free cannot add ideas and the displayed allowance is zero", async () => {
   assert.equal(run.calls(), 0);
 });
 
-test("concurrent ideas serialize before AI work and Max retains its own generation tier", async () => {
-  const run = fixture("max", 4);
+test("concurrent Pro ideas serialize before AI work and respect the two-idea allowance", async () => {
+  const run = fixture("pro", 1);
   const first = run.invoke();
   await run.started;
   assert.equal((await run.invoke()).status, 409);
@@ -55,35 +54,19 @@ test("concurrent ideas serialize before AI work and Max retains its own generati
   assert.equal((await first).status, 200);
   assert.equal(run.calls(), 1);
   assert.equal(run.saves(), 1);
-  assert.equal(run.saved().ideas?.length, 5);
+  assert.equal(run.saved().ideas?.length, 2);
   assert.equal((await run.invoke()).status, 409);
   assert.equal(run.calls(), 1);
 });
 
 test("Pro allowance and membership changes block a late idea without saving", async () => {
   assert.equal((await fixture("pro", 2).invoke()).status, 409);
-  const run = fixture("max", 4);
+  const run = fixture("pro", 1);
   const pending = run.invoke();
   await run.started;
   run.setTier("free");
   run.releaseProvider();
   assert.equal((await pending).status, 409);
   assert.equal(run.saves(), 0);
-  assert.equal(run.saved().ideas?.length, 4);
-});
-
-test("hardware activation requires an explicit opt-in", async () => {
-  const before = process.env.PHYSICAL_PROJECTS_ENABLED, db = process.env.DATABASE_URL;
-  try {
-    delete process.env.DATABASE_URL;
-    delete process.env.PHYSICAL_PROJECTS_ENABLED;
-    assert.equal(await physicalStorageReady(), false);
-    process.env.PHYSICAL_PROJECTS_ENABLED = "0";
-    assert.equal(await physicalStorageReady(), false);
-    process.env.PHYSICAL_PROJECTS_ENABLED = "1";
-    assert.equal(await physicalStorageReady(), true);
-  } finally {
-    if (before === undefined) delete process.env.PHYSICAL_PROJECTS_ENABLED; else process.env.PHYSICAL_PROJECTS_ENABLED = before;
-    if (db === undefined) delete process.env.DATABASE_URL; else process.env.DATABASE_URL = db;
-  }
+  assert.equal(run.saved().ideas?.length, 1);
 });

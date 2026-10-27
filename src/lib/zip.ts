@@ -1,16 +1,13 @@
 import { renderProductSpec, renderTaskDetail } from "./product-document";
-import { renderPhysicalPrd, renderPhysicalHandoff, renderHardwareTask, physicalExportFiles } from "./physical-document";
 import type { Plan } from "./types";
 import { legacyHandoff, handoffInstructions } from "./account-preferences";
 
 export function renderAgentHandoff(plan: Plan) {
-  if (plan.physical) return renderPhysicalHandoff(plan);
   const settings = plan.generationSettings ?? legacyHandoff;
   return `# Agent handoff: ${plan.title}\n\n${handoffInstructions(settings)}\n\nRead PRD.md, struktur.json and fitur/*.md before coding. Follow task references and dependencies in struktur.json. Verify acceptance criteria with tests or explicit evidence. Stop and ask the owner when a requirement is ambiguous, a dependency fails, or a checkpoint requires review. Never invent credentials, completed tasks, or test results.\n\nGeneration settings snapshot:\n\`\`\`json\n${JSON.stringify(settings, null, 2)}\n\`\`\`\n`;
 }
 
 export function renderPrdMd(plan: Plan): string {
-  if (plan.physical) return renderPhysicalPrd(plan);
   const en = plan.generationSettings?.language === "en";
   const label = (english: string, indonesian: string) => en ? english : indonesian;
   let md = `# PRD: Project Requirements Document\n\n## 1. Overview\n${plan.brief}\n\n## 2. Requirements\n`;
@@ -86,7 +83,6 @@ export function renderFeatureMd(feature: Plan["features"][0], language: "id" | "
     for (const t of s.tasks) {
       md += `\n### ${taskNum}. ${t.title}\nRef: ${t.ref}\nLayer: ${t.layer}\nDependencies: ${t.deps.join(", ") || "none"}\nStatus: ${t.status}\n`;
       md += renderTaskDetail(t);
-      if (t.hardware) md += renderHardwareTask(t);
       taskNum++;
     }
   }
@@ -105,7 +101,6 @@ export function createZip(plan: Plan): Uint8Array {
   for (const f of plan.features) {
     files.push({ name: `fitur/${f.slug}.md`, data: encoder.encode(renderFeatureMd(f, plan.generationSettings?.language ?? "id")) });
   }
-  for (const file of physicalExportFiles(plan)) files.push({ name: file.name, data: encoder.encode(file.content) });
   return buildZip(files);
 }
 

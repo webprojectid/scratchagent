@@ -50,8 +50,7 @@ export function resolveHandoff(defaults: HandoffSettings, override?: Partial<Han
 export function handoffInstructions(settings: HandoffSettings): string {
   return `OUTPUT CONTRACT:\nWrite all narrative, requirements, feature descriptions and tasks in ${settings.language === "en" ? "English (US)" : "Indonesian"}; preserve JSON field names, user-provided brand names, and technical terms.\nScope: ${settings.scope === "mvp" ? "MVP: prioritize the smallest usable end-to-end product, explicitly defer optional scope." : "Production: include rollout, observability, backups, security, failure recovery and operations."}\nDepth: ${settings.detail === "detailed" ? "detailed implementation context with edge cases and verifiable outcomes" : "concise, concrete implementation context"}.\nTarget coding agent: ${settings.agent}.\nRegardless of depth, preserve functional and nonfunctional requirements, acceptance criteria, dependencies, and verification tasks. Never omit these essentials. Prefer the requested scope when earlier stylistic instructions conflict.`;
 }
-export function effectiveTechPrefs(explicit: import("./types").TechPrefs, settings: HandoffSettings): import("./types").TechPrefs {
-  if (explicit.domain === "physical") return explicit;
+export function effectiveTechPrefs(explicit: { mode: "auto" | "custom"; frontend?: string; backend?: string; database?: string; deployment?: string }, settings: HandoffSettings) {
   if (explicit.mode === "custom") return explicit;
   const chosen = Object.fromEntries(Object.entries(settings.stack).filter(([, value]) => value.trim()));
   return Object.keys(chosen).length ? { ...chosen, mode: "custom" as const } : explicit;

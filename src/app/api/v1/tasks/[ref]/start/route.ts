@@ -21,7 +21,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ ref
   const { error } = await accessPlan(planId, user, { write: true });
   if (error) return error;
 
-  const task = await startTask(planId, decoded, { id: user.userId, type: user.via === "token" ? "agent" as const : "human" as const });
+  const task = await startTask(planId, decoded);
   if (!task) return NextResponse.json({ error: apiText("Task tidak ditemukan") }, { status: 404 });
   await recordAccountActivity(user.userId, "agent_work", "Agent mulai mengerjakan task: " + decoded, planId);
   return NextResponse.json({ ok: true, ref: decoded, status: task.status });

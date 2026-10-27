@@ -2,15 +2,15 @@ import type { Plan, Task } from "./types";
 
 type StoredPlan = Plan & { userId?: string };
 type StoredToken = { hash: string; userId: string; label: string; revokedAt: string | null; createdAt: string };
-type StoredUser = { id: string; email: string; name: string; tier: "free" | "pro" | "max"; bannedAt: string | null; createdAt: string };
+type StoredUser = { id: string; email: string; name: string; tier: "free" | "pro"; bannedAt: string | null; createdAt: string };
 
 type MemoryStore = {
   planStore: Map<string, StoredPlan>;
   taskEventsStore: { planId: string; taskRef: string; type: string; meta: unknown; createdAt: string }[];
   tokenStore: Map<string, StoredToken>;
   userStore: Map<string, StoredUser>;
-  subscriptionStore: { tier?: "pro" | "max"; id: string; userId: string; startedAt: string; endedAt: string | null; expiresAt: string | null; grantedBy: string | null; endedBy: string | null }[];
-  usageStore: { id: string; userId: string; planId: string | null; stage: string; tier: "free" | "pro" | "max"; createdAt: string }[];
+  subscriptionStore: { id: string; userId: string; startedAt: string; endedAt: string | null; expiresAt: string | null; grantedBy: string | null; endedBy: string | null }[];
+  usageStore: { id: string; userId: string; planId: string | null; stage: string; tier: "free" | "pro"; createdAt: string }[];
 };
 
 const globalStore = globalThis as unknown as { __scratchAgentMemoryStore?: MemoryStore };
@@ -44,7 +44,7 @@ export function memoryListUsers(): StoredUser[] {
   return Array.from(userStore.values());
 }
 
-export function memorySetUserTier(userId: string, tier: "free" | "pro" | "max"): StoredUser | undefined {
+export function memorySetUserTier(userId: string, tier: "free" | "pro"): StoredUser | undefined {
   const u = userStore.get(userId);
   if (u) u.tier = tier;
   return u;
@@ -60,8 +60,8 @@ export function memoryListSubscriptions(userId: string) {
   return subscriptionStore.filter((s) => s.userId === userId);
 }
 
-export function memoryAddSubscription(userId: string, grantedBy: string | null, expiresAtIso: string | null = null, tier: "pro" | "max" = "pro") {
-  const sub = { tier, id: crypto.randomUUID(), userId, startedAt: new Date().toISOString(), endedAt: null, expiresAt: expiresAtIso, grantedBy, endedBy: null };
+export function memoryAddSubscription(userId: string, grantedBy: string | null, expiresAtIso: string | null = null) {
+  const sub = { id: crypto.randomUUID(), userId, startedAt: new Date().toISOString(), endedAt: null, expiresAt: expiresAtIso, grantedBy, endedBy: null };
   subscriptionStore.push(sub);
   return sub;
 }
@@ -86,7 +86,7 @@ export function memoryExpireSubscription(userId: string, endedBy: string, now: D
   return sub;
 }
 
-export function memoryAddUsage(userId: string, stage: string, tier: "free" | "pro" | "max", planId: string | null = null) {
+export function memoryAddUsage(userId: string, stage: string, tier: "free" | "pro", planId: string | null = null) {
   const ev = { id: crypto.randomUUID(), userId, planId, stage, tier, createdAt: new Date().toISOString() };
   usageStore.push(ev);
   return ev;
@@ -110,11 +110,11 @@ export function memoryCountUsageSince(userId: string, stage: string, sinceIso: s
   return usageStore.filter((e) => e.userId === userId && e.stage === stage && e.createdAt >= sinceIso).length;
 }
 
-export function memoryCountUsageByTier(userId: string, stage: string, tier: "free" | "pro" | "max"): number {
+export function memoryCountUsageByTier(userId: string, stage: string, tier: "free" | "pro"): number {
   return usageStore.filter((e) => e.userId === userId && e.stage === stage && e.tier === tier).length;
 }
 
-export function memoryCountUsageSinceByTier(userId: string, stage: string, tier: "free" | "pro" | "max", sinceIso: string): number {
+export function memoryCountUsageSinceByTier(userId: string, stage: string, tier: "free" | "pro", sinceIso: string): number {
   return usageStore.filter((e) => e.userId === userId && e.stage === stage && e.tier === tier && e.createdAt >= sinceIso).length;
 }
 
