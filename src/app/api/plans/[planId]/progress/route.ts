@@ -71,6 +71,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ plan
       completedSections,
       completedCount: Object.keys(generationWork.checkpoint.entries).length,
       attempt: generationFailure?.attempts ?? 0,
+      ...(plan.physical ? { physicalPhaseCount: (Object.values(generationWork.checkpoint.entries).find(entry => entry.stage === "outline")?.value as { phases?: unknown[] } | undefined)?.phases?.length ?? 0 } : {}),
+      ...(plan.physical ? { physicalPhaseCount: Object.values(generationWork.checkpoint.entries).find(entry => entry.stage === "outline")?.value &&
+        (Object.values(generationWork.checkpoint.entries).find(entry => entry.stage === "outline")!.value as { phases?: unknown[] }).phases?.length || 0 } : {}),
     } : null,
     status: plan.status,
     title: plan.title,
@@ -86,7 +89,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ plan
         title: sf.title,
         tujuan: sf.tujuan,
         selesaiBila: sf.selesaiBila,
-        tasks: (sf.tasks ?? []).map((t) => ({ detail: t.detail, ref: t.ref, title: t.title, layer: t.layer, phase: t.phase, page: t.page, deps: t.deps, status: t.status })),
+        tasks: (sf.tasks ?? []).map((t) => ({ hardware: t.hardware, detail: t.detail, ref: t.ref, title: t.title, layer: t.layer, phase: t.phase, page: t.page, deps: t.deps, status: t.status })),
       })),
     })),
   }, { headers: responseHeaders });

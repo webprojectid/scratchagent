@@ -88,6 +88,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pla
     const user = await getRequestUser(legacyUserId);
     const { plan, error } = await accessPlan(planId, user, { write: true });
     if (error || !plan) return error;
+    if (plan.physical) return NextResponse.json({ ok: plan.status === "ready", skipped: true, message: "Hardware tasks are generated with the engineering plan." });
     const ownerId = plan.userId ?? "";
 
     if (plan.status !== "generating") {

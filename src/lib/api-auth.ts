@@ -173,6 +173,11 @@ export async function accessPlan(
     const { isAdminEmail } = await import("@/lib/billing");
     if (user.via !== "session" || !isAdminEmail(user.email)) return { error: planNotFound() };
   }
+  if (plan.physical) {
+    const { getAccountState } = await import("./billing");
+    const membership = await getAccountState(user.userId);
+    if (membership?.tier !== "max" || membership.bannedAt) return { error: forbidden("Hardware and robotics planning requires an active Max plan.") };
+  }
   return { plan };
 }
 
@@ -194,6 +199,11 @@ export async function requirePlanForPage(planId: string): Promise<Plan> {
     if (!ownsPlan(plan, user)) {
       const { isAdminEmail } = await import("@/lib/billing");
       if (!isAdminEmail(user.email)) notFound();
+    }
+    if (plan.physical) {
+      const { getAccountState } = await import("./billing");
+      const membership = await getAccountState(user.userId);
+      if (membership?.tier !== "max" || membership.bannedAt) redirect("/pricing");
     }
     return plan;
   }

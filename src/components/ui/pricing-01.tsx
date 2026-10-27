@@ -14,7 +14,7 @@ export type PricingPlan = {
   name: string; description: string; price: string; period?: string;
   features: string[]; featuresLabel: string; actionLabel: string; href: string;
   highlighted?: boolean; controls?: ReactNode; priceNote?: ReactNode;
-  pending?: boolean; onChoose?: (event: MouseEvent<HTMLAnchorElement>) => void;
+  disabled?: boolean; pending?: boolean; onChoose?: (event: MouseEvent<HTMLAnchorElement>) => void;
 };
 
 export default function Pricing({ plans }: { plans: PricingPlan[] }) {
@@ -34,12 +34,12 @@ export default function Pricing({ plans }: { plans: PricingPlan[] }) {
                 {plan.period && <span>{plan.period}</span>}
               </p>
               <div className={styles.priceNote}>{plan.priceNote}</div>
-              <Button asChild className={styles.action}>
+              {plan.disabled ? <Button disabled className={styles.action}>{plan.actionLabel}</Button> : <Button asChild className={styles.action}>
                 <Link href={plan.href} onClick={plan.onChoose} aria-busy={plan.pending || undefined}>
                   <span>{plan.actionLabel}</span>
                   <span className={styles.actionIcon} aria-hidden="true"><ArrowUpRight size={17} /></span>
                 </Link>
-              </Button>
+              </Button>}
             </div>
           </div>
           <div className={styles.features}>

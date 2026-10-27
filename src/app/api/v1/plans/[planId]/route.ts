@@ -6,6 +6,11 @@ export async function GET(_request: Request, { params }: { params: Promise<{ pla
   const user = await getRequestUser();
   const { plan, error } = await accessPlan(planId, user);
   if (error || !plan) return error;
+  if (plan.physical) {
+    if (new URL(_request.url).searchParams.get("protocol") !== "2") return NextResponse.json({ error: "This hardware plan requires a CLI supporting protocol v2." }, { status: 426 });
+    const { renderPhysicalPrd, renderPhysicalHandoff } = await import("@/lib/physical-document");
+    return NextResponse.json({ ...plan, protocol: 2, document: renderPhysicalPrd(plan), agentHandoff: renderPhysicalHandoff(plan) });
+  }
 
   return NextResponse.json({
     id: plan.id,

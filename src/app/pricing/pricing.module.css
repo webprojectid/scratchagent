@@ -138,3 +138,7 @@
   .tableWrap th, .tableWrap td { padding: 12px 6px; font-size: 12px; overflow-wrap: anywhere; }
   .tableWrap tbody th { width: 44%; }
 }
+
+.maxPlan { margin-top: 24px; padding: 28px; border: 1px solid var(--border, #39413d); border-radius: 16px; }
+.maxPlan h3 { margin: 0 0 12px; font-size: 24px; }
+.maxPlan p { max-width: 70ch; line-height: 1.65; color: #b8c2bb; }

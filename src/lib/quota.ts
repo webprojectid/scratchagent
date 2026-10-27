@@ -21,7 +21,7 @@ export interface QuotaInfo {
 export interface QuotaReceipt {
   userId: string;
   eventId?: string;
-  tier: "free" | "pro";
+  tier: "free" | "pro" | "max";
 }
 
 export interface TokenUsage {

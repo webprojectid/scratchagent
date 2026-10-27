@@ -13,8 +13,10 @@ import {
   generateTasksForFeature,
   sanitizeDeps,
 } from "@/lib/generate";
-import { IDEAS_PER_PLAN_LIMIT } from "@/lib/plan-limits";
-import { savePlan } from "@/lib/storage";
+import { ideasPerPlanLimit } from "@/lib/plan-limits";
+import { getPlan, savePlan } from "@/lib/storage";
+import { claimGeneration, releaseGeneration } from "@/lib/generation-lease";
+import { withPlanMutation } from "@/lib/plan-mutation";
 import { RATE_LIMITS, clientKey, getClientIp, logSecurity, rateLimit, rateLimitedResponse } from "@/lib/security";
 
 
@@ -51,8 +53,11 @@ export async function GET(_request: Request, { params }: { params: Promise<{ pla
   const user = await getRequestUser();
   const { plan, error } = await accessPlan(planId, user);
   if (error || !plan) return error;
+  if (plan.physical) return NextResponse.json({ error: "Hardware changes require a new reviewed design revision. This software-only extension is unavailable for hardware plans." }, { status: 409 });
+  const account = user ? await getAccountState(user.userId) : null;
+  const ideaLimit = hasProFeatures(user, account?.tier) ? ideasPerPlanLimit(account?.tier) : 0;
   const ideas = plan.ideas ?? [];
-  return NextResponse.json({ ideas, used: ideas.length, limit: IDEAS_PER_PLAN_LIMIT, left: Math.max(0, IDEAS_PER_PLAN_LIMIT - ideas.length) });
+  return NextResponse.json({ ideas, used: ideas.length, limit: ideaLimit, left: Math.max(0, ideaLimit - ideas.length) });
 }
 
 export async function POST(request: Request, { params }: { params: Promise<{ planId: string }> }) {
@@ -71,8 +76,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ pla
   }
 
   // Gate 2: akses tulis (sekaligus menolak plan demo yang read-only).
-  const { plan, error } = await accessPlan(planId, user, { write: true });
-  if (error || !plan) return error;
+  const { plan: initialPlan, error } = await accessPlan(planId, user, { write: true });
+  if (error || !initialPlan) return error;
+  let plan = initialPlan;
+
+  if (plan.physical) return NextResponse.json({ error: "Hardware changes require a new reviewed design revision. This software-only extension is unavailable for hardware plans." }, { status: 409 });
 
   // Rem laju: ide memicu 2 panggilan LLM; cegah spam biaya.
   const ip = await getClientIp(request);
@@ -91,16 +99,24 @@ export async function POST(request: Request, { params }: { params: Promise<{ pla
   if (!text) return NextResponse.json({ error: apiText("Ide tidak boleh kosong.") }, { status: 400 });
   if (text.length > 2000) return NextResponse.json({ error: apiText("Ide terlalu panjang (maks 2000 karakter).") }, { status: 400 });
 
-  // Gate 4: limit 2 ide per project.
+  const lease = await claimGeneration(planId, "ideas");
+  if (!lease) return NextResponse.json({ error: "An idea is already being added. Wait for it to finish." }, { status: 409 });
+  try {
+  const access = await accessPlan(planId, user, { write: true });
+  if (access.error || !access.plan) return access.error;
+  plan = structuredClone(access.plan);
+  if (plan.status !== "ready") return NextResponse.json({ error: "Wait for plan generation to finish before adding an idea." }, { status: 409 });
+  const ideaLimit = ideasPerPlanLimit(account?.tier);
+  const ideaTier = account?.tier === "max" ? "max" : "pro";
+  // Enforce the active membership allowance before provider work.
   const ideas = plan.ideas ?? [];
-  if (ideas.length >= IDEAS_PER_PLAN_LIMIT) {
+  if (ideas.length >= ideaLimit) {
     return NextResponse.json(
-      { error: `Maksimal ${IDEAS_PER_PLAN_LIMIT} ide per project sudah terpakai.`, used: ideas.length },
+      { error: `Maksimal ${ideaLimit} ide per project sudah terpakai.`, used: ideas.length },
       { status: 409 },
     );
   }
 
-  try {
     // Fase baru menempati urutan terakhir plan (phase = jumlah fitur + 1).
     const featureIndex = plan.features.length;
     const phase = featureIndex + 1;
@@ -116,7 +132,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pla
           subFeatures: [{ title: "Umum", tujuan: text, selesaiBila: [] }],
           usage: { tokensIn: 0, tokensOut: 0 },
         }
-      : await convertIdeaToFeature(plan.brief, text, phase, plan.generationSettings);
+      : await convertIdeaToFeature(plan.brief, text, phase, plan.generationSettings, ideaTier);
 
     // 2) AI menyusun task untuk fase baru ini (budget sama dengan fitur reguler;
     //    ide-ide lain ikut disertakan sebagai referensi tambahan).
@@ -136,7 +152,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pla
           ideaFeature.title,
           ideaFeature.subFeatures.map((s) => s.title),
           featureIndex,
-          "pro",
+          ideaTier,
           plan.features.length + 1,
           plan.ideas,
           plan.generationSettings,
@@ -192,7 +208,19 @@ export async function POST(request: Request, { params }: { params: Promise<{ pla
       ...ideas,
       { text, createdAt: new Date().toISOString(), featureTitle: ideaFeature.title, phase },
     ];
-    await savePlan(plan, plan.userId ?? user!.userId);
+    const candidate = plan;
+    const committed = await withPlanMutation(planId, async () => {
+      const latest = await getPlan(planId);
+      if (!latest || latest.features.length !== featureIndex || (latest.ideas ?? []).length !== ideas.length) return false;
+      const membership = await getAccountState(user!.userId);
+      if (!hasProFeatures(user, membership?.tier) || ideas.length >= ideasPerPlanLimit(membership?.tier)) return false;
+      latest.features.push(candidate.features[featureIndex]);
+      latest.ideas = candidate.ideas;
+      await savePlan(latest, latest.userId ?? user!.userId);
+      plan = latest;
+      return true;
+    });
+    if (!committed) return NextResponse.json({ error: "The plan or membership changed. Refresh before adding this idea again." }, { status: 409 });
     const ipAfter = await getClientIp(request);
     await logSecurity("idea_submitted", { planId, phase, featureTitle: ideaFeature.title, used: plan.ideas.length }, { ip: ipAfter, userId: user!.userId });
 
@@ -202,10 +230,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ pla
       idea: plan.ideas.at(-1),
       feature: { slug, title: ideaFeature.title, phase, tasksGenerated: assigned.length },
       used: plan.ideas.length,
-      left: Math.max(0, IDEAS_PER_PLAN_LIMIT - plan.ideas.length),
+      left: Math.max(0, ideaLimit - plan.ideas.length),
     });
   } catch (err) {
     console.error(`[ideas] konversi ide gagal untuk plan ${planId}:`, err);
     return NextResponse.json({ error: apiText("AI gagal mengolah ide. Coba lagi dengan kalimat lebih spesifik.") }, { status: 500 });
+  } finally {
+    await releaseGeneration(planId, "ideas", lease);
   }
 }

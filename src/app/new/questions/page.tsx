@@ -8,7 +8,7 @@ import { ArrowLeft, ArrowRight, Check, AlignLeft } from "lucide-react";
 import { CLARIFY_QUESTIONS } from "@/lib/clarify-questions";
 import { getCurrentUser } from "@/lib/current-user";
 import { SetupFrame } from "../_components/setup-frame";
-import styles from "../_components/setup.module.css";
+import styles from "../_components/planning.module.css";
 
 type AnswerValue = string | string[];
 const questions = CLARIFY_QUESTIONS;
@@ -17,7 +17,7 @@ const topics = ["Pengguna", "Masalah", "Fitur utama", "Platform", "Model bisnis"
 const isAnswered = (answer: AnswerValue | undefined) => Array.isArray(answer) ? answer.length > 0 : typeof answer === "string" && answer.trim() !== "";
 
 export default function QuestionsPage() {
-  useUiLanguage();
+  const language = useUiLanguage();
   const router = useRouter();
   const reducedMotion = useReducedMotion();
   const [answers, setAnswers] = useState<Record<number, AnswerValue>>({});
@@ -104,12 +104,12 @@ export default function QuestionsPage() {
           </aside>
 
           <section className={styles.questionMain} aria-label={ui("Pertanyaan detail proyek")}>
-            <div className={styles.questionTop}><span className={styles.questionCount}>DETAIL {String(step + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}</span><button type="button" className={styles.textButton} onClick={proceed} disabled={leaving}>{answeredCount > 0 ? ui("Selesai dengan jawaban ini") : ui("Lewati detail")}</button></div>
+            <div className={styles.questionTop}><span className={styles.questionCount}>{language === "en" ? "Question" : "Pertanyaan"} {step + 1} / {total}</span><button type="button" className={styles.textButton} onClick={proceed} disabled={leaving}>{answeredCount > 0 ? ui("Selesai dengan jawaban ini") : ui("Lewati detail")}</button></div>
 
             <AnimatePresence mode="wait" custom={direction} initial={false}>
               <motion.div key={step} custom={direction} variants={{ enter: (dir: number) => ({ opacity: 0, x: reducedMotion ? 0 : 14 * dir }), center: { opacity: 1, x: 0 }, exit: (dir: number) => ({ opacity: 0, x: reducedMotion ? 0 : -10 * dir }) }} initial="enter" animate="center" exit="exit" transition={{ duration: reducedMotion ? 0 : .18, ease: "easeOut" }} className={styles.questionBody} onAnimationComplete={(phase) => { if (phase === "center" && focusOnChange.current) { headingRef.current?.focus({ preventScroll: true }); focusOnChange.current = false; } }}>
                 <h1 id={`question-${step}`} ref={headingRef} tabIndex={-1} className={styles.questionTitle}>{ui(q.question)}</h1>
-                <p id={`question-hint-${step}`} className={styles.questionHint}><span>{q.type === "single" ? ui("Pilih satu jawaban") : q.type === "multiple" ? ui("Boleh pilih lebih dari satu") : ui("Ceritakan dengan bahasamu sendiri")}</span> · Opsional</p>
+                <p id={`question-hint-${step}`} className={styles.questionHint}><span>{q.type === "single" ? ui("Pilih satu jawaban") : q.type === "multiple" ? ui("Boleh pilih lebih dari satu") : ui("Ceritakan dengan bahasamu sendiri")}</span> · {language === "en" ? "Optional" : "Opsional"}</p>
 
                 {(q.type === "single" || q.type === "multiple") ? (
                   <div className={styles.answerList} role={q.type === "single" ? "radiogroup" : "group"} aria-labelledby={`question-${step}`} aria-describedby={`question-hint-${step}`}>

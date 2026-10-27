@@ -21,6 +21,7 @@ export async function getProgressRevision(planId: string): Promise<ProgressRevis
   const outerPlanId = sql`"plans"."id"`;
   const [row] = await getDb().select({
     id: plans.id, userId: plans.userId, title: plans.title, status: plans.status, createdAt: plans.createdAt,
+    physical: sql<Plan["physical"]>`${plans.techPrefs}->'physical'`,
     featureCount: sql<number>`(select count(*)::int from features f where f.plan_id = ${outerPlanId})`,
     version: sql<string>`md5(concat_ws('|', ${plans.title}, ${plans.status},
       (select string_agg(md5(row_to_json(f)::text), '' order by f.id) from features f where f.plan_id = ${outerPlanId}),
@@ -28,6 +29,6 @@ export async function getProgressRevision(planId: string): Promise<ProgressRevis
       (select string_agg(md5(row_to_json(t)::text), '' order by t.id) from tasks t where t.plan_id = ${outerPlanId})))`,
   }).from(plans).where(eq(plans.id, planId));
   return row ? { id: row.id, userId: row.userId ?? undefined, title: row.title, status: row.status,
-    createdAt: row.createdAt.toISOString(), brief: "", stack: [], asumsi: [], features: [],
+    createdAt: row.createdAt.toISOString(), physical: row.physical ?? undefined, brief: "", stack: [], asumsi: [], features: [],
     featureCount: row.featureCount, progressVersion: row.version } : undefined;
 }

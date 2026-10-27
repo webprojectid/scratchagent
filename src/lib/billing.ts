@@ -19,7 +19,7 @@ import { developerAdminEmails, isDeveloperAdmin } from "./admin-access";
 const DAY_MS = 24 * 60 * 60 * 1000;
 const GENERATE_STAGE = "generate";
 
-export type Tier = "free" | "pro";
+export type Tier = "free" | "pro" | "max";
 
 /**
  * Pilihan durasi Pro yang bisa diberikan admin.
@@ -39,6 +39,7 @@ export function durationLabel(days: number | null): string {
 }
 
 export interface SubscriptionRecord {
+  tier: "pro" | "max";
   id: string;
   userId: string;
   startedAt: Date;
@@ -81,6 +82,7 @@ function toDate(v: Date | string | null): Date | null {
 }
 
 function normalizeSub(row: {
+  tier?: string;
   id: string;
   userId: string;
   startedAt: Date | string;
@@ -92,6 +94,7 @@ function normalizeSub(row: {
   const startedAt = toDate(row.startedAt as string)!;
   const expiresAt = toDate((row.expiresAt as string | null) ?? null);
   return {
+    tier: row.tier === "max" ? "max" : "pro",
     id: row.id,
     userId: row.userId,
     startedAt,
@@ -169,7 +172,7 @@ export async function getAccountState(userId: string): Promise<{ tier: Tier; ban
     const u = memoryGetUserById(userId);
     if (!u) return null;
     const subs = memoryListSubscriptions(userId).map(normalizeSub);
-    const tier: Tier = activeSub(subs) ? "pro" : "free";
+    const tier: Tier = activeSub(subs)?.tier ?? "free";
     return { tier, bannedAt: toDate(u.bannedAt) };
   }
   const db = getDb();
@@ -177,7 +180,7 @@ export async function getAccountState(userId: string): Promise<{ tier: Tier; ban
   const row = rows[0];
   if (!row) return null;
   const subs = await getSubscriptions(userId);
-  const tier: Tier = activeSub(subs) ? "pro" : "free";
+  const tier: Tier = activeSub(subs)?.tier ?? "free";
   return { tier, bannedAt: row.bannedAt };
 }
 
@@ -201,7 +204,7 @@ export async function getSubscriptions(userId: string): Promise<SubscriptionReco
  * Aktifkan Pro untuk user dengan masa berlaku `days` hari.
  * 1 bulan = 31 hari, 3 bulan = 93 hari. Kalau sudah ada Pro aktif, ditolak.
  */
-export async function grantPro(userId: string, grantedBy: string, days: number): Promise<{ ok: boolean; message: string }> {
+export async function grantPro(userId: string, grantedBy: string, days: number, tier: "pro" | "max" = "pro"): Promise<{ ok: boolean; message: string }> {
   const valid = PRO_DURATIONS.some((d) => d.days === days);
   if (!valid) return { ok: false, message: "Durasi tidak valid. Pilih 7, 14, 28, 31, atau 93 hari." };
 
@@ -213,9 +216,9 @@ export async function grantPro(userId: string, grantedBy: string, days: number):
     if (!u) return { ok: false, message: "User tidak ditemukan" };
     const active = memoryListSubscriptions(userId).map(normalizeSub).find((s) => isSubActive(s));
     if (active) return { ok: false, message: "User sudah berlangganan Pro" };
-    memorySetUserTier(userId, "pro");
-    memoryAddSubscription(userId, grantedBy, expiresAt.toISOString());
-    return { ok: true, message: `Akses Pro aktif selama ${durationLabel(days)}` };
+    memorySetUserTier(userId, tier);
+    memoryAddSubscription(userId, grantedBy, expiresAt.toISOString(), tier);
+    return { ok: true, message: `Akses ${tier === "max" ? "Max" : "Pro"} aktif selama ${durationLabel(days)}` };
   }
 
   const db = getDb();
@@ -230,14 +233,14 @@ export async function grantPro(userId: string, grantedBy: string, days: number):
     await tx.select({ id: users.id }).from(users).where(eq(users.id, userId)).for("update");
     const existing = await tx.select({ id: subscriptions.id }).from(subscriptions).where(and(eq(subscriptions.userId, userId), isNull(subscriptions.endedAt)));
     if (existing.length) return false;
-    await tx.update(users).set({ tier: "pro" } as never).where(eq(users.id, userId));
-    const [subscription] = await tx.insert(subscriptions).values({ userId, grantedBy, expiresAt } as never).returning();
+    await tx.update(users).set({ tier } as never).where(eq(users.id, userId));
+    const [subscription] = await tx.insert(subscriptions).values({ userId, grantedBy, expiresAt, tier } as never).returning();
     const { enqueueEmail } = await import("./email-store");
-    await enqueueEmail(userId, `pro-active:${subscription.id}`, { kind: "pro_active", subscriptionId: subscription.id, startsAt: subscription.startedAt.toISOString(), expiresAt: expiresAt.toISOString(), days }, tx);
+    await enqueueEmail(userId, `pro-active:${subscription.id}`, { kind: "pro_active", tier, subscriptionId: subscription.id, startsAt: subscription.startedAt.toISOString(), expiresAt: expiresAt.toISOString(), days }, tx);
     return true;
   });
   if (!activated) return { ok: false, message: "User sudah berlangganan Pro" };
-  return { ok: true, message: `Akses Pro aktif selama ${durationLabel(days)}` };
+  return { ok: true, message: `Akses ${tier === "max" ? "Max" : "Pro"} aktif selama ${durationLabel(days)}` };
 }
 
 /** Akhiri Pro sebelum waktunya: tutup periode langganan aktif, turunkan tier ke free. */
@@ -374,7 +377,7 @@ export async function getAccountDetail(userId: string): Promise<AccountDetail | 
 
   return {
     ...base,
-    tier: proActive ? "pro" : "free",
+    tier: active?.tier ?? "free",
     firstProAt,
     lastProEnd,
     proActive,
@@ -415,7 +418,7 @@ export async function listAccounts(search?: string): Promise<AdminUserRow[]> {
     const now = new Date();
     const dbRows = await getDb().selectDistinctOn([users.id], {
       id: users.id, email: users.email, name: users.name, bannedAt: users.bannedAt, createdAt: users.createdAt,
-      subscriptionId: subscriptions.id, proExpiresAt: subscriptions.expiresAt,
+      subscriptionTier: subscriptions.tier, subscriptionId: subscriptions.id, proExpiresAt: subscriptions.expiresAt,
     }).from(users).leftJoin(subscriptions, and(
       eq(subscriptions.userId, users.id), isNull(subscriptions.endedAt),
       or(isNull(subscriptions.expiresAt), gt(subscriptions.expiresAt, now)),
@@ -423,7 +426,7 @@ export async function listAccounts(search?: string): Promise<AdminUserRow[]> {
       .orderBy(users.id, desc(subscriptions.startedAt));
     return dbRows.map(r => ({
       id: r.id, email: r.email, name: r.name, bannedAt: r.bannedAt, createdAt: r.createdAt,
-      tier: r.subscriptionId ? "pro" as const : "free" as const,
+      tier: r.subscriptionId ? r.subscriptionTier === "max" ? "max" as const : "pro" as const : "free" as const,
       proActive: !!r.subscriptionId, proExpiresAt: r.proExpiresAt, isAdmin: isAdminEmail(r.email),
     })).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   }
@@ -438,7 +441,7 @@ export async function listAccounts(search?: string): Promise<AdminUserRow[]> {
     const active = activeSub(subs);
     withActive.push({
       ...r,
-      tier: active ? "pro" : "free",
+      tier: active?.tier ?? "free",
       proActive: active !== null,
       proExpiresAt: active?.expiresAt ?? null,
       isAdmin: isAdminEmail(r.email),
@@ -454,15 +457,15 @@ export async function getAccountSummary(userId: string): Promise<AdminUserRow | 
     if (!u) return null;
     const active = activeSub(memoryListSubscriptions(userId).map(normalizeSub).sort((a, b) => b.startedAt.getTime() - a.startedAt.getTime()));
     return { id: u.id, email: u.email, name: u.name, bannedAt: toDate(u.bannedAt), createdAt: new Date(u.createdAt),
-      tier: active ? "pro" : "free", proActive: !!active, proExpiresAt: active?.expiresAt ?? null, isAdmin: isAdminEmail(u.email) };
+      tier: active?.tier ?? "free", proActive: !!active, proExpiresAt: active?.expiresAt ?? null, isAdmin: isAdminEmail(u.email) };
   }
   const rows = await getDb().select({
     id: users.id, email: users.email, name: users.name, bannedAt: users.bannedAt, createdAt: users.createdAt,
-    subscriptionId: subscriptions.id, proExpiresAt: subscriptions.expiresAt,
+    subscriptionTier: subscriptions.tier, subscriptionId: subscriptions.id, proExpiresAt: subscriptions.expiresAt,
   }).from(users).leftJoin(subscriptions, and(eq(subscriptions.userId, users.id), isNull(subscriptions.endedAt),
     or(isNull(subscriptions.expiresAt), gt(subscriptions.expiresAt, new Date()))))
     .where(eq(users.id, userId)).orderBy(desc(subscriptions.startedAt)).limit(1);
   const r = rows[0];
   return r ? { id: r.id, email: r.email, name: r.name, bannedAt: r.bannedAt, createdAt: r.createdAt,
-    tier: r.subscriptionId ? "pro" : "free", proActive: !!r.subscriptionId, proExpiresAt: r.proExpiresAt, isAdmin: isAdminEmail(r.email) } : null;
+    tier: r.subscriptionId ? r.subscriptionTier === "max" ? "max" : "pro" : "free", proActive: !!r.subscriptionId, proExpiresAt: r.proExpiresAt, isAdmin: isAdminEmail(r.email) } : null;
 }

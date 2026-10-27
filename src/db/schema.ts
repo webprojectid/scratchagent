@@ -56,7 +56,7 @@ export const tasks = pgTable("tasks", {
   subFeatureId: uuid("sub_feature_id").references(() => subFeatures.id, { onDelete: "cascade" }),
   ref: varchar({ length: 20 }).notNull(),
   title: text().notNull(),
-  layer: taskLayer().notNull(),
+  layer: taskLayer(),
   phase: integer().notNull(),
   page: text(),
   deps: jsonb().$type<string[]>().notNull().default([]),
@@ -142,6 +142,7 @@ export const blockedIps = pgTable("blocked_ips", {
  * Dipakai admin untuk catatan subs dan audit pemakaian.
  */
 export const subscriptions = pgTable("subscriptions", {
+  tier: text().notNull().default("pro"),
   id: uuid().primaryKey().defaultRandom(),
   userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   startedAt: timestamp("started_at", { withTimezone: true }).notNull().defaultNow(),

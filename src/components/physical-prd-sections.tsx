@@ -1,0 +1,20 @@
+"use client";
+import type { ReactNode } from "react";
+import type { Plan } from "@/lib/types";
+import { hardwareSections, physicalCategoryCopy, physicalQuestions } from "@/lib/physical-domain";
+import { Mermaid } from "./mermaid";
+function EngineeringContent({text}:{text:string}) { return <div className="space-y-4">{text.split(/(```mermaid[\s\S]*?```)/gi).map((part,index)=>{const match=part.match(/```mermaid\s*([\s\S]*?)```/i); return match ? <Mermaid key={index} code={match[1]}/> : part.trim() ? <p key={index} className="whitespace-pre-wrap">{part.trim()}</p> : null; })}</div>; }
+
+export function physicalPrdSections(plan: Plan, lang: "en" | "id"): { id: string; title: string; body: ReactNode }[] {
+  const p = plan.physical!;
+  const spec = p.spec;
+  const t = (en: string, id: string) => lang === "en" ? en : id;
+  if (!spec) return [{ id: "physical-generating", title: "Foundation", body: <p>{t("Engineering plan generation is still in progress.", "Rencana engineering masih disusun.")}</p> }];
+  return [
+    { id: "foundation", title: "Foundation", body: <div className="space-y-5 text-sm leading-relaxed"><p className="whitespace-pre-wrap">{plan.brief}</p><p className="text-slate-400">{t("This is a planning document. Physical validation has not been completed by generating it.", "Ini dokumen perencanaan. Penyusunan dokumen tidak menyelesaikan validasi fisik.")}</p><dl className="space-y-3">{physicalQuestions.filter(q => (!q.kinds || q.kinds.includes(p.input.kind)) && p.input.foundation[q.key]?.trim()).map(q => <div key={q.key}><dt className="font-semibold">{q.title[lang]}</dt><dd className="whitespace-pre-wrap text-slate-300">{p.input.foundation[q.key]}</dd></div>)}{Object.entries(p.input.choices).map(([key, value]) => <div key={key}><dt className="font-semibold">{physicalCategoryCopy[key as keyof typeof physicalCategoryCopy]?.[lang] ?? key}</dt><dd className="text-slate-300">{value?.value || (value?.mode === "none" ? t("Not needed", "Tidak diperlukan") : t("Recommendation requested", "Meminta rekomendasi"))}</dd></div>)}</dl></div> },
+    { id: "physical-requirements", title: t("Requirements & verification", "Kebutuhan & verifikasi"), body: <div className="space-y-5">{spec.requirements.map(r => <div key={r.id} className="border-l border-white/20 pl-4 text-sm leading-relaxed"><p><strong>{r.id}</strong> · {r.statement}</p><p className="mt-2 text-slate-400">{t("Source", "Sumber")}: {r.sourceQuote}</p><p className="mt-2">{t("Verification method", "Metode verifikasi")}: {r.verification}</p>{r.openDecisions.map(d => <p className="mt-2 text-amber-100" key={d}>{t("Open", "Terbuka")}: {d}</p>)}</div>)}</div> },
+    ...spec.sections.map(section => ({ id: `engineering-${section.id}`, title: hardwareSections[section.id][lang], body: <div className="text-sm leading-relaxed">{section.applicability === "not_applicable" && <p className="mb-3 text-slate-400">{t("Not applicable", "Tidak berlaku")}</p>}<EngineeringContent text={section.content}/></div> })),
+    { id: "bom", title: "BOM", body: <div className="space-y-5"><p className="text-sm text-slate-400">{t("Candidates and quantities require verification. Prices have not been retrieved or verified.", "Kandidat dan jumlah perlu diverifikasi. Harga belum diambil atau diverifikasi.")}</p>{spec.components.map(c => <div key={c.id} className="border-b border-white/15 pb-4 text-sm leading-relaxed"><p><strong>{c.id} · {c.role}</strong> — {c.candidate}</p><p>{c.specification}</p><p className="text-slate-400">{t("Quantity", "Jumlah")}: {c.quantity ?? t("Open", "Terbuka")} · {t("Unverified", "Belum diverifikasi")} · {c.requirementIds.join(", ")}</p>{/^https:\/\//.test(c.source) && <a className="underline" href={c.source} target="_blank" rel="noreferrer">{t("Proposed source — verify before use", "Usulan sumber — periksa sebelum digunakan")}</a>}</div>)}</div> },
+    { id: "physical-open", title: t("Assumptions & open decisions", "Asumsi & keputusan terbuka"), body: <ul className="list-disc space-y-3 pl-5 text-sm">{[...spec.assumptions, ...spec.openDecisions].map((v, i) => <li key={i}>{v}</li>)}</ul> },
+  ];
+}

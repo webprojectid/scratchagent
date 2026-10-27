@@ -2,6 +2,7 @@
 
 import { LandingNavbar } from "@/components/landing-navbar";
 import { useLang } from "@/lib/lang";
+import { MAX_PLAN } from "@/lib/max-plan";
 import { pricingCopy } from "@/lib/copy-pricing";
 import { PricingCards } from "./pricing-cards";
 import styles from "./pricing.module.css";
@@ -31,6 +32,7 @@ export default function PricingPage() {
           <p>{c.currencyNote}</p>
         </div>
         <PricingCards />
+        <p id="max-plan" className={styles.footnote}>{lang === "en" ? `Max pricing is a local preview. Its hardware allowance is ${MAX_PLAN.hardwarePlans} successful plans per rolling ${MAX_PLAN.hardwareWindowDays} days; failed generations return their slot. Unused slots do not accumulate.` : `Harga Max masih preview lokal. Kuota hardware ${MAX_PLAN.hardwarePlans} plan berhasil dalam rolling ${MAX_PLAN.hardwareWindowDays} hari; generate gagal mengembalikan slot. Sisa kuota tidak diakumulasi.`}</p>
         <p className={styles.footnote}>{c.footnote}</p>
       </section>
 
@@ -41,11 +43,13 @@ export default function PricingPage() {
         </div>
         <div className={styles.tableWrap} tabIndex={0} aria-label={lang === "en" ? "Scrollable plan comparison" : "Perbandingan paket yang bisa digeser"}>
           <table>
-            <thead><tr><th>{c.featureLabel}</th><th>Free</th><th>Pro</th></tr></thead>
+            <thead><tr><th>{c.featureLabel}</th><th>Free</th><th>Pro</th><th>Max</th></tr></thead>
             <tbody>
               {c.comparison.map((row) => (
-                <tr key={row.label}><th scope="row">{row.label}</th><td>{row.free}</td><td>{row.pro}</td></tr>
+                <tr key={row.label}><th scope="row">{row.label}</th><td>{row.free}</td><td>{row.pro}</td><td>{row.max ?? row.pro}</td></tr>
               ))}
+              <tr><th scope="row">{lang === "en" ? "Hardware PRDs per rolling 31 days" : "PRD hardware per rolling 31 hari"}</th><td>—</td><td>—</td><td>{MAX_PLAN.hardwarePlans}</td></tr>
+              <tr><th scope="row">Hardware &amp; Robotics PRD</th><td>—</td><td>—</td><td>{lang === "en" ? "Included" : "Termasuk"}</td></tr>
             </tbody>
           </table>
         </div>

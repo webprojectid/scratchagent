@@ -5,7 +5,7 @@
  * - Pro : 10-15 fase per plan, 12-20 sub-fitur per fase, 15-25 task per fitur.
  */
 
-export type Tier = "free" | "pro";
+export type Tier = "free" | "pro" | "max";
 
 export interface StructureLimits {
   /** Jumlah fase (= jumlah fitur, tiap fitur jadi satu fase) per plan. */
@@ -18,6 +18,7 @@ export interface StructureLimits {
 
 export const STRUCTURE_LIMITS: Record<Tier, StructureLimits> = {
   free: { features: [4, 8], subFeatures: [3, 5], tasks: [8, 12] },
+  max: { features: [10, 30], subFeatures: [12, 30], tasks: [15, 30] },
   pro: { features: [10, 15], subFeatures: [12, 20], tasks: [15, 25] },
 };
 
@@ -27,8 +28,12 @@ export const QA_INJECTED_TASKS = 4;
 /** Maksimal ide dari kolom chat "Ide Kamu" per project (khusus Pro). */
 export const IDEAS_PER_PLAN_LIMIT = 2;
 
+export function ideasPerPlanLimit(tier: string | null | undefined): number {
+  return tier === "max" ? 5 : IDEAS_PER_PLAN_LIMIT;
+}
+
 export function structureLimits(tier: Tier | string | null | undefined): StructureLimits {
-  return STRUCTURE_LIMITS[tier === "pro" ? "pro" : "free"];
+  return STRUCTURE_LIMITS[tier === "max" ? "max" : tier === "pro" ? "pro" : "free"];
 }
 
 /**

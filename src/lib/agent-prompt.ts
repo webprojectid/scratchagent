@@ -1,6 +1,31 @@
 import { handoffInstructions, type HandoffSettings } from "./account-preferences";
 
-export function buildAgentPrompt(planId: string, token: string, serverUrl: string, settings: HandoffSettings): string {
+function buildPhysicalAgentPrompt(planId: string, token: string, serverUrl: string, settings: HandoffSettings): string {
+  return `${settings.language === "id" ? "Kerjakan bagian digital dari rencana mesin/robot ini sesuai kemampuan tools. Tugas fisik dan review manusia harus menunggu pemilik." : "Work on the digital portions of this machines/robotics plan within your actual tool capabilities. Physical tasks and human review must wait for the owner."}
+
+Use the authenticated server API directly with a tool available in your environment (for example Node.js fetch). Do not assume the published CLI already supports this hardware protocol.
+Server: ${serverUrl}
+Authorization: Bearer ${token}
+Read plan: GET /api/v1/plans/${planId}?protocol=2
+Next runnable task: GET /api/v1/plans/${planId}/next?protocol=2
+Start: POST /api/v1/tasks/<ref>/start?planId=${planId}
+Record digital result: POST /api/plans/${planId}/hardware-tasks/<ref> with JSON {"action":"evidence","outcome":"pass|fail|inconclusive","revision":<task revision>,"report":"actual verification result","requestId":"<new UUID>"}
+Complete: POST /api/v1/tasks/<ref>/complete?planId=${planId}
+Wait: POST /api/plans/${planId}/hardware-tasks/<ref> with JSON {"action":"wait","revision":<task revision>,"reason":"parts|human|review|tool"}
+Resume after your missing digital tool is available: same endpoint with {"action":"resume","revision":<task revision>}. Human/parts/review prerequisites must be resumed by the owner.
+Keep the token private. It is scoped to this plan. Never put it in source, logs or exported files.
+
+Read the entire PRD, Foundation, engineering sections, component decisions, open decisions, dependency graph and handoff before working. Task discipline and executor are authoritative. Never impose a web app, cloud, database or deployment on hardware. Check required tools, versions and artifact formats. Report an actual capability inventory (available tools, versions, supported formats, unavailable items) before starting. If a tool is unavailable, mark the task waiting for tool, then ask for the next independent task; never substitute fabricated artifacts. Do not install or operate unavailable physical tools as a shortcut.
+
+For runnable digital tasks, start through the API, perform and verify actual work, then record digital evidence for the task revision. Only then request completion. Follow server review requirements. Never invent physical measurements, simulation results, CAD/PCB files, approvals or compatibility. Preserve the owner's manual selections.
+
+If waiting contains human/parts/review/tool prerequisites, report them and stop when no digital task can run. The owner's browser session must report physical results and human review. Do not treat waiting as provider failure or plan completion. A compiler/simulator pass does not validate physical hardware. Do not buy, fabricate, flash or operate devices without applicable owner authorization.
+
+The Scratch Agent API is separate from the device being built. Final report must distinguish generated documents, verified digital work, and outstanding physical validation. Write the report in ${settings.language === "id" ? "Indonesian" : "English"}.`;
+}
+
+export function buildAgentPrompt(planId: string, token: string, serverUrl: string, settings: HandoffSettings, physical = false): string {
+  if (physical) return buildPhysicalAgentPrompt(planId, token, serverUrl, settings);
   const agent = ["claude", "cursor", "opencode"].includes(settings.agent) ? settings.agent : "auto";
   const commands = `npm install -g @notdeadlysins/scratch-agent
 scratch-agent login --token ${token} --url ${serverUrl}

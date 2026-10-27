@@ -4,6 +4,7 @@ import { recordAccountActivity } from "./account-store";
 import type { HandoffSettings } from "./account-preferences";
 import { after } from "next/server";
 import { generatePlanStructure } from "./generate";
+import type { TechPrefs } from "./types";
 import { savePlan, updatePlanTitle, getPlan } from "./storage";
 import { emptyGenerationCheckpoint, runGenerationSlice } from "./generation-checkpoint";
 import { clearGenerationWork, getGenerationWork, saveGenerationWork } from "./generation-checkpoint-store";
@@ -15,15 +16,9 @@ export interface GenerationJob {
   planId: string;
   handoff?: HandoffSettings;
   brief: string;
-  techPrefs: {
-    mode: "auto" | "custom";
-    frontend?: string;
-    backend?: string;
-    database?: string;
-    deployment?: string;
-  };
+  techPrefs: TechPrefs;
   answers: { question: string; answer: string }[];
-  tier: "free" | "pro";
+  tier: "free" | "pro" | "max";
   ownerId: string;
   userId: string;
   /** Continuations recover the original receipt from the saved checkpoint. */
@@ -37,7 +32,7 @@ export async function scheduleGeneration(job: GenerationJob, tryNo = 1): Promise
   const lease = await claimGeneration(job.planId, "structure", 200);
   if (!lease) return false;
   try {
-    if (!await reserveGenerationAttempt(job.userId, job.tier)) {
+    if (!await reserveGenerationAttempt(job.userId, job.tier === "max" ? "pro" : job.tier)) {
       await releaseGeneration(job.planId, "structure", lease);
       return false;
     }
@@ -63,6 +58,7 @@ export async function scheduleGeneration(job: GenerationJob, tryNo = 1): Promise
         const saved = await getGenerationWork(job.planId);
         receipt = saved?.receipt ?? job.receipt;
         loaded = true;
+        if (job.techPrefs.domain === "physical" && (!receipt.eventId || receipt.tier !== "max")) throw new Error("Hardware allowance reservation is missing. Resume this plan to reserve its allowance.");
         const checkpoint = saved?.checkpoint ?? emptyGenerationCheckpoint();
         const persist = async (next: typeof checkpoint) => {
           const stored = await withGenerationLease(job.planId, "structure", lease, async () => {
@@ -75,7 +71,9 @@ export async function scheduleGeneration(job: GenerationJob, tryNo = 1): Promise
         const completedBefore = Object.keys(checkpoint.entries).length;
         acceptedBefore = completedBefore;
         const slice = await runGenerationSlice(checkpoint, persist, () =>
-          generatePlanStructure(job.brief, job.techPrefs, job.answers, job.tier, job.handoff), { concurrency: 3 });
+          job.techPrefs.domain === "physical" && job.techPrefs.hardware
+            ? import("./physical-generation").then(module => module.generatePhysicalPlan(job.brief, job.techPrefs.hardware!, job.tier, job.handoff))
+            : generatePlanStructure(job.brief, job.techPrefs, job.answers, job.tier, job.handoff), { concurrency: 3 });
         if (!slice.done) {
           if (Object.keys(checkpoint.entries).length > completedBefore) {
             await withGenerationLease(job.planId, "structure", lease, async () => {
@@ -90,6 +88,7 @@ export async function scheduleGeneration(job: GenerationJob, tryNo = 1): Promise
           await savePlan({
             id: job.planId,
             title: result.title,
+            physical: result.physical,
             brief: job.brief,
             stack: result.stack,
             techStack: result.techStack,
@@ -100,7 +99,7 @@ export async function scheduleGeneration(job: GenerationJob, tryNo = 1): Promise
             productSpec: result.productSpec,
             generationMetrics: result.usage.requests,
             databaseSchema: result.databaseSchema,
-            status: "generating",
+            status: result.physical ? "ready" : "generating",
             features: result.features as never,
             warnings: result.warnings,
             tier: job.tier,
@@ -110,7 +109,7 @@ export async function scheduleGeneration(job: GenerationJob, tryNo = 1): Promise
           // Watchdog retries have no reservation event; record their successful
           // model usage without finalizing the original reservation again.
           if (receipt.eventId) await finalizeQuota(receipt, job.planId, result.usage);
-          else await recordUsage(job.userId, job.tier, job.planId, result.usage);
+          else await recordUsage(job.userId, job.tier === "max" ? "pro" : job.tier, job.planId, result.usage);
           await clearGenerationWork(job.planId);
           await recordAccountActivity(job.userId, "generation_complete", "Struktur PRD selesai disusun", job.planId, `generation:${job.planId}`);
           await logSecurity("generate", { planId: job.planId, tier: job.tier, features: result.features.length, tokens: result.usage.tokensIn + result.usage.tokensOut, tryNo }, { ip: job.ip, userId: job.userId });

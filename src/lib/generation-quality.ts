@@ -135,7 +135,7 @@ export function validateFeatureDraft(features: readonly FeatureDraft[], tier: Ti
   const [min, max] = structureLimits(tier).features;
   if (!Array.isArray(features)) return ["features: daftar fitur tidak ada."];
   if (features.length < min || features.length > max) {
-    issues.push(`features: paket ${tier === "pro" ? "Pro" : "Free"} perlu ${min}-${max} fase, diterima ${features.length}.`);
+    issues.push(`features: paket ${tier === "max" ? "Max" : tier === "pro" ? "Pro" : "Free"} perlu ${min}-${max} fase, diterima ${features.length}.`);
   }
   const seen = new Set<string>();
   features.forEach((feature, index) => {
@@ -171,7 +171,7 @@ export function validateSubfeatureDraft(
   const issues: string[] = [];
   const [rawMin, rawMax] = structureLimits(tier).subFeatures;
   const reserved = options.reservedQa ? 1 : 0;
-  const [min, max] = [rawMin - reserved, rawMax - reserved];
+  const [min, max] = [rawMin - reserved, tier === "max" && options.reservedQa ? Math.min(rawMax - reserved, structureLimits(tier).tasks[1] - 4) : rawMax - reserved];
   const featureTitle = text(feature?.title);
   if (!featureTitle) issues.push("feature.title: judul fitur induk tidak ada.");
   if (!Array.isArray(subs)) return [...issues, "sub_features: daftar subfitur tidak ada."];

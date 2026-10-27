@@ -1,8 +1,9 @@
-export type TaskLayer = "frontend" | "backend" | "qa";
+export type TaskLayer = "frontend" | "backend" | "qa" | import("./physical-domain").PhysicalDiscipline;
 export type TaskStatus = "pending" | "in_progress" | "done" | "failed";
 export type FeaturePriority = "high" | "medium" | "low";
 
 export interface Task {
+  hardware?: import("./physical-domain").HardwareTask;
   detail?: import("./task-spec").TaskDetail;
   ref: string;
   title: string;
@@ -60,6 +61,7 @@ export interface Requirements {
 }
 
 export interface Plan {
+  physical?: import("./physical-domain").PhysicalPlan;
   generationMetrics?: import("./generation-metrics").GenerationRequestMetric[];
   productSpec?: import("./product-spec").ProductSpec;
   id: string;
@@ -82,7 +84,7 @@ export interface Plan {
   /** Bagian yang memakai template fallback karena LLM gagal; ditampilkan sebagai banner di UI. */
   warnings?: string[];
   /** Tier akun saat plan digenerate; menentukan batas struktur PRD yang dipaksakan. */
-  tier?: "free" | "pro";
+  tier?: "free" | "pro" | "max";
   /** Ide user dari kolom chat (Pro, maks 2/project). Sudah dikonversi AI menjadi fase > sub-fitur > task; wajib dibaca AI sebagai referensi tambahan. */
   ideas?: PlanIdea[];
 }
@@ -98,6 +100,8 @@ export interface PlanIdea {
 }
 
 export interface TechPrefs {
+  domain?: "software" | "physical";
+  hardware?: import("./physical-domain").PhysicalInput;
   mode: "auto" | "custom";
   frontend?: string;
   backend?: string;

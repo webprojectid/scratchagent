@@ -14,7 +14,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ plan
   if (retryIn !== null) return rateLimitedResponse(clientKey(user?.userId, ip), retryIn, { ip, userId: user?.userId ?? null, route: "/api/v1/plans/[id]/next" });
   const { plan, error } = await accessPlan(planId, user);
   if (error || !plan) return error;
-  const next = await getNextTask(planId, plan);
+  if (plan.physical && user?.via === "token" && new URL(request.url).searchParams.get("protocol") !== "2") return NextResponse.json({ error: "Hardware tasks require protocol v2. Upgrade the CLI." }, { status: 426 });
+  const next = await getNextTask(planId, plan, user ? { id: user.userId, type: user.via === "token" ? "agent" as const : "human" as const } : undefined);
   if (user && next.blocked) await recordAccountActivity(user.userId, "agent_blocked", "Agent menunggu penyelesaian dependensi", planId, `blocked:${planId}:${next.failedTasks.map(task => task.ref).join(",")}`);
   if (user && next.progress.checkpoint) await recordAccountActivity(user.userId, "checkpoint", "Checkpoint agent perlu ditinjau", planId, `checkpoint:${planId}:${next.task?.ref}`);
   return NextResponse.json(next);

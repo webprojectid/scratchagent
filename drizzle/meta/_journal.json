@@ -85,6 +85,20 @@
       "when": 1792540800000,
       "tag": "0011_transactional_email",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1792540801000,
+      "tag": "0012_physical_tasks",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1792607417118,
+      "tag": "0013_max_membership",
+      "breakpoints": true
     }
   ]
 }
