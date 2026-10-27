@@ -4,8 +4,9 @@ import React, { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence, useMotionValue, useTransform, useSpring, useMotionTemplate } from "framer-motion";
-import { Mail, Lock, Eye, EyeClosed, ArrowRight, ArrowLeft, User, KeyRound } from "lucide-react";
+import { Mail, Lock, Eye, EyeClosed, ArrowRight, ArrowLeft, User } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { OTPInput } from "@/components/ui/be-ui-otp-input";
 import { useLang } from "@/lib/lang";
 import { createClient } from "@/lib/supabase/client";
 import { refreshCurrentUser, supabaseConfigured } from "@/lib/current-user";
@@ -50,7 +51,7 @@ export function SignInCard2() {
   }, [otpRetryAfter]);
   const [isLoading, setIsLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState<"google" | "github" | null>(null);
-  const [focusedInput, setFocusedInput] = useState<"email" | "password" | "name" | "otp" | null>(null);
+  const [focusedInput, setFocusedInput] = useState<"email" | "password" | "name" | null>(null);
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
@@ -490,24 +491,16 @@ export function SignInCard2() {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <motion.div className="space-y-3">
                   {awaitingOtp ? (
-                    <div className={`relative ${focusedInput === "otp" ? "z-10" : ""}`}>
-                      <div className="relative flex items-center overflow-hidden rounded-lg">
-                        <KeyRound className={`absolute left-3 h-4 w-4 transition-colors duration-300 ${focusedInput === "otp" ? "text-[#74FA6A]" : "text-white/40"}`} />
-                        <Input
-                          type="text"
-                          inputMode="numeric"
-                          autoComplete="one-time-code"
-                          aria-label={en ? "6-digit verification code" : "Kode verifikasi 6 digit"}
-                          placeholder={en ? "6-digit code" : "Kode 6 digit"}
-                          value={otp}
-                          maxLength={6}
-                          onChange={(event) => setOtp(event.target.value.replace(/\D/g, "").slice(0, 6))}
-                          onFocus={() => setFocusedInput("otp")}
-                          onBlur={() => setFocusedInput(null)}
-                          className="h-12 w-full border-transparent bg-white/5 pl-10 pr-3 text-center font-mono text-lg tracking-[0.45em] text-white transition-colors duration-300 placeholder:font-sans placeholder:text-sm placeholder:tracking-normal placeholder:text-white/30 focus:border-[#74FA6A]/30 focus:bg-white/10"
-                        />
-                      </div>
-                    </div>
+                    <OTPInput
+                      label={en ? "Verification code" : "Kode verifikasi"}
+                      value={otp}
+                      onChange={value => { setOtp(value); setError(""); }}
+                      status={error ? "error" : "idle"}
+                      disabled={isLoading}
+                      required
+                      autoFocus
+                      aria-describedby={error || info ? "signup-auth-message" : undefined}
+                    />
                   ) : <>
                   {/* Nama (mode daftar) */}
                   <AnimatePresence>
@@ -585,7 +578,7 @@ export function SignInCard2() {
                 </motion.div>
 
                 {(error || info) && (
-                  <p className={`text-xs ${error ? "text-red-400" : "text-white/60"}`}>{error || info}</p>
+                  <p id="signup-auth-message" role={error ? "alert" : "status"} className={`text-xs ${error ? "text-red-400" : "text-white/60"}`}>{error || info}</p>
                 )}
 
                 {/* Cloudflare Turnstile */}
