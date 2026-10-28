@@ -111,12 +111,35 @@ function numericKey(value: string, unit: string): string {
   return `${word}:${amount}`;
 }
 
+function isInterfaceQuantity(value: string, index: number, raw: string, amount: number, unit: string): boolean {
+  const bounds = sentenceBounds(value, index, raw.length);
+  const sentence = value.slice(bounds.start, bounds.end);
+  const before = value.slice(bounds.start, index);
+  const after = value.slice(index + raw.length, bounds.end);
+  if (amount === 24 && /^(?:hours?|jam)$/i.test(unit)) {
+    return /^\s+(?:time\s+)?(?:format|clock|picker|notation|indicators?|boundary\s+values?)\b/i.test(after);
+  }
+  if (amount === 7 && /^days?$/i.test(unit)) {
+    return (/^\s+(?:(?:opening|operating)\s+hours?\s+)?(?:calendar|grid|matrix|overview)\b/i.test(after) && /\b(?:calendar|weekly|schedule|opening|operating|occupancy)\b/i.test(sentence)) || (/\b(?:display|displays|render|renders|show|shows|list|lists)\s+(?:all\s+)?$/i.test(before) &&
+      /\b(?:week|weekdays|calendar|chronological order)\b/i.test(sentence)) ||
+      (/\ball\s*$/i.test(before) && /^\s+of\s+the\s+week\b/i.test(after) && /\b(?:opening|closing|operating|schedule|schedules|calendar)\b/i.test(sentence));
+  }
+  if (amount === 1 && /^day$/i.test(unit)) {
+    return (/\b(?:toggle|toggles|toggling|configure|configures|configuring|mark|marks|marking)\s*$/i.test(before) && /^\s+(?:to|as|with)\b/i.test(after)) ||
+      (/\b(?:increments?|decrements?|advances?|regresses?|navigation)\b/i.test(before) && /\b(?:date|calendar|schedule)\b/i.test(before) && /\bby\s*$/i.test(before)) || (/\b(?:copy|copies|replicate|replicates)\b.{0,70}\bfrom\s*$/i.test(before) &&
+      /^\s+to\s+(?:selected\s+)?(?:weekdays|days)\b/i.test(after)) ||
+      (/\bon\s*$/i.test(before) && /^\s+(?:when|that|which|configured|marked|selected)\b/i.test(after) && /\b(?:studio|venue|room|calendar|booking|schedule)\b/i.test(sentence));
+  }
+  return amount === 200 && /^(?:percent|persen|%)$/i.test(unit) &&
+    /\b(?:zoom|zooming|resize|resizing|resized)\b.{0,100}\b(?:to|at)\s*$/i.test(before) &&
+    /\b(?:text|browser|viewport|accessibility)\b/i.test(sentence);
+}
+
 function numericClaims(value: string): NumericClaim[] {
   const claims: NumericClaim[] = [];
   for (const match of value.matchAll(NUMERIC_UNIT)) {
     const raw = match[0];
-    const after = value.slice((match.index ?? 0) + raw.length);
-    if (/^24\s*-?\s*(?:hours?|jam)$/i.test(raw) && /^\s+(?:time\s+)?(?:format|clock|picker|notation)\b/i.test(after)) continue;
+    if (isInterfaceQuantity(value, match.index ?? 0, raw, Number(match[1].replace(",", ".")), match[2])) continue;
     const key = numericKey(match[1], match[2]);
     if (key && Number.isFinite(Number(match[1].replace(",", ".")))) {
       claims.push({ raw, key, topic: claimTopic(value, match.index ?? 0, raw.length), index: match.index ?? 0 });
@@ -126,6 +149,7 @@ function numericClaims(value: string): NumericClaim[] {
     claims.push({ raw: match[0], key: "always-on:24x7", topic: claimTopic(value, match.index ?? 0, match[0].length), index: match.index ?? 0 });
   }
   for (const match of value.matchAll(WORD_TIME)) {
+    if (isInterfaceQuantity(value, match.index, match[0], TIME_NUMBER_WORDS[match[1].toLowerCase()], match[2])) continue;
     const afterTime = value.slice(match.index + match[0].length);
     const beforeTime = value.slice(Math.max(0, match.index - 60), match.index);
     if (/^(?:a|one)$/i.test(match[1]) && /^day$/i.test(match[2]) && (

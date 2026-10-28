@@ -133,8 +133,23 @@ test("calendar controls and clock notation are not invented business durations",
     "Selected hours display in 24 hour format such as 18:00 to 22:00.",
     "Disables time inputs when a day toggle is turned off.",
     "Users select a day from the calendar.",
+    "The admin schedule page renders a 7-day grid showing Monday through Sunday with configured open and close times.",
+    "Toggling a day to closed disables the time input pickers and marks the day as non-operational.",
+    "Provide a high-level seven-day overview of room occupancy to anticipate studio congestion.",
+    "Staff toggles to the weekly view and inspects a seven-day matrix aggregated across all three rehearsal rooms.",
+    "Display seven-day operating hours matrix for studio staff.",
+    "Increments or decrements selected date by one day when user triggers controls.",
+    "Next day and previous day navigation buttons advance or regress the target schedule date by one day.",
+    "Slot requested on a day configured as closed returns 422 indicating studio closed.",
+    "Staff can view and update the daily opening and closing timestamps for all seven days of the week in the studio admin dashboard.",
+    "Submitting a booking on a day when the studio is configured as closed rejects the submission.",
+    "Displays all seven days in chronological order with configured times or a closed badge.",
+    "Displays localized time strings with clear AM/PM or 24-hour indicators.",
+    "Enable staff to replicate configured hours from one day to selected weekdays.",
+    "Ensures valid 24-hour boundary values are accepted and saved accurately.",
+    "Zooming the browser viewport up to 200 percent preserves all text readability without clipping.",
   ]) assert.deepEqual(validateContractText([text], source), [], text);
-  for (const text of ["Bookings expire after 24 hours.", "A hold lasts one day.", "Send a reminder a day before booking.", "The day selector responds within 300ms."]) {
+  for (const text of ["Bookings expire after 24 hours.", "A hold lasts one day.", "Send a reminder a day before booking.", "The day selector responds within 300ms.", "The calendar retains bookings for seven days.", "Displays booking holds for seven days on the calendar.", "Display 24-hour booking holds alongside the AM/PM clock.", "A 24-hour booking hold appears in the calendar.", "Zooming the browser must increase conversion by 200 percent."]) {
     assert.ok(validateContractText([text], source).length > 0, text);
   }
 });
@@ -308,4 +323,17 @@ test("product contracts share brief-first duration equivalence with requirements
   assert.deepEqual(validateContractText(["Send booking reminders 24 hours before the start."], "Kirim pengingat H-1 sebelum booking."), []);
   assert.deepEqual(validateContractText(["Proposed assumption to confirm: retain reports for 30 days."], "Managers view reports."), []);
   assert.equal(validateContractText(["Keep a checkout hold for 24 hours."], "Send a reminder one day before the booking.").length, 1);
+});
+
+test("metric targets preserve short confirmed values while rejecting empty targets", () => {
+  for (const target of ["0", "0%", "99%", "Open decision: confirm a target"]) {
+    const candidate = structuredClone(spec);
+    candidate.metrics[0].target = target;
+    assert.equal(productSpecSchema.parse(candidate).metrics[0].target, target);
+  }
+  for (const target of ["", "   "]) {
+    const candidate = structuredClone(spec);
+    candidate.metrics[0].target = target;
+    assert.equal(productSpecSchema.safeParse(candidate).success, false);
+  }
 });

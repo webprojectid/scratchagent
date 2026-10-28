@@ -87,6 +87,7 @@ export async function scheduleGeneration(job: GenerationJob, tryNo = 1): Promise
         }
         const result = slice.value;
         await withGenerationLease(job.planId, "structure", lease, async () => {
+          const initialPlan = await getPlan(job.planId);
           await savePlan({
             id: job.planId,
             title: result.title,
@@ -104,7 +105,7 @@ export async function scheduleGeneration(job: GenerationJob, tryNo = 1): Promise
             features: result.features as never,
             warnings: result.warnings,
             tier: job.tier,
-            createdAt: new Date().toISOString(),
+            createdAt: initialPlan?.createdAt ?? new Date().toISOString(),
           }, job.ownerId);
           await updatePlanTitle(job.planId, result.title);
           // Watchdog retries have no reservation event; record their successful

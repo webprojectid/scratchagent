@@ -184,3 +184,27 @@ test("durable holds can live on canonical resource slots instead of a bookings t
   const missingBinding = schema.replace(/reserved_by_booking_id uuid FK REFERENCES bookings\(id\), /, "");
   assert.equal(validateDatabaseSchemaDraft(missingBinding, { brief: "Prevent double-booking during concurrent checkout.", featureTitles: ["Court checkout"] }).some(issue => issue.includes("persist a checkout hold")), true);
 });
+
+test("immediate atomic bookings do not acquire an unrequested timed-hold requirement", () => {
+  const brief = "Customers book rooms immediately. Prevent double-booking. No online payments or temporary holds.";
+  const schema = `### bookings
+- id UUID PRIMARY KEY, room_id UUID REFERENCES rooms(id), user_id UUID REFERENCES users(id).
+- starts_at TIMESTAMPTZ, ends_at TIMESTAMPTZ, status TEXT CHECK (status IN ('confirmed','cancelled')).
+- An EXCLUDE USING gist constraint on room_id and the occupied interval applies to confirmed records.
+- One atomic transaction inserts a confirmed booking; an overlapping insert is rejected without creating a reservation.`;
+  assert.deepEqual(validateDatabaseSchemaDraft(schema, { brief }), []);
+  assert.ok(validateDatabaseSchemaDraft(schema.replace("EXCLUDE USING gist", "ordinary lookup"), { brief }).some(issue => issue.includes("unique or exclusion")));
+  assert.ok(validateDatabaseSchemaDraft(schema, { brief: "Prevent double-booking and persist temporary holds before confirmation." }).some(issue => issue.includes("persist a checkout hold")));
+});
+
+test("concrete API ownership enforcement is equivalent to an explicitly named server-side role guard", () => {
+  const schema = `### users
+- id UUID PRIMARY KEY, email TEXT UNIQUE, role TEXT CHECK (role IN ('customer','staff')).
+### bookings
+- id UUID PRIMARY KEY, user_id UUID REFERENCES users(id), room_id UUID REFERENCES rooms(id), status TEXT, start_time TIMESTAMPTZ, end_time TIMESTAMPTZ, created_at TIMESTAMPTZ.
+- Next.js route handlers enforce customer user_id ownership before a booking can be viewed or cancelled; staff role checks guard administrative changes.`;
+  const context = { brief: "Customers manage their bookings while staff manage rooms. Enforce role permissions." };
+  assert.deepEqual(validateDatabaseSchemaDraft(schema, context), []);
+  const inventoryOnly = schema.slice(0,schema.indexOf("- Next.js route handlers"));
+  assert.ok(validateDatabaseSchemaDraft(inventoryOnly, context).some(issue => issue.includes("tie role")));
+});

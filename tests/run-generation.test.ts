@@ -26,7 +26,7 @@ function scheduler(fail: boolean | Error = false, ownsLease = true, registration
       if (split) for (const section of ["outline", "requirements"]) await checkpoints.checkpointedSection(section, section, undefined, async () => section);
       return { title: "Fixture", stack: [], features: [], usage: { tokensIn: 2, tokensOut: 3 } };
     } },
-    "./storage": { getPlan: async () => ({ status: "generating", features: [] }), savePlan: record("save"), deletePlan: record("delete"), updatePlanTitle: record("title") },
+    "./storage": { getPlan: async () => ({ status: "generating", features: [], createdAt: "2026-01-01T00:00:00.000Z" }), savePlan: record("save"), deletePlan: record("delete"), updatePlanTitle: record("title") },
     "./quota": { finalizeQuota: record("finalize"), refundQuota: record("refund"), recordUsage: record("usage") },
     "./account-store": { recordAccountActivity: record("activity") },
     "./security": { logSecurity: record("security") },
@@ -84,6 +84,7 @@ test("a wave that saves a peer resets old failures before counting a new transie
 test("successful background generation preserves owner and finalizes quota once", async () => {
   const fixture = scheduler(); await fixture.schedule(job); await fixture.run();
   assert.equal(fixture.calls.find(call => call.kind === "save")?.args[1], job.ownerId);
+  assert.equal((fixture.calls.find(call => call.kind === "save")?.args[0] as { createdAt: string }).createdAt, "2026-01-01T00:00:00.000Z");
   assert.equal(fixture.calls.filter(call => call.kind === "finalize").length, 1);
   assert.equal(fixture.calls.some(call => call.kind === "refund" || call.kind === "delete"), false);
 });
