@@ -4,7 +4,8 @@ import { writeOriginGate } from "@/lib/write-origin";
 import { claimGeneration, releaseGeneration, withGenerationLease } from "@/lib/generation-lease";
 import { getGenerationWork, saveGenerationWork } from "@/lib/generation-checkpoint-store";
 import { consumeQuota, refundQuota, type QuotaReceipt } from "@/lib/quota";
-import { isAdminEmail } from "@/lib/billing";
+import { getAccountState, isAdminEmail } from "@/lib/billing";
+import { hasProFeatures } from "@/lib/account-capabilities";
 
 export async function POST(request: Request, { params }: { params: Promise<{ planId: string }> }) {
   const originError = writeOriginGate(request);
@@ -14,6 +15,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ pla
   const { plan, error } = await accessPlan(planId, user, { write: true });
   if (error || !plan) return error;
   if (!user || !plan.userId || plan.status !== "generating" || plan.features.length) return NextResponse.json({ error: "This plan cannot be resumed here." }, { status: 409 });
+  const account = await getAccountState(user.userId);
+  if (!account || account.bannedAt || plan.tier === "pro" && !hasProFeatures(user, account.tier)) {
+    return NextResponse.json({ error: "An active subscription matching this plan is required to restart generation.", code: "PLAN_TIER_REQUIRED" }, { status: 403 });
+  }
   const lease = await claimGeneration(plan.id, "structure");
   if (!lease) return NextResponse.json({ error: "Generation is already running." }, { status: 409 });
   let receipt: QuotaReceipt | null = null;
@@ -22,7 +27,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pla
     const response = await withGenerationLease(plan.id, "structure", lease, async () => {
       const saved = await getGenerationWork(plan.id);
       if (!saved?.failure?.paused) return NextResponse.json({ error: "Generation is not paused." }, { status: 409 });
-      receipt = await consumeQuota(plan.userId!, plan.tier ?? "free", { skipLimit: await isAdminEmail(user.email) });
+      receipt = await consumeQuota(plan.userId!, account.tier, { skipLimit: await isAdminEmail(user.email) });
       if (!receipt) return NextResponse.json({ error: "Your plan allowance is currently used. Try again when it resets." }, { status: 429 });
       await saveGenerationWork(plan.id, { checkpoint: saved.checkpoint, receipt });
       committed = true;

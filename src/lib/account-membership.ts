@@ -1,8 +1,9 @@
-export type AccountMembership = { role?: string; tier?: string; proActive?: boolean };
+export type AccountMembership = { role?: string; tier?: string; proActive?: boolean; proExpiresAt?: string | null; bannedAt?: string | null };
 
 export function effectiveAccountTier(account: AccountMembership): "free" | "pro" | undefined {
-  if (account.tier === "free" || account.proActive === false) return "free";
-  if (account.tier === "pro" && account.proActive === true) return "pro";
+  const expiresAt = account.proExpiresAt ? Date.parse(account.proExpiresAt) : null;
+  if (account.bannedAt || account.tier === "free" || account.proActive === false || expiresAt !== null && (!Number.isFinite(expiresAt) || expiresAt <= Date.now())) return "free";
+  if (account.tier === "pro" && account.proActive === true) return account.tier;
   return undefined;
 }
 

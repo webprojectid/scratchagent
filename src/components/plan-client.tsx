@@ -364,7 +364,7 @@ export function PlanClient({ plan: initialPlan, tier = "free" }: { plan: Plan; t
               className="landing-nav-button landing-nav-button-outline"
               onClick={() => setShowIdeas((v) => !v)}
               aria-pressed={showIdeas}
-              title={ui("Kolom chat ide — fitur Pro, maksimal 2 kali per project")}
+              title={ui("Your ideas")}
             >
               <span>{ui("Ide Kamu")}</span></button>
             <button className="landing-nav-button landing-nav-button-solid disabled:cursor-wait disabled:opacity-60" onClick={() => setShowModal(true)} disabled={generatingTasks}>

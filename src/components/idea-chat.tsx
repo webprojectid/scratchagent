@@ -18,6 +18,7 @@ const IDEA_LIMIT = 2;
  */
 export function IdeaChatPanel({ planId, isPro, open, onClose }: { planId: string; isPro: boolean; open: boolean; onClose: () => void }) {
   useUiLanguage();
+  const [ideaLimit, setIdeaLimit] = useState(IDEA_LIMIT);
   const [ideas, setIdeas] = useState<PlanIdea[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [text, setText] = useState("");
@@ -25,14 +26,14 @@ export function IdeaChatPanel({ planId, isPro, open, onClose }: { planId: string
   const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const left = Math.max(0, IDEA_LIMIT - ideas.length);
+  const left = Math.max(0, ideaLimit - ideas.length);
 
   useEffect(() => {
     if (!open) return;
     let active = true;
     fetch(`/api/plans/${planId}/ideas`)
       .then((r) => r.json())
-      .then((d) => { if (active) { setIdeas(d.ideas ?? []); setLoaded(true); } })
+      .then((d) => { if (active) { setIdeas(d.ideas ?? []); setIdeaLimit(d.limit ?? IDEA_LIMIT); setLoaded(true); } })
       .catch(() => { if (active) setLoaded(true); });
     return () => { active = false; };
   }, [open, planId]);
@@ -101,7 +102,7 @@ export function IdeaChatPanel({ planId, isPro, open, onClose }: { planId: string
             <h3 className="text-[13px] font-semibold text-white">{ui("Ide Kamu")}</h3>
             {isPro && loaded && (
               <span className="rounded-full border border-white/10 bg-white/[.04] px-2 py-0.5 font-mono text-[10px] tabular-nums text-white/50">
-                {ui("Sisa {0}/{1}", left, IDEA_LIMIT)}
+                {ui("Sisa {0}/{1}", left, ideaLimit)}
               </span>
             )}
           </div>
@@ -117,7 +118,7 @@ export function IdeaChatPanel({ planId, isPro, open, onClose }: { planId: string
               <Lock size={16} className="mt-0.5 shrink-0 text-white/40" />
               <div>
                 <p className="text-[13px] font-semibold text-white/85">{ui("Fitur khusus Pro")}</p>
-                <p className="mt-1 text-[12px] leading-relaxed text-slate-400">{ui("Ceritakan ide tambahanmu, dan AI mengubahnya menjadi fase baru lengkap dengan sub-fitur dan task. Hanya bisa dipakai 2 kali per project.")}</p>
+                <p className="mt-1 text-[12px] leading-relaxed text-slate-400">{ui("Add an idea to create a new phase with features and tasks.")} {ui("Up to {0} ideas per project.", ideaLimit)}</p>
                 <a href="/pricing" className="landing-nav-button landing-nav-button-solid mt-4"><span>{ui("Upgrade ke Pro")}</span></a>
               </div>
             </div>
@@ -171,7 +172,7 @@ export function IdeaChatPanel({ planId, isPro, open, onClose }: { planId: string
                 <p className="mt-1.5 text-[11px] text-white/30">{ui("Ide langsung diolah AI menjadi fase baru di struktur.")}{" "}{text.length > 0 && `${text.length}/2000 · `}{ui("Sisa {0} kali kirim untuk project ini.", left)}</p>
               </div>
             ) : (
-              <p className="rounded-lg border border-amber-400/20 bg-amber-400/[.05] px-3 py-2.5 text-[12px] text-amber-200/85">{ui("Kamu sudah memakai")}{" "}{IDEA_LIMIT}{" "}{ui("ide untuk project ini. Ide di atas tetap dibaca AI sebagai referensi di semua generasi berikutnya.")}</p>
+              <p className="rounded-lg border border-amber-400/20 bg-amber-400/[.05] px-3 py-2.5 text-[12px] text-amber-200/85">{ui("Kamu sudah memakai")}{" "}{ideaLimit}{" "}{ui("ide untuk project ini. Ide di atas tetap dibaca AI sebagai referensi di semua generasi berikutnya.")}</p>
             )}
 
             {success && <p className="text-[12px] text-slate-200">{success}{" "}{ui("Memuat ulang struktur…")}</p>}

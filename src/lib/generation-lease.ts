@@ -4,8 +4,12 @@ import { getDb } from "@/db";
 import { usageEvents } from "@/db/schema";
 import { withPlanMutation } from "./plan-mutation";
 
-const memory = new Map<string, { token: string; expires: number; attempts: number }>();
-const budgets = new Map<string, number[]>();
+const localState = globalThis as unknown as {
+  scratchGenerationLeases?: Map<string, { token: string; expires: number; attempts: number }>;
+  scratchGenerationBudgets?: Map<string, number[]>;
+};
+const memory = localState.scratchGenerationLeases ??= new Map<string, { token: string; expires: number; attempts: number }>();
+const budgets = localState.scratchGenerationBudgets ??= new Map<string, number[]>();
 // Ten allowed initial requests can each generate fifteen Pro phases (160
 // attempts including structures); keep room for retries within that window.
 const GENERATION_ATTEMPT_LIMIT = 200;

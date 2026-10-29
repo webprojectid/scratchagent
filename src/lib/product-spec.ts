@@ -19,7 +19,7 @@ export const productSpecSchema = z.object({
   entities: z.array(z.object({ name: z.string().regex(/^[a-z][a-z0-9_]*$/), fields: z.array(z.string().trim().min(1).max(120)).min(1).max(16) })).min(2).max(20),
   states: z.array(z.object({ entity: sentence, values: z.array(sentence).min(2).max(12) })).max(10),
   outOfScope: z.array(sentence).max(12),
-  metrics: z.array(z.object({ name: sentence, definition: sentence, measurement: sentence, target: sentence })).min(1).max(5),
+  metrics: z.array(z.object({ name: sentence, definition: sentence, measurement: sentence, target: z.string().trim().min(1).max(800) })).min(1).max(5),
   risks: z.array(z.object({ risk: sentence, mitigation: sentence, owner: sentence })).min(1).max(8),
   rollout: z.object({ stages: z.array(sentence).min(1).max(5), releaseChecks: z.array(sentence).min(1).max(8), rollback: z.array(sentence).min(1).max(6) }),
 });

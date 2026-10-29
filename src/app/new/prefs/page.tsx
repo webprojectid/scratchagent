@@ -8,7 +8,7 @@ import { ArrowRight, Check } from "lucide-react";
 import { ProjectGenerationPreferences } from "@/components/account-panels";
 import { defaultHandoff, type HandoffSettings } from "@/lib/account-preferences";
 import { SetupFrame } from "../_components/setup-frame";
-import styles from "../_components/setup.module.css";
+import styles from "../_components/planning.module.css";
 
 const opts = {
   Frontend: ["Next.js", "TanStack Start", "Svelte / SvelteKit", "Astro", "Nuxt", "React", "Vue", "Angular", "HTMX", "Qwik", "Solid / SolidStart", "Flutter", "React Native / Expo", "Jetpack Compose", "SwiftUI (iOS Native)", "Tauri (Desktop)", "Electron (Desktop)"],
@@ -76,10 +76,10 @@ export default function Prefs() {
           </fieldset>
           <AnimatePresence mode="wait" initial={false}>
             <motion.div key={custom ? "custom" : "auto"} initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} transition={{ duration: .18 }} className={styles.modeDetail}>
-              {custom ? <div className={styles.fields}>{stackKeys.map((key) => <label key={key} className={styles.fieldLabel}><span>{key}<small>{descriptions[key]}</small></span><select className={styles.select} value={prefs[key]} onChange={(event) => setPrefs((previous) => ({ ...previous, [key]: event.target.value }))}>{opts[key].map((option) => <option key={option} value={option}>{option}</option>)}</select></label>)}</div> : <p className={styles.autoDetail}>{ui("Frontend, backend, database, dan deployment akan ditentukan dari brief. Pilihan otomatis mengutamakan opsi free tier.")}</p>}
+              {custom ? <div className={styles.fields}>{stackKeys.map((key) => <label key={key} className={styles.fieldLabel}><span>{key}<small>{ui(descriptions[key])}</small></span><select className={styles.select} value={prefs[key]} onChange={(event) => setPrefs((previous) => ({ ...previous, [key]: event.target.value }))}>{opts[key].map((option) => <option key={option} value={option}>{option}</option>)}</select></label>)}</div> : <p className={styles.autoDetail}>{ui("Frontend, backend, database, dan deployment akan ditentukan dari brief. Pilihan otomatis mengutamakan opsi free tier.")}</p>}
             </motion.div>
           </AnimatePresence>
-          <ProjectGenerationPreferences onChange={setHandoff}/>
+          <div className={styles.documentPrefs}><ProjectGenerationPreferences onChange={setHandoff}/></div>
           {error && <p role="alert" className={styles.error}>{error}</p>}
           <div className={styles.actions}><span className={styles.actionHint}>{ui("Berikutnya: detail proyek")}</span><button type="button" className={styles.primary} onClick={start} disabled={leaving}>{leaving ? ui("Membuka detail…") : ui("Lanjut ke detail")}<ArrowRight size={16} aria-hidden="true" /></button></div>
         </section>

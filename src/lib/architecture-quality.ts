@@ -112,7 +112,11 @@ export function validateDatabaseSchemaDraft(value: unknown, context: Architectur
     const durableHold = (holdRecords.length ? holdRecords : [schema]).some((record) =>
       /\b(?:hold_expires_at|held_until|expires_at|expire_at|expiry_at|valid_until|reservation_expires_at|hold_until)\b/i.test(record)
       && /\b(?:held_by|hold_owner(?:_id)?|holder(?:_id)?|hold_user_id|reserved_by(?:_booking_id)?|reservation_user_id|user_id|customer_id|booking_id|owner_id)\b/i.test(record));
-    if (!durableHold) {
+    const holdText = `${context.brief}\n${schema}`;
+    const explicitHold = holdText.split(/[.!?\n]+/).some(sentence =>
+      /\b(?:holds?|held|holding|hold_expires_at|held_until|hold_owner_id)\b/i.test(sentence)
+      && !/\b(?:no|without|never|exclude|do not)\b[^.!?\n]{0,60}\b(?:holds?|held|holding)\b/i.test(sentence));
+    if ((obligations.paymentWebhook || explicitHold) && !durableHold) {
       issues.push("Database schema: persist a checkout hold with its owner or booking ID and expiry timestamp; a transient row lock is not a timed hold.");
     }
     const atomicSlotTransition = /\b(?:atomic|conditional)\s+(?:update|insert|compare[- ]and[- ]swap)\b[^.!?\n]{0,160}\b(?:slot|time_?slots?|booking|reservation|status)\b/i.test(schema)
@@ -138,7 +142,10 @@ export function validateDatabaseSchemaDraft(value: unknown, context: Architectur
   if (obligations.timezone && !(/\b(?:TIMESTAMPTZ|timestamp with time zone|UTC)\b/i.test(schema) && /\b(?:time[ -]?zone|timezone|zona waktu|WIB|WITA|WIT)\b|Asia\/[A-Za-z_]+/i.test(schema))) {
     issues.push("Database schema: specify timestamp storage and the requested schedule timezone or zone identifier.");
   }
-  if (obligations.roleAccess && !(/\b(?:role|permission|peran|hak akses)\b/i.test(schema) && (/\b(?:owner_id|user_id|customer_id|manager_id|profile_id|member_id|actor_id|tenant_id|agency_id|client_organization_id|warehouse_id|account_id|staff_id|pemilik_id)\b/i.test(schema) || (/\b(?:FK|references|foreign key)\b/i.test(schema) && /\b(?:membership|member|principal|identity|actor)\w*\b/i.test(schema) && /auth\s*\.\s*uid\s*\(|\bserver[- ]side (?:authorization|role check)\b/i.test(schema))) && /\b(?:RLS|row[ -]?level security|polic\w*|server[- ]side authorization|server[- ]side guard|server[- ]side role check)\b/i.test(schema))) {
+  const serverRoleBoundary = /\b(?:RLS|row[ -]?level security|polic\w*|server[- ]side authorization|server[- ]side guard|server[- ]side role check)\b/i.test(schema)
+    || /\b(?:server[- ]side|backend|API|route handlers?|server actions?)\b[^.!?\n]{0,180}\b(?:enforc\w*|authoriz\w*|check\w*|den\w*|reject\w*|scop\w*|guard\w*)\b/i.test(schema)
+    || /\b(?:enforc\w*|authoriz\w*|check\w*|reject\w*|guard\w*)\b[^.!?\n]{0,180}\b(?:server[- ]side|backend|API|route handlers?|server actions?)\b/i.test(schema);
+  if (obligations.roleAccess && !(/\b(?:role|permission|peran|hak akses)\b/i.test(schema) && (/\b(?:owner_id|user_id|customer_id|manager_id|profile_id|member_id|actor_id|tenant_id|agency_id|client_organization_id|warehouse_id|account_id|staff_id|pemilik_id)\b/i.test(schema) || (/\b(?:FK|references|foreign key)\b/i.test(schema) && /\b(?:membership|member|principal|identity|actor)\w*\b/i.test(schema) && /auth\s*\.\s*uid\s*\(|\bserver[- ]side (?:authorization|role check)\b/i.test(schema))) && serverRoleBoundary)) {
     issues.push("Database schema: tie role or permission records to the owning resource and specify a server-side policy or authorization boundary.");
   }
   const inventedPolicyDefaults = schema.split(/\r?\n/).filter((line) =>

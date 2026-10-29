@@ -11,6 +11,7 @@ export interface CurrentUser {
   proActive?: boolean;
   createdAt?: string | null;
   proExpiresAt?: string | null;
+  bannedAt?: string | null;
   emailVerified?: boolean;
 }
 
@@ -47,6 +48,7 @@ type UserSnapshot = { user: CurrentUser | null; loading: boolean };
 const serverSnapshot: UserSnapshot = { user: null, loading: true };
 let snapshot = serverSnapshot;
 let cached: Promise<CurrentUser | null> | null = null;
+let cachedUntil = 0;
 let revision = 0;
 const listeners = new Set<() => void>();
 
@@ -83,7 +85,8 @@ async function resolveUser(version: number): Promise<CurrentUser | null> {
     const response = await fetch(`/api/me?userId=${encodeURIComponent(identity.email)}`, { cache: "no-store" });
     if (response.ok) {
       const account = await response.json();
-      user = { ...identity, name: account.name || identity.name, role: account.role === "admin" ? "admin" : "user", tier: effectiveAccountTier(account), proActive: typeof account.proActive === "boolean" ? account.proActive : undefined, emailVerified: account.emailVerified, createdAt: account.createdAt ?? null, proExpiresAt: account.proExpiresAt ?? null };
+      const tier = effectiveAccountTier(account);
+      user = { ...identity, name: account.name || identity.name, role: account.role === "admin" ? "admin" : "user", tier, proActive: tier === "free" ? false : typeof account.proActive === "boolean" ? account.proActive : undefined, emailVerified: account.emailVerified, createdAt: account.createdAt ?? null, proExpiresAt: account.proExpiresAt ?? null, bannedAt: account.bannedAt ?? null };
     } else if (response.status === 401 || response.status === 403) {
       if (version === revision) publish(null);
       return null;
@@ -94,9 +97,13 @@ async function resolveUser(version: number): Promise<CurrentUser | null> {
   return user;
 }
 
-export function getCurrentUser(): Promise<CurrentUser | null> {
+export function getCurrentUser(options: { fresh?: boolean } = {}): Promise<CurrentUser | null> {
   if (typeof window === "undefined") return Promise.resolve(null);
-  if (!cached) cached = resolveUser(revision);
+  if (cached && (options.fresh || Date.now() >= cachedUntil || snapshot.user?.proActive && effectiveAccountTier(snapshot.user) === "free")) {
+    revision++;
+    cached = null;
+  }
+  if (!cached) { cachedUntil = Date.now() + 30_000; cached = resolveUser(revision); }
   return cached;
 }
 
