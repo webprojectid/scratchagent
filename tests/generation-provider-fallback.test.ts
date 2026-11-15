@@ -22,9 +22,10 @@ import * as qaLabels from "../src/lib/qa-labels";
 import * as checkpoints from "../src/lib/generation-checkpoint";
 import * as contracts from "../src/lib/generation-contract";
 import type { GenerateResult, GenerateTask } from "../src/lib/generate";
+import { LLMStreamInterruptedError } from "../src/lib/sse-parser";
 
 type Stage = "review" | "discovery" | "outline" | "subfeatures" | "architecture" | "database" | "requirements" | "tasks";
-type Call = { model: string; stage: Stage; userPrompt: string };
+type Call = { model: string; stage: Stage; userPrompt: string; stream: boolean };
 
 const description = (index: number) => `Pengguna dapat mengelola bagian ${index} dan melihat perubahan data yang tersimpan.`;
 const goal = (index: number) => `Pastikan proses bagian ${index} selesai dengan hasil yang bisa diperiksa pengguna.`;
@@ -83,8 +84,10 @@ function stageOf(systemPrompt: string): Stage {
   return "requirements";
 }
 
-function fixture(tier: "free" | "pro", underfillFirstPhase = false, architecture = architectureFixture, invalidTypes = false, invalidReviewPaths = false, transform?: (response: unknown, call: Call) => unknown) {
+function fixture(tier: "free" | "pro", underfillFirstPhase = false, architecture = architectureFixture, invalidTypes = false, invalidReviewPaths = false, transform?: (response: unknown, call: Call) => unknown, interruptFirstStream = false, finishLengthFirst = false) {
   const calls: Call[] = [];
+  let interrupted = false;
+  let lengthReported = false;
   const featureCount = limits.structureLimits(tier).features[0];
   const goodFeatures = Array.from({ length: featureCount }, (_, index) => ({
     requirement_ids: [`R${String(index + 1).padStart(2, "0")}`],
@@ -198,11 +201,11 @@ function fixture(tier: "free" | "pro", underfillFirstPhase = false, architecture
     "./generation-checkpoint": checkpoints,
     "./generation-contract": contracts,
     "./provider-network": { publicProviderFetch: async (_url: string, init: RequestInit) => {
-      const body = JSON.parse(String(init.body)) as { model: string; messages: { content: string }[] };
-      const call = { model: body.model, stage: stageOf(body.messages[0].content), userPrompt: body.messages[1].content };
+      const body = JSON.parse(String(init.body)) as { model: string; messages: { content: string }[]; stream?: boolean };
+      const call = { model: body.model, stage: stageOf(body.messages[0].content), userPrompt: body.messages[1].content, stream: body.stream !== false };
       calls.push(call);
       const response = responseFor(call);
-      return new Response(JSON.stringify(transform ? transform(response, call) : response), { status: 200, headers: { "content-type": "application/json" } });
+      return new Response(JSON.stringify(transform ? transform(response, call) : response), { status: 200, headers: { "content-type": "application/json", "x-fixture-stream": String(call.stream), "x-fixture-finish": String(finishLengthFirst && !lengthReported && call.stream) } });
     } },
     "./account-preferences": { defaultHandoff: { language: "id" }, legacyHandoff: { language: "id" }, handoffInstructions: () => "" },
     zod: { z },
@@ -218,7 +221,18 @@ function fixture(tier: "free" | "pro", underfillFirstPhase = false, architecture
     "./scope-quality": scopeQuality,
     "./architecture-quality": architectureQuality,
     "./qa-labels": qaLabels,
-    "./sse-parser": { parseLLMResponse: async (response: Response) => ({ content: await response.text(), usage: { prompt_tokens: 10, completion_tokens: 20 } }) },
+    "./sse-parser": { LLMStreamInterruptedError, parseLLMResponse: async (response: Response) => {
+      if (interruptFirstStream && !interrupted && response.headers.get("x-fixture-stream") === "true") {
+        interrupted = true;
+        throw new LLMStreamInterruptedError('{"partial":');
+      }
+      const content = await response.text();
+      if (response.headers.get("x-fixture-finish") === "true") {
+        lengthReported = true;
+        return { content, finishReason: "length", usage: { prompt_tokens: 10, completion_tokens: 20 } };
+      }
+      return { content, usage: { prompt_tokens: 10, completion_tokens: 20 } };
+    } },
   };
   runInNewContext(output, {
     module: fixtureModule,
@@ -297,6 +311,26 @@ test("a web architecture excluding a native mobile app completes without archite
   assert.ok(plan.features.length > 0);
   assert.match(plan.architecture, /not a native mobile app/);
   assert.equal(run.calls.filter((call) => call.stage === "architecture").length, 1);
+});
+
+test("an interrupted provider stream is retried as a non-stream request on the same model", async () => {
+  const run = fixture("free", false, architectureFixture, false, false, undefined, true);
+  const plan = await run.generate.generatePlanStructure("Kelola akun dan ruang kerja.", { mode: "auto" }, [], "free");
+  assert.ok(plan.features.length > 0);
+  assert.equal(run.calls[0].stream, true);
+  assert.equal(run.calls[1].stream, false);
+  assert.equal(run.calls[0].model, run.calls[1].model);
+  assert.equal(run.calls[0].stage, run.calls[1].stage);
+  assert.ok(plan.usage.requests?.some(request => request.validationIssues?.includes("Provider stream ended before completion; retried without streaming")));
+});
+
+test("a provider output-limit response receives a concise complete-JSON repair", async () => {
+  const run = fixture("free", false, architectureFixture, false, false, undefined, false, true);
+  const plan = await run.generate.generatePlanStructure("Kelola akun dan ruang kerja.", { mode: "auto" }, [], "free");
+  assert.ok(plan.features.length > 0);
+  const discoveryCalls = run.calls.filter(call => call.stage === "discovery");
+  assert.ok(discoveryCalls.length >= 2);
+  assert.match(discoveryCalls[1].userPrompt, /output limit before completing JSON/i);
 });
 
 for (const tier of ["free", "pro"] as const) {
