@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
 import { Loader2 } from "lucide-react";
 import { Shell } from "@/components/brand";
+import { FloatingMedia } from "@/components/floating-media";
 import { CircularCarousel, type CarouselItem } from "@/components/ui/circular-carousel";
 import { getCurrentUser } from "@/lib/current-user";
 
@@ -196,7 +197,8 @@ export default function Generate() {
 
   return (
     <Shell back="/new/prefs" sidebar={false}>
-      <div className="mx-auto flex min-h-[100dvh] w-full max-w-3xl flex-col justify-center px-5 py-16">
+      <FloatingMedia />
+      <div className="relative z-10 mx-auto flex min-h-[100dvh] w-full max-w-3xl flex-col justify-center px-5 py-16">
         <p className="eyebrow mx-auto w-full max-w-xl">{error ? ui("Misi gagal") : ui("Agent sedang menyusun strategi")}</p>
         {error ? (
           <div className="mt-8">

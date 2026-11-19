@@ -6,7 +6,7 @@ import { LandingNavbar } from "@/components/landing-navbar";
 import { animate, AnimatePresence, motion, useMotionValue, useSpring } from "motion/react";
 import { ArrowUpDown, ArrowUpRight, Bike, BookOpen, ChevronLeft, Clock, CreditCard, Delete, Footprints, KeyRound, Lock, MoreHorizontal, PenLine, Play, QrCode, Rocket, Sparkles, Star, User, Users, Wind, X, Zap } from "lucide-react";
 import { memo, useEffect, useRef, useState } from "react";
-import DottedDemo from "@/components/ui/dotted-demo";
+import { WaveMesh } from "@/components/ui/wave-mesh";
 import { IPhone17ShopDemo } from "@/components/ui/iphone17-shop-demo";
 import { getCurrentUser } from "@/lib/current-user";
 
@@ -41,6 +41,8 @@ function DoubleBezel({ children, className = "" }: { children: React.ReactNode; 
 }
 
 
+const WAVE_COLORS: [string, string, string] = ["#0A0A0A", "#D2D5D7", "#D2D5D7"];
+
 const stackRows = [
   [{ name: "Next.js", slug: "nextdotjs" }, { name: "React", slug: "react" }, { name: "TypeScript", slug: "typescript" }, { name: "Tailwind CSS", slug: "tailwindcss" }, { name: "Supabase", slug: "supabase" }, { name: "Motion", slug: "framer" }],
   [{ name: "Node.js", slug: "nodedotjs" }, { name: "PostgreSQL", slug: "postgresql" }, { name: "Drizzle", slug: "drizzle" }, { name: "Redis", slug: "redis" }, { name: "Docker", slug: "docker" }, { name: "Vercel", slug: "vercel" }, { name: "GitHub", slug: "github" }],
@@ -50,7 +52,7 @@ function StackMarquee() {
   useUiLanguage();
   const repeated = (row: typeof stackRows[number]) => [...row, ...row, ...row];
 
-  return <section className="landing-stack relative mx-auto w-[calc(100%-28px)] max-w-[1300px] overflow-hidden" aria-label="Scratch Agent stack">
+  return <section className="landing-stack relative mx-auto w-[calc(100%-28px)] max-w-[1300px] overflow-hidden bg-[linear-gradient(to_bottom,rgba(10,10,10,0),rgba(10,10,10,0.72)_26%,#0A0A0A_78%)]" aria-label="Scratch Agent stack">
     <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-24 bg-gradient-to-r from-[#0A0A0A] to-transparent md:w-48" />
     <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-24 bg-gradient-to-l from-[#0A0A0A] to-transparent md:w-48" />
     <div className="stack-row"><div className="stack-track stack-track-right">{[0, 1].map((copy) => <div key={copy} className="stack-group">{repeated(stackRows[0]).map((item, i) => <span key={`${item.name}-${i}`} className="stack-brand"><img src={`https://cdn.simpleicons.org/${item.slug}/B7C8B9`} alt="" />{item.name}</span>)}</div>)}</div></div>
@@ -70,7 +72,9 @@ export default function Home() {
   }, []);
   return (
     <main className="rv2-page relative isolate w-full max-w-full overflow-x-clip bg-[#0A0A0A] text-[#E8EDEC] selection:bg-[#74FA6A]/30 selection:text-black">
-      <DottedDemo />
+      <div className="pointer-events-none fixed inset-0 z-[-1]">
+        <WaveMesh colors={WAVE_COLORS} className="h-full w-full" />
+      </div>
       <div className="pointer-events-none fixed inset-0 z-[70] opacity-[.055] mix-blend-soft-light" style={{ backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>")` }} />
       <a href="#agents" className="relative z-30 mb-3 flex min-h-8 items-center justify-center gap-2 bg-[#74FA6A] px-4 py-1.5 text-center text-[11px] font-medium leading-4 text-black transition-colors hover:bg-[#9AFF82] md:mb-4 md:text-[12px]">{hc.banner}<span aria-hidden="true">→</span></a>
       <LandingNavbar />

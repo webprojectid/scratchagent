@@ -1,0 +1,7 @@
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse 80% 70% at 50% 48%, rgba(9, 10, 10, 0.82), rgba(9, 10, 10, 0.48) 58%, transparent 90%);
+}

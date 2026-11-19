@@ -1,0 +1,68 @@
+.field {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.field::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 46% 48% at 50% 50%, rgba(9, 10, 10, 0.55), transparent 74%);
+}
+
+.orbit {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+}
+.outer .tile {
+  --radius: clamp(560px, 47vw, 900px);
+}
+.inner .tile {
+  --radius: clamp(440px, 36vw, 620px);
+  animation-direction: reverse;
+}
+
+.tile {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: block;
+  width: var(--size);
+  height: var(--size);
+  margin: calc(var(--size) / -2);
+  border-radius: 18px;
+  background-position: center;
+  background-size: cover;
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.55), inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+  opacity: 0.94;
+  filter: saturate(0.95) brightness(0.9);
+  transform: rotate(var(--start)) translateX(var(--radius)) rotate(calc(-1 * var(--start)));
+  animation: orbit var(--duration) linear infinite;
+  will-change: transform;
+}
+
+@keyframes orbit {
+  from {
+    transform: rotate(var(--start)) translateX(var(--radius)) rotate(calc(-1 * var(--start)));
+  }
+  to {
+    transform: rotate(calc(var(--start) + 360deg)) translateX(var(--radius)) rotate(calc(-1 * var(--start) - 360deg));
+  }
+}
+
+@media (max-width: 1100px) {
+  .field {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tile {
+    animation: none;
+  }
+}

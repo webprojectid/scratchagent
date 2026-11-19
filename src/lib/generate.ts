@@ -25,7 +25,7 @@ import { normalizePhaseOwnership, alignProductEvidence, canonicalizeProductFacts
 import { taskDetailSchema, validateTaskDetails, type TaskDetail } from "./task-spec";
 import { mergeGenerationPatch } from "./generation-patch";
 import { normalizeGenerationOutput, GenerationOutputRejected } from "./generation-output";
-import { parseLLMResponse } from "./sse-parser"; // NEW: Dual-mode SSE/JSON parser
+import { LLMStreamInterruptedError, parseLLMResponse, type ParsedLLMResponse } from "./sse-parser"; // NEW: Dual-mode SSE/JSON parser
 
 const prioritySchema = z.preprocess(
   (val) => {
@@ -223,6 +223,12 @@ class QualityError extends Error {
     this.name = "QualityError";
   }
 }
+class LLMOutputTruncatedError extends Error {
+  constructor(readonly partialContent: string) {
+    super("The provider stopped at its output limit before completing the response.");
+    this.name = "LLMOutputTruncatedError";
+  }
+}
 const rejectedDrafts = new WeakMap<object, string>();
 const failedGenerationUsage = new WeakMap<object, LlmUsage>();
 export function getFailedGenerationUsage(error: unknown): LlmUsage | undefined {
@@ -277,45 +283,110 @@ async function attemptOnce<T>(
     ? prompt
     : (options.stage === 'review' ? reviewRepairRequest : repairRequest)(prompt, feedback ?? ["Return complete JSON with the required field types"], previousDraft);
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  // Do not let a stalled stream consume the whole model budget: retry the
+  // same model without streaming while there is still time for a fallback.
+  const timeout = setTimeout(() => controller.abort(), Math.min(timeoutMs, 25_000));
   const start = Date.now();
+  let metricStart = start;
   let draft: string | undefined;
-  const metric: GenerationRequestMetric = { id: crypto.randomUUID(), stage: options.stage ?? "outline", model, startedAt: new Date(start).toISOString(), durationMs: 0, status: "failed", httpStatus: null, requestId: null, repair: cycle > 0, tokensIn: null, tokensOut: null, cachedTokens: null, reasoningTokens: null };
+  const earlierMetrics: GenerationRequestMetric[] = [];
+  let metric: GenerationRequestMetric = { id: crypto.randomUUID(), stage: options.stage ?? "outline", model, startedAt: new Date(start).toISOString(), durationMs: 0, status: "failed", httpStatus: null, requestId: null, repair: cycle > 0, tokensIn: null, tokensOut: null, cachedTokens: null, reasoningTokens: null };
   if (usage && !usage.models.includes(model)) usage.models.push(model);
   console.log(`[LLM] ${options.stage ?? "outline"} request (model: ${model}, cycle ${cycle + 1})`);
-  try {
-    const res = await publicProviderFetch(`${baseUrl}/chat/completions`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model,
-        messages: [
-          { role: "system", content: `${stageRoles[options.stage ?? "outline"]} Return one valid JSON object only. Use double-quoted keys and strings, with no prose, comments, or trailing commas outside JSON. Escape newlines and quotes inside strings. Preserve confirmed user facts, chosen language, and the exact requested field names. JSON FIELD TYPES: ${generationContracts[options.stage ?? "outline"]} Never output objects where strings are required. Keep each criterion concise and observable. Do not invent numeric targets, durations, fees, percentages or business-policy defaults, even inside a proposed assumption. When no value is supplied by the user, state an open configurable decision WITHOUT a sample number. Keep confirmed numeric values exactly as supplied. Do not log or display passwords, password hashes or hash fragments. RLS controls row authorization; validate input formats with explicit application or database constraints. Never invent built-in database catalogs or extensions.` },
-          { role: "user", content: userContent },
-        ],
-        temperature: 0.2,
-        max_tokens: options.stage === "tasks" ? 16384 : options.stage === "subfeatures" || options.stage === "discovery" ? 8192 :
-          options.stage === "database" || options.stage === "requirements" || options.stage === "review" ? 8192 : 4096,
-        // Streaming: parser SSE auto-detect dan fallback ke JSON, jadi aman
-        // untuk gateway yang mengabaikan flag ini. Manfaat: token pertama
-        // langsung mengalir (progress), dan gateway tidak menahan seluruh
-        // respons reasoning-model yang lambat di buffer.
-        stream: true,
-      }),
-      signal: controller.signal,
-    });
-    metric.httpStatus = res.status;
-    metric.requestId = res.headers.get("x-request-id") ?? res.headers.get("request-id");
-    const elapsed = Date.now() - start;
-    if (!res.ok) {
-      const text = await res.text();
-      console.error(`[LLM] ${model} error ${res.status} in ${elapsed}ms`);
-      if (isQuotaExhausted(res.status, text)) {
-        throw new Error(`Quota habis untuk model ${model} (${res.status})`);
+  const requestPayload = {
+    model,
+    messages: [
+      { role: "system", content: `${stageRoles[options.stage ?? "outline"]} Return one valid JSON object only. Use double-quoted keys and strings, with no prose, comments, or trailing commas outside JSON. Escape newlines and quotes inside strings. Preserve confirmed user facts, chosen language, and the exact requested field names. JSON FIELD TYPES: ${generationContracts[options.stage ?? "outline"]} Never output objects where strings are required. Keep each criterion concise and observable. Do not invent numeric targets, durations, fees, percentages or business-policy defaults, even inside a proposed assumption. When no value is supplied by the user, state an open configurable decision WITHOUT a sample number. Keep confirmed numeric values exactly as supplied. Do not log or display passwords, password hashes or hash fragments. RLS controls row authorization; validate input formats with explicit application or database constraints. Never invent built-in database catalogs or extensions.` },
+      { role: "user", content: userContent },
+    ],
+    temperature: 0.2,
+    max_tokens: options.stage === "tasks" ? 16384 : options.stage === "subfeatures" || options.stage === "discovery" ? 8192 :
+      options.stage === "database" || options.stage === "requirements" || options.stage === "review" ? 8192 : 4096,
+  };
+  let parsed: ParsedLLMResponse | undefined;
+  const recoverWithoutStream = async (reason: string): Promise<ParsedLLMResponse> => {
+    metric.validationIssues = [reason];
+    metric.durationMs = Date.now() - metricStart;
+    earlierMetrics.push(metric);
+    const recoveryStart = Date.now();
+    metricStart = recoveryStart;
+    metric = { id: crypto.randomUUID(), stage: options.stage ?? "outline", model, startedAt: new Date(recoveryStart).toISOString(), durationMs: 0, status: "failed", httpStatus: null, requestId: null, repair: cycle > 0, tokensIn: null, tokensOut: null, cachedTokens: null, reasoningTokens: null };
+    console.warn(`[LLM] ${options.stage ?? "outline"} ${reason}; retrying ${model} without streaming`);
+    const recoveryController = new AbortController();
+    const remaining = Math.max(1_000, Math.min(timeoutMs, (options.deadline ?? Infinity) - Date.now()));
+    const recoveryTimer = setTimeout(() => recoveryController.abort(), remaining);
+    try {
+      const recovery = await publicProviderFetch(`${baseUrl}/chat/completions`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ ...requestPayload, stream: false }),
+        signal: recoveryController.signal,
+      });
+      metric.httpStatus = recovery.status;
+      metric.requestId = recovery.headers.get("x-request-id") ?? recovery.headers.get("request-id");
+      if (!recovery.ok) {
+        const text = await recovery.text();
+        console.error(`[LLM] ${model} non-stream retry error ${recovery.status} in ${Date.now() - recoveryStart}ms`);
+        if (isQuotaExhausted(recovery.status, text)) throw new Error(`Quota habis untuk model ${model} (${recovery.status})`);
+        throw new Error(`LLM gagal: HTTP ${recovery.status} dari ${model}`);
       }
-      throw new Error(`LLM gagal: HTTP ${res.status} dari ${model}`);
+      return await parseLLMResponse(recovery, { logDebug: false });
+    } finally {
+      clearTimeout(recoveryTimer);
     }
-    const parsed = await parseLLMResponse(res, { logDebug: false });
+  };
+
+  try {
+    try {
+      const res = await publicProviderFetch(`${baseUrl}/chat/completions`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ ...requestPayload, stream: true }),
+        signal: controller.signal,
+      });
+      metric.httpStatus = res.status;
+      metric.requestId = res.headers.get("x-request-id") ?? res.headers.get("request-id");
+      const elapsed = Date.now() - start;
+      if (!res.ok) {
+        const text = await res.text();
+        console.error(`[LLM] ${model} error ${res.status} in ${elapsed}ms`);
+        if (isQuotaExhausted(res.status, text)) {
+          throw new Error(`Quota habis untuk model ${model} (${res.status})`);
+        }
+        throw new Error(`LLM gagal: HTTP ${res.status} dari ${model}`);
+      }
+      try {
+        parsed = await parseLLMResponse(res, { logDebug: false });
+      } catch (error) {
+        if (error instanceof Error && error.name === "AbortError") {
+          parsed = await recoverWithoutStream("Provider stream timed out; retried without streaming");
+        } else if (error instanceof LLMStreamInterruptedError) {
+          metric.durationMs = Date.now() - start;
+          metric.tokensIn = error.usage?.prompt_tokens ?? null;
+          metric.tokensOut = error.usage?.completion_tokens ?? null;
+          metric.cachedTokens = error.usage?.prompt_tokens_details?.cached_tokens ?? null;
+          metric.reasoningTokens = error.usage?.completion_tokens_details?.reasoning_tokens ?? null;
+          if (usage && error.usage) {
+            usage.tokensIn += error.usage.prompt_tokens ?? 0;
+            usage.tokensOut += error.usage.completion_tokens ?? 0;
+          }
+          draft = error.partialContent || undefined;
+          parsed = await recoverWithoutStream("Provider stream ended before completion; retried without streaming");
+        } else {
+          throw error;
+        }
+      }
+    } catch (error) {
+      if (error instanceof Error && error.name === "AbortError") {
+        parsed = await recoverWithoutStream("Provider stream timed out; retried without streaming");
+      } else {
+        throw error;
+      }
+    }
+    if (!parsed) throw new Error(`LLM request failed for ${model}`);
+    if (!(parsed.content ?? "").trim() && parsed.mode === "streaming") {
+      parsed = await recoverWithoutStream("Provider returned an empty stream; retried without streaming");
+    }
     draft = parsed.content ?? "";
     metric.tokensIn = parsed.usage?.prompt_tokens ?? null;
     metric.tokensOut = parsed.usage?.completion_tokens ?? null;
@@ -326,7 +397,20 @@ async function attemptOnce<T>(
       usage.tokensIn += parsed.usage.prompt_tokens ?? 0;
       usage.tokensOut += parsed.usage.completion_tokens ?? 0;
     }
-    let decoded = JSON.parse(extractJson(parsed.content ?? ""));
+    if (parsed.finishReason === "length") throw new LLMOutputTruncatedError(draft);
+    if (!(parsed.content ?? "").trim()) {
+      metric.validationIssues = ["Provider returned an empty response"];
+      throw new Error(`LLM returned an empty response from ${model}`);
+    }
+    let decoded: unknown;
+    try {
+      decoded = JSON.parse(extractJson(parsed.content ?? ""));
+    } catch (error) {
+      if (parsed.mode !== "streaming") throw error;
+      parsed = await recoverWithoutStream("Streamed response was not valid JSON; retried without streaming");
+      if (!(parsed.content ?? "").trim()) throw new Error(`LLM returned an empty response from ${model}`);
+      decoded = JSON.parse(extractJson(parsed.content ?? ""));
+    }
     if (options.stage === 'review') decoded = normalizeGenerationOutput('review', decoded);
     if (options.stage === 'review' && previousDraft) {
       let previousReview: ReturnType<typeof generationReviewSchema.safeParse> | undefined;
@@ -349,12 +433,17 @@ async function attemptOnce<T>(
   } catch (error) {
     if (error instanceof QualityError) metric.validationIssues = error.issues.slice(0, 24);
     else if (error instanceof z.ZodError) metric.validationIssues = schemaRepairFeedback(error);
+    else if (error instanceof LLMOutputTruncatedError) metric.validationIssues = ["Provider reached its output limit before completing JSON"];
+    else if (error instanceof LLMStreamInterruptedError) {
+      metric.validationIssues = ["Provider stream ended before completion"];
+      draft = draft || error.partialContent || undefined;
+    }
     else if (metric.status === "rejected") metric.validationIssues = [error instanceof Error && error.message.startsWith("JSON parsing gagal:") ? error.message : "Response could not be parsed into the required JSON contract"];
     if (draft && error !== null && typeof error === "object") rejectedDrafts.set(error, draft.slice(0, 80_000));
     throw error;
   } finally {
-    metric.durationMs = Date.now() - start;
-    if (usage) (usage.requests ??= []).push(metric);
+    metric.durationMs = Date.now() - metricStart;
+    if (usage) (usage.requests ??= []).push(...earlierMetrics, metric);
     clearTimeout(timeout);
   }
 }
@@ -382,14 +471,22 @@ async function callLlmUncached<T>(schema: z.ZodType<T>, prompt: string, usage?: 
   let lastError: unknown;
   let rejectedIssues: string[] | undefined;
   let exhaustedCount = 0;
-  for (const entry of entries) {
+  for (const [entryIndex, entry] of entries.entries()) {
+    // A rejection from an earlier provider must not mask a later provider's
+    // network error or make the whole fallback chain look like bad content.
+    rejectedIssues = undefined;
+    // Give every configured model a slice of the section budget. Otherwise a
+    // slow primary can consume the deadline and the fallbacks never run.
+    const remainingEntries = entries.length - entryIndex;
+    const remainingTime = Math.max(0, options.deadline! - Date.now());
+    const entryOptions = { ...options, deadline: Date.now() + Math.max(1, Math.floor(remainingTime / remainingEntries)) };
     let feedback: string[] | undefined;
     let previousDraft: string | undefined;
     let maxCycles = options.stage === "review" ? 3 : 2;
     for (let cycle = 0; cycle < maxCycles; cycle++) {
-      if (Date.now() >= options.deadline!) throw new Error("Generation section exceeded its time budget.");
+      if (Date.now() >= entryOptions.deadline!) throw new Error("Generation section exceeded its time budget.");
       try {
-        const result = await attemptOnce(schema, prompt, entry, usage, cycle, options, feedback, previousDraft);
+        const result = await attemptOnce(schema, prompt, entry, usage, cycle, entryOptions, feedback, previousDraft);
         if (usage && !usage.models.includes(entry.model)) usage.models.push(entry.model);
         return result;
       } catch (error) {
@@ -399,9 +496,9 @@ async function callLlmUncached<T>(schema: z.ZodType<T>, prompt: string, usage?: 
           console.warn(`[LLM] ${entry.model} kehabisan quota, pindah ke entri berikutnya`);
           break;
         }
-        const repairable = error instanceof QualityError || error instanceof z.ZodError ||
+        const repairable = error instanceof QualityError || error instanceof z.ZodError || error instanceof LLMOutputTruncatedError ||
           (error instanceof Error && error.message.startsWith("JSON parsing gagal"));
-        if (repairable) rejectedIssues = error instanceof QualityError ? error.issues.slice(0, 24) : error instanceof z.ZodError ? schemaRepairFeedback(error) : [(error as Error).message];
+        if (repairable) rejectedIssues = error instanceof QualityError ? error.issues.slice(0, 24) : error instanceof z.ZodError ? schemaRepairFeedback(error) : error instanceof LLMOutputTruncatedError ? ["The provider reached its output limit before completing JSON. Return a concise complete object with every required field."] : [(error as Error).message];
         const completeRecovery = repairable && cycle === 1 && maxCycles === 2 && !(error instanceof QualityError);
         if (completeRecovery) maxCycles = 3;
         if (repairable && cycle < maxCycles - 1) {
@@ -410,8 +507,11 @@ async function callLlmUncached<T>(schema: z.ZodType<T>, prompt: string, usage?: 
           console.warn(`[LLM] ${entry.model} ${options.stage ?? "outline"} gagal validasi, coba perbaiki bagian ini`);
           continue;
         }
-        if (entries.length === 1 && cycle === 0 && error instanceof Error && Date.now() + 10_000 < options.deadline!) {
-          feedback = ["The previous request failed. Return complete valid JSON"];
+        if (entries.length === 1 && cycle === 0 && error instanceof Error && Date.now() + 10_000 < entryOptions.deadline!) {
+          feedback = error instanceof LLMStreamInterruptedError
+            ? ["The previous provider stream was interrupted. Return one complete valid JSON object without relying on the cut-off response."]
+            : ["The previous request failed. Return complete valid JSON"];
+          previousDraft = error !== null && typeof error === "object" ? rejectedDrafts.get(error) : undefined;
           continue;
         }
         console.warn(`[LLM] ${entry.model} ${options.stage ?? "outline"} gagal, pindah ke entri berikutnya`);

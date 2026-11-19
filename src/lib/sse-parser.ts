@@ -28,7 +28,18 @@ export interface ParsedLLMResponse {
     prompt_tokens_details?: { cached_tokens?: number };
     completion_tokens_details?: { reasoning_tokens?: number };
   };
+  finishReason?: string;
   mode: "streaming" | "json" | "unknown";
+}
+
+export class LLMStreamInterruptedError extends Error {
+  constructor(
+    readonly partialContent: string,
+    readonly usage?: ParsedLLMResponse["usage"],
+  ) {
+    super("The provider response stream ended before completion.");
+    this.name = "LLMStreamInterruptedError";
+  }
 }
 
 /** Options untuk parsing response */
@@ -66,17 +77,20 @@ async function parseStream(body: ReadableStream<Uint8Array>, options: ParseOptio
   const decoder = new TextDecoder();
   const reader = body.getReader();
   let content = "", buffer = "", finished = false;
+  let finishReason: string | undefined;
   let usage: Partial<NonNullable<ParsedLLMResponse["usage"]>> = {};
   const consumeLine = (line: string) => {
     const trimmed = line.trim();
     if (trimmed === "[DONE]" || trimmed === "data: [DONE]") { finished = true; return; }
     const payload = trimmed.startsWith("data:") ? trimmed.slice(5).trim() : trimmed.startsWith("{") ? trimmed : "";
     if (!payload) return;
-    let event: { choices?: { delta?: { content?: string }; message?: { content?: string } }[]; usage?: typeof usage };
+    let event: { choices?: { delta?: { content?: string }; message?: { content?: string }; finish_reason?: string | null }[]; usage?: typeof usage };
     try { event = JSON.parse(payload); }
     catch { if (options.logDebug) console.warn("[SSE Parser] Skipped malformed SSE event"); return; }
-    const token = event.choices?.[0]?.delta?.content ?? event.choices?.[0]?.message?.content;
+    const choice = event.choices?.[0];
+    const token = choice?.delta?.content ?? choice?.message?.content;
     if (typeof token === "string") { content += token; options.onToken?.(token); }
+    if (typeof choice?.finish_reason === "string") finishReason = choice.finish_reason;
     if (event.usage) usage = event.usage;
   };
   try {
@@ -93,11 +107,14 @@ async function parseStream(body: ReadableStream<Uint8Array>, options: ParseOptio
       for (const line of lines) { consumeLine(line); if (finished) break; }
     }
     if (finished) await reader.cancel();
-    return { content, ...(Object.keys(usage).length ? { usage } : {}), mode: "streaming" };
+    return { content, ...(Object.keys(usage).length ? { usage } : {}), ...(finishReason ? { finishReason } : {}), mode: "streaming" };
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    options.onError?.(new Error(`Streaming parse error: ${message}`));
-    throw new Error(`Failed to parse streaming response: ${message}`);
+    if (error instanceof Error && error.name === "AbortError") {
+      options.onError?.(new Error("The provider response timed out."));
+      throw error;
+    }
+    options.onError?.(new Error("The provider response stream was interrupted."));
+    throw new LLMStreamInterruptedError(content, Object.keys(usage).length ? usage : undefined);
   } finally { reader.releaseLock(); }
 }
 
@@ -127,6 +144,7 @@ async function parseJson(
     
     // Extract usage stats
     const usage: ParsedLLMResponse["usage"] = json.usage ?? undefined;
+    const finishReason = typeof choice?.finish_reason === "string" ? choice.finish_reason : undefined;
     
     if (options.logDebug) {
       console.log(`[SSE Parser] JSON complete: ${content.length} chars, ${usage?.total_tokens?.toLocaleString() ?? "unreported"} tokens`);
@@ -135,6 +153,7 @@ async function parseJson(
     return {
       content,
       usage: usage as ParsedLLMResponse['usage'],
+      ...(finishReason ? { finishReason } : {}),
       mode: "json"
     };
     
@@ -179,6 +198,7 @@ export async function parseLLMResponse(
       return await parseJson(response, defaultOptions);
     }
   } catch (error) {
+    if (error instanceof LLMStreamInterruptedError || (error instanceof Error && error.name === "AbortError")) throw error;
     // Re-throw with context about which mode failed
     const modeMsg = mode === "streaming" ? "streaming" : "JSON";
     throw new Error(`Failed to parse response (${modeMsg} mode): ${error instanceof Error ? error.message : String(error)}`);

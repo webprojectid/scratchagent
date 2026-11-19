@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getRequestUser, requireAdmin } from "@/lib/api-auth";
 import { getLlmConfig } from "@/lib/llm-config";
+import { extractGenerationJson } from "@/lib/generation-json";
 
 const bodySchema = z.object({
   baseUrl: z.string().trim().min(1),
@@ -58,8 +59,9 @@ export async function POST(request: Request) {
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         model,
-        messages: [{ role: "user", content: "Balas hanya: OK" }],
-        max_tokens: 10,
+        messages: [{ role: "user", content: "Return exactly this JSON object and nothing else: {\"ok\":true}" }],
+        max_tokens: 64,
+        temperature: 0,
         stream: false,
       }),
       signal: AbortSignal.timeout(8_000),
@@ -71,8 +73,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, latencyMs, error: `HTTP ${res.status}: ${text || res.statusText}` });
     }
     const data = (await res.json().catch(() => null)) as { choices?: { message?: { content?: string } }[] } | null;
-    const reply = data?.choices?.[0]?.message?.content?.trim().slice(0, 40) ?? "";
-    return NextResponse.json({ ok: true, latencyMs, model, reply });
+    const reply = data?.choices?.[0]?.message?.content?.trim().slice(0, 80) ?? "";
+    let followsJsonContract = false;
+    try { followsJsonContract = JSON.parse(extractGenerationJson(reply))?.ok === true; } catch { /* An empty or prose reply is not a usable generation model. */ }
+    if (!followsJsonContract) {
+      return NextResponse.json({ ok: false, latencyMs, model, reply, error: "Model merespons tetapi tidak mengembalikan JSON {ok:true}." });
+    }
+    return NextResponse.json({ ok: true, latencyMs, model, reply, json: true });
   } catch (error) {
     const latencyMs = Date.now() - start;
     const msg = error instanceof Error ? error.message : String(error);

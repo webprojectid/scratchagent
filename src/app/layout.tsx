@@ -4,6 +4,7 @@ import { Geist, Geist_Mono, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import "./color-styles.css";
 import { Providers } from "@/components/providers";
+import { SiteBackground } from "@/components/site-background";
 import { langInitScript } from "@/lib/lang";
 import { SHARE_IMAGE, SITE_DESCRIPTION, SITE_ORIGIN, siteOpenGraph } from "@/lib/site-metadata";
 
@@ -46,7 +47,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <script dangerouslySetInnerHTML={{ __html: langInitScript }} />
         <script dangerouslySetInnerHTML={{ __html: "try{var p=JSON.parse(localStorage.getItem('scratch_account_preferences')||'{}');if(['scratch','blue','violet','amber','rose'].includes(p.colorStyle))document.documentElement.dataset.colorStyle=p.colorStyle}catch(e){}" }} />
       </head>
-      <body className="min-h-full flex flex-col"><Providers>{children}</Providers></body>
+      <body className="min-h-full flex flex-col"><SiteBackground /><Providers>{children}</Providers></body>
     </html>
   );
 }
