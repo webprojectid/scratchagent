@@ -34,6 +34,12 @@ function makeTask(ref: string, title: string, layer: "frontend" | "backend" | "q
   return { ref, title, layer, phase, page, deps: [], status: "pending", retryCount: 0, lastFailReason: null, failReason: null, startedAt: null, completedAt: null };
 }
 
+function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promise<T> {
+  const { promise: timeout, reject } = Promise.withResolvers<T>();
+  const timer = setTimeout(() => reject(new Error(message)), ms);
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
+
 export async function POST(request: Request, { params }: { params: Promise<{ planId: string }> }) {
   const originGate = writeOriginGate(request);
   if (originGate) return originGate;
@@ -86,7 +92,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pla
       const subTitles = (feature.subFeatures ?? []).map((sf) => sf.title);
       // Ide user (Pro, maks 2/project) WAJIB ikut terbaca AI sebagai referensi tambahan.
       let result;
-      try { result = await generateTasksForFeature(plan.brief, feature.title, subTitles, featureIndex, plan.tier ?? "free", plan.features.length, plan.ideas, plan.generationSettings, {
+      try { result = await withTimeout(generateTasksForFeature(plan.brief, feature.title, subTitles, featureIndex, plan.tier ?? "free", plan.features.length, plan.ideas, plan.generationSettings, {
         productSpec: plan.productSpec,
         requirementIds: feature.requirementIds,
         featureDescription: feature.description,
@@ -96,7 +102,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pla
         requirements: plan.requirements,
         stack: plan.stack,
         reservedQa,
-      });
+      }), 180_000, "Task generation exceeded its time budget");
       } catch (error) {
         const failed = getFailedGenerationUsage(error);
         if (failed) {

@@ -152,8 +152,9 @@ export function fallbackOutline(
     const owned = requirements.length
       ? requirements.filter((_, requirementIndex) => requirementIndex % count === index)
       : [];
-    if (!owned.length && requirements.length) owned.push(requirements[index % requirements.length]);
-    const baseTitle = owned[0]?.statement ?? extras[index % extras.length];
+    const synthetic = !owned.length && requirements.length > 0;
+    if (synthetic) owned.push(requirements[index % requirements.length]);
+    const baseTitle = synthetic ? extras[index % extras.length] : owned[0]?.statement ?? extras[index % extras.length];
     let title = shortTitle(baseTitle, extras[index % extras.length]);
     if (used.has(title.toLowerCase())) title = `${title} ${index + 1}`;
     used.add(title.toLowerCase());

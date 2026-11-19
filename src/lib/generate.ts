@@ -286,9 +286,11 @@ async function attemptOnce<T>(
     ? prompt
     : (options.stage === 'review' ? reviewRepairRequest : repairRequest)(prompt, feedback ?? ["Return complete JSON with the required field types"], previousDraft);
   const controller = new AbortController();
-  // Let a valid slow stream use this model's full slice. The per-model budget
-  // already leaves the remaining fallbacks their own time.
-  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  // Some OpenAI-compatible providers accept a stream but never finish it.
+  // Reserve a meaningful part of this model's slice for the non-stream retry,
+  // without cutting off normal slow streams as aggressively as the old 25s cap.
+  const streamBudgetMs = Math.max(20_000, Math.floor(timeoutMs * 0.55));
+  const timeout = setTimeout(() => controller.abort(), streamBudgetMs);
   const start = Date.now();
   let metricStart = start;
   let draft: string | undefined;
@@ -696,6 +698,9 @@ export async function generatePlanStructure(
   // Batas struktur per tier: fase (fitur), sub-fitur per fitur, total task.
   const limits = structureLimits(tier);
   const structureWarnings: string[] = [];
+  const addStructureWarning = (message: string) => {
+    if (!structureWarnings.includes(message)) structureWarnings.push(message);
+  };
   const stackHint = techPrefs.mode === "custom"
     ? `User memilih opsi STACK CUSTOM: frontend=${techPrefs.frontend ?? "Next.js"}, backend=${techPrefs.backend ?? "Node.js"}, database=${techPrefs.database ?? "PostgreSQL"}, deployment=${techPrefs.deployment ?? "Railway"}`
     : `User memilih mode AUTO untuk tech stack. ATURAN WAJIB PEMILIHAN STACK (PRIORITAS FREE TIER & ZERO COST SETUP):
@@ -961,9 +966,9 @@ export async function generatePlanStructure(
         }
         const finalIssues = [...subfeatureRequirementIssues(matched.sub_features, feature.requirement_ids), ...validateSubfeatureDraft(feature, matched.sub_features, tier, { reservedQa, brief: confirmedScope }), ...validateContractText(matched.sub_features.flatMap(sub => [sub.title, sub.tujuan, ...sub.selesai_bila]), confirmedScope)];
         if (finalIssues.length) {
-          structureWarnings.push(handoff.language === "en"
-            ? `Capabilities for ${feature.title} need review after a contract check.`
-            : `Kapabilitas ${feature.title} perlu ditinjau setelah pemeriksaan kontrak.`);
+          addStructureWarning(handoff.language === "en"
+            ? "Some capabilities need review after a contract check."
+            : "Beberapa kapabilitas perlu ditinjau setelah pemeriksaan kontrak.");
         }
       }
     }
@@ -1201,7 +1206,7 @@ export async function generatePlanStructure(
   };
   if (!reqDataRaw) structureWarnings.push(handoff.language === "en" ? "Requirements and user flows could not be generated. Review this draft before implementation." : "Kebutuhan dan user flow belum berhasil dibuat. Tinjau draft ini sebelum implementasi.");
   const englishWarnings: Record<string, string> = { architecture: "Architecture uses a generic fallback draft because generation failed.", databaseSchema: "Database schema uses a generic fallback draft because generation failed.", "architecture:diagram-missing": "The architecture diagram uses a generic fallback. Review it against the requirements.", "databaseSchema:diagram-missing": "The ERD uses a generic fallback. Review it against the requirements." };
-  const warnings = [...usedFallback.map((code) => handoff.language === "en" ? englishWarnings[code] ?? `Fallback used: ${code}` : WARNING_LABELS[code] ?? `Fallback dipakai: ${code}`), ...structureWarnings];
+  const warnings = [...new Set([...usedFallback.map((code) => handoff.language === "en" ? englishWarnings[code] ?? `Fallback used: ${code}` : WARNING_LABELS[code] ?? `Fallback dipakai: ${code}`), ...structureWarnings])];
   if (usedFallback.length) {
     console.warn(`[generate] fallback dipakai untuk: ${usedFallback.join(", ")}`);
   }
