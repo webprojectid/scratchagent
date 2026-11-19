@@ -216,6 +216,8 @@ interface LlmCallOptions<T> {
   validate?: (value: T) => string[];
   providers?: LlmProvider[];
   deadline?: number;
+  /** Some OpenAI-compatible providers accept streams but never finish them. */
+  preferNonStream?: boolean;
   /** Cached server-owned value used only after every configured model fails. */
   fallback?: () => T;
 }
@@ -234,6 +236,8 @@ class LLMOutputTruncatedError extends Error {
 }
 const rejectedDrafts = new WeakMap<object, string>();
 const failedGenerationUsage = new WeakMap<object, LlmUsage>();
+/** A model that returned an empty/stalled stream is faster to call non-stream next time. */
+const unreliableStreams = new Set<string>();
 export function getFailedGenerationUsage(error: unknown): LlmUsage | undefined {
   const usage = error && typeof error === "object" ? failedGenerationUsage.get(error) : undefined;
   return usage ? { ...usage, models: [...usage.models], requests: usage.requests?.map(request => ({ ...request })) } : undefined;
@@ -286,11 +290,12 @@ async function attemptOnce<T>(
     ? prompt
     : (options.stage === 'review' ? reviewRepairRequest : repairRequest)(prompt, feedback ?? ["Return complete JSON with the required field types"], previousDraft);
   const controller = new AbortController();
+  const useStream = !options.preferNonStream && !unreliableStreams.has(model);
   // Some OpenAI-compatible providers accept a stream but never finish it.
   // Reserve a meaningful part of this model's slice for the non-stream retry,
   // without cutting off normal slow streams as aggressively as the old 25s cap.
   const streamBudgetMs = Math.max(20_000, Math.floor(timeoutMs * 0.55));
-  const timeout = setTimeout(() => controller.abort(), streamBudgetMs);
+  const timeout = setTimeout(() => controller.abort(), useStream ? streamBudgetMs : timeoutMs);
   const start = Date.now();
   let metricStart = start;
   let draft: string | undefined;
@@ -310,6 +315,7 @@ async function attemptOnce<T>(
   };
   let parsed: ParsedLLMResponse | undefined;
   const recoverWithoutStream = async (reason: string): Promise<ParsedLLMResponse> => {
+    unreliableStreams.add(model);
     metric.validationIssues = [reason];
     metric.durationMs = Date.now() - metricStart;
     earlierMetrics.push(metric);
@@ -346,7 +352,7 @@ async function attemptOnce<T>(
       const res = await publicProviderFetch(`${baseUrl}/chat/completions`, {
         method: "POST",
         headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ ...requestPayload, stream: true }),
+        body: JSON.stringify({ ...requestPayload, stream: useStream }),
         signal: controller.signal,
       });
       metric.httpStatus = res.status;
@@ -363,6 +369,7 @@ async function attemptOnce<T>(
       try {
         parsed = await parseLLMResponse(res, { logDebug: false });
       } catch (error) {
+        if (!useStream) throw error;
         if (error instanceof Error && error.name === "AbortError") {
           parsed = await recoverWithoutStream("Provider stream timed out; retried without streaming");
         } else if (error instanceof LLMStreamInterruptedError) {
@@ -382,14 +389,14 @@ async function attemptOnce<T>(
         }
       }
     } catch (error) {
-      if (error instanceof Error && error.name === "AbortError") {
+      if (useStream && error instanceof Error && error.name === "AbortError") {
         parsed = await recoverWithoutStream("Provider stream timed out; retried without streaming");
       } else {
         throw error;
       }
     }
     if (!parsed) throw new Error(`LLM request failed for ${model}`);
-    if (!(parsed.content ?? "").trim() && parsed.mode === "streaming") {
+    if (useStream && !(parsed.content ?? "").trim() && parsed.mode === "streaming") {
       parsed = await recoverWithoutStream("Provider returned an empty stream; retried without streaming");
     }
     draft = parsed.content ?? "";
@@ -482,17 +489,20 @@ async function callLlmUncached<T>(schema: z.ZodType<T>, prompt: string, usage?: 
   if (providers.length === 0) throw new Error("Konfigurasi LLM belum lengkap (isi lewat Settings atau env)");
   const entries = providers.flatMap((p) => p.models.map((model) => ({ baseUrl: p.baseUrl, apiKey: p.apiKey, model })));
   if (entries.length === 0) throw new Error("Konfigurasi LLM belum lengkap: tidak ada model di daftar provider");
+  // Fast free mode gives the first (verified) model a meaningful slice instead
+  // of splitting the budget across every configured fallback.
+  const activeEntries = entries.slice(0, options.preferNonStream ? 2 : entries.length);
 
   let lastError: unknown;
   let rejectedIssues: string[] | undefined;
   let exhaustedCount = 0;
-  for (const [entryIndex, entry] of entries.entries()) {
+  for (const [entryIndex, entry] of activeEntries.entries()) {
     // A rejection from an earlier provider must not mask a later provider's
     // network error or make the whole fallback chain look like bad content.
     rejectedIssues = undefined;
     // Give every configured model a slice of the section budget. Otherwise a
     // slow primary can consume the deadline and the fallbacks never run.
-    const remainingEntries = entries.length - entryIndex;
+    const remainingEntries = activeEntries.length - entryIndex;
     const remainingTime = Math.max(0, options.deadline! - Date.now());
     const entryOptions = { ...options, deadline: Date.now() + Math.max(1, Math.floor(remainingTime / remainingEntries)) };
     let feedback: string[] | undefined;
@@ -522,7 +532,7 @@ async function callLlmUncached<T>(schema: z.ZodType<T>, prompt: string, usage?: 
           console.warn(`[LLM] ${entry.model} ${options.stage ?? "outline"} gagal validasi, coba perbaiki bagian ini`);
           continue;
         }
-        if (entries.length === 1 && cycle === 0 && error instanceof Error && Date.now() + 10_000 < entryOptions.deadline!) {
+        if (activeEntries.length === 1 && cycle === 0 && error instanceof Error && Date.now() + 10_000 < entryOptions.deadline!) {
           feedback = error instanceof LLMStreamInterruptedError
             ? ["The previous provider stream was interrupted. Return one complete valid JSON object without relying on the cut-off response."]
             : ["The previous request failed. Return complete valid JSON"];
@@ -534,8 +544,8 @@ async function callLlmUncached<T>(schema: z.ZodType<T>, prompt: string, usage?: 
       }
     }
   }
-  if (exhaustedCount === entries.length && entries.length > 1) {
-    throw new Error(`Semua model (${entries.map((e) => e.model).join(", ")}) kehabisan quota. Coba lagi nanti atau tambah provider/model di Settings.`);
+  if (exhaustedCount === activeEntries.length && activeEntries.length > 1) {
+    throw new Error(`Semua model (${activeEntries.map((e) => e.model).join(", ")}) kehabisan quota. Coba lagi nanti atau tambah provider/model di Settings.`);
   }
   if (rejectedIssues) throw new GenerationOutputRejected(options.stage ?? "outline", rejectedIssues);
   throw lastError instanceof Error ? lastError : new Error("Semua model gagal");
@@ -691,6 +701,7 @@ export async function generatePlanStructure(
   contextAnswers?: ContextAnswer[],
   tier: Tier | string | null | undefined = "free",
   handoff: HandoffSettings = defaultHandoff,
+  runtime: { preferNonStream?: boolean; fastFree?: boolean } = {},
 ): Promise<GenerateResult> {
   const styleRule = STYLE_RULE + "\n" + handoffInstructions(handoff) + "\n" + scopeGuidance() + "\n" + technicalGroundingRules;
   const usage: LlmUsage = { tokensIn: 0, tokensOut: 0, models: [] };
@@ -725,7 +736,7 @@ export async function generatePlanStructure(
   try {
     productSpecDraft = await callLlm(productSpecSchema,
       `Brief: ${brief}\nConfirmed answers: ${JSON.stringify(contextAnswers ?? [])}\n${handoffInstructions(handoff)}\n${productSpecInstructions}\nExtract at least ${limits.features[0]} independently verifiable requirements. For sourceQuote, copy the exact spelling and punctuation from the user source, never paraphrase or correct informal spelling. Approved complete source for short briefs: ${JSON.stringify(brief.length <= 800 ? brief : "Use exact excerpts from the source above")}.`, usage,
-      { stage: "discovery", providers, validate: draft => { const source = [brief, ...(contextAnswers ?? []).map(answer => answer.answer)].join("\n"); Object.assign(draft, alignProductEvidence(draft, source)); return validateProductSpec(draft, source); }, fallback: () => {
+      { stage: "discovery", providers, preferNonStream: runtime.preferNonStream, validate: draft => { const source = [brief, ...(contextAnswers ?? []).map(answer => answer.answer)].join("\n"); Object.assign(draft, alignProductEvidence(draft, source)); return runtime.fastFree ? [] : validateProductSpec(draft, source); }, fallback: () => {
         structureWarnings.push(handoff.language === "en"
           ? "The discovery contract uses a deterministic fallback. Review the requirements before implementation."
           : "Kontrak discovery memakai fallback deterministik. Tinjau requirement sebelum implementasi.");
@@ -748,13 +759,14 @@ export async function generatePlanStructure(
     stage1Schema,
      `${enforcedBrief}\n${contractRule}\n${stackHint}${answersBlock}\n\nKamu adalah product manager senior. Buat PRD awal yang mendalam:\n${styleRule}\n1. Judul produk WAJIB nama brand yang diberikan pengguna jika ada. Bila belum ada, pilih nama singkat sesuai bahasa output. Jangan tempelkan deskripsi pada judul.\n2. Pisahkan fakta dari asumsi; jangan mengulang jawaban klarifikasi sebagai asumsi atau mengarang angka.\n3. Pilih stack sesuai kebutuhan; validasi biaya, kuota dan kapasitas sebelum launch. Setiap fase wajib requirement_ids dari kontrak.\n4. Daftar ${limits.features[0]} sampai ${limits.features[1]} fase. Pilih jumlah yang cukup untuk setiap workflow eksplisit; jangan paksa jumlah minimum bila hasilnya menggabungkan dua aktor atau alur yang tidak serumpun. Setiap kebutuhan eksplisit di brief harus terwakili sebagai prioritas utama. Fitur pendukung yang langsung menyempurnakan alur tersebut boleh diusulkan; jelaskan kaitannya dengan alur pengguna dan tandai sebagai usulan, bukan kebutuhan yang dikonfirmasi. Jangan tambahkan produk atau alur bisnis yang tidak terkait. Tulis satu tanggung jawab produk utama tepat satu kali; jangan duplikasi checkout/pembayaran sebagai fase terpisah bila alurnya sama.\n5. Untuk tiap fitur: deskripsi spesifik, tujuan yang bisa diamati, dan 2-8 kriteria selesai yang dapat diuji. Detail implementasi diuraikan pada subfitur; jangan mengisi kriteria fase dengan filler atau menyajikan usulan sebagai fakta dari pengguna. Jangan sebut opsi yang secara tegas dikecualikan brief, bahkan sebagai kriteria negatif.\n\nWAJIB gunakan field PERSIS: title, assumptions, stack, features (title, icon, description, tujuan, selesai_bila, priority). Format: {"title":"...","assumptions":[],"stack":[],"features":[{"title":"...","icon":"...","description":"...","tujuan":"...","selesai_bila":[],"priority":"high","requirement_ids":["R01"]}]}`,
     usage,
-    { stage: "outline", providers, validate: (draft) => { normalizePhaseOwnership(draft.features);
+    { stage: "outline", providers, preferNonStream: runtime.preferNonStream, validate: (draft) => { normalizePhaseOwnership(draft.features);
       for (const feature of draft.features) {
         feature.selesai_bila = removeVagueCriteria(
           removeUnrequestedCriteria(feature.selesai_bila, { brief, confirmedAnswers: contextAnswers ?? [] }, 2),
           2,
         );
       }
+      if (runtime.fastFree) return [];
       return [
         ...validateFeatureDraft(draft.features, tier, affirmativeScope),
         ...phaseRequirementIssues(draft.features, productSpec),
@@ -795,6 +807,19 @@ export async function generatePlanStructure(
 
   // Hard cutoff AFTER validation but still warn
   const stage1Features = orderRequirementPhases(one.features, productSpec);
+  if (runtime.fastFree && stage1Features.length < limits.features[0]) {
+    const fill = fallbackOutline(brief, productSpec, tier, one.stack, handoff.language);
+    const seen = new Set(stage1Features.map(feature => feature.title.toLowerCase()));
+    for (const feature of fill.features) {
+      if (stage1Features.length >= limits.features[0]) break;
+      if (seen.has(feature.title.toLowerCase())) continue;
+      seen.add(feature.title.toLowerCase());
+      stage1Features.push(feature);
+    }
+    addStructureWarning(handoff.language === "en"
+      ? "The outline was completed with the minimum number of phases in fast mode."
+      : "Outline dilengkapi ke jumlah fase minimum dalam fast mode.");
+  }
 
   // Jaring pengaman nama brand: LLM kadang tetap menempel deskripsi di judul
   // ("FutsalGo: Aplikasi Booking Lapangan"). Kepala plan cukup nama mereknya;
@@ -878,9 +903,10 @@ export async function generatePlanStructure(
         stage2Schema,
         `Product context: ${sharedContext}\n\nGenerate sub-features ONLY for these phases: ${JSON.stringify(requested)}. Keep each feature title exactly unchanged. Assign requirement_ids to every subfeature using ONLY its phase-owned requirement_ids. Cover all owned requirements. Aim for each phase's subfeatureTarget (the tier minimum), adding more only when requested workflows and their relevant supporting capabilities cannot fit naturally. Respect phase ownership: a capability implemented under another phase may be referenced as a dependency here, but must not become a second sub-feature. A user-facing control can stand alone only if it has distinct product rules and acceptance criteria; do not split selection, validation, persistence, refresh, and layout of the same action into separate capabilities. The final phase reserves one slot for ${QA_COPY[handoff.language].subFeature}, which the server adds automatically. Do not emit that QA sub-feature or any separate testing/QA sub-feature. Every sub-feature must solve a distinct problem with a measurable goal and at least two testable acceptance criteria. Each criterion should identify a trigger, observable outcome, or meaningful failure case; "handled safely", "sent in a timely manner", and restatements of the title are insufficient. Preserve all explicit requirements and confirmed answers, but omit explicitly excluded options completely. Allow relevant supporting proposals within these phases, with an explicit link to a requested workflow. Avoid unrelated modules and count padding.\n${styleRule}\nReturn {"features":[{"title":"exact title","sub_features":[{"title":"...","tujuan":"...","selesai_bila":["...","..."],"requirement_ids":["R01"]}]}]}.`,
         usage,
-        { stage: "subfeatures", providers, validate: (draft) => {
+        { stage: "subfeatures", providers, preferNonStream: runtime.preferNonStream, validate: (draft) => {
           const issues: string[] = [];
           if (draft.features.length !== group.length) issues.push(`Expected ${group.length} phases in this batch`);
+          if (runtime.fastFree) return issues;
           for (const feature of group) {
             const matched = draft.features.find((item) => item.title.trim().toLowerCase() === feature.title.trim().toLowerCase());
             if (!matched) { issues.push(`Missing phase: ${feature.title}`); continue; }
@@ -944,9 +970,10 @@ export async function generatePlanStructure(
             stage2Schema,
             `Product context: ${sharedContext}\n\nComplete ONLY phase ${JSON.stringify(feature.title)} with owned requirement_ids ${JSON.stringify(feature.requirement_ids)} and exactly ${missing} NEW distinct capabilities grounded in the user brief. Existing accepted capabilities: ${JSON.stringify(matched.sub_features.map(({ title, tujuan }) => ({ title, tujuan })))}. Do not repeat these or introduce unrelated features. Relevant supporting proposals may complete the requested workflow; explain that relationship and label the addition as a proposal. A distinct customer or operator outcome is required; error handling, tests, documentation and technical quality are task details unless explicitly requested. Each new capability needs a specific goal and two acceptance criteria with observable results. ${styleRule}\nReturn {"features":[{"title":${JSON.stringify(feature.title)},"sub_features":[{"title":"...","tujuan":"...","selesai_bila":["...","..."],"requirement_ids":["R01"]}]}]}.`,
             usage,
-            { stage: "subfeatures", providers, validate: (draft) => {
+            { stage: "subfeatures", providers, preferNonStream: runtime.preferNonStream, validate: (draft) => {
               const supplement = draft.features.find((item) => item.title.trim().toLowerCase() === feature.title.trim().toLowerCase());
               if (!supplement) return [`Missing phase: ${feature.title}`];
+              if (runtime.fastFree) return supplement.sub_features.length ? [] : [`${feature.title}: no distinct grounded supplements returned`];
               supplement.sub_features = cleanSubfeatures(feature, supplement.sub_features, reservedQa, matched.sub_features);
               return supplement.sub_features.length ? [] : [`${feature.title}: no distinct grounded supplements returned`];
             } },
@@ -1006,7 +1033,7 @@ export async function generatePlanStructure(
       archSchema,
       `Product context: ${sharedContext}\n\nKamu adalah solution architect. Buat architecture yang spesifik untuk kebutuhan produk ini.\n${styleRule} Jelaskan komponen utama, alur data end-to-end, keputusan arsitektur, trade-off yang relevan, error handling, auth, dan skalabilitas. Explain the handoff between real product components, not a generic catalog of technology or repeated paragraphs. For every brief requirement around concurrency, retries, callbacks, timezones, or authorization, explain the actual mechanism instead of a generic promise. When the confirmed lifecycle includes a timed hold, persist its owner and expiry; a row lock lasts only inside its transaction. Keep unspecified durations open and configurable. Cover webhook recovery only when the confirmed scope includes that integration. Mark vendors and integrations not specified by the user as assumptions. Narasi 2-3 paragraf yang masing-masing punya tanggung jawab berbeda. Return separate paragraphs:string[] and mermaid:string, no Markdown fences or JSON wrappers inside either field.\n\nFormat: {"paragraphs":["component responsibilities","end-to-end flows and recovery"],"mermaid":"flowchart TD\\n..."}`,
       usage,
-      { stage: "architecture", providers, validate: (draft) => [
+      { stage: "architecture", providers, preferNonStream: runtime.preferNonStream, validate: (draft) => runtime.fastFree ? [] : [
         ...validateTechnicalClaims(draft.architecture),
         ...validateArchitectureDraft(draft.architecture, { brief: affirmativeScope, featureTitles }),
         ...validateContractText(draft.paragraphs, confirmedScope),
@@ -1025,7 +1052,7 @@ export async function generatePlanStructure(
       dbSchema,
       `Product context: ${sharedContext}\n\nKamu adalah database architect. Buat database schema yang sesuai seluruh kemampuan produk di context.\n${styleRule} Jelaskan tabel utama, kolom dan tipe, PK/FK/UNIQUE/INDEX yang diperlukan, serta keputusan penyimpanan yang tidak jelas dari brief sebagai asumsi. Show the data-level invariant behind each requested concurrency guarantee, callback idempotency, authorization boundary, and timezone rule; a generic claim is insufficient. For concurrent bookings, reject collisions with a database-enforced active-slot rule. Persist a hold owner and expiry only when the confirmed workflow actually includes expiring holds; otherwise confirm immediate bookings atomically without adding checkout states. With PostgreSQL and overlapping intervals, write an explicit EXCLUDE USING gist constraint on court/resource ID and tstzrange(start,end) WHERE status IN active booking states; alternatively describe an atomic conditional UPDATE of a canonical slot row that checks status and verifies one affected row. A plain lookup followed by insert is not safe. If the user gave no hold duration, make it configurable and do not invent a number. Only when the confirmed workflow includes payment callbacks, persist a UNIQUE provider_event_id or a durable atomic payment-state guard and describe recovery for that workflow. State how time is stored and displayed. Authorization invariants must explicitly assign role and resource ownership enforcement to a backend/API handler or RLS, using the declared user/resource keys; merely saying a role is checked does not define the trusted enforcement boundary. Keep schema names and state names consistent with flows. Identifikasi hot path. Return the ERD separately in mermaid, without fences. Keep every canonical core entity. Additional technical support tables (outbox, notification dispatch, event deduplication) are allowed ONLY as explicit implementation proposals with supporting:true, requirementIds from the contract, and parentEntities naming canonical entities actually linked in relationships. Do not rename core entities or omit a requested workflow to avoid a supporting table.\n\nFormat: {"invariants":["..."],"tables":[{"name":"canonical_entity","purpose":"...","fields":["id uuid PK"],"constraints":[],"relationships":[],"supporting":false,"requirementIds":["R01"],"parentEntities":[]}],"mermaid":"erDiagram\\n..."}`,
       usage,
-      { stage: "database", providers, validate: (draft) => [
+      { stage: "database", providers, preferNonStream: runtime.preferNonStream, validate: (draft) => runtime.fastFree ? [] : [
         ...validateTechnicalClaims(draft.database_schema),
         ...validateDatabaseSchemaDraft(draft.database_schema, { brief: affirmativeScope, featureTitles, tables: draft.tables }),
         ...validateContractText(draft.invariants, confirmedScope),
@@ -1046,8 +1073,9 @@ export async function generatePlanStructure(
       reqSchema,
       `Product context: ${sharedContext}\n\nKamu adalah product manager. Buat user flow, requirements, dan tech stack yang konsisten dengan fitur dan subfitur final di atas.\n${styleRule}\n1. User flow: every flow needs requirementIds from the contract; cover ALL contract IDs across the flows. Cover every critical actor workflow with as many concise flows as needed; include registration, approval, reconciliation and recovery, termasuk error path yang relevan.\n2. Requirements: minimal 6 fungsional dan 4 non-fungsional yang spesifik dan dapat diuji. Each item must name a concrete actor, observable behavior, or measurable invariant. A functional item defines what the user or system does; a nonfunctional item must explain an enforceable mechanism or observable failure behavior. "Reliable", "accurate", "consistent", "timely", "secure", or "roles enforced" alone are not testable. Describe the actual check, record, retry, permission boundary, or failure response without inventing a numeric SLA. Relevant supporting capabilities are allowed when they directly improve a requested workflow; explain that relationship and mark them as supporting proposals rather than user-confirmed requirements. Do not add unrelated workflows or override explicit exclusions. Do not mention explicitly excluded features even in a negative or future-scope statement here; leave them out of flows and requirements entirely. For unspecified vendors, mark the choice as an assumption. Any duration, SLA, throughput, or performance target not supplied by the user must be clearly labeled proposed or assumed and require user confirmation; never present it as a fixed commitment.\n3. Tech stack: alasan singkat untuk tiap teknologi, sesuai stack yang dipilih. Do not present recommendations as user-confirmed choices.\n\nFormat: {"user_flow":[{"title":"...","requirementIds":["R01"],"steps":["..."]}],"requirements":{"fungsional":[],"non_fungsional":[]},"tech_stack":[{"name":"...","desc":"..."}]}`,
       usage,
-      { stage: "requirements", providers, validate: (draft) => {
+      { stage: "requirements", providers, preferNonStream: runtime.preferNonStream, validate: (draft) => {
         pruneScopeExtras(draft);
+        if (runtime.fastFree) return [];
         return [
         ...validateTechnicalClaims([...draft.requirements.fungsional, ...draft.requirements.non_fungsional].join("\n\n")),
         ...productSpec.requirements.filter(requirement => !draft.user_flow.some(flow => flow.requirementIds.includes(requirement.id))).map(requirement => `Missing flow for ${requirement.id}`),
@@ -1084,7 +1112,7 @@ export async function generatePlanStructure(
 
   const sections = { architecture: archDataRaw, database: dbDataRaw, requirements: reqDataRaw };
   let review: z.infer<typeof generationReviewSchema> | undefined;
-  if (archDataRaw && dbDataRaw && reqDataRaw) {
+  if (archDataRaw && dbDataRaw && reqDataRaw && !runtime.fastFree) {
     try {
     review = await callLlm(generationReviewSchema,
     `${generationReviewInstructions}\n${styleRule}\nBrief and confirmed answers: ${JSON.stringify({ brief, confirmedAnswers: contextAnswers ?? [] })}\nCanonical contract: ${JSON.stringify(productSpec)}\nDraft sections: ${JSON.stringify(sections)}`,
@@ -1248,6 +1276,7 @@ export async function generateTasksForFeature(
     requirements?: { fungsional?: string[]; nonFungsional?: string[] };
     stack?: string[];
     reservedQa?: boolean;
+    preferNonStream?: boolean;
   },
 ): Promise<{ tasks: Omit<GenerateTask, "ref">[]; usage: LlmUsage }> {
   const styleRule = STYLE_RULE + "\n" + handoffInstructions(handoff) + "\n" + scopeGuidance() + "\n" + technicalGroundingRules;
@@ -1273,7 +1302,7 @@ export async function generateTasksForFeature(
     stage3Schema,
     `Product context: ${JSON.stringify({ brief, productSpec: scopedSpec, requirementIds: context?.requirementIds, featureTitle, featureDescription: context?.featureDescription, featureGoal: context?.featureGoal, featureCriteria: context?.featureCriteria, subFeatures: targets, requirements: scopedSpec ? undefined : context?.requirements, stack: context?.stack })}\n${ideaBlock}\nKamu adalah tech lead senior. Buat task untuk fitur ini saja dengan pendekatan kritis:\n${styleRule}\n1. ${taskBudgetRule} Tiap task harus spesifik dan menelusur ke tujuan serta kriteria selesai subfitur yang bersangkutan.${reservedQa ? ` Four ${QA_COPY[handoff.language].subFeature} tasks are added by the server afterward; do not count them in this response.` : ""}\n2. Setiap sub-fitur harus mendapat minimal satu task yang relevan.\n3. Tiap judul task maksimal 60 karakter, diawali kata kerja, tanpa mengulang nama fitur.\n4. Sertakan validasi, error path, integrasi dan pengujian yang relevan, tanpa task generik yang hanya mengisi jumlah.\n5. Beri SETIAP task id unik berurutan: t1, t2, t3, dst.\n6. Dependency hanya merujuk task dalam daftar ini yang harus selesai lebih dulu, tanpa siklus. Task paralel memakai deps [].\n7. Urutan logis layer: frontend -> backend -> qa.\n8. Every task MUST include detail: {objective,requirementIds,deliverables,acceptanceCriteria,tests:[{scenario,action,expected}],prerequisiteRequirementIds}. Keep detail concise, at most 3 items per list. Every owned requirement needs implementation. Treat each canonical requirement.verification list as an exact checklist: for EACH listed scenario, include a tests entry with that exact scenario label, a concrete action and expected result in a task tagged with that requirement ID. Cover the checklist across multiple tasks when needed; failure tests do not replace success or concurrency tests. prerequisiteRequirementIds may ONLY contain dependsOn IDs declared for those requirements in the canonical contract; do not add out-of-scope requirements. Unknown numeric policies stay open. Write acceptanceCriteria using the confirmed duration or symbolic boundaries such as just before/after the configured cutoff, shorter/longer than the confirmed booking duration, or a configured valid/invalid value. Do not add sample durations or percentages to acceptanceCriteria. Only tests.action may use explicitly labelled fixture values; never promote fixture durations or computed example percentages into policy defaults.\n9. Setiap task wajib field: id, sub_feature (stable ID S01, S02, etc. from the supplied subfeature list; never invent or skip an ID), title, layer (frontend/backend/qa), phase, page (null atau path), deps (array id). JANGAN tulis field feature.\n\nFormat: {"tasks":[{"id":"t1","sub_feature":"S01","title":"...","layer":"frontend","phase":${featureIndex + 1},"page":null,"deps":[],"detail":{"objective":"observable product outcome","requirementIds":["R01"],"deliverables":["concrete implementation artifact"],"acceptanceCriteria":["observable behavior under a named trigger"],"tests":[{"scenario":"success","action":"specific user action or input","expected":"concrete observable result"}],"prerequisiteRequirementIds":[]}}]}`,
     usage,
-    { stage: "tasks", validate: (draft) => {
+    { stage: "tasks", preferNonStream: context?.preferNonStream, validate: (draft) => {
       for (const task of draft.tasks) task.sub_feature = targetTitles.get(task.sub_feature) ?? task.sub_feature;
       return [...validateTaskTechnicalClaims(draft.tasks), ...validateTaskDraft(draft.tasks, subFeatures, tier, { reservedQa }), ...validateTaskDetails(draft.tasks, context?.productSpec, context?.requirementIds), ...validateContractText(draft.tasks.flatMap(task => [task.title, ...(task.detail ? [task.detail.objective, ...task.detail.acceptanceCriteria] : [])]), productEvidenceSource(brief, context?.productSpec))];
     } },

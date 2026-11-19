@@ -75,7 +75,10 @@ export async function scheduleGeneration(job: GenerationJob, tryNo = 1): Promise
         const completedBefore = Object.keys(checkpoint.entries).length;
         acceptedBefore = completedBefore;
         const slice = await runGenerationSlice(checkpoint, persist, () =>
-          generatePlanStructure(job.brief, job.techPrefs, job.answers, job.tier, job.handoff), { concurrency: 3 });
+          generatePlanStructure(job.brief, job.techPrefs, job.answers, job.tier, job.handoff, {
+            preferNonStream: job.tier !== "pro",
+            fastFree: job.tier !== "pro",
+          }), { concurrency: 3 });
         if (!slice.done) {
           if (Object.keys(checkpoint.entries).length > completedBefore) {
             await withGenerationLease(job.planId, "structure", lease, async () => {
