@@ -283,9 +283,9 @@ async function attemptOnce<T>(
     ? prompt
     : (options.stage === 'review' ? reviewRepairRequest : repairRequest)(prompt, feedback ?? ["Return complete JSON with the required field types"], previousDraft);
   const controller = new AbortController();
-  // Do not let a stalled stream consume the whole model budget: retry the
-  // same model without streaming while there is still time for a fallback.
-  const timeout = setTimeout(() => controller.abort(), Math.min(timeoutMs, 25_000));
+  // Let a valid slow stream use this model's full slice. The per-model budget
+  // already leaves the remaining fallbacks their own time.
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
   const start = Date.now();
   let metricStart = start;
   let draft: string | undefined;
