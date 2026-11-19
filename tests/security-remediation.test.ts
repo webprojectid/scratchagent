@@ -1,4 +1,5 @@
 import * as generationMetrics from "../src/lib/generation-metrics";
+import * as generationFallback from "../src/lib/generation-fallback";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { POST as cleanup } from "@/app/api/admin/cleanup/route";
@@ -47,6 +48,7 @@ function taskGeneration(owner?: string) {
     "next/server": { NextResponse }, "@/lib/ui-messages": { apiText: (value: string) => value },
     "@/lib/api-auth": { getRequestUser: async () => ({ userId: "acting-admin" }), accessPlan: async () => ({ plan }) },
     "@/lib/generate": { generateTasksForFeature: () => { throw new Error("Mock mode must not call an LLM"); }, buildTaskRef: (_fi: number, _si: number, number: number) => `F01-S01-T${number}`, assignTasksToSubFeatures: (items: unknown[]) => new Map([[0, items.map((_, index) => index)]]), sanitizeDeps: (nodes: { ref: string; deps: string[] }[]) => new Map(nodes.map(node => [node.ref, node.deps])) },
+    "@/lib/generation-fallback": generationFallback,
     "@/lib/storage": { savePlan: async (_plan: unknown, owner: string) => { savedOwners.push(owner); }, updatePlanStatus: async () => {} },
     "@/lib/tasks": { ensureQaPhase: () => ({ ready: false }) },
   };

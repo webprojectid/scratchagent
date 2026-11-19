@@ -9,6 +9,7 @@ import { apiText } from "@/lib/ui-messages";
 import { NextResponse } from "next/server";
 import { accessPlan, getRequestUser } from "@/lib/api-auth";
 import { generateTasksForFeature, getFailedGenerationUsage, buildTaskRef, sanitizeDeps, assignTasksToSubFeatures } from "@/lib/generate";
+import { fallbackTasks } from "@/lib/generation-fallback";
 
 // Satu fitur bisa makan 1-3 menit dengan failover — beri jendela penuh.
 export const maxDuration = 300;
@@ -100,13 +101,20 @@ export async function POST(request: Request, { params }: { params: Promise<{ pla
         const failed = getFailedGenerationUsage(error);
         if (failed) {
           await appendPlanGenerationMetrics(plan.id, failed.requests ?? []);
-          await recordUsage(user!.userId, plan.tier ?? "free", plan.id, failed, "tasks-failed");
+          await recordUsage(user!.userId, plan.tier ?? 'free', plan.id, failed, "tasks-failed");
         }
-        throw error;
+        console.warn(`[generate-tasks] feature ${featureIndex} fallback:`, error instanceof Error ? error.message : error);
+        const ownedRequirements = (plan.productSpec?.requirements ?? []).filter(requirement => feature.requirementIds?.includes(requirement.id));
+        tasks = fallbackTasks(feature.title, subTitles, plan.tier ?? "free", featureIndex, reservedQa, plan.generationSettings?.language, ownedRequirements).map(task => ({
+          ...task,
+          feature: feature.title,
+        }));
       }
-      tasks = result.tasks;
-      plan.generationMetrics = mergeGenerationMetrics(plan.generationMetrics, result.usage.requests);
-      await recordUsage(user!.userId, plan.tier ?? "free", plan.id, result.usage, "tasks");
+      if (result) {
+        tasks = result.tasks;
+        plan.generationMetrics = mergeGenerationMetrics(plan.generationMetrics, result.usage.requests);
+        await recordUsage(user!.userId, plan.tier ?? "free", plan.id, result.usage, "tasks");
+      }
     }
 
     // Kunci sementara per task: pakai id dari LLM, fallback index. Dipakai utk mapping deps.
