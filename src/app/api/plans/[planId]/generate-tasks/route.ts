@@ -104,7 +104,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pla
         reservedQa,
         preferNonStream: plan.tier !== "pro",
         fastFree: plan.tier !== "pro",
-      }), 180_000, "Task generation exceeded its time budget");
+      }), 120_000, "Task generation exceeded its time budget");
       } catch (error) {
         const failed = getFailedGenerationUsage(error);
         if (failed) {
