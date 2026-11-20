@@ -164,7 +164,7 @@ function normalizeDiscovery(value: RecordValue): RecordValue {
 }
 
 /** Adapt equivalent representations only; missing product facts still fail validation. */
-export function normalizeGenerationOutput(stage: string, input: unknown): unknown {
+export function normalizeGenerationOutput(stage: string, input: unknown, relaxed = false): unknown {
   let root = input;
   for (let depth = 0; depth < 3 && record(root); depth++) {
     const keys = Object.keys(root);
@@ -216,6 +216,21 @@ export function normalizeGenerationOutput(stage: string, input: unknown): unknow
         ? { ...feature, sub_features: objectList(feature.sub_features, 'title') }
         : feature)
       : features;
+    if (stage === 'outline' && relaxed) {
+      value.title = typeof value.title === 'string' && value.title.trim() ? value.title : 'Product Plan';
+      value.assumptions = textList(value.assumptions);
+      const stack = textList(value.stack);
+      value.stack = stack.length ? stack : ['Next.js', 'PostgreSQL', 'Vercel'];
+      const outlineFeatures = Array.isArray(value.features) ? value.features : [];
+      value.features = outlineFeatures.map((feature: unknown, index: number) => record(feature) ? {
+        ...feature,
+        title: typeof feature.title === 'string' && feature.title.trim() ? feature.title : `Phase ${index + 1}`,
+        description: typeof feature.description === 'string' ? feature.description : '',
+        tujuan: typeof feature.tujuan === 'string' ? feature.tujuan : '',
+        selesai_bila: textList(feature.selesai_bila),
+        requirement_ids: normalizeIds(feature.requirement_ids),
+      } : feature);
+    }
   }
   if (stage === 'architecture') {
     if (typeof value.paragraphs === 'string') value.paragraphs = [value.paragraphs];

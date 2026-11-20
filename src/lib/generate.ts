@@ -55,6 +55,19 @@ const stage1Schema = z.object({
   features: z.array(featureSchema).min(2),
 });
 
+const fastSubfeatureSchema = z.object({
+  requirement_ids: z.array(z.string()).default([]),
+  title: z.string().min(1),
+  tujuan: z.string().default(""),
+  selesai_bila: z.array(z.string()).nullish().transform((value) => value ?? []),
+});
+const fastPlanSchema = z.object({
+  title: z.string(),
+  assumptions: z.array(z.string()).nullish().transform((value) => value ?? []),
+  stack: z.array(z.string().min(1)).default([]),
+  features: z.array(featureSchema.extend({ sub_features: z.array(fastSubfeatureSchema).default([]) })).min(2),
+});
+
 const archSchema = z.object({
   paragraphs: z.array(z.string().min(1)).min(1),
   mermaid: z.string().min(20),
@@ -218,6 +231,7 @@ interface LlmCallOptions<T> {
   deadline?: number;
   /** Some OpenAI-compatible providers accept streams but never finish them. */
   preferNonStream?: boolean;
+  maxModels?: number;
   /** Cached server-owned value used only after every configured model fails. */
   fallback?: () => T;
 }
@@ -433,7 +447,7 @@ async function attemptOnce<T>(
     if (decoded && typeof decoded === 'object' && 'patch' in decoded && previousDraft) draft = previousDraft;
     const raw = options.stage === 'review' ? decoded : mergeGenerationPatch(decoded, previousDraft);
     draft = JSON.stringify(raw);
-    const value = schema.parse(normalizeGenerationOutput(options.stage ?? "outline", normalize(raw)));
+    const value = schema.parse(normalizeGenerationOutput(options.stage ?? "outline", normalize(raw), options.preferNonStream === true));
     const issues = options.validate?.(value) ?? [];
     draft = JSON.stringify(value);
     if (issues.length > 0) {
@@ -444,7 +458,10 @@ async function attemptOnce<T>(
     return value;
   } catch (error) {
     if (error instanceof QualityError) metric.validationIssues = error.issues.slice(0, 24);
-    else if (error instanceof z.ZodError) metric.validationIssues = schemaRepairFeedback(error);
+    else if (error instanceof z.ZodError) {
+      metric.validationIssues = schemaRepairFeedback(error);
+      console.warn(`[LLM] ${options.stage ?? "outline"} schema issues`, JSON.stringify(schemaRepairFeedback(error)), String(draft ?? "").slice(0, 700));
+    }
     else if (error instanceof LLMOutputTruncatedError) metric.validationIssues = ["Provider reached its output limit before completing JSON"];
     else if (error instanceof LLMStreamInterruptedError) {
       metric.validationIssues = ["Provider stream ended before completion"];
@@ -484,14 +501,14 @@ async function callLlm<T>(schema: z.ZodType<T>, prompt: string, usage?: LlmUsage
 
 async function callLlmUncached<T>(schema: z.ZodType<T>, prompt: string, usage?: LlmUsage, options: LlmCallOptions<T> = {}): Promise<T> {
   // Leave time for checkpoint persistence before a 300-second invocation ends.
-  options = { ...options, deadline: Math.min(Date.now() + 250_000, generationSliceDeadline() ?? Infinity) };
+  options = { ...options, deadline: Math.min(options.deadline ?? Infinity, Date.now() + 250_000, generationSliceDeadline() ?? Infinity) };
   const providers = options.providers ?? await resolveLlmProviders();
   if (providers.length === 0) throw new Error("Konfigurasi LLM belum lengkap (isi lewat Settings atau env)");
   const entries = providers.flatMap((p) => p.models.map((model) => ({ baseUrl: p.baseUrl, apiKey: p.apiKey, model })));
   if (entries.length === 0) throw new Error("Konfigurasi LLM belum lengkap: tidak ada model di daftar provider");
   // Fast free mode gives the first (verified) model a meaningful slice instead
   // of splitting the budget across every configured fallback.
-  const activeEntries = entries.slice(0, options.preferNonStream ? 2 : entries.length);
+  const activeEntries = entries.slice(0, options.maxModels ?? (options.preferNonStream ? 2 : entries.length));
 
   let lastError: unknown;
   let rejectedIssues: string[] | undefined;
@@ -615,6 +632,155 @@ export interface GenerateResult {
   warnings: string[];
 }
 
+interface FastPlanFeature {
+  requirement_ids: string[];
+  title: string;
+  icon: string;
+  description: string;
+  tujuan: string;
+  selesai_bila: string[];
+  priority: "high" | "medium" | "low";
+  sub_features: Array<{ requirement_ids: string[]; title: string; tujuan: string; selesai_bila: string[] }>;
+}
+
+async function generateFastFreePlan(input: {
+  brief: string;
+  techPrefs: { mode: "auto" | "custom"; frontend?: string; backend?: string; database?: string; deployment?: string };
+  answers: ContextAnswer[];
+  tier: Tier | string | null | undefined;
+  handoff: HandoffSettings;
+  usage: LlmUsage;
+  providers: LlmProvider[];
+  limits: ReturnType<typeof structureLimits>;
+  styleRule: string;
+  stackHint: string;
+  answersBlock: string;
+  enforcedBrief: string;
+  warnings: string[];
+}): Promise<GenerateResult> {
+  const { brief, techPrefs, answers, tier, handoff, usage, providers, limits, styleRule, stackHint, answersBlock, enforcedBrief, warnings } = input;
+  const language = handoff.language;
+  const stack = techPrefs.mode === "custom"
+    ? [techPrefs.frontend, techPrefs.backend, techPrefs.database, techPrefs.deployment].filter((item): item is string => !!item)
+    : ["Next.js", "PostgreSQL", "Vercel"];
+  const fallbackPlan = () => {
+    const spec = fallbackProductSpec(brief, answers, language);
+    const outline = fallbackOutline(brief, spec, tier, stack, language);
+    return {
+      title: outline.title,
+      assumptions: outline.assumptions,
+      stack: outline.stack,
+      features: outline.features.map((feature, index) => ({
+        ...feature,
+        sub_features: fallbackSubfeatures(feature, limits.subFeatures[0] - (index === outline.features.length - 1 ? 1 : 0), [], language),
+      })),
+    };
+  };
+  let plan: z.infer<typeof fastPlanSchema>;
+  try {
+    plan = await callLlm(fastPlanSchema,
+      `${enforcedBrief}\n${stackHint}${answersBlock}\n\n${styleRule}\nTulis SATU plan produk lengkap untuk free tier. Tentukan TEPAT ${limits.features[0]} fase dan TEPAT ${limits.subFeatures[0]} sub-fitur per fase. Jangan membuat bagian discovery, architecture, database, atau requirements terpisah. Setiap fase: title, icon, description, tujuan, tepat 2 selesai_bila, priority, requirement_ids, sub_features berisi tepat ${limits.subFeatures[0]} item {title,tujuan,2 selesai_bila,requirement_ids}. Gunakan requirement_ids R01, R02, dst secara konsisten. Jangan mengarang angka bisnis. Format: {"title":"...","assumptions":[],"stack":[],"features":[{"title":"...","icon":"...","description":"...","tujuan":"...","selesai_bila":[],"priority":"high","requirement_ids":["R01"],"sub_features":[{"title":"...","tujuan":"...","selesai_bila":[],"requirement_ids":["R01"]}]}]}`,
+      usage,
+      { stage: "subfeatures", providers, preferNonStream: true, maxModels: 1, deadline: Date.now() + 120_000, fallback: () => {
+        warnings.push(language === "en" ? "The fast plan uses a deterministic fallback. Review it before implementation." : "Plan fast memakai fallback deterministik. Tinjau sebelum implementasi.");
+        return fallbackPlan();
+      } },
+    );
+  } catch (error) {
+    if (error instanceof GenerationPaused) throw error;
+    console.warn("[generate] fast plan fallback:", error instanceof Error ? error.message : error);
+    warnings.push(language === "en" ? "The fast plan uses a deterministic fallback. Review it before implementation." : "Plan fast memakai fallback deterministik. Tinjau sebelum implementasi.");
+    plan = fallbackPlan();
+  }
+  const fill = fallbackPlan();
+  const candidates: FastPlanFeature[] = plan.features.slice(0, limits.features[0]).map(feature => ({
+    ...feature,
+    sub_features: [...(feature.sub_features ?? [])],
+  }));
+  const seen = new Set(candidates.map(feature => feature.title.trim().toLowerCase()));
+  for (const feature of fill.features) {
+    if (candidates.length >= limits.features[0]) break;
+    if (seen.has(feature.title.trim().toLowerCase())) continue;
+    seen.add(feature.title.trim().toLowerCase());
+    candidates.push(feature);
+  }
+  const specBase = fallbackProductSpec(brief, answers, language);
+  const requirements = [...specBase.requirements];
+  const known = new Set(requirements.map(requirement => requirement.id));
+  for (const [index, feature] of candidates.entries()) {
+    if (!feature.requirement_ids.length) feature.requirement_ids = [requirements[index % requirements.length].id];
+    for (const id of feature.requirement_ids) {
+      if (known.has(id)) continue;
+      known.add(id);
+      requirements.push({
+        id: id.match(/^R\d{2,3}$/) ? id : `R${String(requirements.length + 1).padStart(2, "0")}`,
+        statement: (feature.description || feature.title).slice(0, 800),
+        sourceQuote: brief.slice(0, 800),
+        priority: "must",
+        dependsOn: [],
+        verification: ["success", "failure"],
+      });
+    }
+    feature.requirement_ids = feature.requirement_ids.map(id => known.has(id) ? id : feature.requirement_ids[0]);
+    const target = limits.subFeatures[0] - (index === candidates.length - 1 ? 1 : 0);
+    feature.sub_features = feature.sub_features.slice(0, target);
+    if (feature.sub_features.length < target) {
+      feature.sub_features.push(...fallbackSubfeatures(feature, target - feature.sub_features.length, feature.sub_features, language));
+    }
+    for (const sub of feature.sub_features) {
+      if (!sub.requirement_ids.length) sub.requirement_ids = [feature.requirement_ids[0]];
+    }
+  }
+  const productSpec: ProductSpec = { ...specBase, requirements: requirements.slice(0, 30) };
+  const features = candidates.map((feature, index) => ({
+    requirementIds: feature.requirement_ids,
+    slug: feature.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || `phase-${index + 1}`,
+    title: feature.title,
+    icon: feature.icon,
+    description: feature.description,
+    tujuan: feature.tujuan,
+    selesaiBila: feature.selesai_bila,
+    priority: feature.priority,
+    status: "direncanakan" as const,
+    subFeatures: feature.sub_features.map(sub => ({
+      title: sub.title,
+      requirementIds: sub.requirement_ids,
+      tujuan: sub.tujuan,
+      selesaiBila: sub.selesai_bila,
+      tasks: [],
+    })),
+  }));
+  const context = JSON.stringify({ brief, product: plan.title, productSpec, stack, features: features.map(({ title, description, tujuan, selesaiBila }) => ({ title, description, tujuan, selesai_bila: selesaiBila })) });
+  const fallbackSection = () => null as unknown;
+  const [archData, dbData] = await Promise.all([
+    callLlm(archSchema, `Product context: ${context}\n\n${styleRule} Tulis arsitektur spesifik untuk produk ini dalam 2 paragraf dan flowchart Mermaid. Format: {"paragraphs":["..."],"mermaid":"flowchart TD\\n..."}`, usage, { stage: "architecture", providers, preferNonStream: true, maxModels: 1, deadline: Date.now() + 60_000, fallback: fallbackSection as () => z.infer<typeof archSchema> }).catch(error => { if (error instanceof GenerationPaused) throw error; return null; }),
+    callLlm(dbSchema, `Product context: ${context}\n\n${styleRule} Tulis database schema spesifik untuk produk ini, tabel kanonik, field, relasi, invariant, dan ERD Mermaid. Format: {"invariants":["..."],"tables":[{"name":"...","purpose":"...","fields":["..."],"constraints":[],"relationships":[],"supporting":false,"requirementIds":["R01"],"parentEntities":[]}],"mermaid":"erDiagram\\n..."}`, usage, { stage: "database", providers, preferNonStream: true, maxModels: 1, deadline: Date.now() + 60_000, fallback: fallbackSection as () => z.infer<typeof dbSchema> }).catch(error => { if (error instanceof GenerationPaused) throw error; return null; }),
+  ]);
+  const requirementData = fallbackRequirements(productSpec, candidates, stack, language);
+  const arch = applyArchFallback(
+    { title: plan.title, stack, features: features as never },
+    archData?.architecture ?? "",
+    dbData?.database_schema ?? "",
+    { injectDiagrams: true, language },
+  );
+  const resolvedStack = plan.stack.length ? plan.stack : stack;
+  return {
+    productSpec,
+    title: plan.title.split(/[:\u2013\u2014]|\s+-\s+/)[0].trim() || plan.title,
+    brief,
+    stack: resolvedStack,
+    techStack: requirementData.tech_stack,
+    asumsi: [...plan.assumptions, ...(techPrefs.mode === "auto" ? [language === "en" ? "The tech stack is an AUTO-mode recommendation and has not been confirmed by the user." : "Tech stack adalah rekomendasi mode AUTO dan belum dikonfirmasi pengguna."] : [])],
+    requirements: { fungsional: requirementData.requirements.fungsional, nonFungsional: requirementData.requirements.non_fungsional },
+    userFlow: requirementData.user_flow,
+    architecture: arch.architecture,
+    databaseSchema: arch.databaseSchema,
+    features,
+    usage,
+    warnings: [...new Set([...warnings, ...arch.usedFallback.map(code => `Fallback used: ${code}`)])],
+  };
+}
+
 export interface GenerateTask {
   detail?: TaskDetail;
   ref: string;
@@ -732,6 +898,12 @@ export async function generatePlanStructure(
   const confirmedScope = confirmedScopeForValidation(brief, contextAnswers ?? []);
   const affirmativeScope = affirmativeScopeForValidation(brief, contextAnswers ?? []);
   const enforcedBrief = getEnforcedBrief(brief, tier);
+  if (runtime.fastFree) {
+    return generateFastFreePlan({
+      brief, techPrefs, answers: contextAnswers ?? [], tier, handoff, usage, providers, limits,
+      styleRule, stackHint, answersBlock, enforcedBrief, warnings: structureWarnings,
+    });
+  }
   let productSpecDraft;
   try {
     productSpecDraft = await callLlm(productSpecSchema,
@@ -1277,6 +1449,7 @@ export async function generateTasksForFeature(
     stack?: string[];
     reservedQa?: boolean;
     preferNonStream?: boolean;
+    fastFree?: boolean;
   },
 ): Promise<{ tasks: Omit<GenerateTask, "ref">[]; usage: LlmUsage }> {
   const styleRule = STYLE_RULE + "\n" + handoffInstructions(handoff) + "\n" + scopeGuidance() + "\n" + technicalGroundingRules;
@@ -1286,8 +1459,10 @@ export async function generateTasksForFeature(
   const [fullMinTasks, fullMaxTasks] = taskRangePerFeature(tier, featureCount, subFeatures.length);
   const reservedQa = context?.reservedQa === true;
   const minTasks = Math.max(subFeatures.length, fullMinTasks - (reservedQa ? 4 : 0));
-  const maxTasks = fullMaxTasks - (reservedQa ? 4 : 0);
-  const taskBudgetRule = `Buat ${minTasks} sampai ${maxTasks} task untuk fitur ini (WAJIB tidak melebihi ${maxTasks}). Pastikan SETIAP sub-fitur memiliki alokasi task (minimal frontend, backend, atau QA).`;
+  const maxTasks = context?.fastFree ? minTasks : fullMaxTasks - (reservedQa ? 4 : 0);
+  const taskBudgetRule = context?.fastFree
+    ? `Buat TEPAT ${minTasks} task untuk fitur ini. Pastikan SETIAP sub-fitur memiliki alokasi task.`
+    : `Buat ${minTasks} sampai ${maxTasks} task untuk fitur ini (WAJIB tidak melebihi ${maxTasks}). Pastikan SETIAP sub-fitur memiliki alokasi task (minimal frontend, backend, atau QA).`;
   // Ide user (fitur Pro) disuntikkan ke prompt AI sebagai referensi wajib:
   // kalau ada ide yang relevan dengan fitur ini, task-nya HARUS mengakomodasi
   // ide tersebut walau belum tercakup di struktur awal.
